@@ -1,0 +1,242 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"></head><body><title>SCA Match Center</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>{{CSS}}</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><h1><span>SCA</span> Match Center</h1><small id="jogo-tit"></small></div>
+    <div class="quem" id="quem" aria-label="Quem está ligado"></div>
+    <div class="status" id="status" aria-live="polite"><i></i><span>A ligar…</span></div>
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tab-q" aria-selected="true">Quadro</button>
+      <button role="tab" id="tab-j" aria-selected="false">Jogo</button>
+      <button role="tab" id="tab-p" aria-selected="false">Plantel</button>
+      <button role="tab" id="tab-m" aria-selected="false">Modelo de Jogo</button>
+      <button role="tab" id="tab-v" aria-selected="false">Ao vivo</button>
+      <button role="tab" id="tab-a" aria-selected="false">Pós-jogo</button>
+      <button role="tab" id="tab-h" aria-selected="false">Histórico</button>
+    </div>
+    <button class="btn" id="btn-rel" aria-label="Relógio do jogo">⏱ <span id="rel-t">0:00</span></button>
+    <button class="btn" id="btn-nota">+ Nota</button>
+    <button class="btn" id="btn-pdf" title="Exportar os quadros em PDF">⬇ PDF</button>
+    <button class="btn" id="btn-tv" title="Apresentação automática para a TV ou vídeo">📺 TV</button>
+    <button class="btn primary" id="btn-present">▶ Apresentar</button>
+  </header>
+
+  <div class="banco" id="banco"></div>
+  <section id="view-q">
+    <div class="grid">
+      <nav class="lances" id="nav" aria-label="Lances"></nav>
+      <div class="board">
+        <div class="boardbar">
+          <span class="tag" id="b-tag"></span><h2 id="b-title"></h2>
+          <div class="sp"><button class="btn sm" id="btn-undo" title="Desfazer a última alteração no quadro" disabled>↶ Desfazer</button><button class="btn sm" id="btn-nomes" aria-pressed="false">Nomes</button><button class="btn sm" id="btn-dup" title="Duplicar este slide">⧉ Duplicar</button><button class="btn sm" id="btn-edit">✎ Editar lance</button><button class="btn ghost sm" id="prev" aria-label="Lance anterior">‹</button><button class="btn ghost sm" id="next" aria-label="Lance seguinte">›</button></div>
+        </div>
+        <div class="editbar" id="editbar" hidden>
+          <b>A editar · arrasta bolinhas e legendas</b>
+          <button class="btn sm" id="e-addp">+ Bolinha</button>
+          <button class="btn sm" id="e-addl">+ Legenda</button>
+          <button class="btn sm" id="e-seta" aria-pressed="false">+ Seta</button>
+          <button class="btn sm" id="e-txt">+ Texto</button>
+          <button class="btn sm" id="e-adv">+ Adversário</button>
+          <button class="btn sm" id="e-forma">+ Forma</button>
+          <button class="btn sm" id="e-bj">+ Bola</button>
+          <select id="e-cor" aria-label="Cor da seta nova" style="min-height:34px;width:auto;padding:4px 8px" hidden></select>
+          <button class="btn sm" id="e-notas">Indicações</button>
+          <button class="btn sm" id="e-props">Nome / tipo</button>
+          <button class="btn sm" id="e-reset" hidden>Repor original</button>
+          <button class="btn sm danger" id="e-del">Apagar lance</button>
+          <button class="btn sm dark" id="e-done">Concluir</button>
+        </div>
+        <div class="stage" id="stage"></div>
+        <div class="hint" id="hint"></div>
+      </div>
+      <aside class="panel">
+        <header><div class="seg" role="group" aria-label="Fase" style="margin-bottom:10px"><button id="fz-pre">Pré-jogo</button><button id="fz-jogo">Jogo</button></div>
+          <h2 id="p-tit">Definições pré-jogo <span class="count" id="cnt">0</span></h2>
+          <p class="sub" id="p-sub"></p></header>
+        <ol class="rows" id="rows"></ol>
+        <div style="padding:0 14px 8px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm danger" id="btn-limpa" hidden>Limpar trocas do jogo</button><button class="btn sm dark" id="btn-gpre" hidden>Guardar pré-jogo</button></div>
+        <div class="add">
+          <h3>Nova alteração</h3>
+          <div class="fields">
+            <label class="f">Sai<select id="f-sai"></select></label>
+            <label class="f">Entra<select id="f-entra"></select></label>
+          </div>
+          <div class="seg" role="group" aria-label="Onde">
+            <button id="sc-este" aria-pressed="true">Só este lance</button>
+            <button id="sc-todos" aria-pressed="false">Todos</button>
+            <button id="sc-esc" aria-pressed="false">Escolher…</button>
+          </div>
+          <div class="picks" id="picks" hidden></div>
+          <button class="btn primary" id="f-add">Adicionar</button>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section id="view-j" hidden>
+    <div class="jogo">
+      <div class="board">
+        <div class="boardbar"><span class="tag OF">ONZE</span><h2>Onze base</h2><span class="sub" style="margin:0 0 0 auto">Arrasta as peças · toca para trocar jogador ou posição</span></div>
+        <div class="stage editing" id="jstage"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+        <div class="card"><header><h2>Jogo</h2></header>
+          <div class="body">
+            <div class="fields"><label class="f">Adversário<input type="text" id="j-adv" placeholder="Ex.: Boavista"></label><label class="f">Data<input type="date" id="j-data"></label></div>
+            <ul class="lineup" id="j-lineup"></ul>
+          </div></div>
+        <div class="card"><header><h2>Ficha de jogo</h2><p class="sub">Dados para a ficha oficial. Golos, cartões, cantos e substituições vêm do Painel; remates da Análise.</p></header>
+          <div class="body" id="fj-body"></div></div>
+        <div class="card"><header><h2>Suplentes <span class="count" id="j-nsup">0</span></h2><p class="sub">Toca para convocar. São estes que aparecem primeiro nas substituições.</p></header>
+          <div class="body"><div class="chips" id="j-sup"></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-v" hidden>
+    <div class="card" style="margin-bottom:12px"><div class="an-top">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <h2 style="font-family:var(--f-display);margin:0;font-size:20px;margin-right:auto">Ao vivo · estatística do banco</h2>
+        <div class="seg" role="group" aria-label="Parte"><button id="vp-1">1ª parte</button><button id="vp-2">2ª parte</button></div>
+        <span class="vmin" id="v-min"></span>
+      </div>
+      <div class="posse" id="v-posse">
+        <button class="p-nos" data-e="nos"><b>0:00</b><span>NOSSA</span></button>
+        <button class="p-div" data-e="div"><b>0:00</b><span>DIVIDIDA</span></button>
+        <button class="p-eles" data-e="eles"><b>0:00</b><span>ADVERSÁRIO</span></button>
+        <button class="p-fora" data-e="fora"><b>0:00</b><span>BOLA FORA</span></button>
+        <button data-e=""><b>⏸</b><span>PARAR</span></button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><p class="sub" style="margin:0;margin-right:auto">Posse opcional: se não houver tempo para a seguir, ignora estes botões.</p><button class="btn sm danger" id="v-rposse">Repor posse</button></div>
+    </div></div>
+    <div class="card" style="margin-bottom:12px"><header style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin-right:auto">Jogo</h2><span class="pl" id="v-pl" style="font-family:var(--f-display);font-weight:800;font-size:24px"></span><span class="sub" id="v-subs" style="margin:0"></span></header>
+      <div class="body">
+        <div class="vev">
+          <button class="vbig" style="background:#C00000" id="ve-gn">⚽ Golo SCA</button>
+          <button class="vbig" style="background:#1F497D" id="ve-ga">⚽ Golo adversário</button>
+          <button class="vbig" style="background:#E0B000;color:#000" id="ve-am">🟨 Amarelo</button>
+          <button class="vbig" style="background:#8B0000" id="ve-vm">🟥 Vermelho</button>
+          <button class="vbig" style="background:#1B1A17" id="ve-sb">🔁 Substituição</button>
+        </div>
+        <ul class="evl" id="v-evs" style="margin-top:10px"></ul>
+      </div></div>
+    <div class="vgrid">
+      <div class="card"><header style="display:flex;align-items:center;gap:8px"><h2 style="margin-right:auto">Contadores</h2><button class="btn sm" id="v-undo">↶ Desfazer</button><button class="btn sm danger" id="v-reset">Repor a zero</button></header>
+        <div class="body"><div class="vcont" id="v-cont"></div></div></div>
+      <div class="card"><header style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h2 style="margin-right:auto">Estatística</h2>
+        <div class="seg" role="group" id="v-ver"><button data-v="1">Intervalo</button><button data-v="2">2ª parte</button><button data-v="t">Final</button></div></header>
+        <div class="body" id="v-est"></div></div>
+    </div>
+  </section>
+
+  <section id="view-a" hidden>
+    <div class="card" style="margin-bottom:16px">
+      <div class="an-top">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <h2 style="font-family:var(--f-display);margin:0;font-size:20px;margin-right:auto">Pós-jogo · análise do vídeo</h2>
+          <div class="seg" role="group" aria-label="Vista"><button id="av-reg" aria-pressed="true">Registar</button><button id="av-rel" aria-pressed="false">Relatório</button></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <div class="seg" role="group" aria-label="Parte"><button id="ap-1">1ª parte</button><button id="ap-2">2ª parte</button></div>
+          <button class="btn sm" id="a-dir">Atacamos →</button>
+          <div class="resumo" id="a-resumo" style="margin-left:auto"></div>
+        </div>
+        <div class="posse" id="a-posse">
+          <button class="p-nos" data-e="nos"><b>0:00</b><span>NOSSA</span></button>
+          <button class="p-div" data-e="div"><b>0:00</b><span>DIVIDIDA</span></button>
+          <button class="p-eles" data-e="eles"><b>0:00</b><span>ADVERSÁRIO</span></button>
+          <button class="p-fora" data-e="fora"><b>0:00</b><span>BOLA FORA</span></button>
+          <button data-e=""><b>⏸</b><span>PARAR</span></button>
+        </div>
+        <div class="recuo" id="a-recuo"><span id="a-recuo-lbl">Recuar</span><button class="btn sm" data-r="5">−5 s</button><button class="btn sm" data-r="15">−15 s</button><button class="btn sm" data-r="60">−1 min</button><button class="btn sm" id="a-sync" style="margin-left:auto" title="Tecla S">⟲ Acertar com o vídeo</button><button class="btn sm" id="a-ajusta">✎ Ajustar tempos</button><button class="btn sm ghost" id="a-kb" aria-pressed="false">⌨ Atalhos</button></div>
+        <div class="kb" id="a-kbp" hidden>
+          <div><kbd>→</kbd> Posse nossa</div><div><kbd>←</kbd> Posse adversário</div><div><kbd>↓</kbd> Dividida</div><div><kbd>↑</kbd> Bola fora</div><div><kbd>Espaço</kbd> Parar</div>
+          <div><kbd>letra</kbd> Ação (ver no botão)</div><div><kbd>T</kbd> Mudar tipo (ex.: perda)</div><div><kbd>X</kbd> Nós / Adversário</div>
+          <div><kbd>79</kbd> + <kbd>Enter</kbd> Jogador</div><div><kbd>Enter</kbd> sem número: Coletivo / Adversário</div><div><kbd>-</kbd> Sem direção</div>
+          <div><kbd>Z</kbd> Desfazer último</div><div><kbd>Esc</kbd> Limpar seleção</div><div><kbd>S</kbd> Acertar com o vídeo</div><div><kbd>Shift</kbd>+<kbd>1/2/3</kbd> Origem: Organizado / Transição / Bola parada</div>
+          <div style="grid-column:1/-1;color:var(--muted)">O sítio no campo é com o rato: 1.º clique = origem, 2.º clique = destino (nas ações com direção). Os atalhos não funcionam enquanto escreves num campo.</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="a-registo">
+      <div class="an-grid" style="padding-top:14px">
+        <div class="an-col">
+          <h3><i>1</i> Ação</h3>
+          <div class="seg" role="group" aria-label="Equipa" style="margin-bottom:8px"><button id="ae-nos">Nós</button><button id="ae-eles">Adversário</button></div>
+          <div class="seg" role="group" aria-label="Origem" id="a-orig" style="margin-bottom:6px"><button data-o="org" title="Shift+1">Organizado</button><button data-o="trans" title="Shift+2">Transição</button><button data-o="bp" title="Shift+3">Bola parada</button></div>
+          <select id="a-bpl" aria-label="Lance de bola parada" style="margin-bottom:8px" hidden></select>
+          <div class="an-list" id="a-acoes"></div>
+          <button class="btn sm ghost" id="a-edit-acoes" style="margin-top:8px">Editar lista de ações</button>
+        </div>
+        <div class="an-col">
+          <h3><i>2</i> Onde no campo</h3>
+          <div class="an-tipo" id="a-tipo" hidden></div>
+          <div class="an-field" id="a-campo"></div>
+          <div class="an-hint" id="a-hint"></div>
+          <div class="an-rtop"><span id="a-rec-tit">Últimos registos · toca para editar</span><button class="btn sm ghost" id="a-rec-todos">Ver todos</button></div>
+          <ul class="an-recent" id="a-recent"></ul>
+        </div>
+        <div class="an-col">
+          <h3><i>3</i> Jogador</h3>
+          <div class="an-list" id="a-jog"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card rel" id="a-relatorio" hidden>
+      <div class="an-top">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h2 style="font-family:var(--f-display);margin:0;font-size:18px;margin-right:auto">Relatório</h2>
+          <button class="btn primary" id="a-rpdf">⬇ Relatório PDF</button><button class="btn" id="a-xlsx">⬇ Exportar Excel</button><button class="btn danger sm" id="a-limpar">Limpar análise</button></div>
+        <h3 style="font-family:var(--f-display);margin:6px 0 0">Posse e tempo útil</h3><div class="tblwrap" id="r-posse"></div>
+        <h3 style="font-family:var(--f-display);margin:10px 0 0">Estatística do jogo <span class="sub" style="font-family:var(--f-body)">(vídeo substitui o ao vivo quando existir · toca num número ao vivo para corrigir)</span></h3><div class="tblwrap" id="r-est"></div>
+        <h3 style="font-family:var(--f-display);margin:10px 0 0">Cantos SC Angrense por tipo <span class="sub" style="font-family:var(--f-body)">(toca num canto para completar)</span></h3><div class="tblwrap" id="r-cantos"></div>
+        <h3 style="font-family:var(--f-display);margin:10px 0 0">Eficácia por origem</h3><div class="tblwrap" id="r-orig"></div>
+        <h3 style="font-family:var(--f-display);margin:10px 0 0">Ações por jogador</h3><div class="tblwrap" id="r-jog"></div>
+        <h3 style="font-family:var(--f-display);margin:10px 0 0">Mapa do campo</h3>
+        <div class="filt"><select id="rf-eq"><option value="">Ambas as equipas</option><option value="nos">Nós</option><option value="eles">Adversário</option></select><select id="rf-ac"></select><select id="rf-j"></select><select id="rf-pt"><option value="">Jogo todo</option><option value="1">1ª parte</option><option value="2">2ª parte</option></select></div>
+        <div class="an-field" id="r-mapa"></div>
+        <div class="resumo" id="r-leg"></div>
+        <ul class="r-lista" id="r-lista"></ul>
+      </div>
+    </div>
+  </section>
+  <section id="view-h" hidden>
+    <div class="card plantel">
+      <header style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><h2 style="margin-right:auto">Histórico de jogos</h2><button class="btn" id="h-bk">⬇ Cópia de segurança</button><button class="btn" id="h-rp">⬆ Repor cópia</button><button class="btn primary" id="h-arq">Arquivar jogo atual</button>
+        <p class="sub" style="width:100%;margin:0" id="h-bkinfo"></p><input type="file" id="h-file" accept=".json,application/json" hidden></header>
+      <div id="h-lista"></div>
+      <p class="foot">Arquivar guarda o onze, os suplentes, as trocas (com minuto), as notas, a análise (ações e posse), o vídeo, o resultado e as observações. Depois podes começar o jogo seguinte com as trocas, notas e relógio a zero.</p>
+    </div>
+  </section>
+  <section id="view-m" hidden>
+    <div class="grid">
+      <nav class="lances" id="m-nav" aria-label="Quadros do Modelo de Jogo"></nav>
+      <div class="board">
+        <div class="boardbar"><h2 id="m-tit">Modelo de Jogo</h2><span class="tag" id="m-tag" hidden></span><div class="sp" id="m-bar"></div></div>
+        <div class="editbar" id="m-ebar" hidden></div>
+        <div class="stage mstage" id="m-stage"></div>
+        <div class="mplay" id="m-play"></div>
+      </div>
+      <aside class="panel" id="m-panel"></aside>
+    </div>
+  </section>
+  <section id="view-p" hidden>
+    <div class="card plantel">
+      <header><h2>Plantel</h2><button class="btn" id="p-add">+ Jogador</button></header>
+      <div class="tblwrap"><table class="ptab"><thead><tr><th>Nº</th><th>Nome / alcunha</th><th>No jogo</th><th></th></tr></thead><tbody id="ptb"></tbody></table></div>
+      <p class="foot">Titulares e suplentes definem-se no separador <b>Jogo</b>. Os nomes aparecem nas listas e ao tocar nas bolinhas; os esquemas mostram só o número.</p>
+    </div>
+  </section>
+</div>
+<div id="sheet-root"></div><div id="present-root"></div><div id="toast-root"></div>
+
+
+<script>{{APP_JS}}</script>
+<script>{{MODELO_JS}}</script>
+</body></html>
+</body></html>

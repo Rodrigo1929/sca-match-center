@@ -1,0 +1,20 @@
+[
+  "js/00-base.js",
+  "js/01-analise.js",
+  "js/02-dados.js",
+  "js/03-desenho.js",
+  "js/04-ui-quadro.js",
+  "js/05-folhas.js",
+  "js/06-jogo.js",
+  "js/07-plantel.js",
+  "js/08-separadores-apresentacao-toast.js",
+  "js/09-analise-ui.js",
+  "js/10-relatorio.js",
+  "js/11-gravacao.js",
+  "js/12-exportar-pdf-dos-quadros.js",
+  "js/13-relatorio-de-jogo-em-pdf.js",
+  "js/14-ficha-de-jogo-modelo-do-clube.js",
+  "js/15-copia-de-seguranca.js",
+  "js/16-tv-apresentacao-automatica-e-video.js",
+  "js/17-arranque.js"
+]
