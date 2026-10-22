@@ -7,7 +7,8 @@
   "scripts": {
     "build": "node tools/build.mjs",
     "check": "node tools/check.mjs",
-    "test": "node tools/build.mjs && node tests/smoke.mjs"
+    "test": "node tools/build.mjs && node tests/smoke.mjs",
+    "test:ipad": "node tools/build.mjs && node tests/smoke.mjs --ipad"
   },
   "devDependencies": {
     "playwright": "^1.48.0"

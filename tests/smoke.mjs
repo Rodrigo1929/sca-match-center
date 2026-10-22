@@ -1,15 +1,18 @@
 // Teste de fumo no browser (sem base de dados: a app corre em modo "só neste aparelho").
 // Requisitos: npm install && npx playwright install chromium
 // Uso: npm test   → falha se houver erros de JavaScript; guarda capturas em tests/capturas/
-import { chromium } from "playwright";
+//      npm run test:ipad → o mesmo no WebKit (motor do Safari) com ecrã e toque de iPad; capturas em tests/capturas/ipad/
+//      (precisa de: npx playwright install webkit)
+import { chromium, webkit, devices } from "playwright";
 import { mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const raiz = join(dirname(fileURLToPath(import.meta.url)), "..");
-const cap = join(raiz, "tests/capturas"); mkdirSync(cap, { recursive: true });
-const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
-const pg = await browser.newPage({ viewport: { width: 1366, height: 900 } });
+const ipad = process.argv.includes("--ipad");
+const cap = join(raiz, ipad ? "tests/capturas/ipad" : "tests/capturas"); mkdirSync(cap, { recursive: true });
+const browser = ipad ? await webkit.launch() : await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
+const pg = ipad ? await (await browser.newContext({ ...devices["iPad (gen 7) landscape"] })).newPage() : await browser.newPage({ viewport: { width: 1366, height: 900 } });
 const erros = []; pg.on("pageerror", (e) => erros.push(String(e)));
 await pg.goto(pathToFileURL(join(raiz, "dist/index.html")).href);
 await pg.waitForTimeout(800);
@@ -55,4 +58,4 @@ await pg.screenshot({ path: join(cap, "tv-modelo.png") }); await pg.keyboard.pre
 
 await browser.close();
 if (erros.length) { console.error("FALHOU:\n" + erros.join("\n")); process.exit(1); }
-console.log("OK · capturas em tests/capturas/");
+console.log(`OK${ipad ? " (WebKit · iPad)" : ""} · capturas em ${ipad ? "tests/capturas/ipad/" : "tests/capturas/"}`);
