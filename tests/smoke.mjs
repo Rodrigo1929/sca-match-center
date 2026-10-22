@@ -65,6 +65,19 @@ if ((await pg.evaluate(() => Object.values(modelos)[0].passos.length)) !== 1) er
 await pg.screenshot({ path: join(cap, "modelo-apagar-passo.png") });
 await pg.click(".toast button"); await pg.waitForTimeout(150);
 if ((await pg.evaluate(() => Object.values(modelos)[0].passos.length)) !== 2) erros.push("Apagar passo: Desfazer devia repor o passo");
+// botão direito do rato: num passo e num quadro abre "Apagar"; o clique na opção apaga e "Desfazer" repõe
+const nQ = () => pg.evaluate(() => [Object.keys(modelos).length, (Object.values(modelos)[0] || { passos: [] }).passos.length]);
+await pg.click("#m-panel li[data-i='1']", { button: "right" }); await pg.waitForSelector(".mmenu");
+await pg.screenshot({ path: join(cap, "modelo-menu-passo.png") });
+await pg.click(".mmenu button"); await pg.waitForTimeout(150);
+if (JSON.stringify(await nQ()) !== "[1,1]") erros.push("Botão direito: devia apagar o passo 2 " + JSON.stringify(await nQ()));
+await pg.click(".toast button"); await pg.waitForTimeout(150);
+await pg.click("#m-nav button[data-id]", { button: "right" }); await pg.waitForSelector(".mmenu");
+await pg.keyboard.press("Escape"); if (await pg.locator(".mmenu").count()) erros.push("Botão direito: Escape devia fechar o menu");
+await pg.click("#m-nav button[data-id]", { button: "right" }); await pg.click(".mmenu button"); await pg.waitForTimeout(150);
+if ((await nQ())[0] !== 0) erros.push("Botão direito: devia apagar o quadro");
+await pg.click(".toast button"); await pg.waitForTimeout(150);
+if (JSON.stringify(await nQ()) !== "[1,2]") erros.push("Botão direito: Desfazer devia repor o quadro com 2 passos " + JSON.stringify(await nQ()));
 // TV: no separador Modelo abre na TV do Modelo; a das bolas paradas fica à parte
 await pg.click("#btn-tv"); await pg.waitForSelector("#tv-modo");
 if ((await pg.getAttribute("#tv-modo [data-m='m']", "aria-pressed")) !== "true") erros.push("TV: devia abrir no Modelo de Jogo");

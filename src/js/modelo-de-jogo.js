@@ -385,7 +385,8 @@ function renderModeloNav(Q){ const nav=$("m-nav"), ls=listaModelos(); let h=`<bu
     q.forEach((x,i)=>{ h+=`<li><button data-id="${esc(x.id)}" aria-current="${Q&&x.id===Q.id}"><span class="n">${i+1}</span><span class="m-nm">${esc(x.nome)}<small>${esc(subNome(x.mom,x.sub))} · ${x.passos.length} ${x.passos.length===1?"passo":"passos"}</small></span></button></li>`; });
     h+=`</ul></div>`; });
   nav.innerHTML=h; $("m-novo").onclick=folhaNovoModelo;
-  nav.querySelectorAll("button[data-id]").forEach(b=>b.onclick=()=>{ if(b.dataset.id===mCur) return; mPara(); mCur=b.dataset.id; mT_=0; mSel=null; mUndo=mUndo.filter(u=>u.id===mCur); renderModelo(); }); }
+  nav.querySelectorAll("button[data-id]").forEach(b=>{ b.onclick=()=>{ if(b.dataset.id===mCur) return; mPara(); mCur=b.dataset.id; mT_=0; mSel=null; mUndo=mUndo.filter(u=>u.id===mCur); renderModelo(); };
+    b.oncontextmenu=e=>{ const Q=modelos[b.dataset.id]; if(Q) menuContexto(e,[[`🗑 Apagar quadro “${Q.nome}”`,()=>apagaQuadro(Q.id),"perigo"]]); }; }); }
 function marcaPasso(){ const Q=qAtual(); if(!Q) return; const pv=passoVisivel(Q,mT_); document.querySelectorAll("#m-play .mpasso").forEach((b,i)=>b.setAttribute("aria-current",String(i===pv)));
   document.querySelectorAll("#m-panel ol.rows li").forEach((li,i)=>li.classList.toggle("here",i===pv)); }
 function renderModeloControlos(){ const Q=qAtual(), box=$("m-play"); if(!Q||!box) return; const n=Q.passos.length, pl=mPl&&mPl.playing;
@@ -395,7 +396,7 @@ function renderModeloControlos(){ const Q=qAtual(), box=$("m-play"); if(!Q||!box
     <button class="btn sm" id="mp-loop" aria-pressed="${mLoop}" title="Repetir em ciclo">🔁</button>`;
   box.querySelector("#mp-ini").onclick=()=>{ mPara(); mT_=0; mPl.set(0); renderModelo(); };
   box.querySelector("#mp-pl").onclick=()=>{ if(mPl.playing){ mPl.pause(); mT_=mPl.t; } else { if(mEdit){ mSel=null; } const from=mT_>=n-1-1e-6?0:mT_; mPl.play(from); } renderModeloControlos(); };
-  box.querySelectorAll(".mpasso[data-i]").forEach(b=>b.onclick=()=>{ mPara(); mT_=+b.dataset.i; mSel=null; mPl.set(mT_); renderModelo(); });
+  box.querySelectorAll(".mpasso[data-i]").forEach(b=>{ b.onclick=()=>{ mPara(); mT_=+b.dataset.i; mSel=null; mPl.set(mT_); renderModelo(); }; b.oncontextmenu=e=>menuPasso(e,+b.dataset.i); });
   if(box.querySelector("#mp-add")) box.querySelector("#mp-add").onclick=()=>{ mPara(); novoPasso(); };
   box.querySelectorAll("#mp-v button").forEach(b=>b.onclick=()=>{ const was=mPl.playing; if(was) mPl.pause(); mMult=+b.dataset.v; if(was) mPl.play(mPl.t); renderModeloControlos(); });
   box.querySelector("#mp-loop").onclick=()=>{ mLoop=!mLoop; renderModeloControlos(); };
@@ -406,7 +407,7 @@ function renderModeloPainel(Q){ const pn=$("m-panel"), k=passoAtual(), M=momDe(Q
       <p class="sub" style="padding:0 14px 6px">Toca num passo para o ver parado, ou em <b>▶ Animar</b>. <b>Toca num jogador</b> para o trocar, como nas bolas paradas. Para a TV, escolhe <b>Modelo de Jogo</b> em <b>📺 TV</b>.</p>
       <div class="add"><h3>Trocas neste quadro</h3>${Q.trocas.length?`<ul class="evl">${Q.trocas.map(t=>`<li><span style="flex:1">↓ ${esc(rot(t.sai))}  ↑ ${esc(rot(t.entra))}</span><button class="icon x" data-t="${esc(t.id)}" aria-label="Apagar troca">✕</button></li>`).join("")}</ul>
         <button class="btn sm" id="mt-rep">Repor o onze do jogo</button>`:`<p class="sub" style="margin:0">Sem trocas: o quadro mostra o onze do separador Jogo.</p>`}</div>`;
-    pn.querySelectorAll("li[data-i]").forEach(li=>li.onclick=()=>{ mPara(); mT_=+li.dataset.i; mPl.set(mT_); renderModelo(); });
+    pn.querySelectorAll("li[data-i]").forEach(li=>{ li.onclick=()=>{ mPara(); mT_=+li.dataset.i; mPl.set(mT_); renderModelo(); }; li.oncontextmenu=e=>menuPasso(e,+li.dataset.i); });
     /* ✕ apaga o passo com 2 toques; o toque não chega à linha (que escolheria o passo) */
     pn.querySelectorAll(".m-xp").forEach(b=>{ b.addEventListener("click",e=>e.stopPropagation()); confirma2(b,"Apagar?",()=>apagaPasso(+b.dataset.i)); });
     pn.querySelectorAll("button[data-t]").forEach(b=>b.onclick=()=>editaQ(Q=>{ Q.trocas=Q.trocas.filter(t=>t.id!==b.dataset.t); }));
@@ -448,7 +449,19 @@ function renderModeloPainel(Q){ const pn=$("m-panel"), k=passoAtual(), M=momDe(Q
   pn.querySelector("#me-up").onclick=()=>moveNaLista(-1); pn.querySelector("#me-dn").onclick=()=>moveNaLista(1);
   pn.querySelector("#me-dup").onclick=()=>{ const C=clone(Q); C.id=mId("q"); C.nome=Q.nome+" (cópia)"; C.ordem=Q.ordem+.5; C.passos.forEach(P=>P.id=mId("p")); const N=guardaQ(C); mCur=N.id; mT_=0; renderModelo(); toast("Quadro duplicado"); };
   pn.querySelector("#me-esp").onclick=()=>{ const N=guardaQ(espelhaQ(Q)); mCur=N.id; mT_=0; renderModelo(); toast("Quadro espelhado criado (corredor contrário)"); };
-  confirma2(pn.querySelector("#me-del"),"Toca outra vez para apagar o quadro",()=>{ pushMUndo(Q.id); delete modelos[Q.id]; apagaDoc("modelo/"+Q.id); guardaModLocal(); mCur=null; mEdit=false; mT_=0; renderModelo(); toast("Quadro apagado · Ctrl+Z para desfazer"); }); }
+  confirma2(pn.querySelector("#me-del"),"Toca outra vez para apagar o quadro",()=>apagaQuadro(Q.id)); }
+function apagaQuadro(id){ const Q=modelos[id]; if(!Q) return; mPara(); pushMUndo(id); delete modelos[id]; apagaDoc("modelo/"+id); guardaModLocal();
+  if(mCur===id){ mCur=null; mEdit=false; mT_=0; } renderModelo(); toast(`Quadro “${Q.nome}” apagado`,desfazModelo); }
+/* menu do botão direito do rato (PC): o clique na opção é a confirmação */
+function menuContexto(e,itens){ e.preventDefault(); fechaMenuContexto(); const m=document.createElement("div"); m.className="mmenu"; m.setAttribute("role","menu");
+  itens.forEach(([txt,acao,cls])=>{ const b=document.createElement("button"); b.setAttribute("role","menuitem"); b.textContent=txt; if(cls) b.className=cls; b.onclick=()=>{ fechaMenuContexto(); acao(); }; m.appendChild(b); });
+  document.body.appendChild(m); const r=m.getBoundingClientRect(); m.style.left=Math.min(e.clientX,innerWidth-r.width-8)+"px"; m.style.top=Math.min(e.clientY,innerHeight-r.height-8)+"px";
+  document.addEventListener("pointerdown",foraMenu,true); document.addEventListener("keydown",escMenu,true); addEventListener("scroll",fechaMenuContexto,true); }
+function foraMenu(e){ if(!e.target.closest(".mmenu")) fechaMenuContexto(); }
+function escMenu(e){ if(e.key==="Escape"){ e.stopPropagation(); fechaMenuContexto(); } }
+function fechaMenuContexto(){ document.querySelectorAll(".mmenu").forEach(m=>m.remove()); document.removeEventListener("pointerdown",foraMenu,true); document.removeEventListener("keydown",escMenu,true); removeEventListener("scroll",fechaMenuContexto,true); }
+function menuPasso(e,i){ const Q=qAtual(); if(!Q) return; if(Q.passos.length<2){ e.preventDefault(); toast("O quadro precisa de pelo menos um passo."); return; }
+  menuContexto(e,[[`🗑 Apagar passo ${i+1}`,()=>apagaPasso(i),"perigo"]]); }
 
 /* ---------- vídeo de um quadro ---------- */
 async function videoQuadro(id,btn){ if(btn) btn.disabled=true;

@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| 65 | Modelo de Jogo (PC): botão direito do rato num passo ou num quadro abre "Apagar", com "Desfazer" no aviso |
 | 64 | Modelo de Jogo: apagar passos mais fácil — ✕ em cada passo da lista (2 toques, sem entrar em Editar), botão "Apagar passo" na barra de edição e "Desfazer" no aviso |
 | 63 | Modelo de Jogo: sem etiqueta por baixo das bolinhas (só o nome, se "Nomes por baixo" estiver ligado) |
 | 62 | Modelo de Jogo: botão Nº ⇄ Posição no quadro e na apresentação; com a posição na bolinha, o número do jogador aparece por baixo (e vice-versa) |
