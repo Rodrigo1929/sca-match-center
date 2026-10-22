@@ -78,11 +78,13 @@ Nota: o **total** nem sempre é séries × prática + pausas (Ex. 2: 6 × 1' + 3
 1. **1a** ✓ (v66) — separador Exercícios: lista, filtros, ficha com todos os campos, duplicar/apagar, cópia de segurança. Figura com o editor do Modelo (campo inteiro).
 2. **1b** ✓ (v67) — vistas parciais do campo e peças de treino (cones, mini-balizas, balizas, coletes, jokers, várias bolas); bolinhas sem texto; figura sem painel do passo.
 3. **1c** ✓ (v68) — imagem carregada (`assets`) e PDF da ficha do exercício.
-4. **1d** — importar os 7 exercícios da UT39.
+4. **1d** ✓ (22/10/2026, dados no link, sem nova versão da app) — 7 exercícios da UT39 (ids `xut39e1`…`xut39e7`). Ex. 4 e 5 redesenhados; Ex. 1, 2, 3 e 6 com a imagem recortada do PDF; Ex. 7 sem figura; Ex. 6 ligado aos 5 cantos do lado esquerdo. Textos cortados no PDF original ficaram com "…" para completar: descrições dos Ex. 3, 4 e 5, último comportamento do Ex. 3 e comportamentos-chave do Ex. 6 (ilegíveis no PDF).
 
 ---
 
-## Fase 2 · Unidade de Treino (separador "Treino")
+## Fase 2 · Unidade de Treino (separador "Treino") ✓ (v69)
+
+Decidido a 22/10/2026: Match Day em botões e regime em texto livre com sugestões; PDF igual ao atual (2×2); presenças só na UT; campo do plantel gerado da app (onze do Jogo + presenças; uma lista de jogadores por posição precisaria de posição por jogador no Plantel).
 
 ### Dados — `uts/{id}`
 ```

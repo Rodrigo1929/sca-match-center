@@ -17,6 +17,7 @@
       <button role="tab" id="tab-p" aria-selected="false">Plantel</button>
       <button role="tab" id="tab-m" aria-selected="false">Modelo de Jogo</button>
       <button role="tab" id="tab-x" aria-selected="false">Exercícios</button>
+      <button role="tab" id="tab-u" aria-selected="false">Treino</button>
       <button role="tab" id="tab-v" aria-selected="false">Ao vivo</button>
       <button role="tab" id="tab-a" aria-selected="false">Pós-jogo</button>
       <button role="tab" id="tab-h" aria-selected="false">Histórico</button>
@@ -239,6 +240,16 @@
       <aside class="panel" id="x-panel"></aside>
     </div>
   </section>
+  <section id="view-u" hidden>
+    <div class="grid">
+      <nav class="lances" id="u-nav" aria-label="Unidades de treino"></nav>
+      <div class="board">
+        <div class="boardbar"><span class="tag" id="u-tag" hidden></span><h2 id="u-tit">Unidades de Treino</h2><div class="sp" id="u-bar"></div></div>
+        <div id="u-corpo"></div>
+      </div>
+      <aside class="panel" id="u-panel"></aside>
+    </div>
+  </section>
   <section id="view-p" hidden>
     <div class="card plantel">
       <header><h2>Plantel</h2><button class="btn" id="p-add">+ Jogador</button></header>
@@ -253,5 +264,6 @@
 <script>{{APP_JS}}</script>
 <script>{{MODELO_JS}}</script>
 <script>{{EXERC_JS}}</script>
+<script>{{TREINO_JS}}</script>
 </body></html>
 </body></html>

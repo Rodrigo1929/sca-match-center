@@ -18,6 +18,7 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
 | `lances/{id}` | coleção | Lances de bolas paradas editados (os de origem estão em `src/data/lances-base.json`) |
 | `modelo/{id}` | coleção | Quadros do Modelo de Jogo |
 | `exercicios/{id}` | coleção | Repositório de exercícios para as UT (ver abaixo) |
+| `uts/{id}` | coleção | Unidades de Treino (ver abaixo) |
 
 ## Quadro do Modelo de Jogo (`modelo/{id}`)
 ```
@@ -47,3 +48,14 @@ Coordenadas em metros num campo de 105×68; a equipa SCA ataca da esquerda para 
 ```
 A figura é desenhada com o editor do Modelo de Jogo (id interno `fx:<id do exercício>`) e gravada dentro do exercício; não entra na lista do Modelo de Jogo.
 As imagens ficam no armazenamento de ficheiros do link (capacidade `assets`), não na base de dados (cada registo aceita no máximo 256 KB). A cópia de segurança guarda só o id da imagem. Tirar a imagem de um exercício não apaga o ficheiro (permite Desfazer e cópias duplicadas continuam a funcionar).
+
+## Unidade de Treino (`uts/{id}`)
+```
+{ id, numero, data: "AAAA-MM-DD", matchDay: "MD-3"…, regime, objetivos: [], material: [] (extra; o dos exercícios junta-se sozinho),
+  tempoTotal (s; null = soma dos exercícios), staff (rodapé; por defeito a equipa técnica do separador Jogo),
+  presencas: { [nº]: "L"|"NFL"|"A"|"C"|"CO" },
+  grupos: [{ id, nome, jogadores: [nº], nota }],
+  exercicios: [{ id, exId, copia: { …exercício completo como estava no dia, com os ajustes desta UT… } }],   // pela ordem da UT
+  criadoPor, criadoEm, alteradoPor, alteradoEm }
+```
+A UT guarda cópias: mudar um exercício no repositório não muda UTs antigas; a UT avisa e oferece "↻ Atualizar".

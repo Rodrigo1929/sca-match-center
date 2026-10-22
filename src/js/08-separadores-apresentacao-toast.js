@@ -82,6 +82,6 @@ function folhaPainel(){ const C=COMPS[jogo.comp]||COMPS.taca, sr=subsReais(), pa
       tr.children[0].textContent=rot(x.n)+(x.tit?"":" (entrou)")+(c?.verm?" 🟥":c?.am?" 🟨":""); tb.appendChild(tr); });
   }); }
 function setTab(t){ if(t!=="m"&&typeof mPara==="function") mPara(); if(t!=="m"&&typeof mSaiFig==="function") mSaiFig(); if(t!=="x"&&typeof xPara==="function") xPara();
-  ["q","j","p","h","a","v","m","x"].forEach(k=>{ $("tab-"+k).setAttribute("aria-selected",String(k===t)); $("view-"+k).hidden=k!==t; }); renderBanco(); if(t==="j") renderJogo(); if(t==="h") renderHist(); if(t==="a") renderAnalise(); if(t==="v") renderVivo(); if(t==="m"&&typeof renderModelo==="function") renderModelo(); if(t==="x"&&typeof renderEx==="function") renderEx(); }
-["q","j","p","h","a","v","m","x"].forEach(k=>$("tab-"+k).onclick=()=>setTab(k));
+  ["q","j","p","h","a","v","m","x","u"].forEach(k=>{ $("tab-"+k).setAttribute("aria-selected",String(k===t)); $("view-"+k).hidden=k!==t; }); renderBanco(); if(t==="j") renderJogo(); if(t==="h") renderHist(); if(t==="a") renderAnalise(); if(t==="v") renderVivo(); if(t==="m"&&typeof renderModelo==="function") renderModelo(); if(t==="x"&&typeof renderEx==="function") renderEx(); if(t==="u"&&typeof renderUT==="function") renderUT(); }
+["q","j","p","h","a","v","m","x","u"].forEach(k=>$("tab-"+k).onclick=()=>setTab(k));
 function dataPt(d){ return d?new Date(d+"T12:00").toLocaleDateString("pt-PT"):"sem data"; }

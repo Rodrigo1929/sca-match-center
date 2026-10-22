@@ -156,6 +156,28 @@ await pg.click("#x-img"); await pg.click("#xi-del"); await pg.click("#xi-del"); 
 const semImg = await pg.evaluate(() => { const E = exercicios[xCur]; return { im: !!E.figura.imagem, usa: E.figura.usa, q: !!E.figura.quadro }; });
 if (semImg.im || semImg.usa !== "quadro" || !semImg.q) erros.push("Imagem: tirar a imagem devia deixar só a figura desenhada " + JSON.stringify(semImg));
 
+// Treino (UT): criar, cabeçalho, exercícios do repositório (cópias), ajustar só na UT, presenças, grupos, aviso de mudança e PDF
+await pg.click("#tab-u"); await pg.click("#u-nova2"); await pg.waitForSelector("#uc-n");
+await pg.fill("#uc-n", "39"); await pg.fill("#uc-d", "2026-10-21"); await pg.click("#uc-md [data-k='MD-3']"); await pg.fill("#uc-r", "Híbrido (+/-)");
+await pg.fill("#uc-o", "Tensão\nPrincípios estratégicos org. ofensiva da 1.ª fase"); await pg.click("#uc-ok"); await pg.waitForTimeout(150);
+await pg.click("#u-add"); await pg.waitForSelector("#ua-l input"); for (const i of await pg.locator("#ua-l input").all()) await i.check();
+await pg.click("#ua-ok"); await pg.waitForTimeout(200);
+const ut = await pg.evaluate(() => { const U = uts[uCur]; return { n: U.numero, md: U.matchDay, ex: U.exercicios.length, obj: U.objetivos.length, tot: totalUT(U) }; });
+if (ut.n !== 39 || ut.md !== "MD-3" || ut.ex !== 2 || ut.obj !== 2 || ut.tot !== 1440) erros.push("UT: cabeçalho ou exercícios errados " + JSON.stringify(ut));
+// ajustar só nesta UT: o repositório não muda
+await pg.click("ol.utx li:first-child [data-a='aj']"); await pg.fill("#uj-se", "4"); await pg.click("#uj-ok"); await pg.waitForTimeout(150);
+const aj = await pg.evaluate(() => { const l = uts[uCur].exercicios[0]; return { ut: l.copia.duracao.series, rep: exercicios[l.exId].duracao.series }; });
+if (aj.ut !== 4 || aj.rep !== 3) erros.push("UT: o ajuste devia ficar só na UT " + JSON.stringify(aj));
+if (!(await pg.locator("ol.utx li:first-child [data-a='at']").count())) erros.push("UT: devia avisar que o exercício difere do repositório");
+// presenças (toque roda L → NFL → …) e grupo de trabalho
+await pg.click(".upres button >> nth=0"); await pg.click(".upres button >> nth=0"); await pg.waitForTimeout(100);
+await pg.click("#u-gn"); await pg.fill("#ug-n", "Guarda-redes"); await pg.click("#ug-j button >> nth=0"); await pg.click("#ug-ok"); await pg.waitForTimeout(150);
+const pg2 = await pg.evaluate(() => { const U = uts[uCur]; return { pres: Object.values(U.presencas), g: U.grupos.length, gj: U.grupos[0] && U.grupos[0].jogadores.length }; });
+if (JSON.stringify(pg2.pres) !== '["NFL"]' || pg2.g !== 1 || pg2.gj !== 1) erros.push("UT: presenças ou grupos errados " + JSON.stringify(pg2));
+await pg.screenshot({ path: join(cap, "treino-ut.png"), fullPage: true });
+const [dUT] = await Promise.all([pg.waitForEvent("download", { timeout: 60000 }), pg.click("#u-pdf")]); const fUT = join(cap, "treino-ut.pdf"); await dUT.saveAs(fUT);
+if (!dUT.suggestedFilename().startsWith("UT39_SCA_") || statSync(fUT).size < 30000) erros.push(`UT: PDF estranho ${dUT.suggestedFilename()} (${statSync(fUT).size} bytes)`);
+
 await browser.close();
 if (erros.length) { console.error("FALHOU:\n" + erros.join("\n")); process.exit(1); }
 console.log(`OK${ipad ? " (WebKit · iPad)" : ""} · capturas em ${ipad ? "tests/capturas/ipad/" : "tests/capturas/"}`);
