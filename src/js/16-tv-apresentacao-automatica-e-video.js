@@ -14,38 +14,60 @@ function guardaTvCfg(c){ tvCfg=c; try{ localStorage.setItem("sca-tv",JSON.string
 function ordenaTV(it,ordem){ if(!ordem||!ordem.length) return it; const pos=new Map(ordem.map((k,i)=>[k,i])); let ult=-1;
   const rk=it.map((x,i)=>{ if(pos.has(x.k)){ ult=pos.get(x.k); return [ult,0,i]; } return [ult,1,i]; });
   return it.map((x,i)=>[x,rk[i]]).sort((a,b)=>a[1][0]-b[1][0]||a[1][1]-b[1][1]||a[1][2]-b[1][2]).map(a=>a[0]); }
-function folhaTV(){ const C=tvCfg||{}; let seg=C.seg||15, junta=C.junta!==false, ordem=(C.ordem||[]).slice();
-  const conhec=new Set(C.conhecidos||[]), sel=new Set(C.sel||[]), conhecM=new Set(C.conhecidosM||[]), selM=new Set(C.selM||[]);
-  folha(`<h3>📺 TV antes do jogo</h3><p class="sub" style="margin:0">Passa os ecrãs automaticamente, em ciclo. A escolha, a ordem e o tempo ficam guardados para todos os aparelhos.</p>
-    <div id="tv-g" style="display:flex;flex-direction:column;gap:6px;max-height:30vh;overflow:auto"></div><div id="tv-mg"></div>
-    <h4>Juntar quadros do mesmo lado</h4><div class="seg" role="group" id="tv-j"><button data-j="1">Sim · vários por ecrã</button><button data-j="0">Não · um por ecrã</button></div>
-    <h4>Segundos por ecrã</h4><div class="seg" role="group" id="tv-s">${[5,8,10,15,20,30].map(x=>`<button data-s="${x}">${x} s</button>`).join("")}</div>
+/* duas TVs: Bolas paradas e Modelo de Jogo, cada uma com a sua escolha, ordem e tempo (guardados para todos os aparelhos) */
+function folhaTV(modo0){ const C=tvCfg||{}, CM=C.modelo||{};
+  let modo=modo0==="m"||modo0==="b"?modo0:(!$("view-m").hidden?"m":"b");
+  const B={seg:C.seg||15,junta:C.junta!==false,ordem:(C.ordem||[]).slice(),conhec:new Set(C.conhecidos||[]),sel:new Set(C.sel||[])};
+  const M={seg:CM.seg||8,ordem:(CM.ordem||[]).slice(),conhec:new Set(CM.conhecidos||C.conhecidosM||[]),sel:new Set(CM.sel||C.selM||[])};
+  folha(`<h3>📺 TV antes do jogo</h3>
+    <div class="seg" role="group" id="tv-modo" aria-label="O que mostrar"><button data-m="b">Bolas paradas</button><button data-m="m">Modelo de Jogo</button></div>
+    <p class="sub" id="tv-ex" style="margin:0"></p>
+    <div id="tv-g" style="display:flex;flex-direction:column;gap:6px;max-height:30vh;overflow:auto"></div>
+    <div id="tv-jw"><h4>Juntar quadros do mesmo lado</h4><div class="seg" role="group" id="tv-j"><button data-j="1">Sim · vários por ecrã</button><button data-j="0">Não · um por ecrã</button></div></div>
+    <h4 id="tv-st">Segundos por ecrã</h4><div class="seg" role="group" id="tv-s">${[5,8,10,15,20,30].map(x=>`<button data-s="${x}">${x} s</button>`).join("")}</div>
     <div style="display:flex;align-items:center;gap:8px"><h4 style="flex:1;margin:0">Ordem dos ecrãs</h4><button class="btn sm ghost" id="tv-r">Repor ordem</button></div>
     <div id="tv-o" style="display:flex;flex-direction:column;gap:4px;max-height:28vh;overflow:auto"></div>
     <p class="sub" id="tv-p" style="margin:0"></p>
-    <div class="actions" style="justify-content:stretch;flex-wrap:wrap"><button class="btn" data-close>Fechar</button><button class="btn" id="tv-v" style="flex:1;min-height:52px">⬇ Vídeo MP4</button><button class="btn primary" id="tv-ok" style="flex:1;min-height:52px">▶ Mostrar no ecrã</button></div>`,(s,fecha)=>{
+    <div class="actions" style="justify-content:stretch;flex-wrap:wrap"><button class="btn" data-close>Fechar</button><button class="btn" id="tv-vs" style="flex:1;min-height:52px">⬇ Um vídeo por quadro</button><button class="btn" id="tv-v" style="flex:1;min-height:52px">⬇ Vídeo MP4</button><button class="btn primary" id="tv-ok" style="flex:1;min-height:52px">▶ Mostrar no ecrã</button></div>`,(s,fecha)=>{
     const box=s.querySelector("#tv-g"), pp=s.querySelector("#tv-p"), ob=s.querySelector("#tv-o");
-    const lista=pickerQuadros(box,L=>conhec.has(L.id)?sel.has(L.id):(L.id==="onze"||L.tipo==="DEF"||L.tipo==="OF"));
-    const listaM=pickerModelo(s.querySelector("#tv-mg"),id=>conhecM.has(id)?selM.has(id):false,box);
-    const itens=()=>ordenaTV([...itensTV(lista(),junta),...itensModeloTV(listaM())],ordem);
-    let tG=null; const grava=()=>{ clearTimeout(tG); tG=setTimeout(()=>guardaTvCfg({seg,junta,ordem,sel:lista().map(l=>l.id),conhecidos:lances().map(l=>l.id),selM:listaM(),conhecidosM:Object.keys(modelos)}),400); };
-    const mexe=(it,k,d)=>{ const ks=it.map(x=>x.k); const j=k+d; if(j<0||j>=ks.length) return; [ks[k],ks[j]]=[ks[j],ks[k]]; ordem=ks; resumo(); grava(); };
-    const resumo=()=>{ const n=lista().length+listaM().length, it=itens(), t=Math.round(it.reduce((a,x)=>a+tempoItemTV(x,seg),0));
-      pp.innerHTML=n?`${n} quadros em <b>${it.length} ecrãs</b> · ciclo de ${Math.floor(t/60)} min ${t%60} s`:"Nenhum quadro selecionado";
+    let lista=()=>[], listaM=()=>[];
+    const E=()=>modo==="m"?M:B;
+    const itens=()=>modo==="m"?ordenaTV(itensModeloTV(listaM()),M.ordem):ordenaTV(itensTV(lista(),B.junta),B.ordem);
+    const n=()=>modo==="m"?listaM().length:lista().length;
+    /* a escolha da TV que não está aberta mantém-se como estava */
+    let tG=null; const grava=()=>{ clearTimeout(tG); tG=setTimeout(()=>guardaTvCfg({seg:B.seg,junta:B.junta,ordem:B.ordem,sel:[...B.sel],conhecidos:[...B.conhec],
+      modelo:{seg:M.seg,ordem:M.ordem,sel:[...M.sel],conhecidos:[...M.conhec]}}),400); };
+    const lembra=()=>{ if(modo==="m"){ M.sel=new Set(listaM()); M.conhec=new Set(Object.keys(modelos)); } else { B.sel=new Set(lista().map(l=>l.id)); B.conhec=new Set(lances().map(l=>l.id)); } };
+    const mexe=(it,k,d)=>{ const ks=it.map(x=>x.k); const j=k+d; if(j<0||j>=ks.length) return; [ks[k],ks[j]]=[ks[j],ks[k]]; E().ordem=ks; resumo(); grava(); };
+    const resumo=()=>{ const it=itens(), t=Math.round(it.reduce((a,x)=>a+tempoItemTV(x,E().seg),0));
+      pp.innerHTML=n()?`${n()} quadros em <b>${it.length} ecrãs</b> · ciclo de ${Math.floor(t/60)} min ${t%60} s`:"Nenhum quadro selecionado";
       ob.innerHTML=""; it.forEach((x,k)=>{ const row=document.createElement("div"); row.style.cssText="display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:2px 4px 2px 10px;background:var(--surface-2)";
         row.innerHTML=`<b style="width:22px;color:var(--muted)">${k+1}</b><span style="flex:1;font-size:14.5px"></span><button class="btn sm ghost" aria-label="Subir" style="min-width:44px">▲</button><button class="btn sm ghost" aria-label="Descer" style="min-width:44px">▼</button>`;
         row.querySelector("span").textContent=x.titulo+(x.ids.length>1?` (${x.ids.length})`:"");
         const [up,dn]=row.querySelectorAll("button"); up.disabled=k===0; dn.disabled=k===it.length-1; up.onclick=()=>mexe(it,k,-1); dn.onclick=()=>mexe(it,k,1); ob.appendChild(row); }); };
-    let pronto=false; box.addEventListener("mudou",()=>{ resumo(); if(pronto) grava(); });
-    const ps=()=>s.querySelectorAll("#tv-s button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.s===seg)));
-    const pj=()=>s.querySelectorAll("#tv-j button").forEach(b=>b.setAttribute("aria-pressed",String((b.dataset.j==="1")===junta)));
-    s.querySelectorAll("#tv-j button").forEach(b=>b.onclick=()=>{ const nj=b.dataset.j==="1"; if(nj===junta) return; junta=nj; seg=junta?Math.max(seg,15):Math.min(seg,8); pj(); ps(); resumo(); grava(); });
-    s.querySelectorAll("#tv-s button").forEach(b=>b.onclick=()=>{ seg=+b.dataset.s; ps(); resumo(); grava(); });
-    s.querySelector("#tv-r").onclick=()=>{ ordem=[]; resumo(); grava(); };
-    pj(); ps(); resumo(); pronto=true;
-    s.querySelector("#tv-ok").onclick=()=>{ const ls=lista(); if(!ls.length&&!listaM().length){ toast("Escolhe pelo menos um quadro."); return; } grava(); fecha(); modoTV(itens(),seg); };
-    s.querySelector("#tv-v").onclick=async e=>{ const ls=lista(); if(!ls.length&&!listaM().length){ toast("Escolhe pelo menos um quadro."); return; } grava(); const bt=e.currentTarget; bt.disabled=true;
-      try{ await exportaVideo(itens(),seg,m=>pp.textContent=m); fecha(); }catch(err){ if(err?.code!=="declined") pp.textContent="Não foi possível gerar o vídeo ("+(err?.code||err?.message||"erro")+")."; } finally{ bt.disabled=false; } };
+    let pronto=false; box.addEventListener("mudou",()=>{ if(!pronto) return; lembra(); resumo(); grava(); });
+    const ps=()=>s.querySelectorAll("#tv-s button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.s===E().seg)));
+    const pj=()=>s.querySelectorAll("#tv-j button").forEach(b=>b.setAttribute("aria-pressed",String((b.dataset.j==="1")===B.junta)));
+    const monta=()=>{ pronto=false; box.innerHTML=""; lista=()=>[]; listaM=()=>[];
+      s.querySelectorAll("#tv-modo button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.m===modo)));
+      const m=modo==="m"; s.querySelector("#tv-jw").hidden=m; s.querySelector("#tv-vs").hidden=!m;
+      s.querySelector("#tv-st").textContent=m?"Segundos mínimos por ecrã (a animação passa sempre inteira)":"Segundos por ecrã";
+      s.querySelector("#tv-ex").textContent=m?"Os quadros animados do Modelo de Jogo, em ciclo, um por ecrã.":"Os quadros das bolas paradas e do jogo, em ciclo.";
+      if(m){ if(!Object.keys(modelos).length) box.innerHTML=`<p class="sub" style="margin:0">Ainda não há quadros do Modelo de Jogo.</p>`;
+        else listaM=pickerModelo(box,id=>M.conhec.has(id)?M.sel.has(id):true); }
+      else lista=pickerQuadros(box,L=>B.conhec.has(L.id)?B.sel.has(L.id):(L.id==="onze"||L.tipo==="DEF"||L.tipo==="OF"));
+      lembra(); pj(); ps(); resumo(); pronto=true; };
+    s.querySelectorAll("#tv-modo button").forEach(b=>b.onclick=()=>{ if(b.dataset.m===modo) return; modo=b.dataset.m; monta(); });
+    s.querySelectorAll("#tv-j button").forEach(b=>b.onclick=()=>{ const nj=b.dataset.j==="1"; if(nj===B.junta) return; B.junta=nj; B.seg=B.junta?Math.max(B.seg,15):Math.min(B.seg,8); pj(); ps(); resumo(); grava(); });
+    s.querySelectorAll("#tv-s button").forEach(b=>b.onclick=()=>{ E().seg=+b.dataset.s; ps(); resumo(); grava(); });
+    s.querySelector("#tv-r").onclick=()=>{ E().ordem=[]; resumo(); grava(); };
+    monta();
+    const falha=err=>{ if(err?.code!=="declined") pp.textContent="Não foi possível gerar o vídeo ("+(err?.code||err?.message||"erro")+")."; };
+    s.querySelector("#tv-ok").onclick=()=>{ if(!n()){ toast("Escolhe pelo menos um quadro."); return; } grava(); fecha(); modoTV(itens(),E().seg); };
+    s.querySelector("#tv-v").onclick=async e=>{ if(!n()){ toast("Escolhe pelo menos um quadro."); return; } grava(); const bt=e.currentTarget; bt.disabled=true;
+      try{ await exportaVideo(itens(),E().seg,m=>pp.textContent=m); fecha(); }catch(err){ falha(err); } finally{ bt.disabled=false; } };
+    s.querySelector("#tv-vs").onclick=async e=>{ if(!n()){ toast("Escolhe pelo menos um quadro."); return; } grava(); const bt=e.currentTarget; bt.disabled=true;
+      try{ await exportaVideosSeparados(itens().map(x=>x.modelo),0,m=>pp.textContent=m); fecha(); }catch(err){ falha(err); } finally{ bt.disabled=false; } };
   }); }
 function grupoTV(L){ const n=L.nome||"", lado=/esq/i.test(n)?"Esq":/dir/i.test(n)?"Dir":"", nl={Esq:" Esquerda",Dir:" Direita","":""}[lado];
   if(L.tipo==="DEF") return ["1DEF","Bolas Paradas Defensivas"]; if(L.tipo==="REF") return ["1REF","Referências"]; if(L.tipo!=="OF") return null;
@@ -98,14 +120,15 @@ async function modoTV(itens,seg){ const ids=itens; const root=document.createEle
   root.querySelector("#tv-x").onclick=sair; root.querySelector("#tv-a").onclick=()=>{ k=(k-1+ids.length)%ids.length; mostra(); mostraBar(); }; root.querySelector("#tv-b").onclick=()=>{ k=(k+1)%ids.length; mostra(); mostraBar(); };
   root.querySelector("#tv-pa").onclick=e=>{ pausa=!pausa; e.currentTarget.textContent=pausa?"▶ Continuar":"⏸ Pausa"; mostra(); mostraBar(); };
   tvEstado={sair}; mostra(); mostraBar(); }
-async function exportaVideo(lista,seg,progresso){ const Wv=1920,Hv=1080,fpsS=5,fpsM=25, temM=lista.some(x=>x.modelo), css=await cssFontes(); try{ await document.fonts.ready; if(temM) await document.fonts.load('700 40px "RC Modelo"'); }catch(e){}
+async function exportaVideo(lista,seg,progresso){ const Wv=1920,Hv=1080,fpsS=5,fpsM=25, temM=lista.some(x=>x.modelo), css=await cssFontes(); try{ await document.fonts.ready; if(temM){ await document.fonts.load('700 40px "RC Modelo"'); await mCarregaImgs(); } }catch(e){}
   const cv=document.createElement("canvas"); cv.width=Wv; cv.height=Hv; const cx=cv.getContext("2d");
   const imgs=[]; for(let k=0;k<lista.length;k++){ progresso(`A preparar ${k+1} de ${lista.length}: ${lista[k].titulo}`);
     if(lista[k].modelo){ const Q=modelos[lista[k].modelo]; imgs.push(Q?{Q,dur:tempoItemTV(lista[k],seg)}:null); continue; }
     const sv=desenhaItemTV(lista[k]); if(!sv){ imgs.push(null); continue; } const mos=sv.getAttribute("class")==="mos", jpg=await svgParaJpeg(sv,css,mos?1920:1440,1080); const im=new Image(); await new Promise((ok,ko)=>{ im.onload=ok; im.onerror=ko; im.src=jpg; }); imgs.push({im,mos,dur:seg}); }
   const pinta=(k,sec)=>{ const I=imgs[k]; if(I.Q){ pintaModeloCanvas(cx,I.Q,mT(I.Q,Math.min(sec||0,mDur(I.Q))),Wv,Hv); return; } const {im,mos}=I; cx.fillStyle="#111"; cx.fillRect(0,0,Wv,Hv); if(mos) cx.drawImage(im,0,0,Wv,Hv); else cx.drawImage(im,(Wv-1440)/2,0,1440,1080); };
   const so1M=lista.length===1&&lista[0].modelo&&modelos[lista[0].modelo];
-  const nomeF=so1M?`SCA_Modelo_${String(modelos[lista[0].modelo].nome).replace(/[^\wÀ-ÿ-]+/g,"_")}`:`SCA_Quadros_TV_${(jogo.adversario||"jogo").replace(/[^\wÀ-ÿ-]+/g,"_")}_${jogo.data||new Date().toISOString().slice(0,10)}`;
+  const soM=lista.every(x=>x.modelo), hoje=new Date().toISOString().slice(0,10);
+  const nomeF=so1M?`SCA_Modelo_${String(modelos[lista[0].modelo].nome).replace(/[^\wÀ-ÿ-]+/g,"_")}`:soM?`SCA_Modelo_de_Jogo_${hoje}`:`SCA_Quadros_TV_${(jogo.adversario||"jogo").replace(/[^\wÀ-ÿ-]+/g,"_")}_${jogo.data||new Date().toISOString().slice(0,10)}`;
   const totS=imgs.reduce((a,I)=>a+(I?I.dur:0),0);
   let dados=null, ext="mp4";
   if(window.VideoEncoder&&window.VideoFrame){
@@ -204,7 +227,7 @@ $("btn-dup")&&($("btn-dup").onclick=folhaDup);
 $("btn-undo").onclick=desfazQuadro;
 document.addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&(e.key==="z"||e.key==="Z")&&$("view-a").hidden&&$("view-v").hidden&&$("view-m").hidden&&!$("sheet-root").innerHTML){ const t=e.target.tagName||""; if(/INPUT|TEXTAREA|SELECT/.test(t)||e.target.isContentEditable) return; e.preventDefault(); desfazQuadro(); } });
 $("btn-pdf")&&($("btn-pdf").onclick=folhaPdf);
-$("btn-tv").onclick=folhaTV;
+$("btn-tv").onclick=()=>folhaTV();
 /* desfazer alterações nos quadros (bolinhas, setas, textos, onze…) */
 let undoQ=[], aDesfazer=false;
 function pushUndo(it){ if(aDesfazer) return; undoQ.push(it); if(undoQ.length>60) undoQ.shift(); atualizaUndo(); }

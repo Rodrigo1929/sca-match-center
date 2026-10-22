@@ -172,10 +172,10 @@ function renderPresent(){
   st.addEventListener("touchend",e=>{ if(x0===null) return; const dx=e.changedTouches[0].clientX-x0; if(Math.abs(dx)>50) passo(dx<0?1:-1); x0=null; });
 }
 function fechaPresent(){ presentOpen=false; $("present-root").innerHTML=""; }
-$("btn-present").onclick=()=>{ editing=false; presentOpen=true; renderBoard(); renderPresent(); };
+$("btn-present").onclick=()=>{ if(!$("view-m").hidden&&typeof apresentaModelo==="function"){ apresentaModelo(); return; } editing=false; presentOpen=true; renderBoard(); renderPresent(); };
 document.addEventListener("keydown",e=>{ if(!presentOpen) return; if(e.key==="ArrowRight") passo(1); else if(e.key==="ArrowLeft") passo(-1); else if(e.key==="Escape") fechaPresent(); });
 let tTimer=null;
 function toast(msg,undo){ const r=$("toast-root"); r.innerHTML=`<div class="toast" role="status"><span></span>${undo?'<button>Desfazer</button>':''}</div>`;
   r.querySelector("span").textContent=msg; if(undo) r.querySelector("button").onclick=()=>{ r.innerHTML=""; undo(); };
   clearTimeout(tTimer); tTimer=setTimeout(()=>{r.innerHTML="";},undo?6000:2800); }
-function render(){ if(dragging) return; renderBanco(); renderVivo(); renderNav(); renderBoard(); renderRows(); renderForm(); renderPlantel(); if(!$("view-j").hidden) renderJogo(); else $("jogo-tit").textContent=jogo.adversario?`vs ${jogo.adversario}`:"Preparação · Jogo · Análise"; if(presentOpen) renderPresent(); }
+function render(){ if(dragging) return; renderBanco(); renderVivo(); renderNav(); renderBoard(); renderRows(); renderForm(); renderPlantel(); if(!$("view-j").hidden) renderJogo(); else $("jogo-tit").textContent=jogo.adversario?`vs ${jogo.adversario}`:"Preparação · Jogo · Análise"; if(presentOpen) renderPresent(); if(typeof renderModeloSeguro==="function") renderModeloSeguro(); }

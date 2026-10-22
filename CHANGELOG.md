@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| 61 | Modelo de Jogo com o visual dos quadros das bolas paradas (campo branco às riscas, cabeçalho com emblema, bolinhas com número e posição). Números ligados ao onze do separador Jogo, com trocas por quadro ou em todos os quadros. ▶ Apresentar no separador Modelo de Jogo. TV com duas escolhas à parte: Bolas paradas ou Modelo de Jogo. Vídeo MP4 de cada quadro e um vídeo por quadro de uma vez |
 | 60 | Novo separador Modelo de Jogo: quadros animados por passos para os 4 momentos e subfases; entram na TV e no vídeo MP4. Projeto passado para repositório (Claude Code) |
 | 59 | TV: livres divididos em Livres Esquerda e Livres Direita, um ecrã cada |
 | 58 | TV: as referências saem todas no mesmo ecrã, logo a seguir às bolas paradas defensivas |

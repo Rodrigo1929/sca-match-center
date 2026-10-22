@@ -14,4 +14,7 @@ Estas regras foram decididas ao longo do desenvolvimento e estão implementadas.
 | Confirmações | Sempre por 2 toques, nunca a escrever (uso rápido no iPad) |
 | Campo de análise | 100×64, com margem para registar ações fora de campo |
 | TV | Por defeito: Onze + bolas paradas, juntas por tipo e lado; 15 s por ecrã quando juntas, 8 s quando separadas. As referências saem sempre juntas num só ecrã. Livres divididos em Esquerda e Direita |
-| Modelo de Jogo | 4 momentos com subfases; posições genéricas por sistema com jogador do plantel opcional; animação por passos (o passo novo copia o anterior); na TV cada quadro fica no ecrã o tempo da animação completa (mínimo: segundos por ecrã) |
+| Modelo de Jogo | 4 momentos com subfases; animação por passos (o passo novo copia o anterior); mesmo visual dos quadros das bolas paradas, em ecrã largo com painel do passo ao lado |
+| Modelo de Jogo · onze | Quadros novos começam no onze do separador Jogo (posições, números e siglas). Cada jogador SCA está ligado a um lugar do onze: o número segue sempre o onze. Trocas como nas bolas paradas (tocar no jogador): só neste quadro ou em todos os quadros do Modelo; não mexem no onze nem nos lances de bolas paradas |
+| TV · duas escolhas | Duas TVs à parte: Bolas paradas ou Modelo de Jogo, cada uma com a sua escolha, ordem e tempo. No Modelo, cada quadro fica no ecrã o tempo da animação completa (mínimo: segundos por ecrã) |
+| Apresentar | No separador Modelo de Jogo, ▶ Apresentar mostra os quadros do Modelo (avança-se à mão, toque anima) |
