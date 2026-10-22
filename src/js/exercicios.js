@@ -291,7 +291,8 @@ async function pdfExercicio(E){
   const linhas=(txt,w,s)=>{ doc.setFont("helvetica","normal"); doc.setFontSize(s); return doc.splitTextToSize(pdfTxt(txt),w); };
   /* cabeçalho do clube */
   doc.setFillColor(...RED); doc.rect(0,0,PW,58,"F");
-  if(IMG_DATA["slides/logo.png"]) try{ doc.addImage(IMG_DATA["slides/logo.png"],"PNG",M,8,46,42); }catch(e){}
+  /* emblema monocromático (branco com transparência) para o cabeçalho vermelho */
+  if(IMG_DATA["slides/logo-pdf.png"]) try{ doc.addImage(IMG_DATA["slides/logo-pdf.png"],"PNG",M,6,52,46); }catch(e){}
   T("SPORT CLUB ANGRENSE",M+56,26,{b:1,s:14,c:[255,255,255]}); T("Ficha de exercício · Repositório para as Unidades de Treino",M+56,42,{s:9,c:[255,225,225]});
   T("COMPROMISSO | RESILIÊNCIA | UNIÃO | ATITUDE | PAIXÃO | ALEGRIA",PW-M,26,{b:1,i:1,s:7,c:[255,225,225],al:"right"});
   let y=fichaExPdf(doc,E,M,74,W)+10;

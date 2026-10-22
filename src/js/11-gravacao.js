@@ -2,7 +2,7 @@
 let soLeitura=false;
 function setStatus(k,t){ if(soLeitura&&k!=="local") return; const s=$("status"); s.className="status "+k; s.querySelector("span").textContent=t; }
 function normEst(d){ return {
-  plantel:Array.isArray(d?.plantel)?d.plantel.map(p=>({n:String(p.n??"").trim(),nome:String(p.nome??"")})):PLANTEL_DEF.slice(),
+  plantel:Array.isArray(d?.plantel)?d.plantel.map(p=>({n:String(p.n??"").trim(),nome:String(p.nome??""),...(POS_UT.some(x=>x[0]===String(p.pos))?{pos:String(p.pos)}:{})})):PLANTEL_DEF.slice(),
   fase:d?.fase==="jogo"?"jogo":"pre",
   ordem:Array.isArray(d?.ordem)?d.ordem.map(String):[],
   staff:Object.fromEntries(STAFF.map(([k])=>[k,String(d?.staff?.[k]||"")])),

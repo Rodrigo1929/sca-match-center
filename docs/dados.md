@@ -4,7 +4,7 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
 
 | Caminho | Tipo | Conteúdo |
 |---|---|---|
-| `estado/atual` | documento | Plantel, linhas de troca do banco, fase, equipa técnica |
+| `estado/atual` | documento | Plantel (nº, nome e posição para o campo do plantel das UT), linhas de troca do banco, fase, equipa técnica |
 | `jogo/atual` | documento | Jogo em curso (adversário, data, competição, onze, suplentes, relógio, vídeo) — sem eventos nem subs |
 | `jogo/vivo` | documento | Contadores do Ao vivo por parte, posse |
 | `jogo/notas` | documento | Notas do jogo |
@@ -53,7 +53,8 @@ As imagens ficam no armazenamento de ficheiros do link (capacidade `assets`), n�
 ```
 { id, numero, data: "AAAA-MM-DD", matchDay: "MD-3"…, regime, objetivos: [], material: [] (extra; o dos exercícios junta-se sozinho),
   tempoTotal (s; null = soma dos exercícios), staff (rodapé; por defeito a equipa técnica do separador Jogo),
-  presencas: { [nº]: "L"|"NFL"|"A"|"C"|"CO" },
+  presencas: { [nº ou "e:<id>"]: "P"|"L"|"A"|"C"|"CO" },
+  extras: [{ id, nome, escalao: "Sub19"…, pos }],                 // jogadores de fora do plantel chamados a esta UT
   grupos: [{ id, nome, jogadores: [nº], nota }],
   exercicios: [{ id, exId, copia: { …exercício completo como estava no dia, com os ajustes desta UT… } }],   // pela ordem da UT
   criadoPor, criadoEm, alteradoPor, alteradoEm }
