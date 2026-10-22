@@ -67,8 +67,8 @@ function numerosQ(Q){ const slots=[...new Set(Q.pecas.filter(p=>p.eq==="nos"&&p.
   Q.trocas.forEach(t=>{ if(!slots.some(s=>v[s]===t.sai)) return; slots.forEach(s=>{ if(v[s]===t.sai) v[s]=t.entra; else if(v[s]===t.entra) v[s]=t.sai; }); }); return v; }
 function numPeca(pc,v){ return pc.slot?(v[pc.slot]||""):String(pc.n||""); }
 function rotulo(Q,pc,v){ const n=numPeca(pc,v); return Q.rot==="num"&&n?n:(pc.pos||n||""); }
-/* por baixo da bolinha vai o que não está dentro dela: a posição ou o número (e o nome, se pedido) */
-function legendaPeca(Q,pc,v){ const n=numPeca(pc,v), nm=Q.nomes&&n?nome(n):""; return (Q.rot==="num"&&n?[pc.pos,nm]:[pc.pos?n:"",nm]).filter(Boolean).join(" · "); }
+/* por baixo da bolinha só o nome, e só com "Nomes por baixo" ligado */
+function legendaPeca(Q,pc,v){ const n=numPeca(pc,v); return Q.nomes&&n?nome(n):""; }
 /* número ⇄ posição nas bolinhas de um quadro (fica guardado: TV e vídeo mostram o mesmo) */
 function trocaRot(id){ const Q=modelos[id]; return guardaQ({...clone(Q),rot:Q.rot==="num"?"pos":"num"}); }
 function estiloPeca(pc){ const gr=/^GR$/i.test(pc.pos||"");
