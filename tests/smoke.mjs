@@ -40,8 +40,18 @@ await pg.click("#gm-campo button"); await pg.waitForTimeout(200);
 const tr = await pg.evaluate(() => { const Q = Object.values(modelos)[0]; return { n: Q.trocas.length, gr: numerosQ(Q)[jogo.onze[0].slot], base: jogo.onze[0].n }; });
 if (tr.n !== 1 || tr.gr === tr.base) erros.push("Modelo de Jogo: a troca no quadro não ficou registada " + JSON.stringify(tr));
 await pg.screenshot({ path: join(cap, "modelo-troca.png") });
+// Nº ⇄ Posição: com a posição na bolinha, o número passa para a legenda por baixo
+await pg.click("#m-rot"); await pg.waitForTimeout(200);
+const rt = await pg.evaluate(() => { const Q = Object.values(modelos)[0], v = numerosQ(Q), pc = Q.pecas.find((p) => p.eq === "nos" && p.slot);
+  return { rot: Q.rot, dentro: rotulo(Q, pc, v), baixo: legendaPeca(Q, pc, v), pos: pc.pos, n: v[pc.slot] }; });
+if (rt.rot !== "pos" || rt.dentro !== rt.pos || rt.baixo !== rt.n) erros.push("Nº ⇄ Posição: esperado posição na bolinha e número por baixo " + JSON.stringify(rt));
+await pg.screenshot({ path: join(cap, "modelo-posicao.png") });
+await pg.click("#m-rot"); await pg.waitForTimeout(200);
+if ((await pg.evaluate(() => Object.values(modelos)[0].rot)) !== "num") erros.push("Nº ⇄ Posição: o segundo toque devia voltar ao número");
 // Apresentar (botão vermelho no separador Modelo de Jogo)
-await pg.click("#btn-present"); await pg.waitForSelector(".present #ma-pl"); await pg.click("#ma-pl"); await pg.waitForTimeout(900);
+await pg.click("#btn-present"); await pg.waitForSelector(".present #ma-pl");
+await pg.click("#ma-rot"); if ((await pg.evaluate(() => Object.values(modelos)[0].rot)) !== "pos") erros.push("Apresentar: Nº ⇄ Posição não mudou o quadro");
+await pg.click("#ma-pl"); await pg.waitForTimeout(900);
 await pg.screenshot({ path: join(cap, "modelo-apresentar.png") }); await pg.keyboard.press("Escape");
 if (await pg.locator(".present").count()) erros.push("Apresentar: Escape não fechou a apresentação");
 // vídeo: um fotograma pintado em canvas, com as imagens carregadas

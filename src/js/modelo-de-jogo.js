@@ -67,7 +67,10 @@ function numerosQ(Q){ const slots=[...new Set(Q.pecas.filter(p=>p.eq==="nos"&&p.
   Q.trocas.forEach(t=>{ if(!slots.some(s=>v[s]===t.sai)) return; slots.forEach(s=>{ if(v[s]===t.sai) v[s]=t.entra; else if(v[s]===t.entra) v[s]=t.sai; }); }); return v; }
 function numPeca(pc,v){ return pc.slot?(v[pc.slot]||""):String(pc.n||""); }
 function rotulo(Q,pc,v){ const n=numPeca(pc,v); return Q.rot==="num"&&n?n:(pc.pos||n||""); }
-function legendaPeca(Q,pc,v){ const n=numPeca(pc,v), nm=Q.nomes&&n?nome(n):""; return (Q.rot==="num"&&n?[pc.pos,nm]:[nm]).filter(Boolean).join(" · "); }
+/* por baixo da bolinha vai o que não está dentro dela: a posição ou o número (e o nome, se pedido) */
+function legendaPeca(Q,pc,v){ const n=numPeca(pc,v), nm=Q.nomes&&n?nome(n):""; return (Q.rot==="num"&&n?[pc.pos,nm]:[pc.pos?n:"",nm]).filter(Boolean).join(" · "); }
+/* número ⇄ posição nas bolinhas de um quadro (fica guardado: TV e vídeo mostram o mesmo) */
+function trocaRot(id){ const Q=modelos[id]; return guardaQ({...clone(Q),rot:Q.rot==="num"?"pos":"num"}); }
 function estiloPeca(pc){ const gr=/^GR$/i.test(pc.pos||"");
   if(pc.eq==="adv") return gr?{fill:"#9DC3E6",txt:"#000000"}:{fill:"#0070C0",txt:"#FFFFFF"}; return gr?{fill:"#FFFF00",txt:"#000000"}:{fill:"#C00000",txt:"#FFFFFF"}; }
 function seta(o,x1,y1,x2,y2,cor,sw,dash,op,attr){ const L=Math.hypot(x2-x1,y2-y1); if(L<MK(.8)) return; const ux=(x2-x1)/L, uy=(y2-y1)/L, hl=Math.min(MK(1.7),L*.6), hw=MK(.65)+sw*.6;
@@ -359,9 +362,10 @@ function renderModelo(){ const view=$("view-m"); if(!view||view.hidden) return; 
   stage.classList.toggle("editing",mEdit);
   if(!mPl.playing){ if(mEdit) mT_=Math.round(mT_); mPl.set(mT_); }
   const M=momDe(Q.mom); $("m-tit").textContent=Q.nome; const tg=$("m-tag"); tg.hidden=false; tg.textContent=subNome(Q.mom,Q.sub).toUpperCase(); tg.style.background=M[2];
-  $("m-bar").innerHTML=mEdit?`<button class="btn sm" id="m-und" title="Desfazer (Ctrl+Z)"${mUndo.length?"":" disabled"}>↶ Desfazer</button><button class="btn sm dark" id="m-ed">✓ Concluir</button>`:`<button class="btn sm" id="m-ed">✎ Editar</button><button class="btn sm" id="m-fs" title="Apresentar os quadros do Modelo de Jogo">⛶ Apresentar</button><button class="btn sm" id="m-vid" title="Exportar a animação deste quadro em vídeo MP4">⬇ Vídeo</button>`;
+  $("m-bar").innerHTML=mEdit?`<button class="btn sm" id="m-und" title="Desfazer (Ctrl+Z)"${mUndo.length?"":" disabled"}>↶ Desfazer</button><button class="btn sm dark" id="m-ed">✓ Concluir</button>`:`<button class="btn sm" id="m-rot" title="Mostrar nas bolinhas o número do jogador ou a posição">Nº ⇄ Posição</button><button class="btn sm" id="m-ed">✎ Editar</button><button class="btn sm" id="m-fs" title="Apresentar os quadros do Modelo de Jogo">⛶ Apresentar</button><button class="btn sm" id="m-vid" title="Exportar a animação deste quadro em vídeo MP4">⬇ Vídeo</button>`;
   $("m-ed").onclick=()=>{ mEdit=!mEdit; mSel=null; mTool="mover"; if(mEdit) mPara(); renderModelo(); };
   if($("m-und")) $("m-und").onclick=desfazModelo;
+  if($("m-rot")) $("m-rot").onclick=()=>{ const N=trocaRot(Q.id); renderModelo(); toast(N.rot==="num"?"Bolinhas com o número do jogador":"Bolinhas com a posição"); };
   if($("m-fs")) $("m-fs").onclick=()=>{ mPara(); apresentaModelo(Q.id); };
   if($("m-vid")) $("m-vid").onclick=e=>{ mPara(); videoQuadro(Q.id,e.currentTarget); };
   const eb=$("m-ebar"); eb.hidden=!mEdit;
@@ -452,7 +456,7 @@ let mApr=null;
 function apresentaModelo(id0){ const ls=listaModelos(); if(!ls.length){ toast("Ainda não há quadros do Modelo de Jogo."); return; } mPara(); if(mApr) mApr.fecha();
   let i=Math.max(0,ls.findIndex(q=>q.id===(id0||mCur))), pl=null;
   const root=document.createElement("div"); root.className="present"; root.setAttribute("role","dialog"); root.setAttribute("aria-label","Apresentação do Modelo de Jogo");
-  root.innerHTML=`<div class="pstage"></div><div class="pbar"><button id="ma-a">‹ Anterior</button><button id="ma-ini" aria-label="Voltar ao passo 1">⏮</button><button id="ma-pl" style="min-width:120px">▶ Animar</button><div class="t"></div><button id="ma-v">⬇ Vídeo</button><button id="ma-b">Seguinte ›</button><button id="ma-x">Fechar</button></div>`;
+  root.innerHTML=`<div class="pstage"></div><div class="pbar"><button id="ma-a">‹ Anterior</button><button id="ma-ini" aria-label="Voltar ao passo 1">⏮</button><button id="ma-pl" style="min-width:120px">▶ Animar</button><div class="t"></div><button id="ma-rot" title="Mostrar nas bolinhas o número do jogador ou a posição">Nº ⇄ Posição</button><button id="ma-v">⬇ Vídeo</button><button id="ma-b">Seguinte ›</button><button id="ma-x">Fechar</button></div>`;
   document.body.appendChild(root); const st=root.querySelector(".pstage"), tt=root.querySelector(".t"), bp=root.querySelector("#ma-pl");
   const estado=()=>{ const Q=modelos[ls[i].id]||ls[i]; bp.textContent=pl&&pl.playing?"⏸ Pausa":"▶ Animar"; tt.textContent=`${i+1}/${ls.length} · ${Q.nome} · passo ${passoVisivel(Q,pl?pl.t:0)+1}/${Q.passos.length}`; };
   const mostra=()=>{ if(pl) pl.pause(); const Q=modelos[ls[i].id]||ls[i]; st.innerHTML=""; pl=playerModelo(Q,{onT:estado,onEnd:estado}); st.appendChild(pl.svg); estado(); };
@@ -463,6 +467,7 @@ function apresentaModelo(id0){ const ls=listaModelos(); if(!ls.length){ toast("A
   document.addEventListener("keydown",kd);
   root.querySelector("#ma-a").onclick=()=>anda(-1); root.querySelector("#ma-b").onclick=()=>anda(1); root.querySelector("#ma-x").onclick=fecha;
   root.querySelector("#ma-ini").onclick=()=>{ pl.pause(); pl.set(0); estado(); }; bp.onclick=animar;
+  root.querySelector("#ma-rot").onclick=()=>{ const N=trocaRot(ls[i].id); pl.setQ(N); if(!pl.playing) pl.set(pl.t); renderModeloSeguro(); };
   root.querySelector("#ma-v").onclick=e=>{ pl.pause(); estado(); videoQuadro(ls[i].id,e.currentTarget); };
   /* iPad: deslizar muda de quadro; um toque anima ou pausa */
   let x0=null; st.addEventListener("touchstart",e=>{ x0=e.touches[0].clientX; },{passive:true});
