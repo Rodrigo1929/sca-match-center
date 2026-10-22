@@ -28,13 +28,14 @@ Os ficheiros `src/js/*.js` **não são módulos**: são concatenados por ordem n
 - `npm run build` → `dist/index.html`
 - `npm run check` → build + sintaxe (correr sempre antes de publicar)
 - `npm test` → build + teste no browser (precisa de `npm install` e `npx playwright install chromium`)
+- `npm run test:ipad` → o mesmo teste no WebKit (motor do Safari) com ecrã e toque de iPad (precisa de `npx playwright install webkit`)
 
 ## Publicação — regra crítica
 A app vive num **único link**: https://claude.ai/artifact/3uVFyLVzJvF5z8upFHkJqN
 Os **dados de toda a equipa** (lances, jogos, histórico, análises, Modelo de Jogo) estão guardados junto desse link.
 - Publicar **sempre para esse mesmo link**, com o ficheiro `dist/index.html`. Nunca criar um artefacto novo para a app.
 - Manter as capacidades atuais (`db`, `downloads`, `room`, `user`): numa republicação não as alterar.
-- Antes de publicar: `npm run check` e, se possível, `npm test`.
+- Antes de publicar: `npm run check` e, se possível, `npm test` e `npm run test:ipad`.
 - Se a sessão não conseguir publicar no link, gerar `dist/index.html` e dizer ao Rodrigo que a publicação tem de ser feita numa conversa do Projeto "SCA Match Center" no claude.ai. Não procurar outra forma de alojar a app.
 - Em dia de jogo, não publicar alterações ao Ao vivo sem o Rodrigo confirmar.
 
