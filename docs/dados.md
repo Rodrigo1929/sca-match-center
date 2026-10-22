@@ -22,8 +22,10 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
 ## Quadro do Modelo de Jogo (`modelo/{id}`)
 ```
 { id, nome, mom: "of"|"def"|"tda"|"tad", sub, ordem, sis ("onze" ou "4-3-3"…), sisAdv,
-  vel (s de movimento), pausa (s em cada passo), rot: "pos"|"num", nomes, auto,
-  pecas: [{ id, eq: "nos"|"adv"|"bola", pos, n, slot? }],   // slot = lugar no onze do jogo; o número vem daí
+  vel (s de movimento), pausa (s em cada passo), rot: "num"|"pos"|"nada" (texto nas bolinhas), nomes, auto,
+  vista: "inteiro"|"meio"|"meiodef"|"duplaarea"|"livre", vw, vh (m, só no espaço livre),
+  pecas: [{ id, eq: "nos"|"adv"|"neutro"|"bola"|"cone"|"minib"|"baliza", pos, n, slot?, cor?, ang? }],
+         // slot = lugar no onze do jogo (o número vem daí); cor = colete ou cor do cone; ang = para onde abre a baliza (0/90/180/270)
   trocas: [{ id, sai, entra }],                             // trocas só deste quadro, aplicadas por ordem
   passos: [{ id, nota, pos: { [pecaId]: {x,y} }, setas: [{id,t,x1,y1,x2,y2}], zonas: [{id,x,y,w,h,cor}] }] }
 ```

@@ -18,6 +18,13 @@ const CORES_ZONA=[["#FFC000","Amarelo"],["#C00000","Vermelho"],["#0070C0","Azul"
 const ZONA_ANT={"#FFD60A":"#FFC000","#FF4D4D":"#C00000","#4DA3FF":"#0070C0","#FFFFFF":"#7F7F7F","#7CF29A":"#1E7A46"};
 const corZ=c=>ZONA_ANT[String(c||"").toUpperCase()]||c||"#FFC000";
 const MV={W:1600,H:900,ox:30,oy:118,k:10.2,px:1132};
+/* vistas do campo: as parciais mostram a baliza que atacamos em cima */
+const VISTAS=[["inteiro","Campo inteiro"],["meio","Meio campo ofensivo"],["meiodef","Meio campo defensivo"],["duplaarea","Dupla área (ofensiva)"],["livre","Espaço livre (medidas)"]];
+/* texto nas bolinhas: número do jogador, posição ou nada (só bolinhas) */
+const ROT_M={num:"número",pos:"posição",nada:"sem texto"};
+const PECAS_EQ=["nos","adv","neutro","bola","cone","minib","baliza"];
+const COLETES=[["vermelho","Vermelho","#C00000","#FFFFFF"],["azul","Azul","#0070C0","#FFFFFF"],["amarelo","Amarelo","#FFD60A","#000000"],["verde","Verde","#1E7A46","#FFFFFF"],["laranja","Laranja","#F79646","#000000"],["branco","Branco","#FFFFFF","#000000"],["preto","Preto","#1B1A17","#FFFFFF"]];
+const BALIZAS={minib:[3,1.2],baliza:[7.32,2]};
 /* campo do onze no separador Jogo (unidades do slide) → metros */
 const ONZE_CAMPO=[2740,11380,81400,63780];
 function onzeM(o){ const [x0,y0,x1,y1]=ONZE_CAMPO; return {x:Math.round(mClamp((o.x-x0)/(x1-x0)*105,-2,107)*10)/10,y:Math.round(mClamp((o.y-y0)/(y1-y0)*68,-2,70)*10)/10}; }
@@ -36,8 +43,10 @@ function momDe(k){ return MOMENTOS.find(m=>m[0]===k)||MOMENTOS[0]; }
 function subNome(mom,sub){ const s=momDe(mom)[3].find(x=>x[0]===sub); return s?s[1]:""; }
 function normQ(d){ const Q={...d}; Q.nome=String(Q.nome||"Sem nome"); if(!MOMENTOS.some(m=>m[0]===Q.mom)) Q.mom="of";
   if(!momDe(Q.mom)[3].some(s=>s[0]===Q.sub)) Q.sub=momDe(Q.mom)[3][0][0];
-  Q.vel=+Q.vel||1.2; Q.pausa=+Q.pausa||1.2; Q.rot=Q.rot==="num"?"num":"pos"; Q.nomes=!!Q.nomes; Q.auto=Q.auto!==false; Q.ordem=+Q.ordem||0;
-  Q.pecas=Array.isArray(Q.pecas)?Q.pecas.filter(p=>p&&p.id).map(p=>{ const c={...p}; if(c.slot) c.slot=String(c.slot); else delete c.slot; return c; }):[];
+  Q.vel=+Q.vel||1.2; Q.pausa=+Q.pausa||1.2; Q.rot=ROT_M[Q.rot]?Q.rot:"pos"; Q.nomes=!!Q.nomes; Q.auto=Q.auto!==false; Q.ordem=+Q.ordem||0;
+  Q.vista=VISTAS.some(v=>v[0]===Q.vista)?Q.vista:"inteiro"; Q.vw=mClamp(Math.round(+Q.vw||20),4,100); Q.vh=mClamp(Math.round(+Q.vh||20),4,68);
+  Q.pecas=Array.isArray(Q.pecas)?Q.pecas.filter(p=>p&&p.id&&PECAS_EQ.includes(p.eq)).map(p=>{ const c={...p}; if(c.slot) c.slot=String(c.slot); else delete c.slot;
+    if(!COLETES.some(x=>x[0]===c.cor)) delete c.cor; if(c.ang!=null) c.ang=((Math.round(+c.ang/90)*90)%360+360)%360; return c; }):[];
   Q.trocas=Array.isArray(Q.trocas)?Q.trocas.filter(t=>t&&t.sai&&t.entra).map(t=>({id:String(t.id||mId("t")),sai:String(t.sai),entra:String(t.entra)})):[];
   Q.passos=Array.isArray(Q.passos)&&Q.passos.length?Q.passos.map(P=>({id:P.id||mId("p"),nota:String(P.nota||""),pos:{...(P.pos||{})},setas:Array.isArray(P.setas)?P.setas:[],zonas:Array.isArray(P.zonas)?P.zonas:[]})):[{id:mId("p"),nota:"",pos:{},setas:[],zonas:[]}];
   Q.passos.forEach((P,i)=>Q.pecas.forEach(pc=>{ if(!P.pos[pc.id]) P.pos[pc.id]=i?{...Q.passos[i-1].pos[pc.id]}:{x:52.5,y:34}; }));
@@ -74,28 +83,52 @@ const MX=m=>MV.ox+m*MV.k, MY=m=>MV.oy+m*MV.k, MK=m=>m*MV.k;
 function numerosQ(Q){ const slots=[...new Set(Q.pecas.filter(p=>p.eq==="nos"&&p.slot).map(p=>p.slot))], v={}; slots.forEach(s=>v[s]=baseOf(s));
   Q.trocas.forEach(t=>{ if(!slots.some(s=>v[s]===t.sai)) return; slots.forEach(s=>{ if(v[s]===t.sai) v[s]=t.entra; else if(v[s]===t.entra) v[s]=t.sai; }); }); return v; }
 function numPeca(pc,v){ return pc.slot?(v[pc.slot]||""):String(pc.n||""); }
-function rotulo(Q,pc,v){ const n=numPeca(pc,v); return Q.rot==="num"&&n?n:(pc.pos||n||""); }
+function rotulo(Q,pc,v){ if(Q.rot==="nada") return ""; const n=numPeca(pc,v); return Q.rot==="num"&&n?n:(pc.pos||n||""); }
 /* por baixo da bolinha só o nome, e só com "Nomes por baixo" ligado */
 function legendaPeca(Q,pc,v){ const n=numPeca(pc,v); return Q.nomes&&n?nome(n):""; }
 /* número ⇄ posição nas bolinhas de um quadro (fica guardado: TV e vídeo mostram o mesmo) */
-function trocaRot(id){ const Q=mLe(id); return guardaQ({...clone(Q),rot:Q.rot==="num"?"pos":"num"}); }
-function estiloPeca(pc){ const gr=/^GR$/i.test(pc.pos||"");
+/* número → posição → sem texto → número */
+function trocaRot(id){ const Q=mLe(id), ks=Object.keys(ROT_M); return guardaQ({...clone(Q),rot:ks[(ks.indexOf(Q.rot)+1)%ks.length]}); }
+function estiloPeca(pc){ const c=COLETES.find(x=>x[0]===pc.cor); if(c) return {fill:c[2],txt:c[3]}; const gr=/^GR$/i.test(pc.pos||"");
+  if(pc.eq==="neutro") return {fill:"#FFD60A",txt:"#000000"};
   if(pc.eq==="adv") return gr?{fill:"#9DC3E6",txt:"#000000"}:{fill:"#0070C0",txt:"#FFFFFF"}; return gr?{fill:"#FFFF00",txt:"#000000"}:{fill:"#C00000",txt:"#FFFFFF"}; }
-function seta(o,x1,y1,x2,y2,cor,sw,dash,op,attr){ const L=Math.hypot(x2-x1,y2-y1); if(L<MK(.8)) return; const ux=(x2-x1)/L, uy=(y2-y1)/L, hl=Math.min(MK(1.7),L*.6), hw=MK(.65)+sw*.6;
-  const bx=x2-ux*hl, by=y2-uy*hl; o.push({t:"line",x1,y1,x2:bx,y2:by,stroke:"rgba(255,255,255,.75)",sw:sw+MK(.3),dash,op,cap:"round"});
+/* vista do campo → região em metros e transformação para o ecrã (as medidas das peças não seguem o zoom todo) */
+function regiaoVista(Q){ const v=Q&&Q.vista;
+  if(v==="meio") return {rot:1,x0:50,y0:-1,w:57,h:70};
+  if(v==="meiodef") return {rot:1,x0:-2,y0:-1,w:57,h:70};
+  if(v==="duplaarea") return {rot:1,x0:72,y0:10,w:35,h:48};
+  if(v==="livre"){ const w=Q.vw, h=Q.vh; return {rot:0,x0:52.5-w/2-1.5,y0:34-h/2-1.5,w:w+3,h:h+3,livre:true,lw:w,lh:h}; }
+  return {rot:0,x0:0,y0:0,w:105,h:68}; }
+/* caixa do campo no ecrã: nas figuras de exercício não há painel do passo e o campo usa a largura toda */
+const caixaCampo=Q=>Q&&Q.fig?{x:30,y:MV.oy,w:MV.W-60,h:68*MV.k}:{x:MV.ox,y:MV.oy,w:105*MV.k,h:68*MV.k};
+function vistaQ(Q){ const R=regiaoVista(Q), C=caixaCampo(Q), k=MV.k, dw=(R.rot?R.h:R.w)*k, dh=(R.rot?R.w:R.h)*k, s=Math.min(C.w/dw,C.h/dh), offX=C.x+(C.w-dw*s)/2, offY=C.y+(C.h-dh*s)/2;
+  const m=R.rot?[0,-s,s,0,offX-s*(MV.oy+R.y0*k),offY+s*(MV.ox+(R.x0+R.w)*k)]:[s,0,0,s,offX-s*(MV.ox+R.x0*k),offY-s*(MV.oy+R.y0*k)];
+  const fwd=(bx,by)=>[m[0]*bx+m[2]*by+m[4],m[1]*bx+m[3]*by+m[5]], det=m[0]*m[3]-m[1]*m[2];
+  const inv=(sx,sy)=>{ const x=sx-m[4], y=sy-m[5]; return [(m[3]*x-m[2]*y)/det,(-m[1]*x+m[0]*y)/det]; };
+  return {...R,s,m,z:mClamp(s,1,1.6),P:(x,y)=>fwd(MX(x),MY(y)),M:(sx,sy)=>{ const [bx,by]=inv(sx,sy); return {x:(bx-MV.ox)/k,y:(by-MV.oy)/k}; },clip:[C.x-14,C.y-14,C.w+28,C.h+28]}; }
+function seta(o,x1,y1,x2,y2,cor,sw,dash,op,attr,zz=1){ const L=Math.hypot(x2-x1,y2-y1); if(L<MK(.8)*zz) return; const ux=(x2-x1)/L, uy=(y2-y1)/L, hl=Math.min(MK(1.7)*zz,L*.6), hw=MK(.65)*zz+sw*.6;
+  const bx=x2-ux*hl, by=y2-uy*hl; o.push({t:"line",x1,y1,x2:bx,y2:by,stroke:"rgba(255,255,255,.75)",sw:sw+MK(.3)*zz,dash,op,cap:"round"});
   o.push({t:"line",x1,y1,x2:bx,y2:by,stroke:cor,sw,dash,op,cap:dash?"butt":"round",attr});
   o.push({t:"poly",pts:[[x2,y2],[bx-uy*hw,by+ux*hw],[bx+uy*hw,by-ux*hw]],fill:cor,op,attr}); }
-/* campo igual ao dos quadros das bolas paradas: riscas brancas e cinzentas, linhas pretas */
-function primsCampo(o){ const k=MV.k, x0=MV.ox, y0=MV.oy, w=105*k, h=68*k, L={stroke:"#111111",sw:2.2,fill:"none"};
+/* campo igual ao dos quadros das bolas paradas: riscas brancas e cinzentas, linhas pretas.
+   Desenhado em coordenadas base e levado para a vista pela transformação V (as linhas mantêm a grossura) */
+function primsCampo(o,V){ const k=MV.k, f=Math.min(V.s,1.4)/V.s, L={stroke:"#111111",sw:2.2*f,fill:"none"};
+  o.push({t:"gon",m:V.m,clip:V.clip});
+  if(V.livre){ /* espaço livre: só a área marcada com cones, sem linhas do campo */
+    const x0=MX(V.x0), y0=MY(V.y0), w=V.w*k, h=V.h*k; for(let i=0;i<10;i++) o.push({t:"rect",x:x0+i*w/10,y:y0,w:w/10+.5,h,fill:i%2?"#EEEEEE":"#FFFFFF"});
+    o.push({t:"rect",x:MX(52.5-V.lw/2),y:MY(34-V.lh/2),w:V.lw*k,h:V.lh*k,stroke:"#F79646",sw:3.2*f,dash:[12*f,8*f],fill:"none"});
+    o.push({t:"goff"}); return; }
+  const x0=MV.ox, y0=MV.oy, w=105*k, h=68*k;
   for(let i=0;i<18;i++) o.push({t:"rect",x:x0+i*w/18,y:y0,w:w/18+.5,h,fill:i%2?"#EEEEEE":"#FFFFFF"});
-  o.push({t:"rect",x:x0,y:y0,w,h,stroke:L.stroke,sw:2.8,fill:"none"}); o.push({t:"line",x1:x0+w/2,y1:y0,x2:x0+w/2,y2:y0+h,stroke:L.stroke,sw:L.sw});
+  o.push({t:"rect",x:x0,y:y0,w,h,stroke:L.stroke,sw:2.8*f,fill:"none"}); o.push({t:"line",x1:x0+w/2,y1:y0,x2:x0+w/2,y2:y0+h,stroke:L.stroke,sw:L.sw});
   o.push({t:"circ",cx:x0+w/2,cy:y0+h/2,r:9.15*k,...L}); o.push({t:"circ",cx:x0+w/2,cy:y0+h/2,r:.35*k,fill:L.stroke});
   const cy=y0+h/2, a=Math.acos(5.5/9.15);
   [[x0,1],[x0+w,-1]].forEach(([gx,d])=>{ o.push({t:"rect",x:d>0?gx:gx-16.5*k,y:cy-20.16*k,w:16.5*k,h:40.32*k,...L}); o.push({t:"rect",x:d>0?gx:gx-5.5*k,y:cy-9.16*k,w:5.5*k,h:18.32*k,...L});
     const sx=gx+d*11*k; o.push({t:"circ",cx:sx,cy,r:.3*k,fill:L.stroke}); o.push(d>0?{t:"arc",cx:sx,cy,r:9.15*k,a0:-a,a1:a,stroke:L.stroke,sw:L.sw}:{t:"arc",cx:sx,cy,r:9.15*k,a0:Math.PI-a,a1:Math.PI+a,stroke:L.stroke,sw:L.sw});
-    const gx2=d>0?gx-2*k:gx; o.push({t:"rect",x:gx2,y:cy-3.66*k,w:2*k,h:7.32*k,fill:"#D9D9D9",stroke:L.stroke,sw:1.8});
-    for(let j=1;j<4;j++) o.push({t:"line",x1:gx2,y1:cy-3.66*k+j*1.83*k,x2:gx2+2*k,y2:cy-3.66*k+j*1.83*k,stroke:"#888888",sw:.8}); });
-  [[x0,y0,0,Math.PI/2],[x0+w,y0,Math.PI/2,Math.PI],[x0+w,y0+h,Math.PI,1.5*Math.PI],[x0,y0+h,1.5*Math.PI,2*Math.PI]].forEach(([cx,cy_,a0,a1])=>o.push({t:"arc",cx,cy:cy_,r:1*k,a0,a1,stroke:L.stroke,sw:L.sw})); }
+    const gx2=d>0?gx-2*k:gx; o.push({t:"rect",x:gx2,y:cy-3.66*k,w:2*k,h:7.32*k,fill:"#D9D9D9",stroke:L.stroke,sw:1.8*f});
+    for(let j=1;j<4;j++) o.push({t:"line",x1:gx2,y1:cy-3.66*k+j*1.83*k,x2:gx2+2*k,y2:cy-3.66*k+j*1.83*k,stroke:"#888888",sw:.8*f}); });
+  [[x0,y0,0,Math.PI/2],[x0+w,y0,Math.PI/2,Math.PI],[x0+w,y0+h,Math.PI,1.5*Math.PI],[x0,y0+h,1.5*Math.PI,2*Math.PI]].forEach(([cx,cy_,a0,a1])=>o.push({t:"arc",cx,cy:cy_,r:1*k,a0,a1,stroke:L.stroke,sw:L.sw}));
+  o.push({t:"goff"}); }
 function primsEstaticas(Q){ const o=[]; o.push({t:"rect",x:0,y:0,w:MV.W,h:MV.H,fill:"#FFFFFF"});
   /* cabeçalho dos slides: ícone tático, título, linha dourada e emblema */
   if(IMG_DATA["slides/b-head.jpg"]) o.push({t:"imgc",href:IMG_DATA["slides/b-head.jpg"],iw:2050,ih:1538,sx:22,sy:30,sw:170,sh:165,x:20,y:12,w:88,h:85});
@@ -103,48 +136,67 @@ function primsEstaticas(Q){ const o=[]; o.push({t:"rect",x:0,y:0,w:MV.W,h:MV.H,f
   o.push({t:"text",x:124,y:64,txt:pre,fs,fill:"#000000",w:700}); o.push({t:"text",x:124+textW(pre,fs,700),y:64,txt:Q.nome,fs,fill:"#C00000",w:700});
   o.push({t:"rect",x:124,y:80,w:tw+10,h:7,fill:"#C9B26B"});
   if(IMG_DATA["slides/logo.png"]) o.push({t:"img",href:IMG_DATA["slides/logo.png"],x:1506,y:6,w:88,h:80});
-  primsCampo(o);
-  o.push({t:"rect",x:MV.px,y:MV.oy,w:MV.W-MV.px-24,h:68*MV.k,fill:"#FFFFFF",stroke:"#C00000",sw:3,rx:14});
+  primsCampo(o,vistaQ(Q));
+  if(!Q.fig) o.push({t:"rect",x:MV.px,y:MV.oy,w:MV.W-MV.px-24,h:68*MV.k,fill:"#FFFFFF",stroke:"#C00000",sw:3,rx:14});
   /* legenda */ let lx=30; const ly=858;
   const usadas=new Set(); Q.passos.forEach(P=>P.setas.forEach(s=>usadas.add(s.t||"corrida"))); if(Q.auto) usadas.add("corrida"); if(Q.auto&&Q.pecas.some(p=>p.eq==="bola")) usadas.add("passe");
   Object.entries(SETA_T).forEach(([k,[nm,cor,sw,dash]])=>{ if(!usadas.has(k)) return; seta(o,lx,ly,lx+46,ly,cor,MK(sw),dash?dash.map(MK):null,1); o.push({t:"text",x:lx+56,y:ly+6,txt:nm,fs:18,fill:"#333333",w:700}); lx+=72+textW(nm,18,700)+24; });
   const sis=Q.sis==="onze"?"SCA · onze do jogo":`SCA ${Q.sis||""}`.trim(), adv=Q.pecas.some(p=>p.eq==="adv");
   const chip=(x,t,c)=>{ const w=textW(t,16,700)+20; o.push({t:"rect",x:x-w,y:ly-14,w,h:28,rx:6,fill:c}); o.push({t:"text",x:x-w/2,y:ly+6,txt:t,fs:16,fill:"#fff",w:700,anchor:"middle"}); return x-w-8; };
-  let rx=MV.ox+105*MV.k; if(adv) rx=chip(rx,"ADV "+(Q.sisAdv||""),"#0070C0"); if(Q.sis) chip(rx,sis,"#C00000");
+  const cc=caixaCampo(Q); let rx=cc.x+cc.w; if(Q.fig&&Q.passos.length>1) rx-=130; /* espaço para "Passo x/n" */
+  if(adv&&Q.sisAdv) rx=chip(rx,"ADV "+Q.sisAdv,"#0070C0"); if(Q.sis) chip(rx,sis,"#C00000");
   return o; }
 function primsDinamicas(Q,t,ed){ const o=[], n=Q.passos.length; t=mClamp(t,0,n-1); const k=Math.floor(t), k2=Math.min(k+1,n-1), f=k2>k?t-k:0, e=mEase(f);
   const A=Q.passos[k], B=Q.passos[k2], opA=f===0?1:Math.max(0,1-f*2.2), pos={};
   Q.pecas.forEach(pc=>{ const a=A.pos[pc.id]||{x:52.5,y:34}, b=B.pos[pc.id]||a; pos[pc.id]={x:a.x+(b.x-a.x)*e,y:a.y+(b.y-a.y)*e,a,b}; });
+  /* tudo o que está em campo vai para o ecrã pela vista V; Z = medida de peça (cresce pouco com o zoom) */
+  const V=vistaQ(Q), Z=m=>MK(m)*V.z, ae=ed&&ed.edit&&f===0;
+  o.push({t:"gon",clip:V.clip});
   /* zonas */ const zB=new Map(B.zonas.map(z=>[z.id,z])), zA=new Set(A.zonas.map(z=>z.id));
-  const ae=ed&&ed.edit&&f===0;
-  const zona=(z,op,attr)=>{ const c=corZ(z.cor); o.push({t:"rect",x:MX(z.x),y:MY(z.y),w:MK(z.w),h:MK(z.h),rx:MK(.9),fill:c,fop:.2*op,stroke:c,sw:MK(.22),dash:[MK(1),MK(.7)],op:.85*op,attr}); };
+  const zona=(z,op,attr)=>{ const c=corZ(z.cor), [x1,y1]=V.P(z.x,z.y), [x2,y2]=V.P(z.x+z.w,z.y+z.h);
+    o.push({t:"rect",x:Math.min(x1,x2),y:Math.min(y1,y2),w:Math.abs(x2-x1),h:Math.abs(y2-y1),rx:Z(.9),fill:c,fop:.2*op,stroke:c,sw:Z(.22),dash:[Z(1),Z(.7)],op:.85*op,attr}); };
   A.zonas.forEach(z=>{ const zb=k2>k?zB.get(z.id):z; if(zb){ const I=(p,q)=>p+(q-p)*e; zona({...z,x:I(z.x,zb.x),y:I(z.y,zb.y),w:I(z.w,zb.w),h:I(z.h,zb.h)},1,ae?{"data-z":z.id}:null); } else zona(z,1-e,null); });
   if(k2>k) B.zonas.forEach(z=>{ if(!zA.has(z.id)) zona(z,e,null); });
   if(ed&&ed.tmpZ){ const z=ed.tmpZ; zona({x:Math.min(z.x1,z.x2),y:Math.min(z.y1,z.y2),w:Math.abs(z.x2-z.x1),h:Math.abs(z.y2-z.y1),cor:mZonaCor},1,null); }
-  /* setas automáticas (movimento até ao passo seguinte) */
-  /* medidas do Onze Titular das bolas paradas (bolinha ~2,3 m, número ~2,2 m) */
-  const r=2.3, rb=1.25;
-  if(Q.auto&&opA>0&&k+1<n){ const C=Q.passos[k+1]; Q.pecas.forEach(pc=>{ const a=A.pos[pc.id], b=C.pos[pc.id]; if(!a||!b) return; const d=Math.hypot(b.x-a.x,b.y-a.y); if(d<1.4) return;
-      const ux=(b.x-a.x)/d, uy=(b.y-a.y)/d, rr=pc.eq==="bola"?rb:r, st=pc.eq==="bola"?SETA_T.passe:SETA_T.corrida;
-      const cor=pc.eq==="adv"?"#0070C0":st[1]; seta(o,MX(a.x+ux*rr),MY(a.y+uy*rr),MX(b.x-ux*.3),MY(b.y-uy*.3),cor,MK(st[2]),st[3]?st[3].map(MK):null,opA*.9); }); }
+  /* balizas e cones (por baixo dos jogadores) */
+  const sel=ed&&ed.edit, toque=(cx,cy,rr,id)=>{ if(!ed) return; if(sel&&mSel===id) o.push({t:"circ",cx,cy,r:rr+Z(.5),fill:"none",stroke:"#F79646",sw:Z(.35)}); o.push({t:"circ",cx,cy,r:rr+Z(.8),fill:"rgba(0,0,0,0)",attr:{"data-p":id}}); };
+  Q.pecas.filter(p=>BALIZAS[p.eq]).forEach(pc=>{ const p=pos[pc.id], [W,D]=BALIZAS[pc.eq], a=(pc.ang==null?180:pc.ang)*Math.PI/180, ux=Math.cos(a), uy=Math.sin(a), vx=-uy, vy=ux;
+    const c=(s,d)=>V.P(p.x+vx*s*W/2-ux*d*D,p.y+vy*s*W/2-uy*d*D), fl=c(1,0), fr=c(-1,0), bl=c(1,1), br=c(-1,1), lw=Z(pc.eq==="baliza"?.3:.22);
+    o.push({t:"poly",pts:[fl,bl,br,fr],fill:"#E9E7E2"});
+    for(let i=1;i<4;i++){ const s=1-i/2; o.push({t:"line",x1:c(s,0)[0],y1:c(s,0)[1],x2:c(s,1)[0],y2:c(s,1)[1],stroke:"#A8A49A",sw:lw*.5}); }
+    [[fl,bl],[bl,br],[br,fr]].forEach(([p1,p2])=>o.push({t:"line",x1:p1[0],y1:p1[1],x2:p2[0],y2:p2[1],stroke:"#1B1A17",sw:lw,cap:"round"}));
+    [fl,fr].forEach(q=>o.push({t:"circ",cx:q[0],cy:q[1],r:lw*1.1,fill:"#C00000"}));
+    const [cx,cy]=V.P(p.x,p.y); toque(cx,cy,Z(1.2),pc.id); });
+  Q.pecas.filter(p=>p.eq==="cone").forEach(pc=>{ const p=pos[pc.id], [cx,cy]=V.P(p.x,p.y), c=(COLETES.find(x=>x[0]===pc.cor)||COLETES[4])[2], h=Z(.85);
+    o.push({t:"poly",pts:[[cx,cy-h],[cx-h*.85,cy+h*.6],[cx+h*.85,cy+h*.6]],fill:c,stroke:"#1B1A17",sw:Z(.1)}); toque(cx,cy,h,pc.id); });
+  /* setas automáticas (movimento até ao passo seguinte); medidas do Onze Titular das bolas paradas (bolinha ~2,3 m, número ~2,2 m) */
+  const r=2.3, rb=1.25, joga=pc=>pc.eq==="nos"||pc.eq==="adv"||pc.eq==="neutro"||pc.eq==="bola";
+  if(Q.auto&&opA>0&&k+1<n){ const C=Q.passos[k+1]; Q.pecas.forEach(pc=>{ if(!joga(pc)) return; const a=A.pos[pc.id], b=C.pos[pc.id]; if(!a||!b||Math.hypot(b.x-a.x,b.y-a.y)<1.4) return;
+      const [ax,ay]=V.P(a.x,a.y), [bx,by]=V.P(b.x,b.y), d=Math.hypot(bx-ax,by-ay), ux=(bx-ax)/d, uy=(by-ay)/d, rr=Z(pc.eq==="bola"?rb:r), st=pc.eq==="bola"?SETA_T.passe:SETA_T.corrida;
+      const cor=pc.eq==="adv"?"#0070C0":st[1]; seta(o,ax+ux*rr,ay+uy*rr,bx-ux*Z(.3),by-uy*Z(.3),cor,Z(st[2]),st[3]?st[3].map(Z):null,opA*.9,null,V.z); }); }
   /* setas manuais do passo */
-  if(opA>0) A.setas.forEach(s=>{ const st=SETA_T[s.t]||SETA_T.corrida; seta(o,MX(s.x1),MY(s.y1),MX(s.x2),MY(s.y2),st[1],MK(st[2]),st[3]?st[3].map(MK):null,opA,ae?{"data-s":s.id}:null);
-    if(ae) o.push({t:"line",x1:MX(s.x1),y1:MY(s.y1),x2:MX(s.x2),y2:MY(s.y2),stroke:"rgba(0,0,0,0)",sw:MK(1.6),attr:{"data-s":s.id}}); });
-  if(ed&&ed.tmpS){ const s=ed.tmpS, st=SETA_T[mSetaT]; seta(o,MX(s.x1),MY(s.y1),MX(s.x2),MY(s.y2),st[1],MK(st[2]),st[3]?st[3].map(MK):null,.8); }
-  /* peças: adversários, nossos, bola por cima */
-  const ordem=[...Q.pecas.filter(p=>p.eq==="adv"),...Q.pecas.filter(p=>p.eq==="nos"),...Q.pecas.filter(p=>p.eq==="bola")];
-  const v=numerosQ(Q), sel=ed&&ed.edit;
-  ordem.forEach(pc=>{ const p=pos[pc.id], cx=MX(p.x), cy=MY(p.y);
-    if(pc.eq==="bola"){ if(IMG_DATA["slides/bola.png"]) o.push({t:"img",href:IMG_DATA["slides/bola.png"],x:cx-MK(rb),y:cy-MK(rb),w:MK(2*rb),h:MK(2*rb)});
-      else { o.push({t:"circ",cx,cy,r:MK(rb),fill:"#FFFFFF",stroke:"#111",sw:MK(.16)}); o.push({t:"circ",cx,cy,r:MK(.3),fill:"#111"}); }
-      if(ed){ if(sel&&mSel===pc.id) o.push({t:"circ",cx,cy,r:MK(rb+.5),fill:"none",stroke:"#F79646",sw:MK(.3)}); o.push({t:"circ",cx,cy,r:MK(rb+1.1),fill:"rgba(0,0,0,0)",attr:{"data-p":pc.id}}); } return; }
-    const S=estiloPeca(pc), lab=rotulo(Q,pc,v), fs=MK(lab.length<=2?2.15:lab.length===3?1.55:1.2);
-    o.push({t:"circ",cx,cy,r:MK(r),fill:S.fill,stroke:"#000000",sw:MK(.2)});
-    o.push({t:"text",x:cx,y:cy+fs*.35,txt:lab,fs,fill:S.txt,w:700,anchor:"middle"});
-    const lg=pc.eq==="nos"?legendaPeca(Q,pc,v):""; if(lg){ const nfs=MK(1.3), nw=textW(lg,nfs,700)+MK(1.1); o.push({t:"rect",x:cx-nw/2,y:cy+MK(r+.3),w:nw,h:nfs*1.35,rx:MK(.5),fill:"rgba(27,26,23,.85)"}); o.push({t:"text",x:cx,y:cy+MK(r+.3)+nfs*1.02,txt:lg,fs:nfs,fill:"#fff",w:700,anchor:"middle"}); }
-    if(ed){ if(sel&&mSel===pc.id) o.push({t:"circ",cx,cy,r:MK(r+.55),fill:"none",stroke:"#F79646",sw:MK(.4)}); o.push({t:"circ",cx,cy,r:MK(r+.7),fill:"rgba(0,0,0,0)",attr:{"data-p":pc.id}}); } });
+  const S2=(s,st,op,attr)=>{ const [x1,y1]=V.P(s.x1,s.y1), [x2,y2]=V.P(s.x2,s.y2); seta(o,x1,y1,x2,y2,st[1],Z(st[2]),st[3]?st[3].map(Z):null,op,attr,V.z); return [x1,y1,x2,y2]; };
+  if(opA>0) A.setas.forEach(s=>{ const [x1,y1,x2,y2]=S2(s,SETA_T[s.t]||SETA_T.corrida,opA,ae?{"data-s":s.id}:null);
+    if(ae) o.push({t:"line",x1,y1,x2,y2,stroke:"rgba(0,0,0,0)",sw:Z(1.6),attr:{"data-s":s.id}}); });
+  if(ed&&ed.tmpS) S2(ed.tmpS,SETA_T[mSetaT],.8,null);
+  /* jogadores: adversários, jokers, nossos; bolas por cima */
+  const ordem=[...Q.pecas.filter(p=>p.eq==="adv"),...Q.pecas.filter(p=>p.eq==="neutro"),...Q.pecas.filter(p=>p.eq==="nos"),...Q.pecas.filter(p=>p.eq==="bola")];
+  const v=numerosQ(Q);
+  ordem.forEach(pc=>{ const p=pos[pc.id], [cx,cy]=V.P(p.x,p.y);
+    if(pc.eq==="bola"){ if(IMG_DATA["slides/bola.png"]) o.push({t:"img",href:IMG_DATA["slides/bola.png"],x:cx-Z(rb),y:cy-Z(rb),w:Z(2*rb),h:Z(2*rb)});
+      else { o.push({t:"circ",cx,cy,r:Z(rb),fill:"#FFFFFF",stroke:"#111",sw:Z(.16)}); o.push({t:"circ",cx,cy,r:Z(.3),fill:"#111"}); }
+      toque(cx,cy,Z(rb),pc.id); return; }
+    const S=estiloPeca(pc), lab=rotulo(Q,pc,v), fs=Z(lab.length<=2?2.15:lab.length===3?1.55:1.2);
+    o.push({t:"circ",cx,cy,r:Z(r),fill:S.fill,stroke:"#000000",sw:Z(.2)});
+    if(lab) o.push({t:"text",x:cx,y:cy+fs*.35,txt:lab,fs,fill:S.txt,w:700,anchor:"middle"});
+    const lg=pc.eq==="nos"?legendaPeca(Q,pc,v):""; if(lg){ const nfs=Z(1.3), nw=textW(lg,nfs,700)+Z(1.1); o.push({t:"rect",x:cx-nw/2,y:cy+Z(r+.3),w:nw,h:nfs*1.35,rx:Z(.5),fill:"rgba(27,26,23,.85)"}); o.push({t:"text",x:cx,y:cy+Z(r+.3)+nfs*1.02,txt:lg,fs:nfs,fill:"#fff",w:700,anchor:"middle"}); }
+    toque(cx,cy,Z(r),pc.id); });
+  o.push({t:"goff"});
+  const pv=passoVisivel(Q,t), P=Q.passos[pv];
+  /* figura de exercício: sem painel; com vários passos, só "Passo x/n" na linha da legenda */
+  if(Q.fig){ if(n>1){ const cc=caixaCampo(Q); o.push({t:"text",x:cc.x+cc.w,y:864,txt:`Passo ${pv+1}/${n}`,fs:22,fill:"#1B1A17",w:700,anchor:"end"}); } return o; }
   /* painel do passo */
-  const pv=passoVisivel(Q,t), px=MV.px+26, P=Q.passos[pv];
+  const px=MV.px+26;
   o.push({t:"text",x:px,y:MV.oy+42,txt:"PASSO",fs:19,fill:"#7F7F7F",w:700});
   o.push({t:"text",x:px,y:MV.oy+122,txt:String(pv+1),fs:84,fill:"#111111",w:700}); o.push({t:"text",x:px+textW(String(pv+1),84,700)+10,y:MV.oy+122,txt:"/ "+n,fs:34,fill:"#7F7F7F",w:700});
   for(let i=0;i<n;i++) o.push({t:"circ",cx:px+8+i*24,cy:MV.oy+154,r:7,fill:i===pv?"#C00000":i<pv?"#1B1A17":"#D0CCC3"});
@@ -156,23 +208,30 @@ function primsDinamicas(Q,t,ed){ const o=[], n=Q.passos.length; t=mClamp(t,0,n-1
 /* ---------- serialização ---------- */
 const mA=v=>Math.round(v*10)/10;
 function primsSvg(L){ const at=p=>p.attr?Object.entries(p.attr).map(([k,v])=>` ${k}="${esc(v)}"`).join(""):"", op=p=>p.op!=null&&p.op<1?` opacity="${mA(p.op*100)/100}"`:"", da=p=>p.dash?` stroke-dasharray="${p.dash.map(mA).join(" ")}"`:"";
+  const abertos=[];
   return L.map(p=>{ switch(p.t){
+    /* grupo recortado à caixa do campo (svg interior, sem ids) e, se houver, transformado pela vista */
+    case "gon": { const [x,y,w,h]=p.clip.map(mA); abertos.push(!!p.m); return `<svg x="${x}" y="${y}" width="${w}" height="${h}" viewBox="${x} ${y} ${w} ${h}" overflow="hidden">${p.m?`<g transform="matrix(${p.m.map(v=>Math.round(v*1e4)/1e4).join(" ")})">`:""}`; }
+    case "goff": return (abertos.pop()?"</g>":"")+"</svg>";
     case "rect": return `<rect x="${mA(p.x)}" y="${mA(p.y)}" width="${mA(p.w)}" height="${mA(p.h)}"${p.rx?` rx="${mA(p.rx)}"`:""} fill="${p.fill||"none"}"${p.fop!=null?` fill-opacity="${mA(p.fop*100)/100}"`:""}${p.stroke?` stroke="${p.stroke}" stroke-width="${mA(p.sw||1)}"`:""}${da(p)}${op(p)}${at(p)}/>`;
     case "circ": return `<circle cx="${mA(p.cx)}" cy="${mA(p.cy)}" r="${mA(p.r)}" fill="${p.fill||"none"}"${p.stroke?` stroke="${p.stroke}" stroke-width="${mA(p.sw||1)}"`:""}${op(p)}${at(p)}/>`;
     case "line": return `<line x1="${mA(p.x1)}" y1="${mA(p.y1)}" x2="${mA(p.x2)}" y2="${mA(p.y2)}" stroke="${p.stroke}" stroke-width="${mA(p.sw)}" stroke-linecap="${p.cap||"butt"}"${da(p)}${op(p)}${at(p)}/>`;
-    case "poly": return `<polygon points="${p.pts.map(q=>mA(q[0])+","+mA(q[1])).join(" ")}" fill="${p.fill}"${op(p)}${at(p)}/>`;
+    case "poly": return `<polygon points="${p.pts.map(q=>mA(q[0])+","+mA(q[1])).join(" ")}" fill="${p.fill}"${p.stroke?` stroke="${p.stroke}" stroke-width="${mA(p.sw||1)}" stroke-linejoin="round"`:""}${op(p)}${at(p)}/>`;
     case "arc": { const x1=p.cx+p.r*Math.cos(p.a0), y1=p.cy+p.r*Math.sin(p.a0), x2=p.cx+p.r*Math.cos(p.a1), y2=p.cy+p.r*Math.sin(p.a1); return `<path d="M ${mA(x1)} ${mA(y1)} A ${mA(p.r)} ${mA(p.r)} 0 ${p.a1-p.a0>Math.PI?1:0} 1 ${mA(x2)} ${mA(y2)}" fill="none" stroke="${p.stroke}" stroke-width="${mA(p.sw)}"/>`; }
     case "text": return `<text x="${mA(p.x)}" y="${mA(p.y)}" font-size="${mA(p.fs)}" font-weight="${p.w||400}" font-family="${MFONT.replace(/"/g,"'")}" fill="${p.fill}"${p.anchor?` text-anchor="${p.anchor}"`:""}${op(p)} pointer-events="none">${esc(p.txt)}</text>`;
     case "img": return `<image href="${p.href}" x="${mA(p.x)}" y="${mA(p.y)}" width="${mA(p.w)}" height="${mA(p.h)}" preserveAspectRatio="xMidYMid meet" pointer-events="none"/>`;
     case "imgc": return `<svg x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" viewBox="${p.sx} ${p.sy} ${p.sw} ${p.sh}" preserveAspectRatio="none" overflow="hidden" pointer-events="none"><image href="${p.href}" x="0" y="0" width="${p.iw}" height="${p.ih}" preserveAspectRatio="none"/></svg>`; } return ""; }).join(""); }
 const mImgs={};
-function primsCanvas(cx,L){ L.forEach(p=>{ cx.save(); cx.globalAlpha=p.op!=null?p.op:1; cx.setLineDash(p.dash||[]);
+function primsCanvas(cx,L){ L.forEach(p=>{
+  if(p.t==="gon"){ cx.save(); cx.beginPath(); cx.rect(...p.clip); cx.clip(); if(p.m) cx.transform(...p.m); return; }
+  if(p.t==="goff"){ cx.restore(); return; }
+  cx.save(); cx.globalAlpha=p.op!=null?p.op:1; cx.setLineDash(p.dash||[]);
   switch(p.t){
     case "rect": { cx.beginPath(); if(p.rx&&cx.roundRect) cx.roundRect(p.x,p.y,p.w,p.h,p.rx); else cx.rect(p.x,p.y,p.w,p.h);
       if(p.fill&&p.fill!=="none"){ cx.save(); if(p.fop!=null) cx.globalAlpha=p.fop; cx.fillStyle=p.fill; cx.fill(); cx.restore(); } if(p.stroke){ cx.lineWidth=p.sw||1; cx.strokeStyle=p.stroke; cx.stroke(); } break; }
     case "circ": cx.beginPath(); cx.arc(p.cx,p.cy,p.r,0,2*Math.PI); if(p.fill&&p.fill!=="none"){ cx.fillStyle=p.fill; cx.fill(); } if(p.stroke){ cx.lineWidth=p.sw||1; cx.strokeStyle=p.stroke; cx.stroke(); } break;
     case "line": cx.beginPath(); cx.moveTo(p.x1,p.y1); cx.lineTo(p.x2,p.y2); cx.lineCap=p.cap||"butt"; cx.lineWidth=p.sw; cx.strokeStyle=p.stroke; cx.stroke(); break;
-    case "poly": cx.beginPath(); p.pts.forEach((q,i)=>i?cx.lineTo(q[0],q[1]):cx.moveTo(q[0],q[1])); cx.closePath(); cx.fillStyle=p.fill; cx.fill(); break;
+    case "poly": cx.beginPath(); p.pts.forEach((q,i)=>i?cx.lineTo(q[0],q[1]):cx.moveTo(q[0],q[1])); cx.closePath(); cx.fillStyle=p.fill; cx.fill(); if(p.stroke){ cx.lineJoin="round"; cx.lineWidth=p.sw||1; cx.strokeStyle=p.stroke; cx.stroke(); } break;
     case "arc": cx.beginPath(); cx.arc(p.cx,p.cy,p.r,p.a0,p.a1); cx.lineWidth=p.sw; cx.strokeStyle=p.stroke; cx.stroke(); break;
     case "text": cx.font=`${p.w||400} ${p.fs}px ${MFONT}`; cx.textAlign=p.anchor==="middle"?"center":"left"; cx.textBaseline="alphabetic"; cx.fillStyle=p.fill; cx.fillText(p.txt,p.x,p.y); break;
     case "img": case "imgc": { let im=mImgs[p.href]; if(!im){ im=new Image(); im.src=p.href; mImgs[p.href]=im; } if(!(im.complete&&im.naturalWidth)) break;
@@ -256,7 +315,7 @@ function folhaNovoModelo(){ let mom=MOMENTOS[0][0], sub=MOMENTOS[0][3][0][0], si
 function qAtual(){ if(mFig) return mLe("fx:"+mFig); const ls=listaModelos(); return modelos[mCur]||ls[0]||null; }
 function passoAtual(){ return Math.round(mT_); }
 function editaQ(fn,semRender){ const Q=clone(qAtual()); if(!Q) return; fn(Q); const N=guardaQ(Q); if(!semRender) renderModelo(); return N; }
-function mPt(e){ const p=svgPt(mPl.svg,e); return {x:(p.x-MV.ox)/MV.k,y:(p.y-MV.oy)/MV.k}; }
+function mPt(e){ const p=svgPt(mPl.svg,e); return vistaQ(qAtual()).M(p.x,p.y); }
 function ligaEdicao(svg){
   svg.addEventListener("pointerdown",e=>{ if(!mEdit||mPl.playing) return; const Q=qAtual(); if(!Q) return; const k=passoAtual(), m=mPt(e), alvo=e.target.closest("[data-p],[data-s],[data-z]");
     if(alvo&&alvo.dataset.p&&(mTool==="mover"||mTool==="seta")){ const pid=alvo.dataset.p, P=Q.passos[k].pos[pid];
@@ -303,14 +362,22 @@ function folhaSubM(pid){ const Q=qAtual(), pc=Q&&Q.pecas.find(p=>p.id===pid); if
     botoesJog(s.querySelector("#gm-campo"),campo,pick); botoesJog(s.querySelector("#gm-resto"),resto,pick);
     s.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{ sc=b.dataset.s; s.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); }); }); }
 function confirma2(btn,txt,acao){ let arm=false, tt=null; const orig=btn.textContent; btn.onclick=()=>{ if(!arm){ arm=true; btn.textContent=txt; btn.style.background="#C00000"; btn.style.color="#fff"; tt=setTimeout(()=>{ arm=false; btn.textContent=orig; btn.style.background=""; btn.style.color=""; },3000); return; } clearTimeout(tt); acao(); }; }
+const NOME_EQ={nos:"Jogador SCA",adv:"Adversário",neutro:"Joker",bola:"Bola",cone:"Cone",minib:"Mini-baliza",baliza:"Baliza"};
 function folhaPecaM(pid){ const Q=qAtual(), pc=Q&&Q.pecas.find(p=>p.id===pid); if(!pc) return;
-  const tit=pc.eq==="bola"?"Bola":pc.eq==="adv"?"Adversário":"Jogador SCA";
-  folha(`<h3>${tit}</h3>${pc.eq==="bola"?`<p class="sub" style="margin:0">Arrasta a bola no quadro para a mudar de sítio em cada passo.</p>`:`
-    <div class="fields"><label class="f">Posição (texto da bolinha)<input type="text" id="mp-p" maxlength="4" value="${esc(pc.pos||"")}"></label>
+  const jog=["nos","adv","neutro"].includes(pc.eq), bal=!!BALIZAS[pc.eq], corAt=pc.cor||(pc.eq==="cone"?"laranja":"");
+  folha(`<h3>${NOME_EQ[pc.eq]}</h3>${pc.eq==="bola"?`<p class="sub" style="margin:0">Arrasta a bola no quadro para a mudar de sítio em cada passo.</p>`:""}
+    ${bal?`<p class="sub" style="margin:0">Arrasta para mudar de sítio. Roda 90° de cada vez para virar a abertura.</p><div class="actions" style="justify-content:flex-start"><button class="btn" id="mp-rod">↻ Rodar 90°</button></div>`:""}
+    ${jog||pc.eq==="cone"?`<h4>${pc.eq==="cone"?"Cor do cone":"Colete"}</h4><div class="seg" id="mp-c">${jog?`<button data-c="">Cor da equipa</button>`:""}${COLETES.map(([k,n,c])=>`<button data-c="${k}"><i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${c};border:1px solid #0005;vertical-align:-1px;margin-right:5px"></i>${n}</button>`).join("")}</div>`:""}
+    ${!jog?"":`
+    <div class="fields"><label class="f">Posição ou letra (texto da bolinha)<input type="text" id="mp-p" maxlength="4" value="${esc(pc.pos||"")}"></label>
     ${pc.eq==="nos"?`<label class="f">Lugar no onze (o número segue o separador Jogo)<select id="mp-s"><option value="">— Sem ligação ao onze —</option>${jogo.onze.map(o=>`<option value="${esc(o.slot)}"${o.slot===pc.slot?" selected":""}>${esc(rot(o.n))}${o.pos?" · "+esc(o.pos):""}</option>`).join("")}</select></label>
       <label class="f" id="mp-nl">Jogador do plantel (opcional)<select id="mp-n"><option value="">— Nenhum —</option>${est.plantel.slice().sort(byNum).map(p=>`<option value="${esc(p.n)}"${p.n===pc.n?" selected":""}>${esc(rot(p.n))}</option>`).join("")}</select></label>`:`<label class="f">Número (opcional)<input type="text" id="mp-n" maxlength="3" value="${esc(pc.n||"")}"></label>`}</div>`}
-    <div class="actions"><button class="btn danger l" id="mp-del">Apagar ${pc.eq==="bola"?"bola":"peça"}</button><button class="btn" data-close>Fechar</button>${pc.eq!=="bola"?`<button class="btn primary" id="mp-ok">Guardar</button>`:""}</div>`,(s,fecha)=>{
+    <div class="actions"><button class="btn danger l" id="mp-del">Apagar ${pc.eq==="bola"?"bola":"peça"}</button><button class="btn" data-close>Fechar</button>${jog?`<button class="btn primary" id="mp-ok">Guardar</button>`:""}</div>`,(s,fecha)=>{
     confirma2(s.querySelector("#mp-del"),"Toca outra vez para apagar",()=>{ fecha(); mSel=null; editaQ(Q=>{ Q.pecas=Q.pecas.filter(p=>p.id!==pid); Q.passos.forEach(P=>delete P.pos[pid]); }); });
+    /* cor e rodar aplicam-se logo, como nas zonas */
+    let cor=corAt; const pintaC=()=>s.querySelectorAll("#mp-c button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.c===cor)));
+    s.querySelectorAll("#mp-c button").forEach(b=>b.onclick=()=>{ cor=b.dataset.c; pintaC(); editaQ(Q=>{ const p=Q.pecas.find(p=>p.id===pid); if(!p) return; if(cor) p.cor=cor; else delete p.cor; }); }); pintaC();
+    const rd=s.querySelector("#mp-rod"); if(rd) rd.onclick=()=>editaQ(Q=>{ const p=Q.pecas.find(p=>p.id===pid); if(p) p.ang=((p.ang==null?180:p.ang)+90)%360; });
     const ss=s.querySelector("#mp-s"), nl=s.querySelector("#mp-nl"); if(ss){ const mostra=()=>nl.hidden=!!ss.value; ss.onchange=mostra; mostra(); }
     const ok=s.querySelector("#mp-ok"); if(ok) ok.onclick=()=>{ const pos=s.querySelector("#mp-p").value.trim().toUpperCase(), n=s.querySelector("#mp-n").value.trim(), sl=ss?ss.value:""; fecha();
       editaQ(Q=>{ const p=Q.pecas.find(p=>p.id===pid); if(!p) return; p.pos=pos;
@@ -333,10 +400,14 @@ function folhaZonaM(zid){ const Q=qAtual(), k=passoAtual(), Z=Q.passos[k].zonas.
     s.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>editaQ(Q=>{ const z=Q.passos[k].zonas.find(z=>z.id===zid); if(!z) return; const [d,sg]=[b.dataset.d[0],b.dataset.d[1]], v=sg==="+"?2:-2;
       if(d==="w"){ const nw=mClamp(z.w+v,2,110); z.x-=(nw-z.w)/2; z.w=nw; } else { const nh=mClamp(z.h+v,2,72); z.y-=(nh-z.h)/2; z.h=nh; } }));
     s.querySelector("#mz-del").onclick=()=>{ fecha(); editaQ(Q=>{ Q.passos[k].zonas=Q.passos[k].zonas.filter(z=>z.id!==zid); }); }; }); }
-function addPeca(eq){ const k=passoAtual(), Q=qAtual(); if(!Q) return; if(eq==="bola"&&Q.pecas.some(p=>p.eq==="bola")){ toast("Este quadro já tem bola."); return; }
-  const id=mId(eq==="adv"?"a":eq==="bola"?"b":"n"), nN=Q.pecas.filter(p=>p.eq===eq).length;
-  editaQ(Q=>{ Q.pecas.push({id,eq,pos:eq==="bola"?"":eq==="adv"?String(nN+1):"J"+(nN+1),n:""}); const x=eq==="adv"?62:eq==="bola"?52.5:44, y=34+((nN%5)-2)*3; Q.passos.forEach(P=>P.pos[id]={x,y}); });
-  mSel=id; renderModelo(); toast(eq==="bola"?"Bola adicionada ao centro":"Peça adicionada · arrasta-a para o sítio; toca nela para mudar a posição"); }
+/* peças do passo k fora da vista escolhida (ao mudar de campo inteiro para meio campo, por exemplo) */
+function forasDaVista(Q,k){ const R=regiaoVista(Q), P=Q.passos[k]; if(!P) return []; return Q.pecas.filter(pc=>{ const p=P.pos[pc.id]; return p&&(p.x<R.x0||p.x>R.x0+R.w||p.y<R.y0||p.y>R.y0+R.h); }).map(pc=>pc.id); }
+/* peça nova a meio da vista; várias bolas são permitidas (exercícios) */
+function addPeca(eq){ const Q=qAtual(); if(!Q) return; const R=regiaoVista(Q), id=mId({adv:"a",bola:"b",cone:"c",minib:"g",baliza:"g",neutro:"j"}[eq]||"n"), nN=Q.pecas.filter(p=>p.eq===eq).length;
+  const x=R.x0+R.w*({nos:.32,adv:.68,neutro:.5,bola:.5,cone:.2,minib:.85,baliza:.9}[eq]??.5), y=R.y0+R.h*(.5+((nN%5)-2)*.08);
+  editaQ(Q=>{ const pc={id,eq,pos:eq==="adv"?String(nN+1):eq==="nos"?"J"+(nN+1):eq==="neutro"?"J":"",n:""}; if(BALIZAS[eq]) pc.ang=180; if(eq==="cone") pc.cor="laranja";
+    Q.pecas.push(pc); Q.passos.forEach(P=>P.pos[id]={x:Math.round(x*10)/10,y:Math.round(y*10)/10}); });
+  mSel=id; renderModelo(); toast(`${NOME_EQ[eq]} adicionad${["bola","baliza","minib"].includes(eq)?"a":"o"} · arrasta para o sítio; toca para ${["nos","adv","neutro"].includes(eq)?"mudar o colete ou a posição":"mais opções"}`); }
 function trocaSistema(eq,sis){ const k=passoAtual(); editaQ(Q=>{
   if(eq==="adv"){ const ant=Q.pecas.filter(p=>p.eq==="adv").map(p=>p.id); Q.pecas=Q.pecas.filter(p=>p.eq!=="adv"); Q.passos.forEach(P=>ant.forEach(id=>delete P.pos[id])); Q.sisAdv=sis||"";
     if(sis){ const nv=pecasSistema(sis,"adv"); const bola=Q.pecas.filter(p=>p.eq==="bola"); Q.pecas=[...Q.pecas.filter(p=>p.eq!=="bola"),...nv.map(p=>p.pc),...bola]; Q.passos.forEach(P=>nv.forEach(p=>P.pos[p.pc.id]={x:p.x,y:p.y})); } }
@@ -353,7 +424,7 @@ function apagaPasso(k0){ const k=k0!=null?k0:passoAtual(), Q=qAtual(); if(!Q||!Q
 function espelhaQ(Q){ const C=clone(Q), M={DD:"DE",DE:"DD",ED:"EE",EE:"ED",MD:"ME",ME:"MD"}; C.id=mId("q"); C.nome=trocaLado(Q.nome)!==Q.nome?trocaLado(Q.nome):Q.nome+" (espelhado)"; C.ordem=Q.ordem+.5;
   /* o jogador acompanha o lado: quem era DD passa a DE e fica com o lugar do DE do onze */
   const slotDe=pos=>{ const os=jogo.onze.filter(o=>o.pos===pos); return os.length===1?os[0].slot:null; };
-  C.pecas.forEach(p=>{ if(!M[p.pos]) return; p.pos=M[p.pos]; if(p.eq==="nos"&&p.slot){ const s=slotDe(p.pos); if(s) p.slot=s; } }); C.passos.forEach(P=>{ P.id=mId("p"); Object.values(P.pos).forEach(p=>p.y=68-p.y); P.setas.forEach(s=>{ s.id=mId("s"); s.y1=68-s.y1; s.y2=68-s.y2; }); P.zonas.forEach(z=>{ z.y=68-z.y-z.h; }); P.nota=trocaPal(P.nota||""); }); return C; }
+  C.pecas.forEach(p=>{ if(p.ang!=null) p.ang=(360-p.ang)%360; if(!M[p.pos]) return; p.pos=M[p.pos]; if(p.eq==="nos"&&p.slot){ const s=slotDe(p.pos); if(s) p.slot=s; } }); C.passos.forEach(P=>{ P.id=mId("p"); Object.values(P.pos).forEach(p=>p.y=68-p.y); P.setas.forEach(s=>{ s.id=mId("s"); s.y1=68-s.y1; s.y2=68-s.y2; }); P.zonas.forEach(z=>{ z.y=68-z.y-z.h; }); P.nota=trocaPal(P.nota||""); }); return C; }
 function moveNaLista(d){ const Q=qAtual(); if(!Q) return; const ls=listaModelos().filter(q=>q.mom===Q.mom&&q.sub===Q.sub), i=ls.findIndex(q=>q.id===Q.id), j=i+d; if(j<0||j>=ls.length) return;
   const A=clone(ls[i]), B=clone(ls[j]); let oa=A.ordem, ob=B.ordem; if(oa===ob){ oa=i; ob=j; } A.ordem=ob; B.ordem=oa; guardaQ(B,true); guardaQ(A); renderModelo(); }
 
@@ -372,11 +443,11 @@ function renderModelo(){ const view=$("view-m"); if(!view||view.hidden) return; 
   if(!mPl.playing){ if(mEdit) mT_=Math.round(mT_); mPl.set(mT_); }
   const M=momDe(Q.mom); $("m-tit").textContent=Q.nome; const tg=$("m-tag"); tg.hidden=false; tg.textContent=mFig?"FIGURA DO EXERCÍCIO":subNome(Q.mom,Q.sub).toUpperCase(); tg.style.background=mFig?"#1B1A17":M[2];
   const volta=mFig?`<button class="btn sm primary" id="mf-volta">↩ Voltar ao exercício</button>`:"";
-  $("m-bar").innerHTML=mEdit?`<button class="btn sm" id="m-und" title="Desfazer (Ctrl+Z)"${mUndo.length?"":" disabled"}>↶ Desfazer</button><button class="btn sm dark" id="m-ed">✓ Concluir</button>${volta}`:`<button class="btn sm" id="m-rot" title="Mostrar nas bolinhas o número do jogador ou a posição">Nº ⇄ Posição</button><button class="btn sm" id="m-ed">✎ Editar</button>${mFig?volta:`<button class="btn sm" id="m-fs" title="Apresentar os quadros do Modelo de Jogo">⛶ Apresentar</button><button class="btn sm" id="m-vid" title="Exportar a animação deste quadro em vídeo MP4">⬇ Vídeo</button>`}`;
+  $("m-bar").innerHTML=mEdit?`<button class="btn sm" id="m-und" title="Desfazer (Ctrl+Z)"${mUndo.length?"":" disabled"}>↶ Desfazer</button><button class="btn sm dark" id="m-ed">✓ Concluir</button>${volta}`:`<button class="btn sm" id="m-rot" title="Bolinhas com número, posição ou sem texto">Bolinhas: ${ROT_M[Q.rot]}</button><button class="btn sm" id="m-ed">✎ Editar</button>${mFig?volta:`<button class="btn sm" id="m-fs" title="Apresentar os quadros do Modelo de Jogo">⛶ Apresentar</button><button class="btn sm" id="m-vid" title="Exportar a animação deste quadro em vídeo MP4">⬇ Vídeo</button>`}`;
   if($("mf-volta")) $("mf-volta").onclick=voltaAoExercicio;
   $("m-ed").onclick=()=>{ mEdit=!mEdit; mSel=null; mTool="mover"; if(mEdit) mPara(); renderModelo(); };
   if($("m-und")) $("m-und").onclick=desfazModelo;
-  if($("m-rot")) $("m-rot").onclick=()=>{ const N=trocaRot(Q.id); renderModelo(); toast(N.rot==="num"?"Bolinhas com o número do jogador":"Bolinhas com a posição"); };
+  if($("m-rot")) $("m-rot").onclick=()=>{ const N=trocaRot(Q.id); renderModelo(); toast("Bolinhas: "+ROT_M[N.rot]); };
   if($("m-fs")) $("m-fs").onclick=()=>{ mPara(); apresentaModelo(Q.id); };
   if($("m-vid")) $("m-vid").onclick=e=>{ mPara(); videoQuadro(Q.id,e.currentTarget); };
   const eb=$("m-ebar"); eb.hidden=!mEdit;
@@ -428,15 +499,21 @@ function renderModeloPainel(Q){ const pn=$("m-panel"), k=passoAtual(), M=momDe(Q
   const P=Q.passos[k], idxL=listaModelos().filter(q=>q.mom===Q.mom&&q.sub===Q.sub), iL=idxL.findIndex(q=>q.id===Q.id);
   pn.innerHTML=`<header><h2>Passo ${k+1} de ${Q.passos.length}</h2><p class="sub">Arrasta os jogadores para a posição deste passo. A animação liga cada passo ao seguinte.</p></header>
     <div class="add" style="border-top:0">
-      <label class="f">Texto do passo (aparece ao lado do campo)<textarea id="me-nota" rows="3" style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;background:var(--surface);color:var(--ink);resize:vertical">${esc(P.nota||"")}</textarea></label>
+      ${Q.fig?"":`<label class="f">Texto do passo (aparece ao lado do campo)<textarea id="me-nota" rows="3" style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;background:var(--surface);color:var(--ink);resize:vertical">${esc(P.nota||"")}</textarea></label>`}
       <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm primary" id="me-np">+ Passo seguinte</button><button class="btn sm" id="me-pe" ${k?"":"disabled"} aria-label="Mover passo para trás">◀</button><button class="btn sm" id="me-pd" ${k<Q.passos.length-1?"":"disabled"} aria-label="Mover passo para a frente">▶</button><button class="btn sm danger" id="me-ap">Apagar passo</button></div>
+      <h3>Campo</h3>
+      <div class="seg" id="me-vis">${VISTAS.map(([k_,n_])=>`<button data-k="${k_}">${n_}</button>`).join("")}</div>
+      ${forasDaVista(Q,k).length?`<button class="btn sm" id="me-dentro">⤢ Trazer para dentro as peças que ficaram fora (${forasDaVista(Q,k).length})</button>`:""}
+      ${Q.vista==="livre"?`<div class="fields"><label class="f">Largura (m)<input type="number" inputmode="numeric" id="me-vw" min="4" max="100" value="${Q.vw}"></label><label class="f">Comprimento (m)<input type="number" inputmode="numeric" id="me-vh" min="4" max="68" value="${Q.vh}"></label></div>`:""}
       <h3>Peças</h3>
-      <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" id="me-an">+ Jogador SCA</button><button class="btn sm" id="me-aa">+ Adversário</button><button class="btn sm" id="me-ab"${Q.pecas.some(p=>p.eq==="bola")?" disabled":""}>+ Bola</button></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-eq="nos">+ Jogador SCA</button><button class="btn sm" data-eq="adv">+ Adversário</button><button class="btn sm" data-eq="neutro">+ Joker</button><button class="btn sm" data-eq="bola">+ Bola</button>
+        <button class="btn sm" data-eq="cone">+ Cone</button><button class="btn sm" data-eq="minib">+ Mini-baliza</button><button class="btn sm" data-eq="baliza">+ Baliza</button></div>
+      <p class="sub" style="margin:0">Toca numa peça para mudar o colete, a cor do cone ou rodar a baliza.</p>
       <div class="fields"><label class="f">Sistema SCA (passo atual)<select id="me-sis">${Q.sis?"":`<option value="" selected>—</option>`}${SIS_NOS.map(([k,n])=>`<option value="${k}"${k===Q.sis?" selected":""}>${n}</option>`).join("")}</select></label>
       <label class="f">Equipa adversária<select id="me-adv"><option value="">Sem adversário</option>${Object.keys(SISTEMAS).map(s=>`<option${adv&&s===Q.sisAdv?" selected":""}>${s}</option>`).join("")}</select></label></div>
       <button class="btn sm" id="me-onze">↺ Pôr o onze do jogo neste passo</button>
       <h3>Mostrar</h3>
-      <div class="seg" id="me-rot"><button data-k="num">Número na bolinha</button><button data-k="pos">Posição na bolinha</button></div>
+      <div class="seg" id="me-rot"><button data-k="num">Número na bolinha</button><button data-k="pos">Posição na bolinha</button><button data-k="nada">Só bolinhas (sem texto)</button></div>
       <div class="picks"><label><input type="checkbox" id="me-nm"${Q.nomes?" checked":""}> Nomes por baixo</label><label><input type="checkbox" id="me-au"${Q.auto?" checked":""}> Setas automáticas do movimento</label></div>
       <div class="fields"><label class="f">Movimento entre passos<select id="me-vel">${[.6,.8,1,1.2,1.5,2,2.5,3].map(v=>`<option value="${v}"${v===Q.vel?" selected":""}>${String(v).replace(".",",")} s</option>`).join("")}</select></label>
       <label class="f">Pausa em cada passo<select id="me-pau">${[.5,.8,1,1.2,1.5,2,3,4].map(v=>`<option value="${v}"${v===Q.pausa?" selected":""}>${String(v).replace(".",",")} s</option>`).join("")}</select></label></div>
@@ -447,10 +524,14 @@ function renderModeloPainel(Q){ const pn=$("m-panel"), k=passoAtual(), M=momDe(Q
       <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" id="me-up" ${iL>0?"":"disabled"}>▲ Subir na lista</button><button class="btn sm" id="me-dn" ${iL<idxL.length-1?"":"disabled"}>▼ Descer</button><button class="btn sm" id="me-dup">⧉ Duplicar</button><button class="btn sm" id="me-esp">⇅ Duplicar espelhado</button></div>
       <button class="btn danger" id="me-del">Apagar este quadro</button>`}
     </div>`;
-  const nota=pn.querySelector("#me-nota"); nota.oninput=()=>{ clearTimeout(mNotaT); const v=nota.value; mNotaT=setTimeout(()=>{ editaQ(Q=>{ Q.passos[k].nota=v; },true); mPl.setQ(qAtual()); mPl.set(k); },500); };
+  pn.querySelectorAll("#me-vis button").forEach(b=>{ b.setAttribute("aria-pressed",String(b.dataset.k===Q.vista)); b.onclick=()=>{ if(b.dataset.k!==Q.vista) editaQ(Q=>{ Q.vista=b.dataset.k; }); }; });
+  [["#me-vw","vw",100],["#me-vh","vh",68]].forEach(([i,c,mx])=>{ const el=pn.querySelector(i); if(el) el.onchange=()=>{ const v=mClamp(Math.round(+el.value||20),4,mx); editaQ(Q=>{ Q[c]=v; }); }; });
+  pn.querySelectorAll("[data-eq]").forEach(b=>b.onclick=()=>addPeca(b.dataset.eq));
+  if(pn.querySelector("#me-dentro")) pn.querySelector("#me-dentro").onclick=()=>{ const R=regiaoVista(Q), ids=forasDaVista(Q,k);
+    editaQ(Q=>ids.forEach(id=>{ const p=Q.passos[k].pos[id]; p.x=Math.round(mClamp(p.x,R.x0+2,R.x0+R.w-2)*10)/10; p.y=Math.round(mClamp(p.y,R.y0+2,R.y0+R.h-2)*10)/10; })); toast(`${ids.length} peças trazidas para dentro · Ctrl+Z para desfazer`); };
+  const nota=pn.querySelector("#me-nota"); if(nota) nota.oninput=()=>{ clearTimeout(mNotaT); const v=nota.value; mNotaT=setTimeout(()=>{ editaQ(Q=>{ Q.passos[k].nota=v; },true); mPl.setQ(qAtual()); mPl.set(k); },500); };
   pn.querySelector("#me-np").onclick=novoPasso; pn.querySelector("#me-pe").onclick=()=>moverPasso(-1); pn.querySelector("#me-pd").onclick=()=>moverPasso(1);
   confirma2(pn.querySelector("#me-ap"),"Toca outra vez",()=>apagaPasso());
-  pn.querySelector("#me-an").onclick=()=>addPeca("nos"); pn.querySelector("#me-aa").onclick=()=>addPeca("adv"); pn.querySelector("#me-ab").onclick=()=>addPeca("bola");
   pn.querySelector("#me-sis").onchange=e=>trocaSistema("nos",e.target.value); pn.querySelector("#me-adv").onchange=e=>trocaSistema("adv",e.target.value);
   pn.querySelector("#me-onze").onclick=()=>{ trocaSistema("nos","onze"); toast(`Onze do jogo no passo ${k+1} · Ctrl+Z para desfazer`); };
   pn.querySelectorAll("#me-rot button").forEach(b=>{ b.setAttribute("aria-pressed",String(b.dataset.k===Q.rot)); b.onclick=()=>editaQ(Q=>{ Q.rot=b.dataset.k; }); });
@@ -487,7 +568,7 @@ let mApr=null;
 function apresentaModelo(id0){ const ls=listaModelos(); if(!ls.length){ toast("Ainda não há quadros do Modelo de Jogo."); return; } mPara(); if(mApr) mApr.fecha();
   let i=Math.max(0,ls.findIndex(q=>q.id===(id0||mCur))), pl=null;
   const root=document.createElement("div"); root.className="present"; root.setAttribute("role","dialog"); root.setAttribute("aria-label","Apresentação do Modelo de Jogo");
-  root.innerHTML=`<div class="pstage"></div><div class="pbar"><button id="ma-a">‹ Anterior</button><button id="ma-ini" aria-label="Voltar ao passo 1">⏮</button><button id="ma-pl" style="min-width:120px">▶ Animar</button><div class="t"></div><button id="ma-rot" title="Mostrar nas bolinhas o número do jogador ou a posição">Nº ⇄ Posição</button><button id="ma-v">⬇ Vídeo</button><button id="ma-b">Seguinte ›</button><button id="ma-x">Fechar</button></div>`;
+  root.innerHTML=`<div class="pstage"></div><div class="pbar"><button id="ma-a">‹ Anterior</button><button id="ma-ini" aria-label="Voltar ao passo 1">⏮</button><button id="ma-pl" style="min-width:120px">▶ Animar</button><div class="t"></div><button id="ma-rot" title="Bolinhas com número, posição ou sem texto">Bolinhas</button><button id="ma-v">⬇ Vídeo</button><button id="ma-b">Seguinte ›</button><button id="ma-x">Fechar</button></div>`;
   document.body.appendChild(root); const st=root.querySelector(".pstage"), tt=root.querySelector(".t"), bp=root.querySelector("#ma-pl");
   const estado=()=>{ const Q=modelos[ls[i].id]||ls[i]; bp.textContent=pl&&pl.playing?"⏸ Pausa":"▶ Animar"; tt.textContent=`${i+1}/${ls.length} · ${Q.nome} · passo ${passoVisivel(Q,pl?pl.t:0)+1}/${Q.passos.length}`; };
   const mostra=()=>{ if(pl) pl.pause(); const Q=modelos[ls[i].id]||ls[i]; st.innerHTML=""; pl=playerModelo(Q,{onT:estado,onEnd:estado}); st.appendChild(pl.svg); estado(); };
@@ -498,7 +579,7 @@ function apresentaModelo(id0){ const ls=listaModelos(); if(!ls.length){ toast("A
   document.addEventListener("keydown",kd);
   root.querySelector("#ma-a").onclick=()=>anda(-1); root.querySelector("#ma-b").onclick=()=>anda(1); root.querySelector("#ma-x").onclick=fecha;
   root.querySelector("#ma-ini").onclick=()=>{ pl.pause(); pl.set(0); estado(); }; bp.onclick=animar;
-  root.querySelector("#ma-rot").onclick=()=>{ const N=trocaRot(ls[i].id); pl.setQ(N); if(!pl.playing) pl.set(pl.t); renderModeloSeguro(); };
+  root.querySelector("#ma-rot").onclick=()=>{ const N=trocaRot(ls[i].id); pl.setQ(N); if(!pl.playing) pl.set(pl.t); renderModeloSeguro(); toast("Bolinhas: "+ROT_M[N.rot]); };
   root.querySelector("#ma-v").onclick=e=>{ pl.pause(); estado(); videoQuadro(ls[i].id,e.currentTarget); };
   /* iPad: deslizar muda de quadro; um toque anima ou pausa */
   let x0=null; st.addEventListener("touchstart",e=>{ x0=e.touches[0].clientX; },{passive:true});

@@ -47,7 +47,9 @@ const rt = await pg.evaluate(() => { const Q = Object.values(modelos)[0], v = nu
 if (rt.rot !== "pos" || rt.dentro !== rt.pos || rt.baixo !== "") erros.push("Nº ⇄ Posição: esperado só a posição na bolinha, sem nada por baixo " + JSON.stringify(rt));
 await pg.screenshot({ path: join(cap, "modelo-posicao.png") });
 await pg.click("#m-rot"); await pg.waitForTimeout(200);
-if ((await pg.evaluate(() => Object.values(modelos)[0].rot)) !== "num") erros.push("Nº ⇄ Posição: o segundo toque devia voltar ao número");
+if ((await pg.evaluate(() => Object.values(modelos)[0].rot)) !== "nada") erros.push("Bolinhas: o segundo toque devia passar a sem texto");
+await pg.click("#m-rot"); await pg.waitForTimeout(200);
+if ((await pg.evaluate(() => Object.values(modelos)[0].rot)) !== "num") erros.push("Bolinhas: o terceiro toque devia voltar ao número");
 // Apresentar (botão vermelho no separador Modelo de Jogo)
 await pg.click("#btn-present"); await pg.waitForSelector(".present #ma-pl");
 await pg.click("#ma-rot"); if ((await pg.evaluate(() => Object.values(modelos)[0].rot)) !== "pos") erros.push("Apresentar: Nº ⇄ Posição não mudou o quadro");
@@ -100,11 +102,28 @@ if (!(await pg.locator("#x-ficha .exf-dur").textContent()).includes("12'")) erro
 await pg.screenshot({ path: join(cap, "exercicio-ficha.png") });
 // figura: abre o editor do Modelo de Jogo; o que se desenha fica no exercício e não na lista do Modelo
 await pg.click("#x-fig2"); await pg.waitForSelector("#mf-volta");
-await pg.click("#me-an"); await pg.click("#me-aa"); await pg.click("#me-ab"); await pg.waitForTimeout(150);
+for (const eq of ["nos", "nos", "adv", "neutro", "bola", "bola", "cone", "minib"]) await pg.click(`#m-panel [data-eq='${eq}']`);
+await pg.waitForTimeout(150);
+const f1 = await pg.evaluate(() => { const Q = qAtual(); return { rot: Q.rot, fig: Q.fig, bolas: Q.pecas.filter((p) => p.eq === "bola").length, txt: [...document.querySelectorAll("#m-stage > svg .mdin text")].length }; });
+if (f1.rot !== "nada" || !f1.fig || f1.bolas !== 2 || f1.txt !== 0) erros.push("Figura: devia começar só com bolinhas, sem texto, e aceitar várias bolas " + JSON.stringify(f1));
 await pg.screenshot({ path: join(cap, "exercicio-editor-figura.png") });
+// espaço livre 20×20 e meio campo rodado (baliza em cima); arrastar no campo rodado leva a peça para onde se larga
+await pg.click("#me-vis [data-k='livre']"); await pg.waitForSelector("#me-vw"); await pg.fill("#me-vw", "20"); await pg.press("#me-vw", "Enter"); await pg.waitForTimeout(150);
+await pg.screenshot({ path: join(cap, "exercicio-espaco-livre.png") });
+await pg.click("#me-vis [data-k='meio']"); await pg.waitForTimeout(150);
+const ecra = (id) => pg.evaluate((id) => { const Q = qAtual(), p = Q.passos[0].pos[id], [sx, sy] = vistaQ(Q).P(p.x, p.y), m = document.querySelector("#m-stage > svg").getScreenCTM(); return { x: m.a * sx + m.e, y: m.d * sy + m.f }; }, id);
+if (!(await pg.locator("#me-dentro").count())) erros.push("Campo rodado: devia oferecer trazer para dentro as peças que ficaram fora");
+await pg.click("#me-dentro"); await pg.waitForTimeout(150);
+if (await pg.evaluate(() => forasDaVista(qAtual(), 0).length)) erros.push("Campo rodado: ainda há peças fora da vista");
+await pg.click("#m-panel [data-eq='nos']"); await pg.waitForTimeout(100);
+const idN = await pg.evaluate(() => qAtual().pecas.filter((p) => p.eq === "nos").pop().id), a0 = await ecra(idN);
+await pg.mouse.move(a0.x, a0.y); await pg.mouse.down(); await pg.mouse.move(a0.x + 60, a0.y - 40, { steps: 6 }); await pg.mouse.up(); await pg.waitForTimeout(150);
+const a1 = await ecra(idN);
+if (Math.abs(a1.x - (a0.x + 60)) > 6 || Math.abs(a1.y - (a0.y - 40)) > 6) erros.push("Campo rodado: a peça não ficou onde foi largada " + JSON.stringify({ a0, a1 }));
+await pg.screenshot({ path: join(cap, "exercicio-meio-campo.png") });
 await pg.click("#mf-volta"); await pg.waitForSelector("#x-stage > svg");
-const fg = await pg.evaluate(() => ({ pecas: Object.values(exercicios)[0].figura?.quadro?.pecas?.length, modelos: listaModelos().length, x: !document.getElementById("view-x").hidden, fig: mFig }));
-if (fg.pecas !== 3 || fg.modelos !== 1 || !fg.x || fg.fig) erros.push("Exercícios: figura mal gravada ou fora do sítio " + JSON.stringify(fg));
+const fg = await pg.evaluate(() => ({ pecas: Object.values(exercicios)[0].figura?.quadro?.pecas?.length, vista: Object.values(exercicios)[0].figura?.quadro?.vista, modelos: listaModelos().length, x: !document.getElementById("view-x").hidden, fig: mFig }));
+if (fg.pecas !== 9 || fg.vista !== "meio" || fg.modelos !== 1 || !fg.x || fg.fig) erros.push("Exercícios: figura mal gravada ou fora do sítio " + JSON.stringify(fg));
 await pg.screenshot({ path: join(cap, "exercicio-figura.png") });
 // duplicar, apagar com o botão direito e desfazer
 await pg.click("#x-dup"); await pg.waitForTimeout(150);

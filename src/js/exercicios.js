@@ -47,8 +47,9 @@ function repoeExercicios(X){ Object.keys(exercicios).forEach(id=>{ if(!X[id]) ap
 /* ---------- figura: desenhada com o editor do Modelo de Jogo (id "fx:<id>") ---------- */
 function temFigura(E){ return !!(E&&E.figura&&E.figura.quadro); }
 function cabFigura(E){ return `${parteDe(E.parte)[1]}${E.formato?" · "+E.formato:""} – `; }
-function figuraQ(id){ const E=exercicios[id]; if(!E) return null; return normQ({...(temFigura(E)?E.figura.quadro:{rot:"num",auto:true,sis:"",pecas:[]}),id:"fx:"+id,nome:E.nome,cab:cabFigura(E)}); }
-function guardaFigura(id,Q){ const E=exercicios[id]; if(!E) return; const q=clone(Q); delete q.id; delete q.nome; delete q.cab; guardaEx({...clone(E),figura:{quadro:q}},true); }
+/* figura nova: só bolinhas (sem números nem posições), sem onze; fig = sem painel do passo */
+function figuraQ(id){ const E=exercicios[id]; if(!E) return null; return normQ({...(temFigura(E)?E.figura.quadro:{rot:"nada",auto:true,sis:"",pecas:[]}),id:"fx:"+id,nome:E.nome,cab:cabFigura(E),fig:true}); }
+function guardaFigura(id,Q){ const E=exercicios[id]; if(!E) return; const q=clone(Q); delete q.id; delete q.nome; delete q.cab; delete q.fig; guardaEx({...clone(E),figura:{quadro:q}},true); }
 function xPara(){ if(xPl&&xPl.playing) xPl.pause(); }
 
 /* ---------- lista, pesquisa e filtros ---------- */
