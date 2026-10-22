@@ -21,7 +21,10 @@ function normEx(d){ const s=v=>String(v??"").trim(), L=v=>(Array.isArray(v)?v.ma
     objetivos:s(d.objetivos), comportamentos:L(d.comportamentos), condicionantes:L(d.condicionantes), descricao:s(d.descricao), variantes:L(d.variantes), material:L(d.material),
     ligacoes:{modelo:L(d.ligacoes&&d.ligacoes.modelo), lances:L(d.ligacoes&&d.ligacoes.lances)},
     criadoPor:s(d.criadoPor), criadoEm:s(d.criadoEm), alteradoPor:s(d.alteradoPor), alteradoEm:s(d.alteradoEm)};
-  if(d.figura&&typeof d.figura==="object"&&d.figura.quadro&&typeof d.figura.quadro==="object") E.figura={quadro:d.figura.quadro};
+  if(d.figura&&typeof d.figura==="object"){ const F={};
+    if(d.figura.quadro&&typeof d.figura.quadro==="object") F.quadro=d.figura.quadro;
+    const im=d.figura.imagem; if(im&&/^[\w-]{8,64}$/.test(String(im.id||""))) F.imagem={id:String(im.id),w:n(im.w)||1600,h:n(im.h)||900};
+    if(F.quadro||F.imagem){ F.usa=F.imagem&&(d.figura.usa==="imagem"||!F.quadro)?"imagem":"quadro"; E.figura=F; } }
   return E; }
 Object.keys(exercicios).forEach(id=>{ try{ exercicios[id]=normEx({...exercicios[id],id}); }catch(e){ delete exercicios[id]; } });
 
@@ -46,10 +49,46 @@ function repoeExercicios(X){ Object.keys(exercicios).forEach(id=>{ if(!X[id]) ap
 
 /* ---------- figura: desenhada com o editor do Modelo de Jogo (id "fx:<id>") ---------- */
 function temFigura(E){ return !!(E&&E.figura&&E.figura.quadro); }
+const usaImagem=E=>!!(E&&E.figura&&E.figura.imagem&&E.figura.usa==="imagem");
 function cabFigura(E){ return `${parteDe(E.parte)[1]}${E.formato?" · "+E.formato:""} – `; }
 /* figura nova: só bolinhas (sem números nem posições), sem onze; fig = sem painel do passo */
 function figuraQ(id){ const E=exercicios[id]; if(!E) return null; return normQ({...(temFigura(E)?E.figura.quadro:{rot:"nada",auto:true,sis:"",pecas:[]}),id:"fx:"+id,nome:E.nome,cab:cabFigura(E),fig:true}); }
-function guardaFigura(id,Q){ const E=exercicios[id]; if(!E) return; const q=clone(Q); delete q.id; delete q.nome; delete q.cab; delete q.fig; guardaEx({...clone(E),figura:{quadro:q}},true); }
+function guardaFigura(id,Q){ const E=exercicios[id]; if(!E) return; const q=clone(Q); delete q.id; delete q.nome; delete q.cab; delete q.fig;
+  guardaEx({...clone(E),figura:{...(E.figura||{}),quadro:q,usa:"quadro"}},true); }
+
+/* ---------- figura por imagem: guardada no armazenamento de ficheiros do link (assets); o exercício guarda só o id ---------- */
+let xAssets; const xImgUrl={};
+async function assetsEx(){ if(xAssets!==undefined) return xAssets; try{ xAssets=window.claude&&window.claude.use?await window.claude.use("assets"):null; }catch(e){ xAssets=null; } return xAssets; }
+const srcImagem=im=>xImgUrl[im.id]||"/_blob/"+im.id;
+/* fotos do iPad ou prints grandes: no máximo 1600 px no lado maior, JPEG */
+async function reduzImagem(file,max=1600){ const url=URL.createObjectURL(file);
+  try{ const img=new Image(); await new Promise((ok,ko)=>{ img.onload=ok; img.onerror=()=>ko(new Error("imagem")); img.src=url; });
+    const f=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight)), w=Math.max(1,Math.round(img.naturalWidth*f)), h=Math.max(1,Math.round(img.naturalHeight*f));
+    const cv=document.createElement("canvas"); cv.width=w; cv.height=h; const cx=cv.getContext("2d"); cx.fillStyle="#fff"; cx.fillRect(0,0,w,h); cx.drawImage(img,0,0,w,h);
+    const blob=await new Promise(ok=>cv.toBlob(ok,"image/jpeg",.85)); if(!blob) throw new Error("imagem"); return {blob,w,h}; }
+  finally{ URL.revokeObjectURL(url); } }
+const ERR_ASSETS={too_large:"A imagem é demasiado grande.",unsupported_type:"Esse tipo de ficheiro não é aceite. Usa uma foto ou imagem (JPG ou PNG).",quota_or_state:"O espaço para imagens do link está cheio.",rate_limited:"Muitas tentativas seguidas. Espera um pouco e tenta de novo.",upstream_auth:"Sessão expirada. Recarrega a página.",not_granted:"Sem permissão para carregar imagens neste link."};
+function folhaImagemEx(id){ const E=exercicios[id]; if(!E) return; const im=E.figura&&E.figura.imagem;
+  folha(`<h3>Imagem da figura</h3><p class="sub" style="margin:0">Uma foto ou print da figura (por exemplo, das UT antigas). Fica guardada no link para toda a equipa. É reduzida para no máximo 1600 px. Precisa de internet para carregar.</p>
+    ${im?`<div class="xi-prev"><img alt="Imagem atual da figura"></div>`:""}
+    ${im&&temFigura(E)?`<h4>Mostrar na ficha</h4><div class="seg" id="xi-u"><button data-k="quadro">Figura desenhada</button><button data-k="imagem">Imagem</button></div>`:""}
+    <input type="file" id="xi-f" accept="image/*" hidden>
+    <p class="sub" id="xi-st" style="margin:0"></p>
+    <div class="actions">${im?`<button class="btn danger l" id="xi-del">Tirar imagem</button>`:""}<button class="btn" data-close>Fechar</button><button class="btn primary" id="xi-esc" disabled>${im?"Trocar imagem":"Escolher imagem ou foto"}</button></div>`,async(s,fecha)=>{
+    const q=x=>s.querySelector(x), st=q("#xi-st"), esc_=q("#xi-esc");
+    if(im){ const i=q(".xi-prev img"); i.src=srcImagem(im); i.onerror=()=>{ i.replaceWith(Object.assign(document.createElement("span"),{className:"sub",textContent:"Não consegui mostrar a imagem (sem rede ou sem acesso)."})); }; }
+    s.querySelectorAll("#xi-u button").forEach(b=>{ b.setAttribute("aria-pressed",String(b.dataset.k===E.figura.usa)); b.onclick=()=>{ const X=exercicios[id]; guardaEx({...clone(X),figura:{...X.figura,usa:b.dataset.k}}); fecha(); }; });
+    if(q("#xi-del")) confirma2(q("#xi-del"),"Toca outra vez para tirar",()=>{ const X=exercicios[id], antes=clone(X), F={...X.figura}; delete F.imagem; F.usa="quadro"; fecha();
+      guardaEx({...clone(X),figura:F.quadro?F:undefined}); toast("Imagem tirada",()=>{ guardaEx(antes); }); });
+    const A=await assetsEx();
+    if(!A){ st.textContent="Neste aparelho não é possível carregar imagens: precisas de acesso de edição ao link no claude.ai."; return; }
+    esc_.disabled=false; esc_.onclick=()=>q("#xi-f").click();
+    q("#xi-f").onchange=async()=>{ const f=q("#xi-f").files[0]; if(!f) return; if(navigator.onLine===false){ st.textContent="Sem internet: liga-te à rede para carregar a imagem."; return; }
+      esc_.disabled=true; st.textContent="A preparar a imagem…";
+      try{ const {blob,w,h}=await reduzImagem(f); st.textContent="A enviar…";
+        let r; try{ r=await A.upload(blob,{type:"image/jpeg"}); }catch(e){ if(e&&e.code==="store_unavailable"){ await new Promise(ok=>setTimeout(ok,1500)); r=await A.upload(blob,{type:"image/jpeg"}); } else throw e; }
+        xImgUrl[r.id]=r.url; const X=exercicios[id]; guardaEx({...clone(X),figura:{...(X.figura||{}),imagem:{id:r.id,w,h},usa:"imagem"}}); fecha(); toast("Imagem guardada na figura"); }
+      catch(e){ esc_.disabled=false; st.textContent=(e&&ERR_ASSETS[e.code])||(e&&e.message==="imagem"?"Não consegui abrir esse ficheiro como imagem.":"Não foi possível guardar a imagem ("+((e&&(e.code||e.message))||"erro")+")."); } }; }); }
 function xPara(){ if(xPl&&xPl.playing) xPl.pause(); }
 
 /* ---------- lista, pesquisa e filtros ---------- */
@@ -90,8 +129,9 @@ function renderExFicha(E){ const bx=$("x-ficha"), bar=$("x-bar"), tg=$("x-tag");
     $("x-novo2").onclick=()=>folhaEx(null); return; }
   const P=parteDe(E.parte), D=E.duracao, tot=totalEx(E), tit=E.nome+(E.formato&&!E.nome.includes(E.formato)?" – "+E.formato:"");
   $("x-tit").textContent=E.nome; tg.hidden=false; tg.textContent=P[1].toUpperCase(); tg.style.background=P[2];
-  bar.innerHTML=`<button class="btn sm" id="x-ed">✎ Editar ficha</button><button class="btn sm" id="x-fig">✎ ${temFigura(E)?"Editar":"Desenhar"} figura</button><button class="btn sm" id="x-dup">⧉ Duplicar</button>`;
-  $("x-ed").onclick=()=>folhaEx(E.id); $("x-fig").onclick=()=>{ xPara(); mEntraFig(E.id); }; $("x-dup").onclick=()=>duplicaEx(E.id);
+  bar.innerHTML=`<button class="btn sm" id="x-ed">✎ Editar ficha</button><button class="btn sm" id="x-fig">✎ ${temFigura(E)?"Editar":"Desenhar"} figura</button><button class="btn sm" id="x-img">🖼 Imagem</button><button class="btn sm" id="x-dup">⧉ Duplicar</button><button class="btn sm" id="x-pdf">⬇ PDF</button>`;
+  $("x-ed").onclick=()=>folhaEx(E.id); $("x-fig").onclick=()=>{ xPara(); mEntraFig(E.id); }; $("x-img").onclick=()=>folhaImagemEx(E.id); $("x-dup").onclick=()=>duplicaEx(E.id);
+  $("x-pdf").onclick=e=>guardaPdfEx(E.id,e.currentTarget);
   bx.innerHTML=`<div class="exf">
     <div class="exf-cab"><span>EXERCÍCIO</span><span>${esc(P[1].toUpperCase())}</span></div>
     <div class="exf-g">
@@ -109,8 +149,11 @@ function renderExFicha(E){ const bx=$("x-ficha"), bar=$("x-bar"), tg=$("x-tag");
     </div></div>`; }
 function renderExFigura(E){ const st=$("x-stage"), pb=$("x-play"); if(xPl){ xPl.pause(); xPl=null; }
   if(!E){ st.innerHTML=""; st.hidden=true; pb.hidden=true; return; } st.hidden=false;
+  if(usaImagem(E)){ pb.hidden=true; st.innerHTML=`<div class="x-img"><img alt="Figura do exercício"></div>`; const i=st.querySelector("img"); i.src=srcImagem(E.figura.imagem);
+    i.onerror=()=>{ st.innerHTML=`<div class="m-vazio"><b>Imagem indisponível</b><span>Não consegui mostrar a imagem da figura (sem rede ou sem acesso ao link).</span></div>`; }; return; }
   if(!temFigura(E)){ st.innerHTML=`<div class="m-vazio"><b>Sem figura</b><span>Desenha a figura com o editor do Modelo de Jogo: jogadores, adversários, bola, setas, zonas e passos animados.</span><button class="btn primary" id="x-fig2">✎ Desenhar figura</button></div>`;
-    $("x-fig2").onclick=()=>mEntraFig(E.id); pb.hidden=true; return; }
+    st.querySelector(".m-vazio").insertAdjacentHTML("beforeend",`<button class="btn" id="x-img2">🖼 Ou carregar uma imagem</button>`);
+    $("x-fig2").onclick=()=>mEntraFig(E.id); $("x-img2").onclick=()=>folhaImagemEx(E.id); pb.hidden=true; return; }
   const Q=figuraQ(E.id), estado=()=>{ const b=$("x-pl"); if(b) b.textContent=xPl&&xPl.playing?"⏸ Pausa":"▶ Animar"; };
   st.innerHTML=""; xPl=playerModelo(Q,{onT:estado,onEnd:estado}); st.appendChild(xPl.svg);
   if(Q.passos.length<2){ pb.hidden=true; return; }
@@ -190,6 +233,66 @@ function folhaEx(id){ const E0=id?exercicios[id]:null, E=E0?clone(E0):normEx({id
       if(!E0){ N.criadoPor=meuId||""; N.criadoEm=new Date().toISOString(); }
       fecha(); const R=guardaEx(N,true); xCur=R.id; renderEx();
       if(E0) toast("Exercício guardado",()=>{ guardaEx(E0,true); renderEx(); }); else toast("Exercício criado · desenha a figura em ✎ Desenhar figura"); }; }); }
+
+/* ---------- PDF da ficha do exercício (desenho da ficha de UT do clube, A4 ao alto) ---------- */
+/* as letras do PDF (helvetica) não têm todos os símbolos */
+const pdfTxt=s=>String(s??"").replace(/→/g,"-").replace(/[–—]/g,"-").replace(/…/g,"...").replace(/[‘’]/g,"'").replace(/[“”]/g,'"');
+async function figuraJpegEx(E){ if(usaImagem(E)){ const d=await paraDataUrl(srcImagem(E.figura.imagem)); return {d,w:E.figura.imagem.w,h:E.figura.imagem.h}; }
+  if(!temFigura(E)) return null; await mCarregaImgs(); try{ await document.fonts.ready; await document.fonts.load('700 40px "RC Modelo"'); }catch(e){}
+  const cv=document.createElement("canvas"); cv.width=1600; cv.height=900; pintaModeloCanvas(cv.getContext("2d"),figuraQ(E.id),0,1600,900); return {d:cv.toDataURL("image/jpeg",.9),w:1600,h:900}; }
+async function pdfExercicio(E){
+  if(!window.jspdf) await carregaScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+  const doc=new window.jspdf.jsPDF({unit:"pt",format:"a4"}), PW=595.28, PH=841.89, M=28, W=PW-2*M, RED=[192,0,0], INK=[27,26,23], MUT=[110,106,98], GR=[236,234,228], LN=[200,196,186];
+  const T=(txt,x,y,o={})=>{ doc.setFont("helvetica",o.b?(o.i?"bolditalic":"bold"):(o.i?"italic":"normal")); doc.setFontSize(o.s||9); doc.setTextColor(...(o.c||INK)); doc.text(pdfTxt(txt),x,y,o.al?{align:o.al}:undefined); };
+  const linhas=(txt,w,s)=>{ doc.setFont("helvetica","normal"); doc.setFontSize(s); return doc.splitTextToSize(pdfTxt(txt),w); };
+  /* cabeçalho do clube */
+  doc.setFillColor(...RED); doc.rect(0,0,PW,58,"F");
+  if(IMG_DATA["slides/logo.png"]) try{ doc.addImage(IMG_DATA["slides/logo.png"],"PNG",M,8,46,42); }catch(e){}
+  T("SPORT CLUB ANGRENSE",M+56,26,{b:1,s:14,c:[255,255,255]}); T("Ficha de exercício · Repositório para as Unidades de Treino",M+56,42,{s:9,c:[255,225,225]});
+  T("COMPROMISSO | RESILIÊNCIA | UNIÃO | ATITUDE | PAIXÃO | ALEGRIA",PW-M,26,{b:1,i:1,s:7,c:[255,225,225],al:"right"});
+  let y=74; const P=parteDe(E.parte), D=E.duracao, metade=W/2, xR=M+metade, pad=6;
+  /* faixas EXERCÍCIO | PARTE */
+  doc.setFillColor(...INK); doc.rect(M,y,metade,18,"F"); doc.setFillColor(...RED); doc.rect(xR,y,metade,18,"F");
+  T("EXERCÍCIO",M+metade/2,y+12.5,{b:1,i:1,s:10,c:[255,255,255],al:"center"}); T(P[1].toUpperCase(),xR+metade/2,y+12.5,{b:1,s:10,c:[255,255,255],al:"center"}); y+=18;
+  const cab=(txt,x,yy,w)=>{ doc.setFillColor(...GR); doc.rect(x,yy,w,14,"F"); doc.setDrawColor(...LN); doc.setLineWidth(.5); doc.line(x,yy+14,x+w,yy+14); T(txt,x+w/2,yy+10,{b:1,s:7.5,c:MUT,al:"center"}); return yy+14; };
+  /* coluna esquerda: espaço + duração, objetivos e condicionantes */
+  let yL=y; const wE=metade*.42, wD=metade-wE;
+  cab("ESPAÇO",M,yL,wE); cab("DURAÇÃO",M+wE,yL,wD); yL+=14;
+  const durL=[["TOTAL",fmtTempo(totalEx(E))],["SÉRIES / REPS.",D.series?String(D.series):"-"],["TEMPO PRÁTICA",fmtTempo(D.pratica)],["PAUSA",fmtTempo(D.pausa)]];
+  durL.forEach(([l,v],i)=>{ const yy=yL+i*15; T(l,M+wE+wD*.62,yy+10.5,{s:7,c:MUT,al:"right"}); T(v.replace("–","-"),M+wE+wD*.8,yy+10.5,{b:1,s:9.5,al:"center"}); if(i) { doc.setDrawColor(...LN); doc.line(M+wE,yy,M+metade,yy); } });
+  doc.setDrawColor(...LN); doc.line(M+wE,yL,M+wE,yL+60);
+  const espL=linhas((E.espaco.txt||"-").toUpperCase(),wE-2*pad,9.5); espL.forEach((l,i)=>T(l,M+wE/2,yL+30-(espL.length-1)*6+i*12+3,{b:1,s:9.5,al:"center"}));
+  yL+=60; yL=cab("OBJETIVOS E CONDICIONANTES",M,yL,metade)+pad;
+  const bloco=(txt,o={})=>{ const ls=linhas(txt,metade-2*pad-(o.ind||0),o.s||8.5); ls.forEach(l=>{ yL+=(o.s||8.5)+2.5; T(l,M+pad+(o.ind||0),yL,o); }); };
+  bloco(E.nome+(E.formato&&!E.nome.includes(E.formato)?" - "+E.formato:""),{b:1,s:10,c:RED});
+  if(E.objetivos){ yL+=2; bloco(E.objetivos); }
+  if(E.comportamentos.length){ yL+=3; bloco("Comportamentos-chave:",{b:1}); E.comportamentos.forEach(c=>bloco("• "+c,{ind:4})); }
+  if(E.condicionantes.length){ yL+=3; bloco("Condicionantes:",{b:1}); E.condicionantes.forEach(c=>bloco("• "+c,{ind:4})); }
+  yL+=pad+2;
+  /* coluna direita: descrição e variantes */
+  let yR=cab("DESCRIÇÃO",xR,y,metade)+pad; const blocoR=(txt,o={})=>{ const ls=linhas(txt,metade-2*pad,o.s||8.5); ls.forEach(l=>{ yR+=(o.s||8.5)+2.5; T(l,xR+pad,yR,o); }); };
+  if(E.descricao) String(E.descricao).split(/\n/).forEach(p=>blocoR(p||" ")); else blocoR("Sem descrição.",{c:MUT});
+  yR+=pad+2; yR=cab("VARIANTES DO EXERCÍCIO",xR,yR,metade)+pad;
+  if(E.variantes.length) E.variantes.forEach((v,i)=>blocoR(`${i+1}) ${v}`)); else blocoR("Sem variantes.",{c:MUT});
+  yR+=pad+2;
+  const yF=Math.max(yL,yR); doc.setDrawColor(...INK); doc.setLineWidth(.9); doc.rect(M,y-18,W,yF-y+18); doc.setDrawColor(...LN); doc.setLineWidth(.5); doc.line(xR,y,xR,yF);
+  y=yF+10;
+  /* classificação e material numa linha */
+  const cls=[rotuloDe(MOM_EX,E.momento)&&("Momento: "+rotuloDe(MOM_EX,E.momento)+(E.sub?" · "+subNome(E.momento,E.sub):"")),rotuloDe(TIPOS_EX,E.tipo)&&("Tipo: "+rotuloDe(TIPOS_EX,E.tipo)),E.material.length&&("Material: "+E.material.join(", "))].filter(Boolean).join("   |   ");
+  if(cls){ linhas(cls,W,8).forEach(l=>{ y+=10; T(l,M,y,{s:8,c:MUT}); }); y+=6; }
+  /* figura */
+  const fig=await figuraJpegEx(E);
+  if(fig){ let w=W, h=W*fig.h/fig.w; const livre=PH-40-y; if(h>livre){ if(livre>=220){ h=livre; w=h*fig.w/fig.h; } else { doc.addPage(); y=M; if(h>PH-40-y){ h=PH-40-y; w=h*fig.w/fig.h; } } }
+    doc.setDrawColor(...LN); doc.rect(M+(W-w)/2,y,w,h); doc.addImage(fig.d,"JPEG",M+(W-w)/2,y,w,h,undefined,"FAST"); }
+  const np=doc.getNumberOfPages(); for(let i=1;i<=np;i++){ doc.setPage(i); T(`SC Angrense · Ficha de exercício · ${E.nome} · ${new Date().toLocaleDateString("pt-PT")}${np>1?` · ${i}/${np}`:""}`,PW/2,PH-18,{s:7.5,c:MUT,al:"center"}); }
+  return doc; }
+async function guardaPdfEx(id,botao){ const E=exercicios[id]; if(!E) return; if(botao) botao.disabled=true; toast("A gerar o PDF do exercício…");
+  try{ const doc=await pdfExercicio(E), buf=doc.output("arraybuffer"), nomeF=`SCA_Exercicio_${E.nome.replace(/[^\wÀ-ÿ-]+/g,"_")}.pdf`;
+    let dl=null; try{ dl=await window.claude.use("downloads"); }catch(e){}
+    if(!dl){ const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([buf],{type:"application/pdf"})); a.download=nomeF; document.body.appendChild(a); a.click(); a.remove(); }
+    else { await dl.save({filename:nomeF,data:new Uint8Array(buf)}); toast("PDF do exercício guardado"); } }
+  catch(e){ if(e?.code!=="declined") toast(e?.message==="script"?"Não consegui carregar o gerador de PDF. Verifica a internet.":"Não foi possível gerar o PDF ("+(e?.code||e?.message||"erro")+")"); }
+  finally{ if(botao) botao.disabled=false; } }
 
 /* ---------- sincronização ---------- */
 function ligaExDb(){ if(!db) return; db.collection("exercicios").onSnapshot(q=>{ if(q.metadata?.hasPendingWrites) return; const m={};

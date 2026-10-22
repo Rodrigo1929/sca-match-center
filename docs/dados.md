@@ -40,7 +40,10 @@ Coordenadas em metros num campo de 105×68; a equipa SCA ataca da esquerda para 
   duracao: { series, pratica, pausa, total },   // segundos; total null = conta (séries × prática + pausas)
   objetivos, comportamentos: [], condicionantes: [], descricao, variantes: [], material: [],
   ligacoes: { modelo: [ids], lances: [ids] },
-  figura?: { quadro: { …mesmo formato de um quadro do Modelo de Jogo, sem id/nome… } },
+  figura?: { quadro?: { …mesmo formato de um quadro do Modelo de Jogo, sem id/nome… },
+             imagem?: { id, w, h },          // id do ficheiro no armazenamento do link (assets); mostrada em "/_blob/"+id
+             usa: "quadro"|"imagem" },        // qual das duas aparece na ficha e no PDF
   criadoPor, criadoEm, alteradoPor, alteradoEm }   // ids de utilizador; o nome vem sempre na hora
 ```
 A figura é desenhada com o editor do Modelo de Jogo (id interno `fx:<id do exercício>`) e gravada dentro do exercício; não entra na lista do Modelo de Jogo.
+As imagens ficam no armazenamento de ficheiros do link (capacidade `assets`), não na base de dados (cada registo aceita no máximo 256 KB). A cópia de segurança guarda só o id da imagem. Tirar a imagem de um exercício não apaga o ficheiro (permite Desfazer e cópias duplicadas continuam a funcionar).

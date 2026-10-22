@@ -77,7 +77,7 @@ Nota: o **total** nem sempre é séries × prática + pausas (Ex. 2: 6 × 1' + 3
 ### Ordem de trabalho da Fase 1 (cada passo é uma versão publicada)
 1. **1a** ✓ (v66) — separador Exercícios: lista, filtros, ficha com todos os campos, duplicar/apagar, cópia de segurança. Figura com o editor do Modelo (campo inteiro).
 2. **1b** ✓ (v67) — vistas parciais do campo e peças de treino (cones, mini-balizas, balizas, coletes, jokers, várias bolas); bolinhas sem texto; figura sem painel do passo.
-3. **1c** — imagem carregada (`assets`) e PDF da ficha do exercício.
+3. **1c** ✓ (v68) — imagem carregada (`assets`) e PDF da ficha do exercício.
 4. **1d** — importar os 7 exercícios da UT39.
 
 ---

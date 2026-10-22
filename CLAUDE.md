@@ -36,7 +36,7 @@ Os 3 scripts partilham o âmbito global: antes de criar um nome novo, confirma q
 A app vive num **único link**: https://claude.ai/artifact/3uVFyLVzJvF5z8upFHkJqN
 Os **dados de toda a equipa** (lances, jogos, histórico, análises, Modelo de Jogo) estão guardados junto desse link.
 - Publicar **sempre para esse mesmo link**, com o ficheiro `dist/index.html`. Nunca criar um artefacto novo para a app.
-- Manter as capacidades atuais (`db`, `downloads`, `room`, `user`): numa republicação não as alterar.
+- Manter as capacidades atuais (`db`, `downloads`, `room`, `user` com `scopes:["profile"]`, e desde a v68 `assets` com `upload:"interact"` para as imagens dos exercícios): numa republicação não as alterar (omitir `capabilities` mantém as guardadas).
 - Antes de publicar: `npm run check` e, se possível, `npm test` e `npm run test:ipad`.
 - Se a sessão não conseguir publicar no link, gerar `dist/index.html` e dizer ao Rodrigo que a publicação tem de ser feita numa conversa do Projeto "SCA Match Center" no claude.ai. Não procurar outra forma de alojar a app.
 - Em dia de jogo, não publicar alterações ao Ao vivo sem o Rodrigo confirmar.
