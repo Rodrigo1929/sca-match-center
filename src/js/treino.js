@@ -215,7 +215,7 @@ async function pdfUT(U){
       continue; }
     const E=B.l.copia, hf=ch*.52; fichaExPdf(doc,E,x,y,cw,{k:.6,hMax:hf,num:B.i+1});
     const fig=await figuraJpegEx(E), fy=y+hf+3, fh=ch-hf-3;
-    if(fig){ let w=cw, h=cw*fig.h/fig.w; if(h>fh){ h=fh; w=h*fig.w/fig.h; } doc.addImage(fig.d,"JPEG",x+(cw-w)/2,fy+(fh-h)/2,w,h,undefined,"FAST"); }
+    if(fig){ let w=cw, h=cw*fig.h/fig.w; if(h>fh){ h=fh; w=h*fig.w/fig.h; } figuraNoPdf(doc,fig,x+(cw-w)/2,fy+(fh-h)/2,w,h); }
     doc.setDrawColor(...INK); doc.setLineWidth(.9); doc.rect(x,fy,cw,fh); }
   const np=doc.getNumberOfPages(), rod=U.staff||staffPadrao();
   for(let i=1;i<=np;i++){ doc.setPage(i); T(`${rod}${np>1?`   ·   ${i}/${np}`:""}`,PW/2,PH-12,6.5,{b:1,c:RED,al:"center"}); }

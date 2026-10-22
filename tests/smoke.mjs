@@ -13,7 +13,8 @@ const ipad = process.argv.includes("--ipad");
 const cap = join(raiz, ipad ? "tests/capturas/ipad" : "tests/capturas"); mkdirSync(cap, { recursive: true });
 const browser = ipad ? await webkit.launch() : await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
 const pg = ipad ? await (await browser.newContext({ ...devices["iPad (gen 7) landscape"] })).newPage() : await browser.newPage({ viewport: { width: 1366, height: 900 } });
-const erros = []; pg.on("pageerror", (e) => erros.push(String(e)));
+// o WebKit regista como erro de página um fetch a file:// já apanhado pela app (imagem em falta); no link é https e não acontece
+const erros = []; pg.on("pageerror", (e) => { const s = String(e); if (!/Fetch API cannot load file:/.test(s)) erros.push(s); });
 await pg.goto(pathToFileURL(join(raiz, "dist/index.html")).href);
 await pg.waitForTimeout(800);
 
@@ -177,6 +178,14 @@ if (JSON.stringify(pg2.pres) !== '["NFL"]' || pg2.g !== 1 || pg2.gj !== 1) erros
 await pg.screenshot({ path: join(cap, "treino-ut.png"), fullPage: true });
 const [dUT] = await Promise.all([pg.waitForEvent("download", { timeout: 60000 }), pg.click("#u-pdf")]); const fUT = join(cap, "treino-ut.pdf"); await dUT.saveAs(fUT);
 if (!dUT.suggestedFilename().startsWith("UT39_SCA_") || statSync(fUT).size < 30000) erros.push(`UT: PDF estranho ${dUT.suggestedFilename()} (${statSync(fUT).size} bytes)`);
+// imagem de figura que não carrega (sem rede ou apagada): os PDF saem na mesma, com uma nota no lugar da figura
+await pg.evaluate(() => { const fig = { imagem: { id: "naoexiste00000000000000000000000", w: 1600, h: 900 }, usa: "imagem" };
+  editaUT((U) => { U.exercicios[0].copia.figura = { ...(U.exercicios[0].copia.figura || {}), ...fig }; }); });
+const [dSem] = await Promise.all([pg.waitForEvent("download", { timeout: 60000 }), pg.click("#u-pdf")]); const fSem = join(cap, "treino-ut-sem-imagem.pdf"); await dSem.saveAs(fSem);
+if (statSync(fSem).size < 20000) erros.push("UT: com uma imagem em falta o PDF devia sair na mesma");
+await pg.click("#tab-x"); await pg.evaluate(() => { const E = exercicios[xCur]; guardaEx({ ...E, figura: { ...(E.figura || {}), imagem: { id: "naoexiste00000000000000000000000", w: 1600, h: 900 }, usa: "imagem" } }); });
+const [dSemEx] = await Promise.all([pg.waitForEvent("download", { timeout: 60000 }), pg.click("#x-pdf")]); await dSemEx.saveAs(join(cap, "exercicio-sem-imagem.pdf"));
+if (statSync(join(cap, "exercicio-sem-imagem.pdf")).size < 10000) erros.push("Exercício: com a imagem em falta o PDF devia sair na mesma");
 
 await browser.close();
 if (erros.length) { console.error("FALHOU:\n" + erros.join("\n")); process.exit(1); }

@@ -242,9 +242,16 @@ function folhaEx(id){ const E0=id?exercicios[id]:null, E=E0?clone(E0):normEx({id
 /* ---------- PDF da ficha do exercício (desenho da ficha de UT do clube, A4 ao alto) ---------- */
 /* as letras do PDF (helvetica) não têm todos os símbolos */
 const pdfTxt=s=>String(s??"").replace(/→/g,"-").replace(/[–—]/g,"-").replace(/…/g,"...").replace(/[‘’]/g,"'").replace(/[“”]/g,'"');
-async function figuraJpegEx(E){ if(usaImagem(E)){ const d=await paraDataUrl(srcImagem(E.figura.imagem)); return {d,w:E.figura.imagem.w,h:E.figura.imagem.h}; }
+/* imagem que não carrega (sem rede, sem acesso, apagada): o PDF sai na mesma, com uma nota no lugar da figura */
+async function figuraJpegEx(E){ if(usaImagem(E)){ const im=E.figura.imagem;
+    try{ const r=await fetch(srcImagem(im)); if(!r.ok) throw new Error("imagem"); const bl=await r.blob(); if(!/^image\/jpe?g$/.test(bl.type)) throw new Error("imagem");
+      const d=await new Promise((ok,ko)=>{ const fr=new FileReader(); fr.onload=()=>ok(fr.result); fr.onerror=ko; fr.readAsDataURL(bl); }); return {d,w:im.w,h:im.h}; }
+    catch(e){ return {falta:true,w:im.w,h:im.h}; } }
   if(!temFigura(E)) return null; await mCarregaImgs(); try{ await document.fonts.ready; await document.fonts.load('700 40px "RC Modelo"'); }catch(e){}
   const cv=document.createElement("canvas"); cv.width=1600; cv.height=900; pintaModeloCanvas(cv.getContext("2d"),figuraQde(E),0,1600,900); return {d:cv.toDataURL("image/jpeg",.9),w:1600,h:900}; }
+/* desenha a figura numa caixa do PDF; sem imagem disponível, escreve a nota */
+function figuraNoPdf(doc,fig,x,y,w,h){ try{ if(!fig.falta){ doc.addImage(fig.d,"JPEG",x,y,w,h,undefined,"FAST"); return; } }catch(e){}
+  doc.setFont("helvetica","italic"); doc.setFontSize(8); doc.setTextColor(110,106,98); doc.text(doc.splitTextToSize("Figura indisponível: a imagem não carregou (sem rede ou sem acesso ao link).",w-16),x+w/2,y+h/2,{align:"center"}); }
 /* ficha no PDF com o desenho da UT do clube; k = escala das letras; hMax = altura fixa (o texto que não cabe acaba em "…", como no Excel) */
 function fichaExPdf(doc,E,x0,y0,W,o={}){ const k=o.k||1, fim=o.hMax?y0+o.hMax:1e9, RED=[192,0,0], INK=[27,26,23], MUT=[110,106,98], GR=[236,234,228], LN=[200,196,186];
   const T=(txt,x,y,s,op={})=>{ doc.setFont("helvetica",op.b?(op.i?"bolditalic":"bold"):(op.i?"italic":"normal")); doc.setFontSize(s*k); doc.setTextColor(...(op.c||INK)); doc.text(pdfTxt(txt),x,y,op.al?{align:op.al}:undefined); };
@@ -294,7 +301,7 @@ async function pdfExercicio(E){
   /* figura */
   const fig=await figuraJpegEx(E);
   if(fig){ let w=W, h=W*fig.h/fig.w; const livre=PH-40-y; if(h>livre){ if(livre>=220){ h=livre; w=h*fig.w/fig.h; } else { doc.addPage(); y=M; if(h>PH-40-y){ h=PH-40-y; w=h*fig.w/fig.h; } } }
-    doc.setDrawColor(...LN); doc.rect(M+(W-w)/2,y,w,h); doc.addImage(fig.d,"JPEG",M+(W-w)/2,y,w,h,undefined,"FAST"); }
+    doc.setDrawColor(...LN); doc.rect(M+(W-w)/2,y,w,h); figuraNoPdf(doc,fig,M+(W-w)/2,y,w,h); }
   const np=doc.getNumberOfPages(); for(let i=1;i<=np;i++){ doc.setPage(i); T(`SC Angrense · Ficha de exercício · ${E.nome} · ${new Date().toLocaleDateString("pt-PT")}${np>1?` · ${i}/${np}`:""}`,PW/2,PH-18,{s:7.5,c:MUT,al:"center"}); }
   return doc; }
 async function guardaPdfEx(id,botao){ const E=exercicios[id]; if(!E) return; if(botao) botao.disabled=true; toast("A gerar o PDF do exercício…");
