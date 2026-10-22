@@ -16,6 +16,7 @@
       <button role="tab" id="tab-j" aria-selected="false">Jogo</button>
       <button role="tab" id="tab-p" aria-selected="false">Plantel</button>
       <button role="tab" id="tab-m" aria-selected="false">Modelo de Jogo</button>
+      <button role="tab" id="tab-x" aria-selected="false">Exercícios</button>
       <button role="tab" id="tab-v" aria-selected="false">Ao vivo</button>
       <button role="tab" id="tab-a" aria-selected="false">Pós-jogo</button>
       <button role="tab" id="tab-h" aria-selected="false">Histórico</button>
@@ -225,6 +226,19 @@
       <aside class="panel" id="m-panel"></aside>
     </div>
   </section>
+  <section id="view-x" hidden>
+    <div class="ex-filtros" id="x-filtros"></div>
+    <div class="grid">
+      <nav class="lances" id="x-nav" aria-label="Exercícios"></nav>
+      <div class="board">
+        <div class="boardbar"><span class="tag" id="x-tag" hidden></span><h2 id="x-tit">Exercícios</h2><div class="sp" id="x-bar"></div></div>
+        <div id="x-ficha"></div>
+        <div class="stage mstage" id="x-stage"></div>
+        <div class="mplay" id="x-play" hidden></div>
+      </div>
+      <aside class="panel" id="x-panel"></aside>
+    </div>
+  </section>
   <section id="view-p" hidden>
     <div class="card plantel">
       <header><h2>Plantel</h2><button class="btn" id="p-add">+ Jogador</button></header>
@@ -238,5 +252,6 @@
 
 <script>{{APP_JS}}</script>
 <script>{{MODELO_JS}}</script>
+<script>{{EXERC_JS}}</script>
 </body></html>
 </body></html>

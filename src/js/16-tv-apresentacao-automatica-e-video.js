@@ -225,7 +225,7 @@ function duplicaLance(esp){ const L=lanceAtual();
   toast(`“${nm}” criado a seguir ao original`,()=>{ const C=clone(lancesDb[id]); C.apagado=true; curId=L.id; est={...est,ordem:est.ordem.filter(x=>x!==id)}; gravaDoc("estado/atual",est); guardaLance(C); }); }
 $("btn-dup")&&($("btn-dup").onclick=folhaDup);
 $("btn-undo").onclick=desfazQuadro;
-document.addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&(e.key==="z"||e.key==="Z")&&$("view-a").hidden&&$("view-v").hidden&&$("view-m").hidden&&!$("sheet-root").innerHTML){ const t=e.target.tagName||""; if(/INPUT|TEXTAREA|SELECT/.test(t)||e.target.isContentEditable) return; e.preventDefault(); desfazQuadro(); } });
+document.addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&(e.key==="z"||e.key==="Z")&&$("view-a").hidden&&$("view-v").hidden&&$("view-m").hidden&&$("view-x").hidden&&!$("sheet-root").innerHTML){ const t=e.target.tagName||""; if(/INPUT|TEXTAREA|SELECT/.test(t)||e.target.isContentEditable) return; e.preventDefault(); desfazQuadro(); } });
 $("btn-pdf")&&($("btn-pdf").onclick=folhaPdf);
 $("btn-tv").onclick=()=>folhaTV();
 /* desfazer alterações nos quadros (bolinhas, setas, textos, onze…) */

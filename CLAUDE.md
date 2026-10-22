@@ -11,10 +11,11 @@ Responsável único: Rodrigo Fonte (treinador adjunto, bolas paradas). Responde 
 
 ## Estrutura
 ```
-src/page.html            esqueleto HTML com marcadores {{CSS}} {{APP_JS}} {{MODELO_JS}}
+src/page.html            esqueleto HTML com marcadores {{CSS}} {{APP_JS}} {{MODELO_JS}} {{EXERC_JS}}
 src/styles.css           todo o CSS
 src/js/NN-*.js           script principal, partido por secções (ordem em src/js/ordem.json)
-src/js/modelo-de-jogo.js separador Modelo de Jogo (2.º <script>)
+src/js/modelo-de-jogo.js separador Modelo de Jogo (2.º <script>); o editor também desenha a figura dos exercícios
+src/js/exercicios.js     separador Exercícios, repositório para as UT (3.º <script>)
 src/data/lances-base.json lances de bolas paradas de origem (DEF_LANCES)
 assets/                  imagens dos campos, logo e letras (embutidos no build como data URI)
 tools/build.mjs          monta dist/index.html (um único ficheiro)
@@ -23,6 +24,7 @@ tests/smoke.mjs          teste no browser (Playwright)
 docs/                    regras de negócio, modelo de dados, histórico
 ```
 Os ficheiros `src/js/*.js` **não são módulos**: são concatenados por ordem num `<script>` clássico e partilham o mesmo âmbito global. Uma função definida num ficheiro é usada noutro. Não uses `import`/`export` dentro de `src/`.
+Os 3 scripts partilham o âmbito global: antes de criar um nome novo, confirma que não existe noutro ficheiro (uma `function` repetida noutro script substitui a primeira sem dar erro).
 
 ## Comandos
 - `npm run build` → `dist/index.html`

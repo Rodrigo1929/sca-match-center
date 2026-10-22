@@ -17,7 +17,7 @@ const erros = []; pg.on("pageerror", (e) => erros.push(String(e)));
 await pg.goto(pathToFileURL(join(raiz, "dist/index.html")).href);
 await pg.waitForTimeout(800);
 
-for (const t of ["q", "j", "p", "m", "v", "a", "h"]) {
+for (const t of ["q", "j", "p", "m", "x", "v", "a", "h"]) {
   await pg.click("#tab-" + t); await pg.waitForTimeout(250);
   await pg.screenshot({ path: join(cap, `separador-${t}.png`) });
 }
@@ -85,6 +85,39 @@ await pg.click("#tv-modo [data-m='b']"); if (!(await pg.locator("#tv-g input.pdf
 if (await pg.locator("#tv-g input.m-l").count()) erros.push("TV: os quadros do Modelo não deviam aparecer na TV das bolas paradas");
 await pg.click("#tv-modo [data-m='m']"); await pg.click("#tv-ok"); await pg.waitForTimeout(1200);
 await pg.screenshot({ path: join(cap, "tv-modelo.png") }); await pg.keyboard.press("Escape");
+
+// Exercícios: criar com a ficha da UT, conta da duração, figura com o editor do Modelo, duplicar, apagar e desfazer, filtros
+await pg.click("#tab-x"); await pg.click("#x-novo2");
+await pg.fill("#xe-n", "MPB Posicional"); await pg.fill("#xe-fo", "8+2×4+GR"); await pg.fill("#xe-es", "Dupla área");
+await pg.click("#xe-p [data-k='fundamental']"); await pg.click("#xe-m [data-k='of']"); await pg.click("#xe-s [data-k='constr']"); await pg.click("#xe-t [data-k='mpb']");
+await pg.fill("#xe-se", "3"); await pg.fill("#xe-pr", "3'"); await pg.fill("#xe-pa", "1,30");
+await pg.fill("#xe-ob", "Manter a posse em superioridade e acelerar para a finalização.");
+await pg.fill("#xe-co", "Criar linhas de passe\nReceção perfilada"); await pg.fill("#xe-va", "Competição interna"); await pg.fill("#xe-ma", "Bolas\nCones");
+await pg.click("#xe-ok"); await pg.waitForTimeout(200);
+const ex = await pg.evaluate(() => { const E = Object.values(exercicios)[0]; return E && { n: Object.keys(exercicios).length, tot: totalEx(E), sub: E.sub, co: E.comportamentos.length, ma: E.material.length, fig: temFigura(E) }; });
+if (!ex || ex.n !== 1 || ex.tot !== 720 || ex.sub !== "constr" || ex.co !== 2 || ex.ma !== 2 || ex.fig) erros.push("Exercícios: ficha criada com dados errados " + JSON.stringify(ex));
+if (!(await pg.locator("#x-ficha .exf-dur").textContent()).includes("12'")) erros.push("Exercícios: a ficha devia mostrar o total 12'");
+await pg.screenshot({ path: join(cap, "exercicio-ficha.png") });
+// figura: abre o editor do Modelo de Jogo; o que se desenha fica no exercício e não na lista do Modelo
+await pg.click("#x-fig2"); await pg.waitForSelector("#mf-volta");
+await pg.click("#me-an"); await pg.click("#me-aa"); await pg.click("#me-ab"); await pg.waitForTimeout(150);
+await pg.screenshot({ path: join(cap, "exercicio-editor-figura.png") });
+await pg.click("#mf-volta"); await pg.waitForSelector("#x-stage > svg");
+const fg = await pg.evaluate(() => ({ pecas: Object.values(exercicios)[0].figura?.quadro?.pecas?.length, modelos: listaModelos().length, x: !document.getElementById("view-x").hidden, fig: mFig }));
+if (fg.pecas !== 3 || fg.modelos !== 1 || !fg.x || fg.fig) erros.push("Exercícios: figura mal gravada ou fora do sítio " + JSON.stringify(fg));
+await pg.screenshot({ path: join(cap, "exercicio-figura.png") });
+// duplicar, apagar com o botão direito e desfazer
+await pg.click("#x-dup"); await pg.waitForTimeout(150);
+const nEx = () => pg.evaluate(() => Object.keys(exercicios).length);
+if ((await nEx()) !== 2) erros.push("Exercícios: Duplicar devia criar uma cópia");
+await pg.click("#x-nav button[aria-current='true']", { button: "right" }); await pg.click(".mmenu button.perigo"); await pg.waitForTimeout(150);
+if ((await nEx()) !== 1) erros.push("Exercícios: o botão direito devia apagar");
+await pg.click(".toast button"); await pg.waitForTimeout(150);
+if ((await nEx()) !== 2) erros.push("Exercícios: Desfazer devia repor o exercício");
+// pesquisa e filtros
+await pg.fill("#x-q", "zzz"); if (await pg.locator("#x-nav button[data-id]").count()) erros.push("Exercícios: a pesquisa devia esconder tudo");
+await pg.fill("#x-q", ""); await pg.selectOption("#x-ft", "rondo"); if (await pg.locator("#x-nav button[data-id]").count()) erros.push("Exercícios: o filtro de tipo devia esconder os MPB");
+await pg.selectOption("#x-ft", ""); if ((await pg.locator("#x-nav button[data-id]").count()) !== 2) erros.push("Exercícios: sem filtros deviam aparecer os 2");
 
 await browser.close();
 if (erros.length) { console.error("FALHOU:\n" + erros.join("\n")); process.exit(1); }

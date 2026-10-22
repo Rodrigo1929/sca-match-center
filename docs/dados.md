@@ -17,6 +17,7 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
 | `historico/{id}` | coleção | Jogos arquivados |
 | `lances/{id}` | coleção | Lances de bolas paradas editados (os de origem estão em `src/data/lances-base.json`) |
 | `modelo/{id}` | coleção | Quadros do Modelo de Jogo |
+| `exercicios/{id}` | coleção | Repositório de exercícios para as UT (ver abaixo) |
 
 ## Quadro do Modelo de Jogo (`modelo/{id}`)
 ```
@@ -27,3 +28,17 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
   passos: [{ id, nota, pos: { [pecaId]: {x,y} }, setas: [{id,t,x1,y1,x2,y2}], zonas: [{id,x,y,w,h,cor}] }] }
 ```
 Coordenadas em metros num campo de 105×68; a equipa SCA ataca da esquerda para a direita.
+
+## Exercício (`exercicios/{id}`)
+```
+{ id, nome, parte: "inicial"|"fundamental"|"final",
+  momento: "of"|"def"|"tda"|"tad"|"bpof"|"bpdef"|"", sub (subfase do Modelo de Jogo, só nos 4 momentos),
+  tipo: "ativacao"|"rondo"|"mpb"|"reduzido"|"estrategico"|"bolaparada"|"finalizacao"|"fisico"|"gr"|"",
+  formato, espaco: { txt },
+  duracao: { series, pratica, pausa, total },   // segundos; total null = conta (séries × prática + pausas)
+  objetivos, comportamentos: [], condicionantes: [], descricao, variantes: [], material: [],
+  ligacoes: { modelo: [ids], lances: [ids] },
+  figura?: { quadro: { …mesmo formato de um quadro do Modelo de Jogo, sem id/nome… } },
+  criadoPor, criadoEm, alteradoPor, alteradoEm }   // ids de utilizador; o nome vem sempre na hora
+```
+A figura é desenhada com o editor do Modelo de Jogo (id interno `fx:<id do exercício>`) e gravada dentro do exercício; não entra na lista do Modelo de Jogo.
