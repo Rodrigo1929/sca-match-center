@@ -340,7 +340,8 @@ function trocaSistema(eq,sis){ const k=passoAtual(); editaQ(Q=>{
     base.forEach(([pos,x,y],i)=>{ const pc=nos[i]; if(!pc) return; pc.pos=pos; if(!pc.slot&&sl[i]&&!nos.some(p=>p.slot===sl[i])) pc.slot=sl[i]; Q.passos[k].pos[pc.id]={x,y}; }); } }); }
 function novoPasso(){ const k=passoAtual(); editaQ(Q=>{ const P=Q.passos[k]; Q.passos.splice(k+1,0,{id:mId("p"),nota:"",pos:clone(P.pos),setas:[],zonas:clone(P.zonas)}); },true); mT_=k+1; mSel=null; renderModelo(); toast(`Passo ${k+2} criado · mexe só o que muda`); }
 function moverPasso(d){ const k=passoAtual(), Q=qAtual(), j=k+d; if(!Q||j<0||j>=Q.passos.length) return; editaQ(Q=>{ [Q.passos[k],Q.passos[j]]=[Q.passos[j],Q.passos[k]]; },true); mT_=j; renderModelo(); }
-function apagaPasso(){ const k=passoAtual(), Q=qAtual(); if(!Q) return; if(Q.passos.length<2){ toast("O quadro precisa de pelo menos um passo."); return; } editaQ(Q=>{ Q.passos.splice(k,1); },true); mT_=Math.max(0,k-1); renderModelo(); toast("Passo apagado · Ctrl+Z para desfazer"); }
+function apagaPasso(k0){ const k=k0!=null?k0:passoAtual(), Q=qAtual(); if(!Q||!Q.passos[k]) return; if(Q.passos.length<2){ toast("O quadro precisa de pelo menos um passo."); return; } mPara();
+  editaQ(Q=>{ Q.passos.splice(k,1); },true); mT_=Math.max(0,k-1); mSel=null; renderModelo(); toast(`Passo ${k+1} apagado`,desfazModelo); }
 function espelhaQ(Q){ const C=clone(Q), M={DD:"DE",DE:"DD",ED:"EE",EE:"ED",MD:"ME",ME:"MD"}; C.id=mId("q"); C.nome=trocaLado(Q.nome)!==Q.nome?trocaLado(Q.nome):Q.nome+" (espelhado)"; C.ordem=Q.ordem+.5;
   /* o jogador acompanha o lado: quem era DD passa a DE e fica com o lugar do DE do onze */
   const slotDe=pos=>{ const os=jogo.onze.filter(o=>o.pos===pos); return os.length===1?os[0].slot:null; };
@@ -369,8 +370,9 @@ function renderModelo(){ const view=$("view-m"); if(!view||view.hidden) return; 
   if($("m-fs")) $("m-fs").onclick=()=>{ mPara(); apresentaModelo(Q.id); };
   if($("m-vid")) $("m-vid").onclick=e=>{ mPara(); videoQuadro(Q.id,e.currentTarget); };
   const eb=$("m-ebar"); eb.hidden=!mEdit;
-  if(mEdit){ eb.innerHTML=`<b>A editar · passo ${passoAtual()+1}</b><div class="seg" id="m-tool"><button data-k="mover">✥ Mover</button><button data-k="seta">↗ Seta</button><button data-k="zona">▭ Zona</button></div>
-      <div class="seg" id="m-sub"></div>`;
+  if(mEdit){ const nP=Q.passos.length; eb.innerHTML=`<b>A editar · passo ${passoAtual()+1}</b><div class="seg" id="m-tool"><button data-k="mover">✥ Mover</button><button data-k="seta">↗ Seta</button><button data-k="zona">▭ Zona</button></div>
+      <div class="seg" id="m-sub"></div>${nP>1?`<button class="btn sm danger" id="m-ap">🗑 Apagar passo ${passoAtual()+1}</button>`:""}`;
+    if($("m-ap")) confirma2($("m-ap"),"Toca outra vez para apagar",()=>apagaPasso());
     eb.querySelectorAll("#m-tool button").forEach(b=>{ b.setAttribute("aria-pressed",String(b.dataset.k===mTool)); b.onclick=()=>{ mTool=b.dataset.k; renderModelo(); }; });
     const sb=eb.querySelector("#m-sub");
     if(mTool==="seta"){ sb.innerHTML=Object.entries(SETA_T).map(([k,v])=>`<button data-k="${k}" aria-pressed="${k===mSetaT}"><i style="display:inline-block;width:18px;height:4px;background:${v[1]};border:1px solid #0003;vertical-align:middle;margin-right:5px"></i>${v[0]}</button>`).join(""); sb.querySelectorAll("button").forEach(b=>b.onclick=()=>{ mSetaT=b.dataset.k; renderModelo(); }); }
@@ -400,11 +402,13 @@ function renderModeloControlos(){ const Q=qAtual(), box=$("m-play"); if(!Q||!box
   marcaPasso(); }
 function renderModeloPainel(Q){ const pn=$("m-panel"), k=passoAtual(), M=momDe(Q.mom), adv=Q.pecas.some(p=>p.eq==="adv"), dur=mDur(Q);
   if(!mEdit){ pn.innerHTML=`<header><h2>Passos</h2><p class="sub">${esc(M[1])} · ${esc(subNome(Q.mom,Q.sub))} · SCA ${Q.sis==="onze"?"(onze do jogo)":esc(Q.sis||"")}${adv?" vs "+esc(Q.sisAdv||"adversário"):""} · ${Math.round(dur)} s</p></header>
-      <ol class="rows">${Q.passos.map((P,i)=>`<li data-i="${i}" class="${i===passoVisivel(Q,mT_)?"here":""}" style="cursor:pointer;grid-template-columns:26px 1fr"><span class="ix">${i+1}</span><div style="font-size:14.5px;white-space:pre-wrap">${P.nota?esc(P.nota):`<span style="color:var(--muted)">Sem texto</span>`}</div></li>`).join("")}</ol>
+      <ol class="rows">${Q.passos.map((P,i)=>`<li data-i="${i}" class="${i===passoVisivel(Q,mT_)?"here":""}" style="cursor:pointer;grid-template-columns:26px 1fr auto"><span class="ix">${i+1}</span><div style="font-size:14.5px;white-space:pre-wrap">${P.nota?esc(P.nota):`<span style="color:var(--muted)">Sem texto</span>`}</div>${Q.passos.length>1?`<button class="btn sm ghost m-xp" data-i="${i}" aria-label="Apagar passo ${i+1}" style="min-width:44px">✕</button>`:"<span></span>"}</li>`).join("")}</ol>
       <p class="sub" style="padding:0 14px 6px">Toca num passo para o ver parado, ou em <b>▶ Animar</b>. <b>Toca num jogador</b> para o trocar, como nas bolas paradas. Para a TV, escolhe <b>Modelo de Jogo</b> em <b>📺 TV</b>.</p>
       <div class="add"><h3>Trocas neste quadro</h3>${Q.trocas.length?`<ul class="evl">${Q.trocas.map(t=>`<li><span style="flex:1">↓ ${esc(rot(t.sai))}  ↑ ${esc(rot(t.entra))}</span><button class="icon x" data-t="${esc(t.id)}" aria-label="Apagar troca">✕</button></li>`).join("")}</ul>
         <button class="btn sm" id="mt-rep">Repor o onze do jogo</button>`:`<p class="sub" style="margin:0">Sem trocas: o quadro mostra o onze do separador Jogo.</p>`}</div>`;
     pn.querySelectorAll("li[data-i]").forEach(li=>li.onclick=()=>{ mPara(); mT_=+li.dataset.i; mPl.set(mT_); renderModelo(); });
+    /* ✕ apaga o passo com 2 toques; o toque não chega à linha (que escolheria o passo) */
+    pn.querySelectorAll(".m-xp").forEach(b=>{ b.addEventListener("click",e=>e.stopPropagation()); confirma2(b,"Apagar?",()=>apagaPasso(+b.dataset.i)); });
     pn.querySelectorAll("button[data-t]").forEach(b=>b.onclick=()=>editaQ(Q=>{ Q.trocas=Q.trocas.filter(t=>t.id!==b.dataset.t); }));
     if(pn.querySelector("#mt-rep")) confirma2(pn.querySelector("#mt-rep"),"Toca outra vez para tirar as trocas",()=>editaQ(Q=>{ Q.trocas=[]; })); return; }
   const P=Q.passos[k], idxL=listaModelos().filter(q=>q.mom===Q.mom&&q.sub===Q.sub), iL=idxL.findIndex(q=>q.id===Q.id);
@@ -431,7 +435,7 @@ function renderModeloPainel(Q){ const pn=$("m-panel"), k=passoAtual(), M=momDe(Q
     </div>`;
   const nota=pn.querySelector("#me-nota"); nota.oninput=()=>{ clearTimeout(mNotaT); const v=nota.value; mNotaT=setTimeout(()=>{ editaQ(Q=>{ Q.passos[k].nota=v; },true); mPl.setQ(qAtual()); mPl.set(k); },500); };
   pn.querySelector("#me-np").onclick=novoPasso; pn.querySelector("#me-pe").onclick=()=>moverPasso(-1); pn.querySelector("#me-pd").onclick=()=>moverPasso(1);
-  confirma2(pn.querySelector("#me-ap"),"Toca outra vez",apagaPasso);
+  confirma2(pn.querySelector("#me-ap"),"Toca outra vez",()=>apagaPasso());
   pn.querySelector("#me-an").onclick=()=>addPeca("nos"); pn.querySelector("#me-aa").onclick=()=>addPeca("adv"); pn.querySelector("#me-ab").onclick=()=>addPeca("bola");
   pn.querySelector("#me-sis").onchange=e=>trocaSistema("nos",e.target.value); pn.querySelector("#me-adv").onchange=e=>trocaSistema("adv",e.target.value);
   pn.querySelector("#me-onze").onclick=()=>{ trocaSistema("nos","onze"); toast(`Onze do jogo no passo ${k+1} · Ctrl+Z para desfazer`); };

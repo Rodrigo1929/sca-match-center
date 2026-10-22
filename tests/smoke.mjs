@@ -58,6 +58,13 @@ if (await pg.locator(".present").count()) erros.push("Apresentar: Escape não fe
 const pix = await pg.evaluate(async () => { await mCarregaImgs(); const c = document.createElement("canvas"); c.width = 1920; c.height = 1080; const cx = c.getContext("2d");
   pintaModeloCanvas(cx, Object.values(modelos)[0], 0.5, 1920, 1080); return Array.from(cx.getImageData(960, 5, 1, 1).data); });
 if (pix[0] < 200 || pix[1] < 200) erros.push("Vídeo: fundo do fotograma não é branco " + JSON.stringify(pix));
+// apagar passo pela lista: 1.º toque arma, 2.º apaga; "Desfazer" no aviso repõe
+await pg.click(".m-xp[data-i='1']"); if ((await pg.evaluate(() => Object.values(modelos)[0].passos.length)) !== 2) erros.push("Apagar passo: o 1.º toque não devia apagar");
+await pg.click(".m-xp[data-i='1']"); await pg.waitForTimeout(150);
+if ((await pg.evaluate(() => Object.values(modelos)[0].passos.length)) !== 1) erros.push("Apagar passo: o 2.º toque devia apagar o passo 2");
+await pg.screenshot({ path: join(cap, "modelo-apagar-passo.png") });
+await pg.click(".toast button"); await pg.waitForTimeout(150);
+if ((await pg.evaluate(() => Object.values(modelos)[0].passos.length)) !== 2) erros.push("Apagar passo: Desfazer devia repor o passo");
 // TV: no separador Modelo abre na TV do Modelo; a das bolas paradas fica à parte
 await pg.click("#btn-tv"); await pg.waitForSelector("#tv-modo");
 if ((await pg.getAttribute("#tv-modo [data-m='m']", "aria-pressed")) !== "true") erros.push("TV: devia abrir no Modelo de Jogo");
