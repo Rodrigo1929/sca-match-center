@@ -17,7 +17,7 @@ function normUT(d){ const s=v=>String(v??"").trim(), L=v=>(Array.isArray(v)?v.ma
   return {id:s(d.id)||uId(), numero:n(d.numero), data:/^\d{4}-\d{2}-\d{2}$/.test(s(d.data))?s(d.data):"", matchDay:s(d.matchDay), regime:s(d.regime),
     objetivos:L(d.objetivos), material:L(d.material), tempoTotal:n(d.tempoTotal)||null, presencas:pres, staff:s(d.staff),
     /* jogadores chamados de fora do plantel (juniores, juvenis…): só nesta UT; nas presenças e grupos são "e:<id>" */
-    extras:(Array.isArray(d.extras)?d.extras:[]).filter(e=>e&&s(e.nome)).map(e=>({id:s(e.id)||uId("e"),nome:s(e.nome),escalao:s(e.escalao),pos:POS_UT.some(x=>x[0]===s(e.pos))?s(e.pos):""})),
+    extras:(Array.isArray(d.extras)?d.extras:[]).filter(e=>e&&s(e.nome)).map(e=>({id:s(e.id)||uId("e"),nome:s(e.nome),escalao:s(e.escalao),pos:POS_UT.some(x=>x[0]===s(e.pos))?s(e.pos):"",...(s(e.alc)?{alc:s(e.alc)}:{})})),
     grupos:(Array.isArray(d.grupos)?d.grupos:[]).filter(g=>g&&(g.nome||(g.jogadores||[]).length)).map(g=>({id:s(g.id)||uId("g"),nome:s(g.nome),jogadores:L(g.jogadores),nota:s(g.nota)})),
     /* cada exercício da UT é uma cópia do exercício no dia: mudar o repositório depois não mexe nas UT antigas */
     exercicios:(Array.isArray(d.exercicios)?d.exercicios:[]).filter(e=>e&&e.copia).map(e=>({id:s(e.id)||uId("l"),exId:s(e.exId),copia:normEx({...e.copia,id:s(e.exId)||s(e.copia.id)})})),
@@ -136,14 +136,15 @@ function folhaExtraUT(id,eid){ const U=uts[id]; if(!U) return; const X=eid?U.ext
   folha(`<h3>Jogador de fora do plantel</h3><p class="sub" style="margin:0">Para juniores, juvenis ou outros chamados a esta UT. Fica só nesta UT (os nomes já usados aparecem como sugestão).</p>
     <label class="f">Nome<input type="text" id="ux-n" list="ux-l" value="${esc(X?X.nome:"")}" placeholder="Ex.: Santiago C."><datalist id="ux-l">${usados.map(e=>`<option value="${esc(e.nome)}">`).join("")}</datalist></label>
     <h4>Escalão</h4><div class="seg" id="ux-e">${[...ESC_FORM,"Outro"].map(x=>`<button data-k="${x}">${x}</button>`).join("")}</div>
+    <label class="f">Alcunhas (separadas por vírgulas; para ler os grupos escritos em texto)<input type="text" id="ux-a" value="${esc(X?X.alc||"":"")}" placeholder="Ex.: Guga"></label>
     <label class="f">Posição no campo do plantel<select id="ux-p"><option value="">—</option>${POS_UT.map(([k,n])=>`<option value="${k}"${X&&X.pos===k?" selected":""}>${k} · ${n}</option>`).join("")}</select></label>
     <div class="actions">${X?`<button class="btn danger l" id="ux-del">Tirar da UT</button>`:""}<button class="btn" data-close>Cancelar</button><button class="btn primary" id="ux-ok">${X?"Guardar":"Adicionar"}</button></div>`,(s,fecha)=>{
     const q=x=>s.querySelector(x), pinta=()=>s.querySelectorAll("#ux-e button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===escl)));
     s.querySelectorAll("#ux-e button").forEach(b=>b.onclick=()=>{ escl=b.dataset.k; pinta(); }); pinta();
-    q("#ux-n").onchange=()=>{ const u=usados.find(e=>e.nome===q("#ux-n").value.trim()); if(u&&!X){ escl=u.escalao||"Outro"; q("#ux-p").value=u.pos||""; pinta(); } };
+    q("#ux-n").onchange=()=>{ const u=usados.find(e=>e.nome===q("#ux-n").value.trim()); if(u&&!X){ escl=u.escalao||"Outro"; q("#ux-p").value=u.pos||""; q("#ux-a").value=u.alc||""; pinta(); } };
     if(q("#ux-del")) confirma2(q("#ux-del"),"Toca outra vez",()=>{ fecha(); editaUT(U=>{ U.extras=U.extras.filter(e=>e.id!==eid); delete U.presencas["e:"+eid]; U.grupos.forEach(g=>{ g.jogadores=g.jogadores.filter(k=>k!=="e:"+eid); }); },`${X.nome} tirado da UT`); });
     q("#ux-ok").onclick=()=>{ const nm=q("#ux-n").value.trim(); if(!nm){ toast("Escreve o nome."); return; } fecha();
-      const e={id:eid||uId("e"),nome:nm,escalao:escl==="Outro"?"":escl,pos:q("#ux-p").value};
+      const alc=q("#ux-a").value.trim(), e={id:eid||uId("e"),nome:nm,escalao:escl==="Outro"?"":escl,pos:q("#ux-p").value,...(alc?{alc}:{})};
       editaUT(U=>{ if(eid) U.extras=U.extras.map(x=>x.id===eid?e:x); else U.extras.push(e); },eid?null:`${nm} adicionado à UT`); }; }); }
 
 /* ---------- campo do plantel como na ficha do clube: meio campo, baliza em cima, nomes por posição ---------- */
@@ -244,10 +245,10 @@ function folhaGrupoUT(id,gid){ const U=uts[id]; if(!U) return; const G=gid?U.gru
       editaUT(U=>{ if(gid) U.grupos=U.grupos.map(x=>x.id===gid?ng:x); else U.grupos.push(ng); }); }; }); }
 /* ---------- grupos escritos em texto (ex.: vindos do PDF da UT) → grupos com jogadores ---------- */
 const semAcento=t=>String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/\s+/g," ").trim();
-/* nome escrito → atleta: as alcunhas do Plantel valem sempre que só sejam de um atleta; nome completo, primeiro e último nome,
+/* nome escrito → atleta: as alcunhas (do Plantel ou do jogador de fora) valem sempre que só sejam de um atleta; nome completo, primeiro e último nome,
    "Simão S." e "S. Soares" só valem quando não servem a mais ninguém (ex.: "Soares" sozinho não chega) */
 function chavesAtletas(U){ const forte=new Map(), fraca=new Map(), add=(m,c,k)=>{ c=semAcento(c); if(c.length<2) return; if(!m.has(c)) m.set(c,new Set()); m.get(c).add(k); };
-  atletasUT(U).forEach(a=>{ const p=a.n?est.plantel.find(x=>x.n===a.k):null, nm=a.nome.trim().split(/\s+/).filter(Boolean);
+  atletasUT(U).forEach(a=>{ const p=a.n?est.plantel.find(x=>x.n===a.k):U.extras.find(e=>"e:"+e.id===a.k), nm=a.nome.trim().split(/\s+/).filter(Boolean);
     String(p&&p.alc||"").split(/[,;]/).forEach(x=>add(forte,x,a.k));
     if(!nm.length) return; add(fraca,a.nome,a.k); add(fraca,nm[0],a.k);
     if(nm.length>1){ const u=nm[nm.length-1]; [u,`${nm[0]} ${u[0]}`,`${nm[0]} ${u[0]}.`,`${nm[0][0]}. ${u}`,`${nm[0][0]}.${u}`].forEach(c=>add(fraca,c,a.k)); } });
@@ -287,7 +288,7 @@ function gruposDoTexto(U,txt){ const M=chavesAtletas(U), grupos=[], desc=new Set
 function folhaLerGrupos(id,gid){ const U=uts[id], G=U&&U.grupos.find(g=>g.id===gid); if(!G) return; const r=gruposDoTexto(U,G.nota); let manter=true;
   folha(`<h3>Ler jogadores do texto</h3><p class="sub" style="margin:0">Procura no texto de “${esc(G.nome||"Grupo")}” os nomes e as alcunhas do Plantel (e os jogadores de fora desta UT).</p>
     ${r.grupos.length?`<ul class="evl">${r.grupos.map(g=>`<li><span><b>${esc(g.nome)}</b> · ${esc(g.jogadores.map(k=>nomeAtleta(U,k)).join(", "))}</span></li>`).join("")}</ul>`:`<p class="sub" style="margin:0">Não encontrei jogadores do Plantel neste texto.</p>`}
-    ${r.desc.length?`<p class="sub" style="margin:0"><b>Não reconheci:</b> ${esc(r.desc.join(", "))}. Se forem jogadores, escreve a alcunha no separador Plantel (coluna Alcunhas) e volta a ler.</p>`:""}
+    ${r.desc.length?`<p class="sub" style="margin:0"><b>Não reconheci:</b> ${esc(r.desc.join(", "))}. Se forem jogadores, escreve a alcunha no separador Plantel (coluna Alcunhas) ou no jogador de fora desta UT, e volta a ler.</p>`:""}
     <h4>Texto original</h4><div class="seg" id="ulg-t"><button data-k="1">Manter como nota</button><button data-k="">Apagar</button></div>
     <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="ulg-ok" ${r.grupos.length?"":"disabled"}>Criar ${r.grupos.length} ${r.grupos.length===1?"grupo":"grupos"}</button></div>`,(s,fecha)=>{
     const pinta=()=>s.querySelectorAll("#ulg-t button").forEach(b=>b.setAttribute("aria-pressed",String(!!b.dataset.k===manter)));
@@ -329,13 +330,25 @@ async function pdfUT(U){
     const r_=PLV.W/PLV.H, wi=Math.min(hw,(HC-20)*r_), hi=wi/r_; doc.addImage(campoJpg,"JPEG",xR+(hw-wi)/2,y+17,wi,hi,undefined,"FAST"); doc.rect(xR,y+17,hw,hi); };
   /* 4 blocos por página; o último bloco livre leva os grupos de trabalho */
   const y0=M+HC+6, cw=hw, ch=(PH-y0-26-G)/2, blocos=[...U.exercicios.map((l,i)=>({l,i})),{grupos:true}];
+  const slot=b=>({x:M+(b%4%2)*(cw+G), y:y0+Math.floor(b%4/2)*(ch+G)});
+  /* grupos de trabalho em 2 colunas; se não couberem no bloco, continuam nos blocos seguintes (e em páginas novas, com o cabeçalho) */
+  const gruposNoPdf=b=>{ const colW=(cw-24)/2, L=[];
+    U.grupos.forEach(g=>{ doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.splitTextToSize(pdfTxt(g.nome||"Grupo"),colW).forEach((t,i)=>L.push({t,s:7,b:1,c:RED,h:8.5,tit:!i}));
+      doc.setFont("helvetica","normal"); doc.setFontSize(6.3);
+      if(g.jogadores.length) doc.splitTextToSize(pdfTxt(g.jogadores.map(k=>nomeAtleta(U,k)).join(", ")),colW).forEach(t=>L.push({t,s:6.3,c:INK,h:7.6}));
+      doc.setFontSize(6); if(g.nota) g.nota.split(/\n/).forEach(p=>doc.splitTextToSize(pdfTxt(p)||" ",colW).forEach(t=>L.push({t,s:6,c:MUT,h:7.2})));
+      L.push({gap:4}); });
+    const area=(b,cont)=>{ const {x,y}=slot(b); caixa(x,y,cw,14,INK,cont?"GRUPOS DE TRABALHO (CONTINUAÇÃO)":"GRUPOS DE TRABALHO",{i:1,s:7.5});
+      doc.setDrawColor(...INK); doc.setLineWidth(.9); doc.rect(x,y,cw,ch); return [0,1].map(i=>({x:x+8+i*(colW+8),y0:y+25,y1:y+ch-5})); };
+    let cols=area(b,false), ci=0, yy=cols[0].y0;
+    if(!U.grupos.length){ T("Sem grupos de trabalho.",cols[0].x,yy,7,{c:MUT}); return; }
+    L.forEach((l,i)=>{ if(l.gap){ if(yy>cols[ci].y0) yy+=l.gap; return; }
+      const prec=l.tit&&L[i+1]&&!L[i+1].gap?L[i+1].h:0;           // o nome do grupo não fica sozinho no fundo da coluna
+      if(yy+l.h+prec>cols[ci].y1){ ci++; if(ci>1){ b++; if(b%4===0){ doc.addPage(); cabecalho(); } cols=area(b,true); ci=0; } yy=cols[ci].y0; }
+      T(l.t,cols[ci].x,yy,l.s,{b:l.b,c:l.c}); yy+=l.h; }); };
   for(let b=0;b<blocos.length;b++){ const pos=b%4; if(pos===0){ if(b) doc.addPage(); cabecalho(); }
-    const x=M+(pos%2)*(cw+G), y=y0+Math.floor(pos/2)*(ch+G), B=blocos[b];
-    if(B.grupos){ caixa(x,y,cw,14,INK,"GRUPOS DE TRABALHO",{i:1,s:7.5}); doc.setDrawColor(...INK); doc.setLineWidth(.9); doc.rect(x,y,cw,ch); let yy=y+26;
-      if(!U.grupos.length){ T("Sem grupos de trabalho.",x+8,yy,7,{c:MUT}); }
-      U.grupos.forEach(g=>{ if(yy>y+ch-10) return; T(g.nome||"Grupo",x+8,yy,7.5,{b:1,c:RED}); yy+=10; doc.setFont("helvetica","normal"); doc.setFontSize(6.5); doc.setTextColor(...INK);
-        const ls=doc.splitTextToSize(pdfTxt(g.jogadores.map(k=>nomeAtleta(U,k)).join(", ")+(g.nota?" — "+g.nota:"")),cw-16); ls.forEach(l=>{ if(yy<=y+ch-6){ doc.text(l,x+8,yy); yy+=8.5; } }); yy+=4; });
-      continue; }
+    const {x,y}=slot(b), B=blocos[b];
+    if(B.grupos){ gruposNoPdf(b); continue; }
     const E=B.l.copia, hf=ch*.52; fichaExPdf(doc,E,x,y,cw,{k:.6,hMax:hf,num:B.i+1});
     const fig=await figuraJpegEx(E), fy=y+hf+3, fh=ch-hf-3;
     if(fig){ let w=cw, h=cw*fig.h/fig.w; if(h>fh){ h=fh; w=h*fig.w/fig.h; } figuraNoPdf(doc,fig,x+(cw-w)/2,fy+(fh-h)/2,w,h); }
