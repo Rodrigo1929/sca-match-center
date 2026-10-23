@@ -216,7 +216,8 @@ select,input[type=text],input[type=date],input[type=time]{border:1px solid var(-
 .filt{display:flex;gap:8px;flex-wrap:wrap}
 .filt select{width:auto;min-width:140px}
 /* Plantel */
-.plantel{max-width:760px;margin:0 auto}
+.plantel{max-width:920px;margin:0 auto}
+.ptab select{min-width:96px}
 .plantel header{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .plantel header h2{margin-right:auto}
 .ptab{width:100%;border-collapse:collapse}
@@ -386,6 +387,7 @@ ol.utx li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;al
 .utx-t b{font-family:var(--f-display);font-size:16px}
 .utx-t small{color:var(--muted);font-size:12.5px}
 .utx-mud{color:var(--warn);font-weight:700}
+.ug-nota{white-space:pre-line}
 .upres{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px}
 /* jovens da formação: escalão à vista */
 .chip em.esc{font-style:normal;font-size:11px;font-weight:700;color:#fff;background:#1F3A5F;border-radius:4px;padding:0 5px}

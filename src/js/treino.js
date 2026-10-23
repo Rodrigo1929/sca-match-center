@@ -85,7 +85,7 @@ function renderUTCorpo(U){ const bx=$("u-corpo"), bar=$("u-bar"), tg=$("u-tag");
     li.querySelectorAll("[data-a]").forEach(b=>{ const a=b.dataset.a;
       if(a==="up"||a==="dn") b.onclick=()=>editaUT(U=>{ const j=i+(a==="up"?-1:1); [U.exercicios[i],U.exercicios[j]]=[U.exercicios[j],U.exercicios[i]]; });
       else if(a==="aj") b.onclick=()=>folhaAjusteUT(U.id,lid);
-      else if(a==="at") confirma2(b,"Toca outra vez",()=>editaUT(U=>{ const l=U.exercicios.find(x=>x.id===lid); l.copia=clone(exercicios[l.exId]); },"Exercício atualizado a partir do repositório"));
+      else if(a==="at") b.onclick=()=>folhaAtualizaUT(U.id,lid);
       else if(a==="x") confirma2(b,"Tirar?",()=>tiraExUT(lid)); }); }); }
 /* para comparar cópia e repositório sem contar quem alterou e quando */
 const semAutoria=E=>{ const c={...E}; ["criadoPor","criadoEm","alteradoPor","alteradoEm"].forEach(k=>delete c[k]); return c; };
@@ -93,6 +93,16 @@ const semAutoria=E=>{ const c={...E}; ["criadoPor","criadoEm","alteradoPor","alt
    (os ajustes do dia, como a duração ou a figura, não contam) */
 function mudouNoRepo(l){ const R=exercicios[l.exId]; if(!R) return false;
   return (R.alteradoEm||"")>(l.copia.alteradoEm||"")&&JSON.stringify(semAutoria(R))!==JSON.stringify(semAutoria(l.copia)); }
+/* ↻ Atualizar: traz a versão do repositório; por defeito mantém os ajustes do dia (os mesmos campos do "Ajustar nesta UT") */
+const AJUSTES_DIA=["parte","espaco","duracao","variantes"];
+function folhaAtualizaUT(id,lid){ const U=uts[id], l=U&&U.exercicios.find(x=>x.id===lid), R=l&&exercicios[l.exId]; if(!R) return; const C=l.copia;
+  folha(`<h3>Atualizar a partir do repositório</h3>
+    <p class="sub" style="margin:0"><b>${esc(R.nome)}</b> foi alterado no repositório${R.alteradoEm?` a ${esc(dataHora(R.alteradoEm))}`:""}.</p>
+    <p style="margin:0">Vem do repositório: nome, textos, classificação, figura e material.<br>Fica desta UT: ${esc(parteDe(C.parte)[1].toLowerCase())}, espaço ${esc(C.espaco.txt||"–")}, duração ${totalEx(C)?fmtTempo(totalEx(C)):"–"} e variantes.</p>
+    <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn" id="uat-tudo">Substituir tudo</button><button class="btn primary" id="uat-ok">Atualizar e manter os ajustes</button></div>`,(s,fecha)=>{
+    const vai=tudo=>{ fecha(); editaUT(U=>{ const x=U.exercicios.find(y=>y.id===lid), N=clone(exercicios[x.exId]); if(!tudo) AJUSTES_DIA.forEach(k=>{ N[k]=clone(x.copia[k]); }); x.copia=N; },
+      tudo?"Exercício substituído pela versão do repositório":"Exercício atualizado · ajustes desta UT mantidos"); };
+    s.querySelector("#uat-ok").onclick=()=>vai(false); confirma2(s.querySelector("#uat-tudo"),"Toca outra vez",()=>vai(true)); }); }
 function tiraExUT(lid){ const U=uts[uCur], l=U&&U.exercicios.find(x=>x.id===lid); if(!l) return; editaUT(U=>{ U.exercicios=U.exercicios.filter(x=>x.id!==lid); },`“${l.copia.nome}” tirado da UT`); }
 function renderUTPainel(U){ const pn=$("u-panel");
   if(!U){ pn.innerHTML=`<header><h2>Unidades de Treino</h2><p class="sub">Feitas com os exercícios do repositório.</p></header>`; return; }
@@ -103,14 +113,14 @@ function renderUTPainel(U){ const pn=$("u-panel");
       <p class="sub" style="margin:0"><b>Toque</b>: Presente (<b style="color:${corPres("P")}">P</b>). <b>Botão direito</b> (no iPad, manter o dedo): ${PRESENCAS.filter(p=>p[0]!=="P").map(p=>`<b style="color:${p[2]}">${p[1]}</b>`).join(", ")}.</p>
       <div class="upres">${atl.map(a=>{ const k=U.presencas[a.k]||""; return `<button data-k="${esc(a.k)}" style="${k?`border-color:${corPres(k)};color:${corPres(k)}`:""}"><b>${esc(a.n||a.esc)}</b><span>${esc(a.nome)}</span>${a.n&&a.esc?`<small class="esc">${esc(a.esc)}</small>`:""}${k?`<i style="background:${corPres(k)}">${k}</i>`:""}</button>`; }).join("")||`<p class="sub">Sem jogadores no Plantel.</p>`}</div>
       <button class="btn sm" id="u-xn">+ Jogador de fora do plantel</button></div>
-    <div class="add"><h3>Grupos de trabalho</h3>${U.grupos.length?`<ul class="evl">${U.grupos.map(g=>`<li><span style="flex:1"><b>${esc(g.nome||"Grupo")}</b> · ${esc(g.jogadores.map(k=>nomeAtleta(U,k)).join(", ")||"sem jogadores")}${g.nota?`<br><small class="sub">${esc(g.nota)}</small>`:""}</span><button class="btn sm ghost" data-g="${esc(g.id)}">✎</button></li>`).join("")}</ul>`:`<p class="sub" style="margin:0">Sem grupos (ex.: GR, condicionados, reforço).</p>`}
+    <div class="add"><h3>Grupos de trabalho</h3>${U.grupos.length?`<ul class="evl">${U.grupos.map(g=>`<li><span style="flex:1"><b>${esc(g.nome||"Grupo")}</b> · ${esc(g.jogadores.map(k=>nomeAtleta(U,k)).join(", ")||"sem jogadores")}${g.nota?`<br><small class="sub ug-nota">${esc(g.nota)}</small>`:""}</span>${g.nota?`<button class="btn sm ghost" data-lg="${esc(g.id)}" title="Procurar no texto os jogadores do Plantel">👥 Ler</button>`:""}<button class="btn sm ghost" data-g="${esc(g.id)}">✎</button></li>`).join("")}</ul>`:`<p class="sub" style="margin:0">Sem grupos (ex.: GR, condicionados, reforço).</p>`}
       <button class="btn sm" id="u-gn">+ Grupo</button></div>
     <div class="add"><h3>Campo do plantel</h3><div class="ucampo"></div><p class="sub" style="margin:0">Cada atleta na sua posição (definida no separador Plantel), com a cor da presença; lesionados à parte. Entra no PDF.</p></div>`;
   pn.querySelectorAll(".upres button").forEach(b=>{ const k=b.dataset.k;
     b.onclick=()=>{ if(b.dataset.longo){ delete b.dataset.longo; return; } marcaPres(k,(uts[uCur].presencas[k]==="P")?"":"P"); };
     b.oncontextmenu=e=>menuPres(e,k); premirLongo(b,e=>menuPres(e,k)); });
   $("u-xn").onclick=()=>folhaExtraUT(U.id,null);
-  pn.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>folhaGrupoUT(U.id,b.dataset.g)); $("u-gn").onclick=()=>folhaGrupoUT(U.id,null);
+  pn.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>folhaGrupoUT(U.id,b.dataset.g)); pn.querySelectorAll("[data-lg]").forEach(b=>b.onclick=()=>folhaLerGrupos(U.id,b.dataset.lg)); $("u-gn").onclick=()=>folhaGrupoUT(U.id,null);
   pn.querySelector(".ucampo").appendChild(plantelSvg(U)); }
 
 /* ---------- presenças: toque = Presente; botão direito / dedo pressionado = escolher ---------- */
@@ -222,7 +232,7 @@ function folhaGrupoUT(id,gid){ const U=uts[id]; if(!U) return; const G=gid?U.gru
   folha(`<h3>${G?"Grupo de trabalho":"Novo grupo de trabalho"}</h3>
     <label class="f">Nome<input type="text" id="ug-n" value="${esc(G?G.nome:"")}" placeholder="Ex.: Guarda-redes, Condicionados, Reforço"></label>
     <h4>Jogadores</h4><div class="pgrid" id="ug-j"></div>
-    <label class="f">Nota (opcional)<input type="text" id="ug-o" value="${esc(G?G.nota:"")}" placeholder="Ex.: trabalho específico com o treinador de GR"></label>
+    <label class="f">Nota (opcional)<textarea id="ug-o" rows="3" placeholder="Ex.: trabalho específico com o treinador de GR">${esc(G?G.nota:"")}</textarea></label>
     <div class="actions">${G?`<button class="btn danger l" id="ug-del">Apagar grupo</button>`:""}<button class="btn" data-close>Cancelar</button><button class="btn primary" id="ug-ok">Guardar</button></div>`,(s,fecha)=>{
     const q=x=>s.querySelector(x), g=q("#ug-j");
     const atl=atletasUT(U); g.innerHTML=atl.map(a=>`<button data-k="${esc(a.k)}"><b>${esc(a.n||a.esc)}</b><span>${esc(a.nome||" ")}</span>${U.presencas[a.k]?`<small>${U.presencas[a.k]}</small>`:""}</button>`).join("");
@@ -232,6 +242,59 @@ function folhaGrupoUT(id,gid){ const U=uts[id]; if(!U) return; const G=gid?U.gru
     q("#ug-ok").onclick=()=>{ const nm=q("#ug-n").value.trim(); if(!nm&&!sel.size){ toast("Dá um nome ou escolhe jogadores."); return; } fecha();
       const ng={id:gid||uId("g"),nome:nm,jogadores:atl.map(a=>a.k).filter(k=>sel.has(k)),nota:q("#ug-o").value.trim()};
       editaUT(U=>{ if(gid) U.grupos=U.grupos.map(x=>x.id===gid?ng:x); else U.grupos.push(ng); }); }; }); }
+/* ---------- grupos escritos em texto (ex.: vindos do PDF da UT) → grupos com jogadores ---------- */
+const semAcento=t=>String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/\s+/g," ").trim();
+/* nome escrito → atleta: as alcunhas do Plantel valem sempre que só sejam de um atleta; nome completo, primeiro e último nome,
+   "Simão S." e "S. Soares" só valem quando não servem a mais ninguém (ex.: "Soares" sozinho não chega) */
+function chavesAtletas(U){ const forte=new Map(), fraca=new Map(), add=(m,c,k)=>{ c=semAcento(c); if(c.length<2) return; if(!m.has(c)) m.set(c,new Set()); m.get(c).add(k); };
+  atletasUT(U).forEach(a=>{ const p=a.n?est.plantel.find(x=>x.n===a.k):null, nm=a.nome.trim().split(/\s+/).filter(Boolean);
+    String(p&&p.alc||"").split(/[,;]/).forEach(x=>add(forte,x,a.k));
+    if(!nm.length) return; add(fraca,a.nome,a.k); add(fraca,nm[0],a.k);
+    if(nm.length>1){ const u=nm[nm.length-1]; [u,`${nm[0]} ${u[0]}`,`${nm[0]} ${u[0]}.`,`${nm[0][0]}. ${u}`,`${nm[0][0]}.${u}`].forEach(c=>add(fraca,c,a.k)); } });
+  const M=new Map(); fraca.forEach((ks,c)=>{ if(ks.size===1) M.set(c,[...ks][0]); }); forte.forEach((ks,c)=>{ if(ks.size===1) M.set(c,[...ks][0]); });
+  return M; }
+const PAL_GRUPO=new Set("vermelhos vermelho amarelos amarelo azuis azul brancos branco verdes verde laranjas pretos equipa equipas grupo grupos campo periodo trocas troca trocar apoios apoio coletes colete sem exercicio saidas jornada parte junior juniores".split(" "));
+/* texto → [{nome, jogadores}] + palavras que parecem nomes mas não são de ninguém. "Rótulo: nomes" abre um grupo; linhas só com nomes juntam-se ao grupo aberto;
+   linhas sem nomes (ex.: "1º Período", "Campo 1") ficam como cabeçalho dos grupos seguintes */
+function gruposDoTexto(U,txt){ const M=chavesAtletas(U), grupos=[], desc=new Set(); let cab="", cur=null;
+  const seq=t=>{ const w=String(t).replace(/[,|/+*()<>!=–—-]/g," ").split(/\s+/).filter(Boolean), n=w.map(semAcento), r=[];
+    for(let i=0;i<w.length;){ let ok=0;
+      for(let m=Math.min(3,w.length-i);m>=1&&!ok;m--){ const c=n.slice(i,i+m).join(" "), k=M.get(c)??(m===1?M.get(c.replace(/\.+$/,"")):undefined); if(k!==undefined){ r.push({k}); i+=m; ok=1; } }
+      if(!ok){ r.push({w:w[i]}); i++; } }
+    return r; };
+  const fora=r=>r.forEach(x=>{ const w=(x.w||"").replace(/\.+$/,""); if(/^[A-ZÀ-Ý][a-zà-ÿ]{2,}$/.test(w)&&!PAL_GRUPO.has(semAcento(w))) desc.add(w); });
+  const novo=nome=>{ if(cur&&!cur.jogadores.length){ grupos.pop(); cab=cur.rot; } nome=nome.replace(/\s+/g," ").trim()||`Grupo ${grupos.length+1}`;
+    cur={rot:nome,nome:cab&&cab!==nome?`${cab} · ${nome}`:nome,jogadores:[]}; grupos.push(cur); };
+  const poe=r=>{ const ks=r.filter(x=>x.k).map(x=>x.k); if(ks.length&&!cur) novo(""); ks.forEach(k=>{ if(!cur.jogadores.includes(k)) cur.jogadores.push(k); }); fora(r); };
+  /* "nomes | Rótulo" ou "nomes Rótulo": os nomes ficam no grupo aberto, o resto é o rótulo do grupo seguinte */
+  const corta=t=>{ const b=t.lastIndexOf("|"); if(b>=0) return [seq(t.slice(0,b)),t.slice(b+1)];
+    const r=seq(t); let e=r.length; while(e>0&&!r[e-1].k) e--; return [r.slice(0,e),r.slice(e).map(x=>x.w).join(" ")]; };
+  String(txt||"").split(/\n/).map(l=>l.trim()).filter(Boolean).forEach(L=>{
+    if(/<-|->/.test(L)) return;                                  // trocas ("Maria <-> Jordanes") não são grupos
+    const ps=L.split(":");
+    if(ps.length===1){ const r=seq(L);
+      if(r.some(x=>x.k)) poe(r);
+      /* linha sem nomes conhecidos: dentro de uma lista é um nome que não reconheço; senão é cabeçalho ("1º Período", "Campo 1") */
+      else if(cur&&!/\d|[()[\]]/.test(L)&&L.split(/\s+/).length<=2&&!L.split(/\s+/).some(w=>PAL_GRUPO.has(semAcento(w)))) fora(r);
+      else { if(cur&&!cur.jogadores.length) grupos.pop(); cab=L.replace(/[|]+/g," ").replace(/\s+/g," ").trim(); cur=null; }
+      return; }
+    let [r0,rot]=corta(ps[0]); if(r0.some(x=>x.k)) poe(r0); else rot=ps[0].replace(/\|/g," ");
+    for(let j=1;j<ps.length;j++){ let r, prox="";
+      if(j<ps.length-1) [r,prox]=corta(ps[j]); else r=seq(ps[j]);
+      novo(rot); poe(r); rot=prox; } });
+  if(cur&&!cur.jogadores.length) grupos.pop();
+  return {grupos:grupos.map(g=>({nome:g.nome,jogadores:g.jogadores})),desc:[...desc]}; }
+function folhaLerGrupos(id,gid){ const U=uts[id], G=U&&U.grupos.find(g=>g.id===gid); if(!G) return; const r=gruposDoTexto(U,G.nota); let manter=true;
+  folha(`<h3>Ler jogadores do texto</h3><p class="sub" style="margin:0">Procura no texto de “${esc(G.nome||"Grupo")}” os nomes e as alcunhas do Plantel (e os jogadores de fora desta UT).</p>
+    ${r.grupos.length?`<ul class="evl">${r.grupos.map(g=>`<li><span><b>${esc(g.nome)}</b> · ${esc(g.jogadores.map(k=>nomeAtleta(U,k)).join(", "))}</span></li>`).join("")}</ul>`:`<p class="sub" style="margin:0">Não encontrei jogadores do Plantel neste texto.</p>`}
+    ${r.desc.length?`<p class="sub" style="margin:0"><b>Não reconheci:</b> ${esc(r.desc.join(", "))}. Se forem jogadores, escreve a alcunha no separador Plantel (coluna Alcunhas) e volta a ler.</p>`:""}
+    <h4>Texto original</h4><div class="seg" id="ulg-t"><button data-k="1">Manter como nota</button><button data-k="">Apagar</button></div>
+    <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="ulg-ok" ${r.grupos.length?"":"disabled"}>Criar ${r.grupos.length} ${r.grupos.length===1?"grupo":"grupos"}</button></div>`,(s,fecha)=>{
+    const pinta=()=>s.querySelectorAll("#ulg-t button").forEach(b=>b.setAttribute("aria-pressed",String(!!b.dataset.k===manter)));
+    s.querySelectorAll("#ulg-t button").forEach(b=>b.onclick=()=>{ manter=!!b.dataset.k; pinta(); }); pinta();
+    s.querySelector("#ulg-ok").onclick=()=>{ if(!r.grupos.length) return; fecha();
+      editaUT(U=>{ const i=U.grupos.findIndex(g=>g.id===gid), novos=r.grupos.map(g=>({id:uId("g"),nome:g.nome,jogadores:g.jogadores,nota:""})); U.grupos.splice(i<0?U.grupos.length:i,manter||i<0?0:1,...novos); },
+        `${r.grupos.length} ${r.grupos.length===1?"grupo criado":"grupos criados"} a partir do texto`); }; }); }
 /* ver a ficha do exercício tal como está nesta UT */
 function folhaVerExUT(id,lid){ const U=uts[id], i=U?U.exercicios.findIndex(x=>x.id===lid):-1; if(i<0) return; const E=U.exercicios[i].copia;
   folha(`<h3>Exercício ${i+1} · UT${U.numero}</h3>${fichaHtml(E,i+1)}<div class="ufig"></div>

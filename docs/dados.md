@@ -4,7 +4,7 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
 
 | Caminho | Tipo | Conteúdo |
 |---|---|---|
-| `estado/atual` | documento | Plantel (nº, nome, posição para o campo do plantel das UT e escalão `esc` para os jovens da formação: Sub19/Sub17/Sub15; sem `esc` = sénior), linhas de troca do banco, fase, equipa técnica |
+| `estado/atual` | documento | Plantel (nº, nome, posição para o campo do plantel das UT escalão `esc` para os jovens da formação: Sub19/Sub17/Sub15, sem `esc` = sénior; e `alc` com as alcunhas separadas por vírgulas, para ler grupos escritos em texto), linhas de troca do banco, fase, equipa técnica |
 | `jogo/atual` | documento | Jogo em curso (adversário, data, competição, onze, suplentes, relógio, vídeo) — sem eventos nem subs |
 | `jogo/vivo` | documento | Contadores do Ao vivo por parte, posse |
 | `jogo/notas` | documento | Notas do jogo |
@@ -59,4 +59,4 @@ As imagens ficam no armazenamento de ficheiros do link (capacidade `assets`), n�
   exercicios: [{ id, exId, copia: { …exercício completo como estava no dia, com os ajustes desta UT… } }],   // pela ordem da UT
   criadoPor, criadoEm, alteradoPor, alteradoEm }
 ```
-A UT guarda cópias: mudar um exercício no repositório não muda UTs antigas. A cópia guarda o `alteradoEm` que o exercício tinha quando entrou na UT; só quando o repositório tem uma alteração mais recente (e o conteúdo é diferente) a UT avisa e oferece "↻ Atualizar". Os ajustes do dia não contam.
+A UT guarda cópias: mudar um exercício no repositório não muda UTs antigas. A cópia guarda o `alteradoEm` que o exercício tinha quando entrou na UT; só quando o repositório tem uma alteração mais recente (e o conteúdo é diferente) a UT avisa e oferece "↻ Atualizar". Os ajustes do dia não contam. Ao atualizar, por defeito ficam os campos do dia (`parte`, `espaco`, `duracao`, `variantes`); "Substituir tudo" traz a cópia inteira.

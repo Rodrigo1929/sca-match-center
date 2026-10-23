@@ -174,6 +174,10 @@ if (await pg.locator("ol.utx li:first-child [data-a='at']").count()) erros.push(
 await pg.evaluate(async () => { await new Promise(r => setTimeout(r, 5)); const l = uts[uCur].exercicios[0]; guardaEx({ ...exercicios[l.exId], objetivos: "Mudado no repositório" }, true); renderUT(); });
 if (!(await pg.locator("ol.utx li:first-child [data-a='at']").count())) erros.push("UT: devia avisar que o exercício mudou no repositório");
 if (await pg.locator("ol.utx li:nth-child(2) [data-a='at']").count()) erros.push("UT: só o exercício alterado devia ter aviso");
+// ↻ Atualizar: traz o texto do repositório e mantém o ajuste do dia (4 séries)
+await pg.click("ol.utx li:first-child [data-a='at']"); await pg.click("#uat-ok"); await pg.waitForTimeout(150);
+const at = await pg.evaluate(() => { const l = uts[uCur].exercicios[0]; return { obj: l.copia.objetivos, se: l.copia.duracao.series, aviso: mudouNoRepo(l) }; });
+if (at.obj !== "Mudado no repositório" || at.se !== 4 || at.aviso) erros.push("UT: Atualizar devia trazer o repositório e manter o ajuste do dia " + JSON.stringify(at));
 // presenças: toque = Presente; botão direito = escolher (Condicionado)
 await pg.click(".upres button >> nth=0"); await pg.waitForTimeout(100);
 await pg.click(".upres button >> nth=1", { button: "right" }); await pg.click(".mmenu button:has-text('Condicionado')"); await pg.waitForTimeout(100);
@@ -186,7 +190,17 @@ if (JSON.stringify(pg2.pres) !== '["CO","P"]' || JSON.stringify(pg2.ext) !== '["
 // posição no Plantel → aparece na posição certa do campo do plantel
 await pg.click("#tab-p"); await pg.selectOption("#pp-0", "1"); await pg.waitForTimeout(800);
 if ((await pg.evaluate(() => est.plantel[0].pos)) !== "1") erros.push("Plantel: a posição não ficou guardada");
+// alcunha no Plantel → grupos escritos em texto passam a ter jogadores ("👥 Ler")
+await pg.fill("#pa-0", "Zeca"); await pg.waitForTimeout(800);
+if ((await pg.evaluate(() => est.plantel[0].alc)) !== "Zeca") erros.push("Plantel: a alcunha não ficou guardada");
 await pg.click("#tab-u"); await pg.waitForTimeout(150);
+await pg.click("#u-gn"); await pg.fill("#ug-n", "Texto do PDF"); await pg.fill("#ug-o", "Vermelhos: Zeca | Amarelos: Ninguém"); await pg.click("#ug-ok"); await pg.waitForTimeout(150);
+await pg.click("[data-lg]"); await pg.waitForSelector("#ulg-ok");
+const desc = await pg.locator(".sheet").textContent();
+await pg.click("#ulg-t button[data-k='']"); await pg.click("#ulg-ok"); await pg.waitForTimeout(150);
+const lg = await pg.evaluate(() => uts[uCur].grupos.map((g) => g.nome + "=" + g.jogadores.join(",")));
+const n0 = await pg.evaluate(() => est.plantel[0].n);
+if (lg.length !== 2 || !lg[0].startsWith("Guarda-redes=") || lg[1] !== "Vermelhos=" + n0 || !desc.includes("Ninguém")) erros.push("UT: ler grupos do texto falhou " + JSON.stringify(lg));
 await pg.locator(".ucampo").screenshot({ path: join(cap, "treino-campo-plantel.png") });
 // jovem da formação: entra no Plantel (secção própria), pode ser suplente no Jogo e marcado na UT
 await pg.click("#tab-p"); await pg.click("#p-addf"); await pg.waitForTimeout(150);
