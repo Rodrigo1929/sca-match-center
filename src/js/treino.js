@@ -2,7 +2,6 @@
 /* ================= TREINO · Unidades de Treino (UT) feitas com os exercícios do repositório ================= */
 const MATCH_DAYS=["MD+1","MD+2","MD-5","MD-4","MD-3","MD-2","MD-1","MD"];
 const PRESENCAS=[["P","Presente","#1E9E3E"],["L","Lesão","#C00000"],["A","Ausente","#E36C09"],["C","Castigado","#7030A0"],["CO","Condicionado","#0070C0"]];
-const ESCALOES=["Sub19","Sub17","Sub15"];
 const U_LS="sca-uts-v1";
 const uParteOrd=k=>Math.max(0,PARTES.findIndex(p=>p[0]===k));
 const corPres=k=>(PRESENCAS.find(p=>p[0]===k)||[])[2]||"";
@@ -26,7 +25,8 @@ function normUT(d){ const s=v=>String(v??"").trim(), L=v=>(Array.isArray(v)?v.ma
 Object.keys(uts).forEach(id=>{ try{ uts[id]=normUT({...uts[id],id}); }catch(e){ delete uts[id]; } });
 
 /* atletas da UT: plantel (chave = nº) e jogadores de fora (chave = "e:<id>") */
-function atletasUT(U){ return [...est.plantel.filter(p=>p.n).slice().sort((a,b)=>byNum(a.n,b.n)).map(p=>({k:p.n,n:p.n,nome:p.nome||"",pos:p.pos||"",esc:""})),
+function atletasUT(U){ const pl=est.plantel.filter(p=>p.n).slice().sort((a,b)=>byNum(a.n,b.n)), at=p=>({k:p.n,n:p.n,nome:p.nome||"",pos:p.pos||"",esc:p.esc||"",form:!!p.esc});
+  return [...pl.filter(p=>!p.esc).map(at),...pl.filter(p=>p.esc).map(at),
   ...U.extras.map(e=>({k:"e:"+e.id,n:"",nome:e.nome,pos:e.pos,esc:e.escalao||"Extra"}))]; }
 function nomeAtleta(U,k){ if(String(k).startsWith("e:")){ const e=U.extras.find(x=>"e:"+x.id===k); return e?`${e.nome}${e.escalao?" ("+e.escalao+")":""}`:"?"; } return rot(k); }
 const totalUT=U=>U.tempoTotal||U.exercicios.reduce((a,l)=>a+totalEx(l.copia),0);
@@ -97,7 +97,7 @@ function renderUTPainel(U){ const pn=$("u-panel");
   pn.innerHTML=`<header><h2>Resumo</h2><p class="sub">${U.exercicios.length} exercícios · ${totalUT(U)?fmtTempo(totalUT(U)):"sem duração"}${U.tempoTotal?" (escrito à mão)":""}</p>${porParte.length?`<p class="sub" style="margin:2px 0 0">${esc(porParte.join(" · "))}</p>`:""}</header>
     <div class="add"><h3>Presenças <span class="count" title="Presentes">${nP}</span></h3>
       <p class="sub" style="margin:0"><b>Toque</b>: Presente (<b style="color:${corPres("P")}">P</b>). <b>Botão direito</b> (no iPad, manter o dedo): ${PRESENCAS.filter(p=>p[0]!=="P").map(p=>`<b style="color:${p[2]}">${p[1]}</b>`).join(", ")}.</p>
-      <div class="upres">${atl.map(a=>{ const k=U.presencas[a.k]||""; return `<button data-k="${esc(a.k)}" style="${k?`border-color:${corPres(k)};color:${corPres(k)}`:""}"><b>${esc(a.n||a.esc)}</b><span>${esc(a.nome)}</span>${k?`<i style="background:${corPres(k)}">${k}</i>`:""}</button>`; }).join("")||`<p class="sub">Sem jogadores no Plantel.</p>`}</div>
+      <div class="upres">${atl.map(a=>{ const k=U.presencas[a.k]||""; return `<button data-k="${esc(a.k)}" style="${k?`border-color:${corPres(k)};color:${corPres(k)}`:""}"><b>${esc(a.n||a.esc)}</b><span>${esc(a.nome)}</span>${a.n&&a.esc?`<small class="esc">${esc(a.esc)}</small>`:""}${k?`<i style="background:${corPres(k)}">${k}</i>`:""}</button>`; }).join("")||`<p class="sub">Sem jogadores no Plantel.</p>`}</div>
       <button class="btn sm" id="u-xn">+ Jogador de fora do plantel</button></div>
     <div class="add"><h3>Grupos de trabalho</h3>${U.grupos.length?`<ul class="evl">${U.grupos.map(g=>`<li><span style="flex:1"><b>${esc(g.nome||"Grupo")}</b> · ${esc(g.jogadores.map(k=>nomeAtleta(U,k)).join(", ")||"sem jogadores")}${g.nota?`<br><small class="sub">${esc(g.nota)}</small>`:""}</span><button class="btn sm ghost" data-g="${esc(g.id)}">✎</button></li>`).join("")}</ul>`:`<p class="sub" style="margin:0">Sem grupos (ex.: GR, condicionados, reforço).</p>`}
       <button class="btn sm" id="u-gn">+ Grupo</button></div>
@@ -121,7 +121,7 @@ function folhaExtraUT(id,eid){ const U=uts[id]; if(!U) return; const X=eid?U.ext
   const usados=[...new Map(Object.values(uts).flatMap(u=>u.extras).map(e=>[e.nome,e])).values()];
   folha(`<h3>Jogador de fora do plantel</h3><p class="sub" style="margin:0">Para juniores, juvenis ou outros chamados a esta UT. Fica só nesta UT (os nomes já usados aparecem como sugestão).</p>
     <label class="f">Nome<input type="text" id="ux-n" list="ux-l" value="${esc(X?X.nome:"")}" placeholder="Ex.: Santiago C."><datalist id="ux-l">${usados.map(e=>`<option value="${esc(e.nome)}">`).join("")}</datalist></label>
-    <h4>Escalão</h4><div class="seg" id="ux-e">${[...ESCALOES,"Outro"].map(x=>`<button data-k="${x}">${x}</button>`).join("")}</div>
+    <h4>Escalão</h4><div class="seg" id="ux-e">${[...ESC_FORM,"Outro"].map(x=>`<button data-k="${x}">${x}</button>`).join("")}</div>
     <label class="f">Posição no campo do plantel<select id="ux-p"><option value="">—</option>${POS_UT.map(([k,n])=>`<option value="${k}"${X&&X.pos===k?" selected":""}>${k} · ${n}</option>`).join("")}</select></label>
     <div class="actions">${X?`<button class="btn danger l" id="ux-del">Tirar da UT</button>`:""}<button class="btn" data-close>Cancelar</button><button class="btn primary" id="ux-ok">${X?"Guardar":"Adicionar"}</button></div>`,(s,fecha)=>{
     const q=x=>s.querySelector(x), pinta=()=>s.querySelectorAll("#ux-e button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===escl)));
@@ -144,7 +144,7 @@ function plantelSvg(U){ const {W:VW,H:VH}=PLV, svg=el("svg",{viewBox:`0 0 ${VW} 
   el("rect",{x:cx-20.16*kx,y:fy,width:40.32*kx,height:16.5*ky,...L},svg); el("rect",{x:cx-9.16*kx,y:fy,width:18.32*kx,height:5.5*ky,...L},svg);
   el("path",{d:`M ${cx-7.31*kx} ${fy+16.5*ky} A ${9.15*kx} ${9.15*ky} 0 0 0 ${cx+7.31*kx} ${fy+16.5*ky}`,...L},svg);
   el("path",{d:`M ${cx-9.15*kx} ${fy+fh} A ${9.15*kx} ${9.15*ky} 0 0 1 ${cx+9.15*kx} ${fy+fh}`,...L},svg);
-  const atl=atletasUT(U), pres=a=>U.presencas[a.k]||"", les=atl.filter(a=>pres(a)==="L"), resto=atl.filter(a=>pres(a)!=="L");
+  const atl=atletasUT(U), pres=a=>U.presencas[a.k]||"", les=atl.filter(a=>pres(a)==="L"), resto=atl.filter(a=>pres(a)!=="L"&&!(a.form&&!pres(a)));
   /* caixa de nome com a borda na cor da presença (sem marcação: cinzento escuro) */
   const caixa=(x,y,a,w)=>{ const p=pres(a), c=p?corPres(p):"#4A4A4A", g=el("g",{},svg), t=a.nome||a.n||"?", fs=23;
     el("rect",{x:x-w/2,y,width:w,height:38,rx:5,fill:"#fff",stroke:c,"stroke-width":p?5:3},g);
@@ -159,7 +159,7 @@ function plantelSvg(U){ const {W:VW,H:VH}=PLV, svg=el("svg",{viewBox:`0 0 ${VW} 
   if(les.length){ const x=fx+fw-170; el("text",{x,y:fy+32,"text-anchor":"middle","font-size":24,"font-weight":800,fill:"#C00000",class:"lbl"},svg).textContent="LESIONADOS:";
     les.forEach((a,i)=>caixa(x,fy+44+i*44,a,280)); }
   const comPos=resto.filter(a=>a.pos), gr=comPos.filter(a=>a.pos==="1"), campo=comPos.filter(a=>a.pos!=="1"), ext=l=>l.filter(a=>a.esc).length, nP=atl.filter(a=>pres(a)==="P").length;
-  const resumo=`GR: ${gr.length-ext(gr)}${ext(gr)?"+"+ext(gr)+" (fora do plantel)":""}  //  Campo: ${campo.length-ext(campo)}${ext(campo)?"+"+ext(campo):""}  //  Presentes: ${nP}${les.length?"  //  Lesionados: "+les.length:""}`;
+  const resumo=`GR: ${gr.length-ext(gr)}${ext(gr)?"+"+ext(gr)+" (formação)":""}  //  Campo: ${campo.length-ext(campo)}${ext(campo)?"+"+ext(campo):""}  //  Presentes: ${nP}${les.length?"  //  Lesionados: "+les.length:""}`;
   const rw=textW(resumo,24,700)+60; el("path",{d:`M ${fx} ${fy-58} H ${fx+rw} L ${fx+rw-24} ${fy-12} H ${fx} Z`,fill:"#1B1A17"},svg);
   el("text",{x:fx+18,y:fy-26,"font-size":24,"font-weight":700,fill:"#fff",class:"lbl"},svg).textContent=resumo;
   const semPos=resto.filter(a=>!a.pos);

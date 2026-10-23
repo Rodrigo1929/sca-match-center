@@ -4,7 +4,7 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
 
 | Caminho | Tipo | Conteúdo |
 |---|---|---|
-| `estado/atual` | documento | Plantel (nº, nome e posição para o campo do plantel das UT), linhas de troca do banco, fase, equipa técnica |
+| `estado/atual` | documento | Plantel (nº, nome, posição para o campo do plantel das UT e escalão `esc` para os jovens da formação: Sub19/Sub17/Sub15; sem `esc` = sénior), linhas de troca do banco, fase, equipa técnica |
 | `jogo/atual` | documento | Jogo em curso (adversário, data, competição, onze, suplentes, relógio, vídeo) — sem eventos nem subs |
 | `jogo/vivo` | documento | Contadores do Ao vivo por parte, posse |
 | `jogo/notas` | documento | Notas do jogo |

@@ -184,6 +184,21 @@ await pg.click("#tab-p"); await pg.selectOption("#pp-0", "1"); await pg.waitForT
 if ((await pg.evaluate(() => est.plantel[0].pos)) !== "1") erros.push("Plantel: a posição não ficou guardada");
 await pg.click("#tab-u"); await pg.waitForTimeout(150);
 await pg.locator(".ucampo").screenshot({ path: join(cap, "treino-campo-plantel.png") });
+// jovem da formação: entra no Plantel (secção própria), pode ser suplente no Jogo e marcado na UT
+await pg.click("#tab-p"); await pg.click("#p-addf"); await pg.waitForTimeout(150);
+const iF = await pg.evaluate(() => est.plantel.length - 1);
+await pg.fill(`#pn-${iF}`, "51"); await pg.fill(`#pm-${iF}`, "Júnior Teste"); await pg.selectOption(`#pp-${iF}`, "9"); await pg.waitForTimeout(800);
+const jf = await pg.evaluate(() => ({ p: est.plantel[est.plantel.length - 1], sec: !!document.querySelector(".ptab tr.psec") }));
+if (jf.p.n !== "51" || jf.p.esc !== "Sub19" || jf.p.pos !== "9" || !jf.sec) erros.push("Plantel: jovem da formação mal gravado " + JSON.stringify(jf));
+await pg.screenshot({ path: join(cap, "plantel-formacao.png") });
+await pg.click("#tab-j"); await pg.click("#j-sup .chip:has-text('51')"); await pg.waitForTimeout(150);
+const sj = await pg.evaluate(() => ({ sup: jogo.suplentes.includes("51"), tag: [...document.querySelectorAll("#j-sup .chip")].some((c) => c.textContent.includes("51") && c.querySelector("em.esc")) }));
+if (!sj.sup || !sj.tag) erros.push("Jogo: o jovem devia poder ser suplente, com o escalão à vista " + JSON.stringify(sj));
+await pg.click("#tab-u"); await pg.waitForTimeout(150);
+const noCampo = () => pg.evaluate(() => [...document.querySelectorAll(".ucampo text")].some((t) => t.textContent.includes("Júnior Teste")));
+if (await noCampo()) erros.push("UT: jovem da formação sem marcação não devia aparecer no campo do plantel");
+await pg.click(".upres button[data-k='51']"); await pg.waitForTimeout(150);
+if (!(await noCampo())) erros.push("UT: jovem da formação marcado devia aparecer no campo do plantel");
 await pg.screenshot({ path: join(cap, "treino-ut.png"), fullPage: true });
 const [dUT] = await Promise.all([pg.waitForEvent("download", { timeout: 60000 }), pg.click("#u-pdf")]); const fUT = join(cap, "treino-ut.pdf"); await dUT.saveAs(fUT);
 if (!dUT.suggestedFilename().startsWith("UT39_SCA_") || statSync(fUT).size < 30000) erros.push(`UT: PDF estranho ${dUT.suggestedFilename()} (${statSync(fUT).size} bytes)`);

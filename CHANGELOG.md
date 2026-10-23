@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| 72 | Plantel com jovens da formação (escalão Sub19, Sub17 ou Sub15, botão "+ Jovem da formação", secção própria): podem ser convocados para o onze e os suplentes no Jogo, com o escalão à vista; nas UT aparecem nas presenças e só entram no campo do plantel quando marcados |
 | 71 | Treino: presenças com Presente (P, verde) num toque e menu no botão direito (no iPad, manter o dedo) para Lesão, Ausente, Castigado ou Condicionado; sai o NFL. Jogadores de fora do plantel (juniores, juvenis) por UT, com escalão e posição. Plantel com posição de cada atleta; campo do plantel como na ficha do clube (meio campo, nomes empilhados por posição com a cor da presença, lesionados à parte, contagens). Novo emblema monocromático nos PDF |
 | 70 | PDF do exercício e da UT saem mesmo quando a imagem de uma figura não carrega (sem rede, sem acesso ou apagada): no lugar da figura fica uma nota |
 | 69 | Novo separador Treino (Fase 2): Unidades de Treino feitas com os exercícios do repositório (cópia no dia, ajuste de duração/variantes só na UT, aviso e "Atualizar" quando o exercício muda no repositório); cabeçalho do clube (Match Day, regime com sugestões, objetivos, material automático, tempo total); presenças (L, NFL, A, C, CO); grupos de trabalho; campo do plantel com o onze e as presenças; PDF da UT no formato atual (cabeçalho em cada página, 4 exercícios por página com a figura). A verificação passou a apanhar nomes repetidos entre os scripts |

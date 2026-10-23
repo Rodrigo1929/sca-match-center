@@ -161,7 +161,7 @@ function folhaOnze(i){
     const grid=s.querySelector("#o-g");
     const nums=est.plantel.map(p=>p.n).filter(Boolean).sort(byNum);
     botoesJog(grid,nums,n=>{ esc_=n; grid.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.querySelector("b").textContent===n))); },
-      n=>{ const j=jogo.onze.findIndex(x=>x.n===n); return j>=0&&j!==i?"titular · troca":jogo.suplentes.includes(n)?"suplente":""; });
+      n=>{ const j=jogo.onze.findIndex(x=>x.n===n); return [j>=0&&j!==i?"titular · troca":jogo.suplentes.includes(n)?"suplente":"",escalaoDe(n)].filter(Boolean).join(" · "); });
     grid.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.querySelector("b").textContent===o.n)));
     s.querySelector("#o-ok").onclick=()=>{
       const J=clone(jogo); const j=J.onze.findIndex(x=>x.n===esc_);
@@ -199,12 +199,13 @@ function renderJogo(){ setTimeout(renderFichaCampos,0); setTimeout(avisoSup,0);
   if(document.activeElement!==$("j-data")) $("j-data").value=jogo.data||"";
   const lu=$("j-lineup"); lu.innerHTML="";
   jogo.onze.forEach(o=>{ const li=document.createElement("li"); li.innerHTML=`<span class="p"></span><b></b><span></span>`;
-    li.children[0].textContent=o.pos||""; li.children[1].textContent=o.n; li.children[2].textContent=nome(o.n)||"—"; lu.appendChild(li); });
+    li.children[0].textContent=o.pos||""; li.children[1].textContent=o.n; li.children[2].textContent=(nome(o.n)||"—")+(escalaoDe(o.n)?" ("+escalaoDe(o.n)+")":""); lu.appendChild(li); });
   const sp=$("j-sup"); sp.innerHTML=""; $("j-nsup").textContent=jogo.suplentes.length;
   const tit=new Set(titulares());
-  est.plantel.map(p=>p.n).filter(n=>n&&!tit.has(n)).sort(byNum).forEach(n=>{
+  const naoTit=est.plantel.map(p=>p.n).filter(n=>n&&!tit.has(n)).sort(byNum);
+  [...naoTit.filter(n=>!escalaoDe(n)),...naoTit.filter(n=>escalaoDe(n))].forEach(n=>{
     const b=document.createElement("button"); b.className="chip"; b.setAttribute("aria-pressed",String(jogo.suplentes.includes(n)));
-    b.innerHTML=`<b></b><span></span>`; b.children[0].textContent=n; b.children[1].textContent=nome(n)||"";
+    b.innerHTML=`<b></b><span></span>${escalaoDe(n)?`<em class="esc"></em>`:""}`; b.children[0].textContent=n; b.children[1].textContent=nome(n)||""; if(escalaoDe(n)) b.children[2].textContent=escalaoDe(n);
     b.onclick=()=>{ const J=clone(jogo); J.suplentes=J.suplentes.includes(n)?J.suplentes.filter(x=>x!==n):[...J.suplentes,n].sort(byNum); guardaJogo(J); };
     sp.appendChild(b); });
   if(!sp.childElementCount) sp.innerHTML=`<p class="sub">Todos os jogadores do plantel são titulares. Adiciona jogadores no separador Plantel.</p>`;
