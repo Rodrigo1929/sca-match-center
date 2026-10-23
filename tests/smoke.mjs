@@ -237,16 +237,28 @@ await pg.click("#tab-x"); await pg.evaluate(() => { const E = exercicios[xCur]; 
 const [dSemEx] = await Promise.all([pg.waitForEvent("download", { timeout: 60000 }), pg.click("#x-pdf")]); await dSemEx.saveAs(join(cap, "exercicio-sem-imagem.pdf"));
 if (statSync(join(cap, "exercicio-sem-imagem.pdf")).size < 10000) erros.push("Exercício: com a imagem em falta o PDF devia sair na mesma");
 
-// Plano semanal: jogo no calendário → semana nova (véspera de manhã, treinos à noite, jogo no domingo); marcar folga; PDF
+// Plano semanal: jogo fora da ilha no calendário → semana nova (ida na véspera de manhã, regresso no dia do jogo, treinos à noite);
+// folga do dia, duas atividades na mesma tarde, concentração e texto do dia de jogo; PDF
 await pg.click("#tab-u"); await pg.click(".u-modo button[data-m='semana']"); await pg.waitForSelector("#s-nova2");
 const iniS = await pg.evaluate(() => { const h = segundaDe(isoDia(new Date())); return new Date().getDay() >= 5 ? diaMais(h, 7) : h; });
-await pg.click("#s-jn"); await pg.fill("#jc-d", await pg.evaluate((i) => diaMais(i, 6), iniS)); await pg.fill("#jc-h", "15:00"); await pg.fill("#jc-a", "Boavista CR");
-await pg.fill("#jc-p", "Taça AFAH"); await pg.fill("#jc-j", "3ª Jornada"); await pg.click("#jc-ok"); await pg.waitForTimeout(150);
+const dS = await pg.evaluate((i) => diasDaSemana(i), iniS);
+await pg.click("#s-jn"); await pg.fill("#jc-d", dS[6]); await pg.fill("#jc-h", "15:00"); await pg.fill("#jc-a", "União Micaelense");
+await pg.click("#jc-c button[data-k='']"); await pg.click("#jc-v button[data-k='1']"); await pg.fill("#jc-de", "S. Miguel");
+await pg.fill("#jc-p", "Campeonato dos Açores"); await pg.fill("#jc-j", "4ª Jornada"); await pg.click("#jc-ok"); await pg.waitForTimeout(150);
 await pg.click("#s-nova2"); await pg.waitForTimeout(200);
-const sem = await pg.evaluate(() => { const S = semanas[sCur], ds = diasDaSemana(S.inicio); return { ini: S.inicio, sab: S.dias[ds[5]].manha && S.dias[ds[5]].manha.tipo, ter: S.dias[ds[1]].tarde && S.dias[ds[1]].tarde.conc, jogo: !!document.querySelector(".psem .ps-jogo") }; });
-if (sem.ini !== iniS || sem.sab !== "treino" || sem.ter !== "19:15" || !sem.jogo) erros.push("Plano semanal: semana-tipo errada " + JSON.stringify(sem));
-await pg.click(".psem tbody tr:first-child td:nth-child(2)"); await pg.click("#ss-t button[data-k='folga']"); await pg.click("#ss-ok"); await pg.waitForTimeout(150);
+const sem = await pg.evaluate(() => { const S = semanas[sCur], ds = diasDaSemana(S.inicio), z = (k, t) => S.dias[ds[k]][t].map((x) => x.tipo + ":" + x.txt + ":" + x.conc).join("|");
+  return { ini: S.inicio, sab: z(5, "manha"), dom: z(6, "tarde"), ter: z(1, "tarde"), jogo: !!document.querySelector(".psem .ps-jogo") }; });
+if (sem.ini !== iniS || sem.sab !== "viagem:Ida para S. Miguel:" || sem.dom !== "viagem:Regresso:" || sem.ter !== "treino::19:15" || !sem.jogo) erros.push("Plano semanal: semana-tipo errada " + JSON.stringify(sem));
+// folga o dia todo na segunda
+await pg.click(`.psem td[data-d='${dS[0]}'][data-t='manha']`); await pg.click("#st-dia"); await pg.waitForTimeout(150);
 if (!(await pg.locator(".psem .ps-folga").count())) erros.push("Plano semanal: a folga não ficou marcada");
+// quarta à tarde: treino + ginásio
+await pg.click(`.psem td[data-d='${dS[2]}'][data-t='tarde']`); await pg.click(".st-add button[data-add='ginasio']"); await pg.fill("#sa-x", "Ginásio do clube"); await pg.click("#sa-ok"); await pg.waitForTimeout(150);
+await pg.click(".sheet [data-close]"); await pg.waitForTimeout(100);
+// dia de jogo: concentração e texto
+await pg.click(`.psem td[data-d='${dS[6]}'][data-t='tarde']`); await pg.fill("#st-jc", "13:30"); await pg.fill("#st-jl", "Aeroporto de Ponta Delgada"); await pg.fill("#st-jt", "Regresso 20:30"); await pg.click("#st-jok"); await pg.waitForTimeout(150);
+const ed = await pg.evaluate((ds) => { const S = semanas[sCur]; return { qua: S.dias[ds[2]].tarde.map((x) => x.tipo).join(","), jogo: S.dias[ds[6]].jogo.conc + "/" + S.dias[ds[6]].jogo.txt, txt: document.querySelector(".psem .ps-jogo").textContent.includes("REGRESSO 20:30") }; }, dS);
+if (ed.qua !== "treino,ginasio" || ed.jogo !== "13:30/Regresso 20:30" || !ed.txt) erros.push("Plano semanal: edição errada " + JSON.stringify(ed));
 await pg.screenshot({ path: join(cap, "plano-semanal.png"), fullPage: true });
 const [dPS] = await Promise.all([pg.waitForEvent("download", { timeout: 60000 }), pg.click("#s-pdf")]); const fPS = join(cap, "plano-semanal.pdf"); await dPS.saveAs(fPS);
 if (statSync(fPS).size < 20000) erros.push(`Plano semanal: PDF estranho (${statSync(fPS).size} bytes)`);

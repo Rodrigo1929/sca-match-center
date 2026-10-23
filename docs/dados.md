@@ -66,15 +66,17 @@ A UT guarda cópias: mudar um exercício no repositório não muda UTs antigas. 
 ## Plano semanal (`semanas/{id}`)
 ```
 { id = inicio: "AAAA-MM-DD" (segunda-feira), numero (nº da semana no plano), obs,
-  dias: { "AAAA-MM-DD": { folga, manha: sessão|null, tarde: sessão|null } },     // os 7 dias da semana
+  dias: { "AAAA-MM-DD": { folga (dia todo), manha: [atividade], tarde: [atividade], jogo: { conc, local, txt } } },   // os 7 dias; jogo = concentração/texto do dia de jogo
   criadoPor, criadoEm, alteradoPor, alteradoEm }
-sessão = { tipo: "treino"|"ginasio"|"viagem"|"outro", txt, conc, ini, fim (horas "19:30"), local, treino (nº = nº da UT) }
+atividade = { tipo: "treino"|"viagem"|"ginasio"|"folga"|"outro", txt, conc, ini, fim (horas "19:30"), local, treino (nº = nº da UT) }
+// as semanas antigas tinham uma atividade (objeto) por período: normSemana converte para lista
 ```
 O jogo não se grava na semana: vem do calendário pela data (de manhã se for antes das 13h).
 
 ## Jogo do calendário (`calendario/{id}`)
 ```
 { id, data: "AAAA-MM-DD", hora: "15:00", adversario, casa: true|false, competicao, jornada, local, nota,
+  deslocacao: true|false (jogo fora da ilha), destino (ex.: "S. Miguel"),
   emblema?: { id, w, h },        // imagem no armazenamento do link (assets)
   criadoPor, criadoEm, alteradoPor, alteradoEm }
 ```
