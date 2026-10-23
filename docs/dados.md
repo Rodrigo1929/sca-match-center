@@ -21,6 +21,8 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
 | `uts/{id}` | coleção | Unidades de Treino (ver abaixo) |
 | `semanas/{id}` | coleção | Planos semanais (id = segunda-feira da semana; ver abaixo) |
 | `calendario/{id}` | coleção | Jogos da época, oficiais e jogos-treino (ver abaixo) |
+| `anual/{AAAA-MM-DD}` | coleção | Planeamento anual: um documento por dia com conteúdo (ver abaixo) |
+| `ciclos/{id}` | coleção | Microciclos e mesociclos do planeamento anual (ver abaixo) |
 
 ## Quadro do Modelo de Jogo (`modelo/{id}`)
 ```
@@ -80,3 +82,11 @@ O jogo não se grava na semana: vem do calendário pela data (de manhã se for a
   emblema?: { id, w, h },        // imagem no armazenamento do link (assets)
   criadoPor, criadoEm, alteradoPor, alteradoEm }
 ```
+
+## Planeamento anual (`anual/{AAAA-MM-DD}` e `ciclos/{id}`)
+```
+anual: { id = dia, tipo: "ut"|"folga"|"pausa"|"outro", ut (nº da UT), txt, alteradoPor, alteradoEm }   // dia sem documento = livre; jogos vêm do calendário
+ciclos: { id, tipo: "micro"|"meso", n, inicio, fim, periodo: "prep"|"comp"|"trans", alteradoPor, alteradoEm }
+        // micro: id "micro-<segunda>", semana de segunda a domingo; o nº é o nº do plano semanal
+```
+A semana nova do plano semanal usa o anual: UT nº → treino (de manhã na véspera de jogo de dia, senão à noite), folga ou interrupção → folga, outro → atividade com o texto. A UT nova vai buscar o nº ao anual e o Match Day ao calendário.

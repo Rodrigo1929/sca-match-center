@@ -237,6 +237,42 @@ await pg.click("#tab-x"); await pg.evaluate(() => { const E = exercicios[xCur]; 
 const [dSemEx] = await Promise.all([pg.waitForEvent("download", { timeout: 60000 }), pg.click("#x-pdf")]); await dSemEx.saveAs(join(cap, "exercicio-sem-imagem.pdf"));
 if (statSync(join(cap, "exercicio-sem-imagem.pdf")).size < 10000) erros.push("Exercício: com a imagem em falta o PDF devia sair na mesma");
 
+// Ao vivo: substituição feita e depois editada; cartão a quem já saiu e a um suplente no banco
+await pg.click("#tab-v"); await pg.waitForTimeout(150);
+const supl = await pg.evaluate(() => { const t = new Set(titulares()), s = est.plantel.map((p) => p.n).filter((n) => n && !t.has(n)).slice(0, 3); guardaJogo({ ...jogo, suplentes: s, subs: [], eventos: [] }, true); return s; });
+await pg.click("#ve-sb"); await pg.fill("#sv-m", "60:00"); await pg.click("#sv-s button >> nth=0"); await pg.click("#sv-e button >> nth=0"); await pg.waitForTimeout(150);
+const sub0 = await pg.evaluate(() => jogo.subs[0] && { sai: jogo.subs[0].sai, entra: jogo.subs[0].entra });
+await pg.click("#v-evs li span:has-text('🔁')"); await pg.waitForSelector("#sv-ok"); await pg.fill("#sv-m", "70:00"); await pg.click("#sv-e button >> nth=1"); await pg.click("#sv-ok"); await pg.waitForTimeout(150);
+const sub1 = await pg.evaluate(() => ({ n: jogo.subs.length, min: jogo.subs[0].min, entra: jogo.subs[0].entra, conta: subsReais().lista.length }));
+if (!sub0 || sub1.n !== 1 || sub1.min !== "70:00" || sub1.entra !== supl[1] || sub1.conta !== 1) erros.push("Ao vivo: editar a substituição falhou " + JSON.stringify({ sub0, sub1 }));
+await pg.click("#ve-am"); await pg.click("#ev-j h5:has-text('Já saíram') + .pgrid button"); await pg.click("#ev-ok"); await pg.waitForTimeout(120);
+await pg.click("#ve-am"); await pg.click("#ev-j h5:has-text('Banco') + .pgrid button"); await pg.click("#ev-ok"); await pg.waitForTimeout(120);
+const cts = await pg.evaluate(() => jogo.eventos.filter((e) => e.tipo === "amarelo").map((e) => e.n));
+if (cts[0] !== sub0.sai || !supl.includes(cts[1]) || cts[1] === sub1.entra) erros.push("Ao vivo: cartão a quem saiu / ao banco falhou " + JSON.stringify(cts));
+await pg.screenshot({ path: join(cap, "ao-vivo-subs-cartoes.png") });
+// Pós-jogo: falta sofrida por um jogador nosso conta como falta cometida do adversário
+const fal = await pg.evaluate(() => { const r = (ac, eq) => ({ id: Math.random().toString(36).slice(2, 9), c: Date.now(), ac, eq, x: .5, y: .5, j: eq === "nos" ? "1" : null, parte: 1, seg: 60 });
+  guardaAn({ ...an, regs: [r("fs", "nos"), r("fs", "nos"), r("fc", "nos")] }); const E = estatJogo(); const o = { eles: E.t.eles.fal, nos: E.t.nos.fal }; guardaAn({ ...an, regs: [] }); return o; });
+if (fal.eles !== 2 || fal.nos !== 1) erros.push("Pós-jogo: faltas sofridas deviam contar como faltas do adversário " + JSON.stringify(fal));
+// faltas só do nosso lado: com o adversário escolhido, "Falta cometida" e "Falta sofrida" ficam desligadas e não gravam
+await pg.click("#tab-a"); await pg.waitForTimeout(150); await pg.click("#ae-eles"); await pg.waitForTimeout(100);
+const fb = await pg.evaluate(() => { const bs = [...document.querySelectorAll("#a-acoes button")], d = (n) => bs.find((b) => b.textContent.includes(n))?.disabled;
+  anSel = { ...anSel, ac: "fc", pt: { x: .5, y: .5 } }; const grava = tentaGravar(null); anSel = { ac: null, eq: "nos", pt: null }; renderAnalise(); return { fc: d("Falta cometida"), fs: d("Falta sofrida"), rem: d("Remate enquadrado"), grava }; });
+if (!fb.fc || !fb.fs || fb.rem || fb.grava) erros.push("Pós-jogo: as faltas do adversário deviam estar bloqueadas " + JSON.stringify(fb));
+await pg.evaluate(() => guardaJogo({ ...jogo, subs: [], eventos: [] }, true));
+
+// Planeamento anual: marcar UT e folga num dia, microciclo e mesociclo; a semana nova segue o anual (nº da UT, folga, nº do microciclo)
+await pg.click("#tab-u"); await pg.click(".u-modo button[data-m='ano']"); await pg.waitForSelector(".pan");
+const iniA = await pg.evaluate(() => { const h = segundaDe(isoDia(new Date())); return diaMais(h, 14); }), dA = await pg.evaluate((i) => diasDaSemana(i), iniA);
+await pg.evaluate((d) => { aEpoca = +d.slice(0, 4) - (+d.slice(5, 7) < 7 ? 1 : 0); renderUT(); }, dA[0]);
+await pg.click(`.pan td[data-d='${dA[0]}']`); await pg.click("#ad-t button[data-k='folga']"); await pg.click("#ad-ok"); await pg.waitForTimeout(100);
+await pg.click(`.pan td[data-d='${dA[1]}']`); await pg.click("#ad-t button[data-k='ut']"); await pg.fill("#ad-n", "501"); await pg.click("#ad-ok"); await pg.waitForTimeout(100);
+await pg.click(`.pan td.pan-mi[data-mi='${iniA}']`); await pg.fill("#am-n", "77"); await pg.click("#am-ok"); await pg.waitForTimeout(100);
+await pg.click("#a-meso-n"); await pg.fill("#ae-n", "9"); await pg.fill("#ae-i", dA[0]); await pg.fill("#ae-f", dA[6]); await pg.click("#ae-p button[data-k='trans']"); await pg.click("#ae-ok"); await pg.waitForTimeout(100);
+const an1 = await pg.evaluate((ds) => ({ f: anual[ds[0]]?.tipo, ut: anual[ds[1]]?.ut, mi: microDe(ds[0])?.n, me: mesoDe(ds[3])?.periodo, sem: (() => { const z = semanaTipo(ds[0].slice(0, 10)); return { seg: z[ds[0]].folga, ter: z[ds[1]].tarde.map((x) => x.treino).join(","), n: numeroSemana(ds[0]) }; })() }), dA);
+if (an1.f !== "folga" || an1.ut !== 501 || an1.mi !== 77 || an1.me !== "trans" || !an1.sem.seg || an1.sem.ter !== "501" || an1.sem.n !== 77) erros.push("Planeamento anual: " + JSON.stringify(an1));
+await pg.screenshot({ path: join(cap, "planeamento-anual.png") });
+
 // Plano semanal: jogo fora da ilha no calendário → semana nova (ida na véspera de manhã, regresso no dia do jogo, treinos à noite);
 // folga do dia, duas atividades na mesma tarde, concentração e texto do dia de jogo; PDF
 await pg.click("#tab-u"); await pg.click(".u-modo button[data-m='semana']"); await pg.waitForSelector("#s-nova2");

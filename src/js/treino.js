@@ -1,6 +1,6 @@
 
 /* ================= TREINO · Unidades de Treino (UT) feitas com os exercícios do repositório ================= */
-const MATCH_DAYS=["MD+1","MD+2","MD-5","MD-4","MD-3","MD-2","MD-1","MD"];
+const MATCH_DAYS=["MD+1","MD+2","MD-6","MD-5","MD-4","MD-3","MD-2","MD-1","MD"];
 const PRESENCAS=[["P","Presente","#1E9E3E"],["L","Lesão","#C00000"],["A","Ausente","#E36C09"],["C","Castigado","#7030A0"],["CO","Condicionado","#0070C0"]];
 const U_LS="sca-uts-v1";
 const uParteOrd=k=>Math.max(0,PARTES.findIndex(p=>p[0]===k));
@@ -40,8 +40,9 @@ function epocaDe(d){ const x=d?new Date(d+"T12:00"):new Date(), a=x.getFullYear(
 function guardaUTLocal(){ try{ localStorage.setItem(U_LS,JSON.stringify(uts)); }catch(e){} }
 function guardaUT(U,semRender){ const N=normUT({...U,alteradoPor:meuId||U.alteradoPor||"",alteradoEm:new Date().toISOString()}); uts[N.id]=N; guardaUTLocal(); gravaDoc("uts/"+N.id,N); if(!semRender) renderUT(); return N; }
 function editaUT(fn,msg){ const U0=uts[uCur]; if(!U0) return; const antes=clone(U0), U=clone(U0); fn(U); guardaUT(U); if(msg) toast(msg,()=>{ guardaUT(antes); }); }
-function novaUT(){ const ls=listaUTs(), ult=ls[0], num=Math.max(0,...ls.map(u=>u.numero))+1;
-  const U=guardaUT({id:uId(),numero:num,data:new Date().toISOString().slice(0,10),staff:staffPadrao(),regime:"",objetivos:[],exercicios:[],criadoPor:meuId||"",criadoEm:new Date().toISOString()},true);
+/* UT nova: nº do planeamento anual para hoje (senão a seguir à última) e Match Day pelo calendário */
+function novaUT(){ const ls=listaUTs(), ult=ls[0], hoje=isoDia(new Date()), A=diaAnualDe(hoje), num=A&&A.ut?A.ut:Math.max(0,...ls.map(u=>u.numero))+1;
+  const U=guardaUT({id:uId(),numero:num,data:hoje,matchDay:mdAuto(hoje),staff:staffPadrao(),regime:"",objetivos:[],exercicios:[],criadoPor:meuId||"",criadoEm:new Date().toISOString()},true);
   uCur=U.id; renderUT(); folhaCabUT(U.id); if(ult) toast(`UT${num} criada · a seguir à UT${ult.numero}`); }
 function apagaUT(id){ const U=uts[id]; if(!U) return; const antes=clone(U); delete uts[id]; guardaUTLocal(); apagaDoc("uts/"+id); if(uCur===id) uCur=null; renderUT();
   toast(`UT${U.numero} apagada`,()=>{ uts[id]=antes; guardaUTLocal(); gravaDoc("uts/"+id,antes); uCur=id; renderUT(); }); }
@@ -51,7 +52,7 @@ function duplicaUT(id){ const U=uts[id]; if(!U) return; const num=Math.max(0,...
 function repoeUTs(X){ Object.keys(uts).forEach(id=>{ if(!X[id]) apagaDoc("uts/"+id); }); uts={}; Object.entries(X||{}).forEach(([id,U])=>{ uts[id]=normUT({...U,id}); gravaDoc("uts/"+id,uts[id]); }); guardaUTLocal(); renderUT(); }
 
 /* ---------- ecrã ---------- */
-function renderUT(){ const v=$("view-u"); if(!v||v.hidden) return; if(uModo==="semana"){ renderSemana(); return; } const ls=listaUTs(); let U=uts[uCur]||ls[0]||null; uCur=U?U.id:null;
+function renderUT(){ const v=$("view-u"); if(!v||v.hidden) return; if(uModo==="semana"){ renderSemana(); return; } if(uModo==="ano"){ renderAnual(); return; } const ls=listaUTs(); let U=uts[uCur]||ls[0]||null; uCur=U?U.id:null;
   try{ localStorage.setItem("sca-ut-cur",uCur||""); }catch(e){}
   renderUTNav(ls,U); renderUTCorpo(U); renderUTPainel(U); }
 function renderUTNav(ls,U){ const nav=$("u-nav");
@@ -196,6 +197,9 @@ function folhaCabUT(id){ const U=uts[id]; if(!U) return; let md=U.matchDay; cons
     <div class="actions"><button class="btn danger l" id="uc-del">Apagar UT</button><button class="btn" data-close>Cancelar</button><button class="btn primary" id="uc-ok">Guardar</button></div>`,(s,fecha)=>{
     const q=x=>s.querySelector(x), pinta=()=>s.querySelectorAll("#uc-md button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===md)));
     s.querySelectorAll("#uc-md button").forEach(b=>b.onclick=()=>{ md=b.dataset.k; pinta(); }); pinta();
+    /* mudar a data sugere o Match Day pelo calendário (se ainda não foi escolhido à mão) e o nº da UT do planeamento anual */
+    let mdMao=!!md; s.querySelectorAll("#uc-md button").forEach(b=>b.addEventListener("click",()=>{ mdMao=true; }));
+    q("#uc-d").onchange=()=>{ const d=q("#uc-d").value, A=diaAnualDe(d); if(!mdMao){ md=mdAuto(d); pinta(); } if(A&&A.ut) q("#uc-n").value=A.ut; };
     confirma2(q("#uc-del"),"Toca outra vez para apagar",()=>{ fecha(); apagaUT(id); });
     q("#uc-ok").onclick=()=>{ const t=lerDur(q("#uc-t").value); if(isNaN(t)){ toast("Tempo total que não percebo. Usa por exemplo 88'."); return; }
       const X=uts[id]; fecha(); guardaUT({...clone(X),numero:q("#uc-n").value,data:q("#uc-d").value,matchDay:md,regime:q("#uc-r").value,objetivos:q("#uc-o").value,material:q("#uc-m").value,tempoTotal:t||null,staff:q("#uc-s").value}); toast("Cabeçalho guardado"); }; }); }

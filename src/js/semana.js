@@ -14,7 +14,7 @@ const S_CAL="sca-calendario-v1", S_SEM="sca-semanas-v1";
 let calendario={}, semanas={};
 try{ calendario=JSON.parse(localStorage.getItem(S_CAL)||"{}")||{}; }catch(e){ calendario={}; }
 try{ semanas=JSON.parse(localStorage.getItem(S_SEM)||"{}")||{}; }catch(e){ semanas={}; }
-let uModo="ut"; try{ uModo=localStorage.getItem("sca-u-modo")==="semana"?"semana":"ut"; }catch(e){}
+let uModo="ut"; try{ const m=localStorage.getItem("sca-u-modo"); uModo=m==="semana"||m==="ano"?m:"ut"; }catch(e){}
 let sCur=null; try{ sCur=localStorage.getItem("sca-sem-cur")||null; }catch(e){}
 
 /* ---------- datas ---------- */
@@ -79,21 +79,28 @@ function repoeSemanas(Ss,Cs){ if(Ss){ Object.keys(semanas).forEach(id=>{ if(!Ss[
    véspera de jogo de dia (antes das 17h) → treino de manhã; restantes dias úteis → treino à noite; fim de semana sem jogo → livre.
    Os treinos são numerados a seguir ao último número usado (UT ou plano). */
 /* último nº de treino antes de um dia: UT com data anterior e treinos já planeados em dias anteriores */
-function ultimoTreinoAntes(d){ return Math.max(0,...Object.values(uts).filter(U=>U.data&&U.data<d).map(U=>U.numero),
+function ultimoTreinoAntes(d){ return Math.max(0,...Object.values(uts).filter(U=>U.data&&U.data<d).map(U=>U.numero),...Object.values(anual).filter(a=>a.id<d&&a.ut).map(a=>a.ut),
   ...Object.values(semanas).flatMap(atividades).filter(a=>a.d<d).map(a=>a.x.treino)); }
 const novaAtividade=(tipo,o={})=>({tipo,txt:"",conc:"",ini:"",fim:"",local:"",treino:0,...o});
 function semanaTipo(ini){ const dias={}, ds=diasDaSemana(ini);
   let n=ultimoTreinoAntes(ini);
   ds.forEach((d,i)=>{ const jg=jogosDoDia(d), ontem=jogosDoDia(diaMais(d,-1)), amanha=jogosDoDia(diaMais(d,1)), fora=amanha.find(j=>j.deslocacao);
     const z={folga:false,manha:[],tarde:[],jogo:{conc:"",local:"",txt:""}}, treino=t=>novaAtividade("treino",{...HORAS_SES[t],local:LOCAL_CASA,treino:++n});
+    const A=diaAnualDe(d), cedo=amanha.some(j=>!j.hora||+j.hora.split(":")[0]<17);
     if(jg.length){ const j=jg.find(x=>x.deslocacao); if(j) z[turnoDoJogo(j)].push(novaAtividade("viagem",{txt:"Regresso"})); }
+    /* o planeamento anual manda: UT nº, folga, interrupção ou outro */
+    else if(A){ if(A.tipo==="folga"||A.tipo==="pausa") z.folga=true;
+      else { if(fora) z.manha.push(novaAtividade("viagem",{txt:`Ida${fora.destino?" para "+fora.destino:""}`,local:LOCAIS_VIAGEM[0]}));
+        if(A.tipo==="ut"){ const t=!fora&&cedo?"manha":"tarde"; n=Math.max(n,A.ut); z[t].push(novaAtividade("treino",{...HORAS_SES[t],local:LOCAL_CASA,treino:A.ut,txt:A.txt})); }
+        else z[fora?"tarde":"manha"].push(novaAtividade("outro",{txt:A.txt||"Outro"})); } }
     else if(ontem.length) z.folga=true;
     else if(fora) z.manha.push(novaAtividade("viagem",{txt:`Ida${fora.destino?" para "+fora.destino:""}`,local:LOCAIS_VIAGEM[0]}));
-    else if(amanha.some(j=>!j.hora||+j.hora.split(":")[0]<17)) z.manha.push(treino("manha"));
+    else if(cedo) z.manha.push(treino("manha"));
     else if(i<5) z.tarde.push(treino("tarde"));
     dias[d]=z; });
   return dias; }
-function numeroSemana(ini){ const ant=semanas[diaMais(ini,-7)]; if(ant&&ant.numero) return ant.numero+1;
+function numeroSemana(ini){ const M=microDe(ini); if(M&&M.n) return M.n;     // nº do microciclo do planeamento anual
+  const ant=semanas[diaMais(ini,-7)]; if(ant&&ant.numero) return ant.numero+1;
   const U1=Object.values(uts).find(U=>U.numero===1&&U.data); return U1?Math.max(1,Math.round((new Date(ini+"T12:00")-new Date(segundaDe(U1.data)+"T12:00"))/6048e5)+1):1; }
 function novaSemana(){ const ls=listaSemanas(), hoje=segundaDe(isoDia(new Date()));
   let ini=ls.length?diaMais(ls[0].inicio,7):hoje; if(!ls.length&&new Date().getDay()>=5) ini=diaMais(hoje,7);   // de sexta em diante, prepara-se a semana seguinte
@@ -122,7 +129,7 @@ const resumoAtividade=x=>[tituloAtividade(x),x.tipo!=="outro"?x.txt:"",x.conc?"c
 const htmlLinhasSem=L=>L.map(l=>l.gap?"<i></i>":`<span class="${l.tit?"t":l.b?"b":""}">${esc(l.t)}</span>`).join("");
 
 /* ---------- ecrã ---------- */
-function modoUTHtml(){ return `<div class="seg u-modo"><button data-m="ut" aria-pressed="${uModo==="ut"}">Unidades de Treino</button><button data-m="semana" aria-pressed="${uModo==="semana"}">Plano semanal</button></div>`; }
+function modoUTHtml(){ return `<div class="seg u-modo"><button data-m="ut" aria-pressed="${uModo==="ut"}">UT</button><button data-m="semana" aria-pressed="${uModo==="semana"}">Semana</button><button data-m="ano" aria-pressed="${uModo==="ano"}">Ano</button></div>`; }
 function ligaModoUT(nav){ nav.querySelectorAll(".u-modo button").forEach(b=>b.onclick=()=>{ uModo=b.dataset.m; try{ localStorage.setItem("sca-u-modo",uModo); }catch(e){} renderUT(); }); }
 function renderSemana(){ const ls=listaSemanas(); let S=semanas[sCur]||ls.find(x=>x.inicio<=isoDia(new Date())&&diaMais(x.inicio,6)>=isoDia(new Date()))||ls[0]||null; sCur=S?S.id:null;
   try{ localStorage.setItem("sca-sem-cur",sCur||""); }catch(e){}

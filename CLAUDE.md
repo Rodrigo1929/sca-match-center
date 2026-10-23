@@ -18,6 +18,7 @@ src/js/modelo-de-jogo.js separador Modelo de Jogo (2.º <script>); o editor tamb
 src/js/exercicios.js     separador Exercícios, repositório para as UT (3.º <script>)
 src/js/treino.js         separador Treino, Unidades de Treino e PDF da UT (4.º <script>)
 src/js/semana.js         Plano semanal e calendário de jogos (no separador Treino; junta-se ao 4.º <script>)
+src/js/anual.js          Planeamento anual: dias, microciclos e mesociclos (no separador Treino; junta-se ao 4.º <script>)
 src/data/lances-base.json lances de bolas paradas de origem (DEF_LANCES)
 assets/                  imagens dos campos, logo e letras (embutidos no build como data URI)
 tools/build.mjs          monta dist/index.html (um único ficheiro)

@@ -29,7 +29,7 @@ html = troca(html, "{{CSS}}", ler("src/styles.css"));
 html = troca(html, "{{APP_JS}}", app);
 html = troca(html, "{{MODELO_JS}}", ler("src/js/modelo-de-jogo.js"));
 html = troca(html, "{{EXERC_JS}}", ler("src/js/exercicios.js"));
-html = troca(html, "{{TREINO_JS}}", ler("src/js/treino.js") + "\n" + ler("src/js/semana.js"));
+html = troca(html, "{{TREINO_JS}}", ler("src/js/treino.js") + "\n" + ler("src/js/semana.js") + "\n" + ler("src/js/anual.js"));
 
 mkdirSync(join(raiz, "dist"), { recursive: true });
 writeFileSync(join(raiz, "dist/index.html"), html);

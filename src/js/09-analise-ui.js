@@ -57,8 +57,12 @@ function paraEcra(r_){ const dir=an.ataque[String(r_.parte)]; return dir==="esq"
 function deEcra(fx,fy){ const dir=an.ataque[String(an.posse.parte)]; return dir==="esq"?{x:1-fx,y:1-fy}:{x:fx,y:fy}; }
 function jogadoresAn(){ const emCampo=titulares(), sup=jogo.suplentes.filter(n=>!emCampo.includes(n)); const trocou=(jogo.subs||[]).map(l=>l.entra); return [...new Set([...emCampo,...trocou,...sup])]; }
 function linkAn(x){ return linkVideoModo({t:minutoReg(x),parte:x.parte},jogo.video,"web"); }
+/* faltas (cometidas e sofridas) marcam-se sempre do nosso lado: a sofrida conta como falta cometida do adversário */
+const SO_NOS=["fc","fs"], soNos=id=>SO_NOS.includes(id);
+const AVISO_FALTA="As faltas marcam-se sempre do nosso lado: falta sofrida (por um jogador nosso) ou falta cometida (por um jogador nosso).";
 function tentaGravar(j){
   const S=anSel; if(!S.ac||!S.pt) return false; const A=acaoDe(S.ac);
+  if(S.eq==="eles"&&soNos(S.ac)) return false;
   if(A.dir&&S.pt2===undefined) return false;
   if(A.tipos.length&&!A.tipos.includes(S.tipo)) return false;
   if(j===undefined) j=S.j;
@@ -81,7 +85,7 @@ function renderAnalise(){
   { const sb=$("a-bpl"); sb.hidden=anOrig.or!=="bp"; if(anOrig.or==="bp") opcBpl(sb,anSel.eq,anOrig.bpl); }
   $("ae-nos").setAttribute("aria-pressed",String(anSel.eq==="nos")); $("ae-eles").setAttribute("aria-pressed",String(anSel.eq==="eles"));
   const la=$("a-acoes"); la.innerHTML="";
-  anCfg.acoes.forEach(a=>{ const b=document.createElement("button"); b.setAttribute("aria-pressed",String(anSel.ac===a.id)); b.innerHTML=`<span class="sw"></span><span></span>${a.tecla?`<kbd>${a.tecla}</kbd>`:""}`; b.children[0].style.background=a.cor; b.children[1].textContent=a.nome;
+  anCfg.acoes.forEach(a=>{ const b=document.createElement("button"); b.setAttribute("aria-pressed",String(anSel.ac===a.id)); if(anSel.eq==="eles"&&soNos(a.id)){ b.disabled=true; b.title=AVISO_FALTA; } b.innerHTML=`<span class="sw"></span><span></span>${a.tecla?`<kbd>${a.tecla}</kbd>`:""}`; b.children[0].style.background=a.cor; b.children[1].textContent=a.nome;
     b.onclick=()=>{ const novo=anSel.ac===a.id?null:a.id; anSel={...anSel,ac:novo,tipo:undefined,pt2:novo&&a.dir?anSel.pt2:undefined}; if(!tentaGravar(anSel.eq==="eles"?null:undefined)) renderAnalise(); }; la.appendChild(b); });
   // campo
   const recentes=an.regs.filter(x=>x.parte===an.posse.parte).slice(-12);
@@ -190,6 +194,7 @@ function folhaReg(id){ const x0=an.regs.find(y=>y.id===id); if(!x0) return; cons
     q("#er-ac").onchange=()=>{ tipos(); pinta(); }; tipos(); pinta();
     q("#er-del").onclick=()=>{ const prev=an.regs.slice(); fecha(); guardaAn({...an,regs:an.regs.filter(y=>y.id!==id)}); toast("Registo apagado",()=>guardaAn({...an,regs:prev})); };
     q("#er-ok").onclick=()=>{ const abs=lerTempo(q("#er-min").value); if(abs==null){ q("#er-err").hidden=false; return; }
+      if(q("#er-eq").value==="eles"&&soNos(q("#er-ac").value)){ toast(AVISO_FALTA); return; }
       const parte=+q("#er-p").value, eq=q("#er-eq").value;
       const A=acaoDe(q("#er-ac").value); const novo={...X,parte,eq,ac:A.id,seg:Math.max(0,abs-(parte===2?2700:0)),j:eq==="eles"?null:(q("#er-j").value||null)};
       if(A.tipos.length) novo.tipo=q("#er-t").value; else delete novo.tipo;
@@ -240,11 +245,12 @@ document.addEventListener("keydown",e=>{
   if(k==="-"&&anSel.pt&&anSel.ac&&acaoDe(anSel.ac).dir&&anSel.pt2===undefined){ anSel={...anSel,pt2:null}; if(!tentaGravar(anSel.eq==="eles"?null:undefined)) renderAnalise(); return; }
   const K=k.length===1?k.toUpperCase():"";
   if(!K) return;
-  if(K==="X"){ e.preventDefault(); anSel={...anSel,eq:anSel.eq==="nos"?"eles":"nos"}; if(!(anSel.eq==="eles"&&tentaGravar(null))) renderAnalise(); return; }
+  if(K==="X"){ e.preventDefault(); anSel={...anSel,eq:anSel.eq==="nos"?"eles":"nos"}; if(anSel.eq==="eles"&&soNos(anSel.ac)){ anSel={...anSel,ac:null}; toast(AVISO_FALTA); } if(!(anSel.eq==="eles"&&tentaGravar(null))) renderAnalise(); return; }
   if(K==="Z"){ e.preventDefault(); desfazUltimo(); return; }
   if(K==="S"){ e.preventDefault(); folhaSync(); return; }
   if(K==="T"){ const A=anSel.ac&&acaoDe(anSel.ac); if(!A||!A.tipos.length) return; e.preventDefault(); const i=A.tipos.indexOf(anSel.tipo); anSel={...anSel,tipo:A.tipos[(i+1)%A.tipos.length]}; if(!tentaGravar(anSel.eq==="eles"?null:undefined)) renderAnalise(); return; }
   const A=anCfg.acoes.find(a=>a.tecla===K); if(!A) return; e.preventDefault();
+  if(anSel.eq==="eles"&&soNos(A.id)){ toast(AVISO_FALTA); return; }
   if(anSel.ac===A.id&&A.tipos.length){ const i=A.tipos.indexOf(anSel.tipo); anSel={...anSel,tipo:A.tipos[(i+1)%A.tipos.length]}; }
   else anSel={...anSel,ac:A.id,tipo:undefined,pt2:A.dir?anSel.pt2:undefined};
   if(!tentaGravar(anSel.eq==="eles"?null:undefined)) renderAnalise(); });
@@ -256,7 +262,7 @@ try{ if(localStorage.getItem("sca-kb")){ $("a-kbp").hidden=false; $("a-kb").setA
 $("a-recuo").querySelectorAll("button[data-r]").forEach(b=>b.onclick=()=>recua(+b.dataset.r));
 $("a-ajusta").onclick=folhaTempos;
 $("a-dir").onclick=()=>{ const p=String(an.posse.parte); guardaAn({...an,ataque:{...an.ataque,[p]:an.ataque[p]==="esq"?"dir":"esq"}}); };
-$("ae-nos").onclick=()=>{ anSel={...anSel,eq:"nos"}; renderAnalise(); }; $("ae-eles").onclick=()=>{ anSel={...anSel,eq:"eles"}; if(!tentaGravar(null)) renderAnalise(); };
+$("ae-nos").onclick=()=>{ anSel={...anSel,eq:"nos"}; renderAnalise(); }; $("ae-eles").onclick=()=>{ anSel={...anSel,eq:"eles"}; if(soNos(anSel.ac)){ anSel={...anSel,ac:null}; toast(AVISO_FALTA); } if(!tentaGravar(null)) renderAnalise(); };
 $("a-posse").querySelectorAll("button[data-e]").forEach(b=>b.onclick=()=>setPosse(b.dataset.e));
 $("a-edit-acoes").onclick=()=>{
   const PAL=["#1E7A46","#C00000","#1F497D","#B8963F","#8064A2","#4BACC6","#E07B39","#6B675E","#2E8B57","#00B0F0","#8B5A2B","#E6B000"];

@@ -37,11 +37,13 @@ function folhaCantoRapido(id){ const e0=(jogo.eventos||[]).find(x=>x.id===id); i
     CANTO_R.forEach(([k,n])=>bt("#cr-r",k,`<b style="font-family:var(--f-display)">${k}</b> <span>${n}</span>`,"res"));
     pinta(); }); }
 /* estatística combinada: vídeo substitui o ao vivo quando existir */
-const VID_MAP={rem:x=>["re","rd","rb","golo"].includes(x.ac),enq:x=>x.ac==="re"||x.ac==="golo",can:x=>x.ac==="can",fal:x=>x.ac==="fc",fj:x=>x.ac==="fj"};
+const VID_MAP={rem:x=>["re","rd","rb","golo"].includes(x.ac),enq:x=>x.ac==="re"||x.ac==="golo",can:x=>x.ac==="can",fal:x=>x.ac==="fc"||x.ac==="fs",fj:x=>x.ac==="fj"};
+/* de que equipa conta um registo: a falta sofrida por um jogador nosso é falta cometida do adversário (e vice-versa), sem a marcar duas vezes */
+const contaPara=(k,x,e)=>k==="fal"&&x.ac==="fs"?x.eq!==e:x.eq===e;
 function estatJogo(regs,vv,posseVid,evs){ regs=regs||an.regs; vv=vv||vivo; evs=evs||jogo.eventos||[]; const out={fonte:{}};
   ["1","2"].forEach(p=>{ out[p]={nos:{},eles:{}}; });
   VSTATS.forEach(([k])=>{ const vid=regs.filter(VID_MAP[k]); const usaV=vid.length>0; out.fonte[k]=usaV?"vídeo":"ao vivo";
-    ["1","2"].forEach(p=>["nos","eles"].forEach(e=>{ let v=usaV?vid.filter(x=>String(x.parte)===p&&x.eq===e).length:vv.c[p][e][k];
+    ["1","2"].forEach(p=>["nos","eles"].forEach(e=>{ let v=usaV?vid.filter(x=>String(x.parte)===p&&contaPara(k,x,e)).length:vv.c[p][e][k];
       if(!usaV&&(k==="rem"||k==="enq")) v+=evs.filter(x=>x.tipo===(e==="nos"?"golo":"golo_adv")&&(((minSeg(x.min)??0)<2700)===(p==="1"))).length;
       out[p][e][k]=v; })); });
   const golo=(t,p)=>evs.filter(x=>x.tipo===t&&(((minSeg(x.min)??0)<2700)===(p==="1"))).length;
@@ -71,35 +73,46 @@ function renderVivo(){ if(!$("view-v")||$("view-v").hidden) return; const p=vPar
   cont.querySelectorAll(".menos").forEach(b=>b.onclick=()=>vConta(b.dataset.eq,b.dataset.k,-1));
   const ver=vVer||(p===1?"1":"t"); $("v-ver").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===ver)));
   $("v-est").innerHTML=tabelaEstat(estatJogo(),ver); tickVivo(); }
-function folhaSubVivo(){ let sai=null; const C=COMPS[jogo.comp]||COMPS.taca, sr=subsReais(), np=paragensDe(sr.lista).length, ct=cartoes();
-  const campo=[...sr.campo].sort(byNum), sup=jogo.suplentes.filter(n=>!sr.campo.has(n)&&!sr.lista.some(l=>l.sai===n)).sort(byNum);
+/* substituição no Ao vivo: nova ou (l0) editar uma já feita — minuto, quem sai e quem entra */
+const tSub=l=>l.int?2700:(minSeg(l.min)??1e9);
+function folhaSubVivo(l0){ if(l0&&!l0.sai) l0=null; let sai=l0?l0.sai:null, entra=l0?l0.entra:null;
+  const C=COMPS[jogo.comp]||COMPS.taca, outras=(jogo.subs||[]).filter(l=>!l0||l.id!==l0.id), sr=subsReaisDe(outras), np=paragensDe(subsReais().lista).length, ct=cartoes();
+  const sairam=sr.lista.map(l=>l.sai), campo=[...new Set([...sr.campo,...(l0?[l0.sai]:[])])].sort(byNum);
+  const sup=[...new Set([...jogo.suplentes.filter(n=>!sr.campo.has(n)&&!sairam.includes(n)),...(l0?[l0.entra]:[])])].sort(byNum);
   const resto=est.plantel.map(p=>p.n).filter(n=>n&&!sr.campo.has(n)&&!sup.includes(n)).sort(byNum);
   const mk=n=>ct[n]?.verm?"🟥":ct[n]?.am?"🟨":"";
-  folha(`<h3>🔁 Substituição</h3><p class="sub" style="margin:0">${esc(C.nome)}: <b>${sr.lista.length}/${C.subs>=99?"–":C.subs}</b> substituições · <b>${np}/${C.paragens>=99?"–":C.paragens}</b> paragens (intervalo não conta)${sr.lista.length>=C.subs?` · <b style="color:var(--red)">limite atingido</b>`:""}</p>
+  folha(`<h3>🔁 Substituição${l0?" · editar":""}</h3><p class="sub" style="margin:0">${esc(C.nome)}: <b>${subsReais().lista.length}/${C.subs>=99?"–":C.subs}</b> substituições · <b>${np}/${C.paragens>=99?"–":C.paragens}</b> paragens (intervalo não conta)${!l0&&subsReais().lista.length>=C.subs?` · <b style="color:var(--red)">limite atingido</b>`:""}</p>
     <div style="display:flex;gap:10px;align-items:flex-end"><label class="f" style="flex:1">Minuto<input type="text" id="sv-m" inputmode="numeric" placeholder="Ex.: 63:20"></label><label style="display:flex;gap:6px;align-items:center;font-size:14px;min-height:42px"><input type="checkbox" id="sv-i" style="width:20px;height:20px"> Ao intervalo</label></div>
     <h4>1. Sai</h4><div class="pgrid" id="sv-s"></div>
-    <div id="sv-ew" hidden><h4>2. Entra</h4><div class="pgrid" id="sv-e"></div><details class="more"><summary>Resto do plantel</summary><div class="pgrid" id="sv-r" style="margin-top:8px"></div></details></div>
-    <div class="actions"><button class="btn" data-close>Cancelar</button></div>`,(s,fecha)=>{
-    s.querySelector("#sv-m").value=minAgora();
-    const gs=s.querySelector("#sv-s");
-    botoesJog(gs,campo,n=>{ sai=n; gs.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.querySelector("b").textContent===n))); s.querySelector("#sv-ew").hidden=false; s.querySelector("#sv-ew").scrollIntoView({block:"nearest"}); },mk);
-    const pick=n=>{ if(!sai) return; const it=s.querySelector("#sv-i").checked, mm=s.querySelector("#sv-m").value.trim(); fecha();
-      const l={id:Math.random().toString(36).slice(2,9),sai,entra:n,min:it?"45:00":mm,...(it?{int:true}:{}),c:Date.now()};
-      guardaJogo({...jogo,subs:[...(jogo.subs||[]),l]},true); toast(`🔁 ${l.int?"Intervalo":l.min} · sai ${rot(sai)} · entra ${rot(n)} (quadros não alterados)`,()=>guardaJogo({...jogo,subs:jogo.subs.filter(x=>x.id!==l.id)},true)); };
-    botoesJog(s.querySelector("#sv-e"),sup,pick,mk); if(!sup.length) s.querySelector("#sv-e").innerHTML=`<p class="sub">Sem suplentes convocados disponíveis. Usa "Resto do plantel" ou define-os no separador Jogo.</p>`;
-    botoesJog(s.querySelector("#sv-r"),resto,pick,mk);
+    <div id="sv-ew" ${l0?"":"hidden"}><h4>2. Entra</h4><div class="pgrid" id="sv-e"></div><details class="more"${l0&&resto.includes(l0.entra)?" open":""}><summary>Resto do plantel</summary><div class="pgrid" id="sv-r" style="margin-top:8px"></div></details></div>
+    <div class="actions">${l0?`<button class="btn danger l" id="sv-del">Apagar</button>`:""}<button class="btn" data-close>Cancelar</button>${l0?`<button class="btn primary" id="sv-ok">Guardar</button>`:""}</div>`,(s,fecha)=>{
+    const q=x=>s.querySelector(x); q("#sv-m").value=l0?(l0.int?"45:00":l0.min||""):minAgora(); q("#sv-i").checked=!!(l0&&l0.int);
+    const marcaSel=()=>{ s.querySelectorAll("#sv-s button").forEach(b=>b.setAttribute("aria-pressed",String(b.querySelector("b").textContent===sai)));
+      s.querySelectorAll("#sv-e button,#sv-r button").forEach(b=>b.setAttribute("aria-pressed",String(b.querySelector("b").textContent===entra))); };
+    const grava=()=>{ const it=q("#sv-i").checked, mm=q("#sv-m").value.trim(); fecha();
+      const l={id:l0?l0.id:Math.random().toString(36).slice(2,9),sai,entra,min:it?"45:00":mm,...(it?{int:true}:{}),c:l0?l0.c:Date.now()}, prev=clone(jogo.subs||[]);
+      /* por ordem de minuto: uma troca que mude de minuto continua a contar na ordem certa */
+      const subs=l0?prev.map(x=>x.id===l0.id?l:x).sort((a,b)=>tSub(a)-tSub(b)||(a.c||0)-(b.c||0)):[...prev,l];
+      guardaJogo({...jogo,subs},true); const conta=subsReais().lista.some(x=>x.id===l.id);
+      toast(`🔁 ${l.int?"Intervalo":l.min} · sai ${rot(sai)} · entra ${rot(entra)}${l0?" · alterada":""}${conta?"":" · ⚠ não conta (quem sai não estava em campo)"}`,()=>guardaJogo({...jogo,subs:prev},true)); };
+    botoesJog(q("#sv-s"),campo,n=>{ sai=n; marcaSel(); q("#sv-ew").hidden=false; q("#sv-ew").scrollIntoView({block:"nearest"}); },mk);
+    const pick=n=>{ if(!sai) return; entra=n; marcaSel(); if(!l0) grava(); };
+    botoesJog(q("#sv-e"),sup,pick,mk); if(!sup.length) q("#sv-e").innerHTML=`<p class="sub">Sem suplentes convocados disponíveis. Usa "Resto do plantel" ou define-os no separador Jogo.</p>`;
+    botoesJog(q("#sv-r"),resto,pick,mk); marcaSel();
+    if(l0){ q("#sv-ok").onclick=()=>{ if(!sai||!entra){ toast("Escolhe quem sai e quem entra."); return; } if(sai===entra){ toast("Quem sai e quem entra têm de ser diferentes."); return; } grava(); };
+      q("#sv-del").onclick=()=>{ const prev=clone(jogo.subs); fecha(); guardaJogo({...jogo,subs:jogo.subs.filter(y=>y.id!==l0.id)},true); toast("Substituição apagada",()=>guardaJogo({...jogo,subs:prev},true)); }; }
   }); }
 function renderVivoJogo(){ if(!$("v-evs")) return; const C=COMPS[jogo.comp]||COMPS.taca, sr=subsReais(), np=paragensDe(sr.lista).length, pl=placar();
   $("v-pl").innerHTML=`SCA <span style="color:var(--red)">${pl.nos}</span>–<span style="color:var(--red)">${pl.eles}</span> ${esc((jogo.adversario||"ADV").slice(0,12))}`;
   $("v-subs").innerHTML=`Substituições <b>${sr.lista.length}/${C.subs>=99?"–":C.subs}</b> · Paragens <b>${np}/${C.paragens>=99?"–":C.paragens}</b>`;
   const it=[...(jogo.eventos||[]).filter(e=>e.tipo!=="canto").map(e=>({t:minSeg(e.min)??0,min:e.min,txt:`${EVT[e.tipo][0]} ${EVT[e.tipo][1]}${e.n?" · "+rot(e.n):""}${e.gt?" · "+e.gt.join(" "):""}${e.as?" · assist. "+e.as:""}`,ev:e})),
-    ...sr.lista.map(l=>({t:l.int?2700:(minSeg(l.min)??0),min:l.int?"Int.":l.min,txt:`🔁 ↓ ${rot(l.sai)}  ↑ ${rot(l.entra)}`,sub:l}))].sort((a,b)=>b.t-a.t);
+    ...(jogo.subs||[]).map(l=>({t:l.int?2700:(minSeg(l.min)??0),min:l.int?"Int.":l.min,txt:`🔁 ↓ ${rot(l.sai)}  ↑ ${rot(l.entra)}${sr.lista.includes(l)?"":" · ⚠ não conta"}`,sub:l}))].sort((a,b)=>b.t-a.t);
   const ul=$("v-evs"); ul.innerHTML=it.length?"":`<li class="sub">Ainda sem golos, cartões ou substituições.</li>`;
   const mostra=vTodos?it:it.slice(0,3);
   mostra.forEach(x=>{ const li=document.createElement("li"); li.innerHTML=`<span class="t"></span><span style="flex:1;cursor:pointer"></span><button class="icon x" aria-label="Apagar">✕</button>`;
     li.querySelector(".t").textContent=x.min||"?"; li.children[1].textContent=x.txt;
     if(x.ev){ li.children[1].onclick=()=>folhaEvento(x.ev.tipo,x.ev); li.querySelector(".x").onclick=()=>{ const prev=clone(jogo.eventos); guardaJogo({...jogo,eventos:jogo.eventos.filter(y=>y.id!==x.ev.id)},true); toast("Apagado",()=>guardaJogo({...jogo,eventos:prev},true)); }; }
-    else { li.children[1].onclick=null; li.querySelector(".x").onclick=()=>{ const prev=clone(jogo.subs); guardaJogo({...jogo,subs:jogo.subs.filter(y=>y.id!==x.sub.id)},true); toast("Substituição apagada",()=>guardaJogo({...jogo,subs:prev},true)); }; }
+    else { li.children[1].onclick=()=>folhaSubVivo(x.sub); li.querySelector(".x").onclick=()=>{ const prev=clone(jogo.subs); guardaJogo({...jogo,subs:jogo.subs.filter(y=>y.id!==x.sub.id)},true); toast("Substituição apagada",()=>guardaJogo({...jogo,subs:prev},true)); }; }
     ul.appendChild(li); });
   if(it.length>3){ const li=document.createElement("li"); li.style.cssText="justify-content:center;background:transparent"; li.innerHTML=`<button class="btn sm ghost">${vTodos?"Mostrar só os últimos":"Ver todos ("+it.length+")"}</button>`; li.querySelector("button").onclick=()=>{ vTodos=!vTodos; renderVivoJogo(); }; ul.appendChild(li); } }
 let vTodos=false;
@@ -172,8 +185,9 @@ const CANTO_Z=[["1º","1º poste"],["2º","2º poste"],["PA","Pequena-área"]], 
 const EVT={canto:["🚩","Canto SCA"],golo:["⚽","Golo SCA"],golo_adv:["⚽","Golo adversário"],amarelo:["🟨","Amarelo"],vermelho:["🟥","Vermelho"],amarelo_adv:["🟨","Amarelo adversário"],vermelho_adv:["🟥","Vermelho adversário"],lesao:["✚","Lesão"]};
 function minSeg(m){ const v=seg(m); return v>=1e9?null:v; }
 /* substituições reais: só fase de jogo, quem entra não estava em campo */
-function subsReais(){ let campo=new Set(titulares()); const out=[];
-  (jogo.subs||[]).forEach(l=>{ if(campo.has(l.sai)&&!campo.has(l.entra)){ campo.delete(l.sai); campo.add(l.entra); out.push(l); } }); return {lista:out,campo}; }
+function subsReais(){ return subsReaisDe(jogo.subs||[]); }
+function subsReaisDe(subs){ let campo=new Set(titulares()); const out=[];
+  subs.forEach(l=>{ if(campo.has(l.sai)&&!campo.has(l.entra)){ campo.delete(l.sai); campo.add(l.entra); out.push(l); } }); return {lista:out,campo}; }
 function paragensDe(lista){ return [...new Set(lista.filter(l=>!l.int).map(l=>l.min||("?"+l.id)))]; }
 function cartoes(){ const m={}; (jogo.eventos||[]).forEach(e=>{ if(!e.n) return; if(e.tipo==="amarelo"){ m[e.n]=m[e.n]||{am:0,verm:false}; m[e.n].am++; if(m[e.n].am>=2) m[e.n].verm=true; } if(e.tipo==="vermelho"){ m[e.n]=m[e.n]||{am:0,verm:false}; m[e.n].verm=true; } }); return m; }
 function placar(){ const ev=jogo.eventos||[]; return {nos:ev.filter(e=>e.tipo==="golo").length,eles:ev.filter(e=>e.tipo==="golo_adv").length}; }

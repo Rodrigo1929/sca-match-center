@@ -20,7 +20,7 @@ function folhaEvento(tipo0,ev0){ let tipo=ev0?ev0.tipo:tipo0, n=ev0?.n||null, as
   folha(`<h3>${fam==="golo"?"⚽ Golo":fam==="canto"?"🚩 Canto SC Angrense":"🟨 Cartão"}${ev0?" · editar":""}</h3>
     ${grupo.length>1?`<div class="seg" role="group" id="ev-t">${grupo.map(t=>`<button data-t="${t}">${EVT[t][1]}</button>`).join("")}</div>`:""}
     <label class="f">Minuto<input type="text" id="ev-m" inputmode="numeric" placeholder="Ex.: 23:10"></label>
-    <div id="ev-jw"><h4 id="ev-jt">Jogador</h4><div class="pgrid" id="ev-j"></div></div>
+    <div id="ev-jw"><h4 id="ev-jt">Jogador</h4><div id="ev-j"></div></div>
     <label class="f" id="ev-nal">Nº do adversário que marcou (opcional)<input type="text" id="ev-na" inputmode="numeric"></label>
     <div id="ev-gw"><h4>Tipo de golo</h4><div class="styles" id="ev-g"></div></div>
     <details class="more" id="ev-aw"><summary>Assistência (opcional)</summary><div class="pgrid" id="ev-a" style="margin-top:8px"></div><h4>Tipo de assistência</h4><div class="styles" id="ev-at"></div></details>
@@ -35,8 +35,16 @@ function folhaEvento(tipo0,ev0){ let tipo=ev0?ev0.tipo:tipo0, n=ev0?.n||null, as
       const nosso=!tipo.endsWith("_adv"), golo=tipo.startsWith("golo"), canto=tipo==="canto";
       q("#ev-jw").hidden=!nosso||canto; q("#ev-nal").hidden=tipo!=="golo_adv"; q("#ev-gw").hidden=!golo; q("#ev-aw").hidden=tipo!=="golo"; q("#ev-cw").hidden=!canto;
       q("#ev-jt").textContent=golo?"Marcador":"Jogador";
-      const g=q("#ev-j"); g.innerHTML=""; if(nosso&&!canto){ const ct=cartoes(); botoesJog(g,golo?em:[...new Set([...em,...jogo.suplentes])],x=>{ n=n===x?null:x; g.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.querySelector("b").textContent===n))); },x=>ct[x]?.verm?"🟥":ct[x]?.am?"🟨":"");
-        g.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.querySelector("b").textContent===n))); }
+      const g=q("#ev-j"); g.innerHTML=""; if(nosso&&!canto){ const ct=cartoes(), marca=x=>ct[x]?.verm?"🟥":ct[x]?.am?"🟨":"", sr=subsReais();
+        /* cartões: também para o banco e para quem já saiu (e, se preciso, o resto do plantel) */
+        const sairam=[...new Set([...titulares(),...sr.lista.map(l=>l.entra)])].filter(x=>!sr.campo.has(x)).sort(byNum);
+        const banco=jogo.suplentes.filter(x=>!sr.campo.has(x)&&!sairam.includes(x)).sort(byNum), resto=est.plantel.map(p=>p.n).filter(x=>x&&!sr.campo.has(x)&&!banco.includes(x)&&!sairam.includes(x)).sort(byNum);
+        const marcaSel=()=>g.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.querySelector("b")?.textContent===n))), escolhe=x=>{ n=n===x?null:x; marcaSel(); };
+        (golo?[["",em]]:[["Em campo",em],["Banco",banco],["Já saíram",sairam]]).forEach(([t,ls])=>{ if(!ls.length) return; if(t) g.insertAdjacentHTML("beforeend",`<h5 class="evj-h">${t}</h5>`);
+          const d=document.createElement("div"); d.className="pgrid"; g.appendChild(d); botoesJog(d,ls,escolhe,marca); });
+        if(!golo&&resto.length){ const det=document.createElement("details"); det.className="more"; det.innerHTML=`<summary>Resto do plantel</summary><div class="pgrid" style="margin-top:8px"></div>`; g.appendChild(det);
+          botoesJog(det.querySelector(".pgrid"),resto,escolhe,marca); if(n&&resto.includes(n)) det.open=true; }
+        marcaSel(); }
       if(golo){ chips(q("#ev-g"),GOLO_COD,gt,true); }
       if(tipo==="golo"){ const ga=q("#ev-a"); ga.innerHTML=""; botoesJog(ga,em,x=>{ as=as===x?null:x; ga.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.querySelector("b").textContent===as))); }); ga.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.querySelector("b").textContent===as))); chips(q("#ev-at"),GOLO_COD.filter(([k])=>k!=="AG"&&k!=="P"),ast,false); if(as) q("#ev-aw").open=true; }
       if(canto){ chips(q("#ev-z"),CANTO_Z,zona,false); chips(q("#ev-r"),CANTO_R,res,false); } };

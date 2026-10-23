@@ -1,7 +1,7 @@
 /* ---------- cópia de segurança ---------- */
 function ultimaCopia(){ try{ return localStorage.getItem("sca-ultima-copia")||""; }catch(e){ return ""; } }
 function infoCopia(){ const el_=$("h-bkinfo"); if(!el_) return; const u=ultimaCopia(); el_.textContent=u?`Última cópia feita neste aparelho: ${new Date(u).toLocaleString("pt-PT")}. Recomendado: depois de cada jogo.`:"Ainda não fizeste nenhuma cópia neste aparelho. Recomendado: depois de cada jogo."; }
-async function exportaCopia(){ const B={app:"SCA Match Center",versao:1,criadaEm:new Date().toISOString(),est,jogo,lancesDb,notas,hist,an,anCfg,vivo,modelo:(typeof modelos!=="undefined"?modelos:{}),exercicios:(typeof exercicios!=="undefined"?exercicios:{}),uts:(typeof uts!=="undefined"?uts:{}),semanas:(typeof semanas!=="undefined"?semanas:{}),calendario:(typeof calendario!=="undefined"?calendario:{}),tv:tvCfg||null};
+async function exportaCopia(){ const B={app:"SCA Match Center",versao:1,criadaEm:new Date().toISOString(),est,jogo,lancesDb,notas,hist,an,anCfg,vivo,modelo:(typeof modelos!=="undefined"?modelos:{}),exercicios:(typeof exercicios!=="undefined"?exercicios:{}),uts:(typeof uts!=="undefined"?uts:{}),semanas:(typeof semanas!=="undefined"?semanas:{}),calendario:(typeof calendario!=="undefined"?calendario:{}),anual:(typeof anual!=="undefined"?anual:{}),ciclos:(typeof ciclos!=="undefined"?ciclos:{}),tv:tvCfg||null};
   const nomeF=`Copia_SCA_Match_Center_${new Date().toISOString().slice(0,16).replace(/[T:]/g,"-")}.json`, txt=JSON.stringify(B);
   let dl=null; try{ dl=await window.claude.use("downloads"); }catch(e){}
   try{ if(!dl){ const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([txt],{type:"application/json"})); a.download=nomeF; document.body.appendChild(a); a.click(); a.remove(); }
@@ -21,5 +21,6 @@ function repoeCopia(B){ if(!B||!["SCA Match Center","SCA Bolas Paradas"].include
       if(B.exercicios&&typeof repoeExercicios==="function") repoeExercicios(B.exercicios);
       if(B.uts&&typeof repoeUTs==="function") repoeUTs(B.uts);
       if((B.semanas||B.calendario)&&typeof repoeSemanas==="function") repoeSemanas(B.semanas,B.calendario);
+      if((B.anual||B.ciclos)&&typeof repoeAnual==="function") repoeAnual(B.anual,B.ciclos);
       if(B.tv) guardaTvCfg(B.tv);
       guardaLocal(); render(); renderHist(); toast("Cópia reposta"); }; }); }

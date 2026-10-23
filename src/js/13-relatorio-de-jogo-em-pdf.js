@@ -25,7 +25,7 @@ async function relatorioPdf(G){
   const subsR=G.subsReais||[];
   if((G.onze||[]).length){ titulo("Onze, substituições e minutos");
     const lin=(G.onze||[]).map(o=>{ const sb=subsR.find(l=>l.sai===o.n), mm=mins.find(x=>x.n===o.n); return [o.n,o.nome||nm(o.n),o.pos||"",sb?(sb.int?"Sai ao intervalo":"Sai "+sb.min):"",mm?mm.min+"'":"",cart[o.n]?cart[o.n].replace("AA","2A").replace(/A/,"Amarelo ").replace("V","Vermelho"):""]; });
-    subsR.forEach(l=>{ const mm=mins.find(x=>x.n===l.entra); lin.push([l.entra,nm(l.entra),"Suplente",(l.int?"Entra ao intervalo":"Entra "+l.min)+` (por ${l.sai})`,mm?mm.min+"'":"",cart[l.entra]?"Amarelo":""]); });
+    subsR.forEach(l=>{ const mm=mins.find(x=>x.n===l.entra); lin.push([l.entra,nm(l.entra),"Suplente",(l.int?"Entra ao intervalo":"Entra "+l.min)+` (por ${l.sai})`,mm?mm.min+"'":"",cart[l.entra]?cart[l.entra].replace("AA","2A").replace(/A/,"Amarelo ").replace("V","Vermelho"):""]); });
     tabela(["Nº","Jogador","Pos.","Substituição","Min","Cartão"],lin,{cols:{0:{cellWidth:28},4:{cellWidth:36,halign:"right"}}});
     if(C&&C.subs<99) { T(`${subsR.length} de ${C.subs} substituições · ${paragensDe(subsR.map((l,i)=>({...l,id:"s"+i}))).length} de ${C.paragens} paragens (intervalo não conta)`,M,y-4,{s:8,c:MUT}); y+=8; } }
   // posse
