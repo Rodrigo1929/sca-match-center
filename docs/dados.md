@@ -59,4 +59,4 @@ As imagens ficam no armazenamento de ficheiros do link (capacidade `assets`), n�
   exercicios: [{ id, exId, copia: { …exercício completo como estava no dia, com os ajustes desta UT… } }],   // pela ordem da UT
   criadoPor, criadoEm, alteradoPor, alteradoEm }
 ```
-A UT guarda cópias: mudar um exercício no repositório não muda UTs antigas; a UT avisa e oferece "↻ Atualizar".
+A UT guarda cópias: mudar um exercício no repositório não muda UTs antigas. A cópia guarda o `alteradoEm` que o exercício tinha quando entrou na UT; só quando o repositório tem uma alteração mais recente (e o conteúdo é diferente) a UT avisa e oferece "↻ Atualizar". Os ajustes do dia não contam.

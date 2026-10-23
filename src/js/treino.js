@@ -75,7 +75,7 @@ function renderUTCorpo(U){ const bx=$("u-corpo"), bar=$("u-bar"), tg=$("u-tag");
     <div class="utc-l"><div><span>DATA</span><b>${esc(dataPt_(U.data))}</b></div><div><span>UNIDADE DE TREINO</span><b class="r">${U.numero||"–"}</b></div><div><span>MATCH DAY</span><b>${esc(U.matchDay||"–")}</b></div><div><span>REGIME</span><b>${esc(U.regime||"–")}</b></div><div><span>TEMPO TOTAL TREINO</span><b>${tot?fmtTempo(tot):"–"}</b></div></div></div>`;
   /* exercícios por ordem, numerados */
   if(!U.exercicios.length) h+=`<div class="m-vazio"><b>Ainda não há exercícios nesta UT.</b><span>Vai buscá-los ao repositório. Cada um entra como cópia: podes ajustar a duração ou as variantes só nesta UT.</span><button class="btn primary" id="u-add2">+ Adicionar exercícios do repositório</button></div>`;
-  else h+=`<ol class="utx">${U.exercicios.map((l,i)=>{ const E=l.copia, P=parteDe(E.parte), mud=exercicios[l.exId]&&JSON.stringify(semAutoria(exercicios[l.exId]))!==JSON.stringify(semAutoria(E));
+  else h+=`<ol class="utx">${U.exercicios.map((l,i)=>{ const E=l.copia, P=parteDe(E.parte), mud=mudouNoRepo(l);
     return `<li data-l="${esc(l.id)}"><span class="utx-n">${i+1}</span><div class="utx-t"><span class="tag" style="background:${P[2]}">${esc(P[1].replace("Parte ","").toUpperCase())}</span><b>${esc(E.nome)}</b><small>${esc([E.formato,E.espaco.txt,totalEx(E)?fmtTempo(totalEx(E)):"",rotuloDe(TIPOS_EX,E.tipo)].filter(Boolean).join(" · "))}${mud?` · <span class="utx-mud">mudou no repositório</span>`:""}${!exercicios[l.exId]?` · <span class="sub">já não está no repositório</span>`:""}</small></div>
       <div class="rowbtns"><button class="icon" data-a="up" aria-label="Subir" ${i?"":"disabled"}>▲</button><button class="icon" data-a="dn" aria-label="Descer" ${i<U.exercicios.length-1?"":"disabled"}>▼</button><button class="btn sm ghost" data-a="aj">Ajustar</button>${mud?`<button class="btn sm ghost" data-a="at">↻ Atualizar</button>`:""}<button class="btn sm ghost" data-a="x" aria-label="Tirar da UT">✕</button></div></li>`; }).join("")}</ol>`;
   bx.innerHTML=h; if($("u-add2")) $("u-add2").onclick=()=>folhaAddExUT(U.id);
@@ -89,6 +89,10 @@ function renderUTCorpo(U){ const bx=$("u-corpo"), bar=$("u-bar"), tg=$("u-tag");
       else if(a==="x") confirma2(b,"Tirar?",()=>tiraExUT(lid)); }); }); }
 /* para comparar cópia e repositório sem contar quem alterou e quando */
 const semAutoria=E=>{ const c={...E}; ["criadoPor","criadoEm","alteradoPor","alteradoEm"].forEach(k=>delete c[k]); return c; };
+/* só avisa se o exercício foi alterado no repositório depois de entrar na UT: a cópia guarda a data de alteração que o exercício tinha nesse dia
+   (os ajustes do dia, como a duração ou a figura, não contam) */
+function mudouNoRepo(l){ const R=exercicios[l.exId]; if(!R) return false;
+  return (R.alteradoEm||"")>(l.copia.alteradoEm||"")&&JSON.stringify(semAutoria(R))!==JSON.stringify(semAutoria(l.copia)); }
 function tiraExUT(lid){ const U=uts[uCur], l=U&&U.exercicios.find(x=>x.id===lid); if(!l) return; editaUT(U=>{ U.exercicios=U.exercicios.filter(x=>x.id!==lid); },`“${l.copia.nome}” tirado da UT`); }
 function renderUTPainel(U){ const pn=$("u-panel");
   if(!U){ pn.innerHTML=`<header><h2>Unidades de Treino</h2><p class="sub">Feitas com os exercícios do repositório.</p></header>`; return; }
