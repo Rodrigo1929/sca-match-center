@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| 76 | Treino: novo Plano semanal (botão Unidades de Treino / Plano semanal). Semana de segunda a domingo com manhã e tarde/noite: treino (concentração, horário, local, nº do treino ligado à UT), ginásio, viagem, outro ou folga. Semana nova feita a partir do calendário (folga a seguir ao jogo, véspera de manhã, treinos à noite). Calendário de jogos (oficiais e jogos-treino, com emblema do adversário opcional). PDF igual ao plano semanal do clube (A4 deitado, emblemas da AFAH e do SCA). Entra na cópia de segurança |
 | 75 | PDF da UT: os grupos de trabalho saem todos, em 2 colunas; se não couberem no bloco continuam no bloco seguinte ou numa página nova (com o cabeçalho). Jogadores de fora do plantel com alcunhas (ex.: Guga), que o 👥 Ler também reconhece |
 | 74 | Treino: ↻ Atualizar abre uma escolha — atualizar e manter os ajustes desta UT (parte, espaço, duração, variantes) ou substituir tudo (2 toques). Plantel com coluna Alcunhas (separadas por vírgulas). Grupos de trabalho escritos em texto (ex.: os das UTs importadas): botão 👥 Ler procura os nomes e alcunhas do Plantel e cria os grupos com jogadores, com pré-visualização e lista dos nomes que não reconheceu; a nota do grupo passa a aceitar várias linhas |
 | 73 | Treino: o aviso "mudou no repositório" (e o botão ↻ Atualizar) só aparece quando o exercício foi alterado no repositório depois de entrar na UT; os ajustes do dia (duração, espaço, figura) já não contam como mudança. Importadas 25 UTs do clube (UT1 a UT39) e 92 exercícios novos para o repositório |

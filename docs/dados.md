@@ -19,6 +19,8 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
 | `modelo/{id}` | coleção | Quadros do Modelo de Jogo |
 | `exercicios/{id}` | coleção | Repositório de exercícios para as UT (ver abaixo) |
 | `uts/{id}` | coleção | Unidades de Treino (ver abaixo) |
+| `semanas/{id}` | coleção | Planos semanais (id = segunda-feira da semana; ver abaixo) |
+| `calendario/{id}` | coleção | Jogos da época, oficiais e jogos-treino (ver abaixo) |
 
 ## Quadro do Modelo de Jogo (`modelo/{id}`)
 ```
@@ -60,3 +62,19 @@ As imagens ficam no armazenamento de ficheiros do link (capacidade `assets`), n�
   criadoPor, criadoEm, alteradoPor, alteradoEm }
 ```
 A UT guarda cópias: mudar um exercício no repositório não muda UTs antigas. A cópia guarda o `alteradoEm` que o exercício tinha quando entrou na UT; só quando o repositório tem uma alteração mais recente (e o conteúdo é diferente) a UT avisa e oferece "↻ Atualizar". Os ajustes do dia não contam. Ao atualizar, por defeito ficam os campos do dia (`parte`, `espaco`, `duracao`, `variantes`); "Substituir tudo" traz a cópia inteira.
+
+## Plano semanal (`semanas/{id}`)
+```
+{ id = inicio: "AAAA-MM-DD" (segunda-feira), numero (nº da semana no plano), obs,
+  dias: { "AAAA-MM-DD": { folga, manha: sessão|null, tarde: sessão|null } },     // os 7 dias da semana
+  criadoPor, criadoEm, alteradoPor, alteradoEm }
+sessão = { tipo: "treino"|"ginasio"|"viagem"|"outro", txt, conc, ini, fim (horas "19:30"), local, treino (nº = nº da UT) }
+```
+O jogo não se grava na semana: vem do calendário pela data (de manhã se for antes das 13h).
+
+## Jogo do calendário (`calendario/{id}`)
+```
+{ id, data: "AAAA-MM-DD", hora: "15:00", adversario, casa: true|false, competicao, jornada, local, nota,
+  emblema?: { id, w, h },        // imagem no armazenamento do link (assets)
+  criadoPor, criadoEm, alteradoPor, alteradoEm }
+```

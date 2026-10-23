@@ -388,6 +388,34 @@ ol.utx li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;al
 .utx-t small{color:var(--muted);font-size:12.5px}
 .utx-mud{color:var(--warn);font-weight:700}
 .ug-nota{white-space:pre-line}
+/* Treino: alternar UT / Plano semanal */
+.u-modo{margin:0 0 10px;display:grid;grid-template-columns:1fr 1fr}
+.u-modo button{min-height:40px;font-size:13px;padding:4px 6px}
+/* Plano semanal: a grelha do plano do clube */
+.psem-wrap{margin:12px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.psem{border-collapse:collapse;width:100%;min-width:660px;table-layout:fixed;font-size:11px;text-align:center;font-family:var(--f-display)}
+.psem th,.psem td{border:1px solid #1B1A17;padding:4px 2px;vertical-align:middle;overflow-wrap:anywhere}
+.psem thead th{background:#000;color:#fff;font-weight:600;letter-spacing:.2px;font-size:10.5px}
+.psem thead th:first-child,.psem tbody th{width:11%}
+.psem .ps-dia td{background:#D9D9D9}
+.psem .ps-dia td:first-child{background:#fff;font-size:16px}
+.psem tbody th{background:#D9D9D9;font-weight:800}
+.psem td[data-d],.psem td[data-j]{cursor:pointer}
+.psem .ps-vazio{background:#808080;height:118px}
+.psem .ps-vazio:hover{background:#999}
+.psem .ps-ses{background:#fff;height:118px}
+.psem .ps-ses span{display:block;line-height:1.35}
+.psem .ps-ses i{display:block;height:6px}
+.psem .ps-ses .b{font-weight:800}
+.psem .ps-ses .t{color:#C00000;font-weight:800;text-decoration:underline}
+.psem .ps-ut{display:block;margin-top:4px;color:var(--ok,#1E9E3E);font-weight:700}
+.psem .ps-jogo{background:#FF6600;color:#fff;height:118px}
+.psem .ps-jogo span{display:block;line-height:1.35}.psem .ps-jogo .b{font-weight:800}
+.psem .ps-folga{background:#FCE4A0;font-size:26px;line-height:1.2}
+.psem .ps-folga b{display:block}
+.psem .ps-loc{background:#3F3F3F;color:#fff;font-size:10.5px;height:34px}
+.psem .ps-obs th{background:#D9D9D9}.psem .ps-obs td{font-weight:800;background:#fff}
+.jc-emb{display:flex;align-items:center;gap:12px}.jc-emb img{width:56px;height:56px;object-fit:contain}
 .upres{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px}
 /* jovens da formação: escalão à vista */
 .chip em.esc{font-style:normal;font-size:11px;font-weight:700;color:#fff;background:#1F3A5F;border-radius:4px;padding:0 5px}

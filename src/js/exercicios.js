@@ -63,11 +63,11 @@ let xAssets; const xImgUrl={};
 async function assetsEx(){ if(xAssets!==undefined) return xAssets; try{ xAssets=window.claude&&window.claude.use?await window.claude.use("assets"):null; }catch(e){ xAssets=null; } return xAssets; }
 const srcImagem=im=>xImgUrl[im.id]||"/_blob/"+im.id;
 /* fotos do iPad ou prints grandes: no máximo 1600 px no lado maior, JPEG */
-async function reduzImagem(file,max=1600){ const url=URL.createObjectURL(file);
+async function reduzImagem(file,max=1600,png=false){ const url=URL.createObjectURL(file);   // png: mantém o fundo transparente (emblemas)
   try{ const img=new Image(); await new Promise((ok,ko)=>{ img.onload=ok; img.onerror=()=>ko(new Error("imagem")); img.src=url; });
     const f=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight)), w=Math.max(1,Math.round(img.naturalWidth*f)), h=Math.max(1,Math.round(img.naturalHeight*f));
-    const cv=document.createElement("canvas"); cv.width=w; cv.height=h; const cx=cv.getContext("2d"); cx.fillStyle="#fff"; cx.fillRect(0,0,w,h); cx.drawImage(img,0,0,w,h);
-    const blob=await new Promise(ok=>cv.toBlob(ok,"image/jpeg",.85)); if(!blob) throw new Error("imagem"); return {blob,w,h}; }
+    const cv=document.createElement("canvas"); cv.width=w; cv.height=h; const cx=cv.getContext("2d"); if(!png){ cx.fillStyle="#fff"; cx.fillRect(0,0,w,h); } cx.drawImage(img,0,0,w,h);
+    const blob=await new Promise(ok=>png?cv.toBlob(ok,"image/png"):cv.toBlob(ok,"image/jpeg",.85)); if(!blob) throw new Error("imagem"); return {blob,w,h}; }
   finally{ URL.revokeObjectURL(url); } }
 const ERR_ASSETS={too_large:"A imagem é demasiado grande.",unsupported_type:"Esse tipo de ficheiro não é aceite. Usa uma foto ou imagem (JPG ou PNG).",quota_or_state:"O espaço para imagens do link está cheio.",rate_limited:"Muitas tentativas seguidas. Espera um pouco e tenta de novo.",upstream_auth:"Sessão expirada. Recarrega a página.",not_granted:"Sem permissão para carregar imagens neste link."};
 function folhaImagemEx(id){ const E=exercicios[id]; if(!E) return; const im=E.figura&&E.figura.imagem;

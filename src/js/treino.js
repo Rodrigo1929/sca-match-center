@@ -51,12 +51,12 @@ function duplicaUT(id){ const U=uts[id]; if(!U) return; const num=Math.max(0,...
 function repoeUTs(X){ Object.keys(uts).forEach(id=>{ if(!X[id]) apagaDoc("uts/"+id); }); uts={}; Object.entries(X||{}).forEach(([id,U])=>{ uts[id]=normUT({...U,id}); gravaDoc("uts/"+id,uts[id]); }); guardaUTLocal(); renderUT(); }
 
 /* ---------- ecrã ---------- */
-function renderUT(){ const v=$("view-u"); if(!v||v.hidden) return; const ls=listaUTs(); let U=uts[uCur]||ls[0]||null; uCur=U?U.id:null;
+function renderUT(){ const v=$("view-u"); if(!v||v.hidden) return; if(uModo==="semana"){ renderSemana(); return; } const ls=listaUTs(); let U=uts[uCur]||ls[0]||null; uCur=U?U.id:null;
   try{ localStorage.setItem("sca-ut-cur",uCur||""); }catch(e){}
   renderUTNav(ls,U); renderUTCorpo(U); renderUTPainel(U); }
 function renderUTNav(ls,U){ const nav=$("u-nav");
-  nav.innerHTML=`<button class="newl" id="u-nova">+ Nova UT</button><div class="grp"><h3>Unidades de treino</h3><ul>${ls.length?ls.map(x=>`<li><button data-id="${esc(x.id)}" aria-current="${!!U&&x.id===U.id}"><span class="n">${x.numero||"–"}</span><span class="m-nm">UT${x.numero} · ${esc(dataPt_(x.data).slice(0,5))}<small>${esc([x.matchDay,x.exercicios.length+" exerc.",totalUT(x)?fmtTempo(totalUT(x)):""].filter(Boolean).join(" · "))}</small></span></button></li>`).join(""):`<li><span class="m-nada">Ainda sem UT</span></li>`}</ul></div>`;
-  $("u-nova").onclick=novaUT;
+  nav.innerHTML=modoUTHtml()+`<button class="newl" id="u-nova">+ Nova UT</button><div class="grp"><h3>Unidades de treino</h3><ul>${ls.length?ls.map(x=>`<li><button data-id="${esc(x.id)}" aria-current="${!!U&&x.id===U.id}"><span class="n">${x.numero||"–"}</span><span class="m-nm">UT${x.numero} · ${esc(dataPt_(x.data).slice(0,5))}<small>${esc([x.matchDay,x.exercicios.length+" exerc.",totalUT(x)?fmtTempo(totalUT(x)):""].filter(Boolean).join(" · "))}</small></span></button></li>`).join(""):`<li><span class="m-nada">Ainda sem UT</span></li>`}</ul></div>`;
+  $("u-nova").onclick=novaUT; ligaModoUT(nav);
   nav.querySelectorAll("button[data-id]").forEach(b=>{ b.onclick=()=>{ uCur=b.dataset.id; renderUT(); };
     b.oncontextmenu=e=>{ const X=uts[b.dataset.id]; if(X) menuContexto(e,[["⧉ Duplicar UT",()=>duplicaUT(X.id)],[`🗑 Apagar UT${X.numero}`,()=>apagaUT(X.id),"perigo"]]); }; }); }
 function renderUTCorpo(U){ const bx=$("u-corpo"), bar=$("u-bar"), tg=$("u-tag");

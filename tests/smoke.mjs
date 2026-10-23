@@ -237,6 +237,21 @@ await pg.click("#tab-x"); await pg.evaluate(() => { const E = exercicios[xCur]; 
 const [dSemEx] = await Promise.all([pg.waitForEvent("download", { timeout: 60000 }), pg.click("#x-pdf")]); await dSemEx.saveAs(join(cap, "exercicio-sem-imagem.pdf"));
 if (statSync(join(cap, "exercicio-sem-imagem.pdf")).size < 10000) erros.push("Exercício: com a imagem em falta o PDF devia sair na mesma");
 
+// Plano semanal: jogo no calendário → semana nova (véspera de manhã, treinos à noite, jogo no domingo); marcar folga; PDF
+await pg.click("#tab-u"); await pg.click(".u-modo button[data-m='semana']"); await pg.waitForSelector("#s-nova2");
+const iniS = await pg.evaluate(() => { const h = segundaDe(isoDia(new Date())); return new Date().getDay() >= 5 ? diaMais(h, 7) : h; });
+await pg.click("#s-jn"); await pg.fill("#jc-d", await pg.evaluate((i) => diaMais(i, 6), iniS)); await pg.fill("#jc-h", "15:00"); await pg.fill("#jc-a", "Boavista CR");
+await pg.fill("#jc-p", "Taça AFAH"); await pg.fill("#jc-j", "3ª Jornada"); await pg.click("#jc-ok"); await pg.waitForTimeout(150);
+await pg.click("#s-nova2"); await pg.waitForTimeout(200);
+const sem = await pg.evaluate(() => { const S = semanas[sCur], ds = diasDaSemana(S.inicio); return { ini: S.inicio, sab: S.dias[ds[5]].manha && S.dias[ds[5]].manha.tipo, ter: S.dias[ds[1]].tarde && S.dias[ds[1]].tarde.conc, jogo: !!document.querySelector(".psem .ps-jogo") }; });
+if (sem.ini !== iniS || sem.sab !== "treino" || sem.ter !== "19:15" || !sem.jogo) erros.push("Plano semanal: semana-tipo errada " + JSON.stringify(sem));
+await pg.click(".psem tbody tr:first-child td:nth-child(2)"); await pg.click("#ss-t button[data-k='folga']"); await pg.click("#ss-ok"); await pg.waitForTimeout(150);
+if (!(await pg.locator(".psem .ps-folga").count())) erros.push("Plano semanal: a folga não ficou marcada");
+await pg.screenshot({ path: join(cap, "plano-semanal.png"), fullPage: true });
+const [dPS] = await Promise.all([pg.waitForEvent("download", { timeout: 60000 }), pg.click("#s-pdf")]); const fPS = join(cap, "plano-semanal.pdf"); await dPS.saveAs(fPS);
+if (statSync(fPS).size < 20000) erros.push(`Plano semanal: PDF estranho (${statSync(fPS).size} bytes)`);
+await pg.click(".u-modo button[data-m='ut']");
+
 await browser.close();
 if (erros.length) { console.error("FALHOU:\n" + erros.join("\n")); process.exit(1); }
 console.log(`OK${ipad ? " (WebKit · iPad)" : ""} · capturas em ${ipad ? "tests/capturas/ipad/" : "tests/capturas/"}`);
