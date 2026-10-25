@@ -51,6 +51,7 @@ Publica-se **só** para https://claude.ai/artifact/L7rJPrEcxmw86DbHyT5vEw — nu
 - Regras de acesso da base de dados (manter numa republicação, omitindo `capabilities`): raiz e `obs` só o dono; `obs/{self}` lê e escreve o próprio observador (nível `interact` ou mais). O observador precisa de ser convidado como **Editor** (convidado de fora do clube como Leitor não grava) e a página não pode estar partilhada por link público.
 - Caminhos: `obs/<uid>` (marca), `obs/<uid>/relatorios/<id>` (um relatório por adversário), `obs/<uid>/revisoes/<id>` (comentários do Rodrigo; só o dono escreve).
 - O guião de perguntas, a síntese (estrutura, 3 ameaças, 3 oportunidades, bolas paradas e jogadores, clips) e os princípios (espírito de equipa, intensidade, organização, objetividade; referência 3-4-3) foram definidos pelo Rodrigo: não mudar sem ele.
+- Adversários: as equipas do Campeonato de Futebol dos Açores da época em curso (`EQUIPAS` e `EPOCA` no início do script). Na época seguinte, atualizar a lista com a fonte oficial.
 - Cada evidência guarda jogo, minuto do vídeo (mm:ss), frequência (recorrente, pontual, a confirmar) e resultado no momento.
 
 ## Regras técnicas

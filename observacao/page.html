@@ -21,6 +21,7 @@
   --red:#E0393A; --red-ink:#FFFFFF; --gold:#D6B262; --gold-soft:#352C18; --blue:#5B8FE0; --blue-soft:#1C2A40;
   --ok:#5BC48A; --ok-soft:#173225; --warn:#E3A44B; --warn-soft:#3A2A12; --shadow:0 1px 2px rgba(0,0,0,.4); color-scheme:dark}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{background:var(--bg);color:var(--ink)}
 body{font-family:var(--f-body);font-size:15.5px;line-height:1.45;-webkit-tap-highlight-color:transparent}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
@@ -155,10 +156,14 @@ textarea{resize:vertical;min-height:70px;line-height:1.45}
 </div></header>
 <main class="wrap" id="main"></main>
 <button class="btn primary fab" id="fab" hidden>+ Nota</button>
-<div id="sheet-root"></div><div id="toast-root"></div>
+<datalist id="dl-eq"></datalist><div id="sheet-root"></div><div id="toast-root"></div>
 
 <script>
 /* ======================= GUIÃO DE OBSERVAÇÃO ======================= */
+const COMP="Campeonato de Futebol dos Açores", EPOCA="2026/27";
+/* equipas do CFA 2026/27 (Açoriano Oriental, 02/09/2026); o SC Angrense não entra na lista de adversários */
+const EQUIPAS=[["Barreiro","Terceira"],["Lusitânia","Terceira"],["Madalena","Pico"],["Praiense","Terceira"],["Rabo de Peixe","São Miguel"],["Santo António","São Miguel"],["São Roque","São Miguel"],["União Micaelense","São Miguel"],["Vale Formoso","São Miguel"]];
+const TODAS=["Angrense",...EQUIPAS.map(e=>e[0])].sort((a,b)=>a.localeCompare(b,"pt"));
 const PRINC=["Espírito de equipa","Intensidade","Organização","Objetividade"];
 const SECS=[
   {k:"ficha",t:"Ficha e jogos",g:"Relatório"},
@@ -256,7 +261,7 @@ function normRel(d){ const R={...d}; R.adversario=String(R.adversario||""); R.co
   R.refs=Array.isArray(R.refs)?R.refs.filter(p=>p&&p.id).map(p=>({n:"",nome:"",pos:"",papeis:[],fortes:"",...p})):[];
   const S=R.sint||{}; R.sint={estrutura:String(S.estrutura||""),ameacas:[0,1,2].map(i=>String((S.ameacas||[])[i]||"")),oport:[0,1,2].map(i=>String((S.oport||[])[i]||"")),bpref:String(S.bpref||"")};
   R.clips=Array.isArray(R.clips)?R.clips.filter(c=>c&&c.id):[]; return R; }
-function novoRel(){ return normRel({id:nid("r"),autor:meId||"local",criadoEm:new Date().toISOString()}); }
+function novoRel(adv){ return normRel({id:nid("r"),autor:meId||"local",adversario:adv||"",competicao:COMP+" "+EPOCA,criadoEm:new Date().toISOString()}); }
 function relAtual(){ return vista.id&&rels[vista.id]?rels[vista.id]:null; }
 function podeEditar(R){ return !soLeitura&&R&&(R.autor===meId||souDono||semDb); }
 
@@ -319,15 +324,24 @@ function render(){ const R=relAtual(); if(vista.tipo==="rel"&&!R){ vista={tipo:"
 function contagens(R){ const resp=SEC_Q.reduce((a,s)=>a+s.q.filter((_,i)=>(R.resp[s.k+(i+1)]||"").trim()).length,0), tot=SEC_Q.reduce((a,s)=>a+s.q.length,0);
   return {resp,tot,ev:R.evid.length,soltas:R.evid.filter(e=>!e.q).length}; }
 function renderLista(){ const ls=Object.values(rels).sort((a,b)=>String(b.atualizadoEm||b.criadoEm).localeCompare(String(a.atualizadoEm||a.criadoEm)));
-  const avisos=bannerAcesso(); let h=`${avisos}<div class="lhead"><div><h2>${souDono?"Relatórios de observação":"Os meus relatórios"}</h2><p>${souDono?"Todos os relatórios dos observadores. Cada observador só vê os relatórios que criou.":"Um relatório por adversário. Podes juntar vários jogos observados no mesmo relatório."}</p></div>${!soLeitura?`<button class="btn primary" id="novo">+ Novo relatório</button>`:""}</div>`;
-  if(!ls.length) h+=`<div class="empty"><b>Ainda não há relatórios.</b><span>Cria um relatório por adversário. Dentro dele tens o guião de perguntas, o campo para a estrutura, as bolas paradas, os jogadores de referência e a síntese final. No estádio, usa o botão <b>+ Nota</b> para registar depressa e arrumar depois.</span>${!soLeitura?`<button class="btn primary" id="novo2">+ Criar o primeiro relatório</button>`:""}</div>`;
-  else { h+=`<div class="cards">`; ls.forEach(R=>{ const c=contagens(R), rv=revs[R.id], est=rv&&rv.revisto?["rev","Revisto"]:R.estado==="env"?["env","Para revisão"]:["rasc","Em curso"];
-      h+=`<button class="rcard" data-id="${esc(R.id)}"><div class="row" style="justify-content:space-between;width:100%"><span class="chip ${est[0]}">${est[1]}</span>${souDono&&R.autor!==meId?`<span class="hint">${esc(nomes[R.autor]||"Observador")}</span>`:""}</div>
+  const avisos=bannerAcesso(); let h=`${avisos}<div class="lhead"><div><h2>${souDono?"Relatórios de observação":"Os meus relatórios"}</h2><p>${souDono?"Todos os relatórios dos observadores. Cada observador só vê os relatórios que criou.":"Um relatório por adversário do campeonato. Podes juntar vários jogos observados no mesmo relatório."}</p></div>${!soLeitura?`<button class="btn" id="novo">+ Outro adversário</button>`:""}</div>`;
+  const cartao=R=>{ const c=contagens(R), rv=revs[R.id], est=rv&&rv.revisto?["rev","Revisto"]:R.estado==="env"?["env","Para revisão"]:["rasc","Em curso"];
+      return `<button class="rcard" data-id="${esc(R.id)}"><div class="row" style="justify-content:space-between;width:100%"><span class="chip ${est[0]}">${est[1]}</span>${souDono&&R.autor!==meId?`<span class="hint">${esc(nomes[R.autor]||"Observador")}</span>`:""}</div>
         <h3>${esc(R.adversario||"Adversário por definir")}</h3><div class="meta"><span><b>${R.jogos.length}</b> ${R.jogos.length===1?"jogo":"jogos"}</span><span><b>${c.resp}/${c.tot}</b> perguntas</span><span><b>${c.ev}</b> evidências</span>${c.soltas?`<span style="color:var(--warn)"><b>${c.soltas}</b> por arrumar</span>`:""}</div>
-        <div class="meta">${R.competicao?esc(R.competicao)+" · ":""}Atualizado ${new Date(R.atualizadoEm||R.criadoEm).toLocaleDateString("pt-PT")}</div></button>`; }); h+=`</div>`; }
+        <div class="meta">Atualizado ${new Date(R.atualizadoEm||R.criadoEm).toLocaleDateString("pt-PT")}</div></button>`; };
+  const feitas=EQUIPAS.filter(([n])=>ls.some(R=>R.adversario===n)).length;
+  h+=`<div class="row" style="justify-content:space-between;margin:0 0 10px"><h3 style="font-size:19px">${COMP} ${EPOCA}</h3><span class="hint"><b style="color:var(--ink)">${feitas}/${EQUIPAS.length}</b> adversários com relatório</span></div><div class="cards" style="margin-bottom:22px">`;
+  EQUIPAS.forEach(([n,ilha])=>{ const rs=ls.filter(R=>R.adversario===n);
+    if(rs.length) rs.forEach(R=>h+=cartao(R));
+    else h+=`<div class="rcard" style="box-shadow:none;background:var(--surface-2);border-style:dashed"><span class="hint">${esc(ilha)}</span><h3>${esc(n)}</h3><div class="meta">Ainda sem relatório</div>${!soLeitura?`<button class="btn sm" data-novo="${esc(n)}" style="align-self:flex-start">+ Começar observação</button>`:""}</div>`; });
+  h+=`</div>`;
+  const outros=ls.filter(R=>!EQUIPAS.some(([n])=>n===R.adversario));
+  if(outros.length){ h+=`<h3 style="font-size:19px;margin:0 0 10px">Outros adversários</h3><div class="cards">`; outros.forEach(R=>h+=cartao(R)); h+=`</div>`; }
+  if(false) h+=`<div class="empty"><b>Ainda não há relatórios.</b><span>Cria um relatório por adversário. Dentro dele tens o guião de perguntas, o campo para a estrutura, as bolas paradas, os jogadores de referência e a síntese final. No estádio, usa o botão <b>+ Nota</b> para registar depressa e arrumar depois.</span>${!soLeitura?`<button class="btn primary" id="novo2">+ Criar o primeiro relatório</button>`:""}</div>`;
   $("main").innerHTML=h;
-  [$("novo"),$("novo2")].forEach(b=>b&&(b.onclick=()=>{ const R=novoRel(); guardaRel(R,true); if(db&&meId) gravaDoc(`obs/${meId}`,{ativo:true}); vista={tipo:"rel",id:R.id,sec:"ficha"}; render(); }));
-  $("main").querySelectorAll(".rcard").forEach(b=>b.onclick=()=>{ vista={tipo:"rel",id:b.dataset.id,sec:"ficha"}; bpAberto=null; jogAberto=null; render(); scrollTo(0,0); });
+  const cria=adv=>{ const R=novoRel(adv); guardaRel(R,true); if(db&&meId) gravaDoc(`obs/${meId}`,{ativo:true}); vista={tipo:"rel",id:R.id,sec:"ficha"}; render(); scrollTo(0,0); };
+  [$("novo"),$("novo2")].forEach(b=>b&&(b.onclick=()=>cria(""))); $("main").querySelectorAll("[data-novo]").forEach(b=>b.onclick=()=>cria(b.dataset.novo));
+  $("main").querySelectorAll("button.rcard").forEach(b=>b.onclick=()=>{ vista={tipo:"rel",id:b.dataset.id,sec:"ficha"}; bpAberto=null; jogAberto=null; render(); scrollTo(0,0); });
   carregaNomes(ls.map(r=>r.autor)); }
 function bannerAcesso(){ if(soLeitura) return `<div class="banner" style="margin-bottom:12px"><span>🔒</span><span><b>Sem permissão para gravar.</b> Pede ao Rodrigo acesso de <b>Editor</b> a esta página.</span></div>`;
   if(semDb) return `<div class="banner" style="margin-bottom:12px"><span>⚠</span><span><b>Sem ligação à base de dados.</b> O que registares fica só neste aparelho até a ligação voltar a funcionar.</span></div>`; return ""; }
@@ -399,10 +413,10 @@ function secPerguntas(R,S,box,ed){ const nos=S.k==="nos";
   ligaEv(box,R); }
 
 function secFicha(R,box,ed){ box.innerHTML=`<header><h3>Ficha e jogos observados</h3><p>Um relatório por adversário. Junta aqui todos os jogos que viste: cada evidência fica ligada a um jogo e ao minuto do vídeo.</p></header>
-  <div class="card"><div class="fields"><label class="f">Adversário<input type="text" data-b="adversario" data-rr placeholder="Nome da equipa"></label><label class="f">Competição<input type="text" data-b="competicao" placeholder="Campeonato dos Açores"></label></div></div>
+  <div class="card"><div class="fields"><label class="f">Adversário<select data-b="adversario" data-rr><option value="">Escolher equipa</option>${EQUIPAS.map(([n,i])=>`<option value="${esc(n)}">${esc(n)} (${esc(i)})</option>`).join("")}${R.adversario&&!EQUIPAS.some(([n])=>n===R.adversario)?`<option value="${esc(R.adversario)}">${esc(R.adversario)}</option>`:""}</select></label><label class="f">Competição<input type="text" data-b="competicao"></label></div></div>
   <div class="card"><div class="row" style="justify-content:space-between"><h4>Jogos observados</h4>${ed?`<button class="btn sm" id="j-add">+ Jogo</button>`:""}</div>
     ${R.jogos.length?R.jogos.map(J=>`<div class="card" style="background:var(--surface-2)"><div class="row" style="justify-content:space-between"><b style="font-family:var(--f-display);font-size:17px">${esc(jogoCurto(J))}${J.res?" · "+esc(J.res):""}</b>${ed?`<button class="btn sm ghost" data-jdel="${esc(J.id)}">Apagar</button>`:""}</div>
-      <div class="fields"><label class="f">Contra (equipa que defrontaram)<input type="text" data-b="jogos.${J.id}.vs" data-rr></label><label class="f">Data<input type="date" data-b="jogos.${J.id}.data" data-rr></label>
+      <div class="fields"><label class="f">Contra (equipa que defrontaram)<input type="text" data-b="jogos.${J.id}.vs" data-rr list="dl-eq" autocomplete="off"></label><label class="f">Data<input type="date" data-b="jogos.${J.id}.data" data-rr></label>
       <label class="f">Local<select data-b="jogos.${J.id}.local"><option value="">—</option><option value="casa">Em casa</option><option value="fora">Fora</option></select></label><label class="f">Resultado final<input type="text" data-b="jogos.${J.id}.res" data-rr placeholder="2-1"></label>
       <label class="f">Como observaste<select data-b="jogos.${J.id}.como"><option value="">—</option><option value="vivo">Ao vivo</option><option value="video">Vídeo</option><option value="ambos">Ao vivo e vídeo</option></select></label>
       <label class="f">Link do vídeo<input type="url" data-b="jogos.${J.id}.video" placeholder="https://youtube.com/…"></label></div>
@@ -549,6 +563,7 @@ async function carregaNomes(ids){ if(!usr||!souDono) return; const falta=[...new
   try{ const ps=await usr.profiles(falta); let mud=false; falta.forEach(i=>{ const n=(ps[i]&&ps[i].name)||""; if(nomes[i]!==n){ nomes[i]=n; mud=true; } }); if(mud&&!aEscrever()) render(); }catch(e){} }
 
 /* ======================= arranque ======================= */
+$("dl-eq").innerHTML=TODAS.map(n=>`<option value="${esc(n)}"></option>`).join("");
 render(); estado();
 (async()=>{
   try{ db=window.claude&&window.claude.use?await window.claude.use("db"):null; }catch(e){ db=null; }
