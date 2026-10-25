@@ -52,6 +52,7 @@ Publica-se **só** para https://claude.ai/artifact/L7rJPrEcxmw86DbHyT5vEw — nu
 - Caminhos: `obs/<uid>` (marca), `obs/<uid>/relatorios/<id>` (um relatório por adversário), `obs/<uid>/revisoes/<id>` (comentários do Rodrigo; só o dono escreve).
 - O guião de perguntas, a síntese (estrutura, 3 ameaças, 3 oportunidades, bolas paradas e jogadores, clips) e os princípios (espírito de equipa, intensidade, organização, objetividade; referência 3-4-3) foram definidos pelo Rodrigo: não mudar sem ele.
 - Adversários: as equipas do Campeonato de Futebol dos Açores da época em curso (`EQUIPAS` e `EPOCA` no início do script). Na época seguinte, atualizar a lista com a fonte oficial.
+- Planteis de partida em `observacao/planteis.json` (zerozero, com data). Cada relatório guarda a sua cópia (`plantel`), que o observador corrige; atualizar o ficheiro não mexe nos relatórios já criados. O zerozero bloqueia leituras automáticas: recolher pelo Chrome do Rodrigo.
 - Cada evidência guarda jogo, minuto do vídeo (mm:ss), frequência (recorrente, pontual, a confirmar) e resultado no momento.
 
 ## Regras técnicas

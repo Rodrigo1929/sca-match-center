@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| Obs. 3 | Observação: separador Plantel com os planteis dos 9 adversários tirados do zerozero (25/10/2026), no estilo do plantel da SCA Match Center; posição tracejada quando o zerozero só indica a linha; ligação à Estrutura e aos jogadores de referência |
 | Obs. 2 | Observação: página inicial com os 9 adversários do Campeonato de Futebol dos Açores 2026/27 (o que já tem relatório e o que falta), adversário escolhido da lista e competição preenchida |
 | Obs. 1 | Nova app SCA Observação, em link próprio, para observadores de fora do clube: relatório por adversário com o guião de perguntas, evidências por jogo e minuto, estrutura no campo, bolas paradas, jogadores de referência, síntese e revisão do Rodrigo |
 | 79 | Treino: novo Planeamento anual (botões UT / Semana / Ano): a época em meses × dias, como o Excel do clube, com UT nº, folgas, interrupções, jogos do calendário (siglas TAT, CFA, TIT, TP, ST, JT), microciclos e mesociclos com a cor do período. Tudo editável (dia, microciclo com renumeração, mesociclo). A semana nova do plano semanal segue o anual (nº da UT, folgas, nº do microciclo) e a UT nova vem com o nº do anual e o Match Day calculado pelo calendário (MD-6 acrescentado aos botões). Entra na cópia de segurança |

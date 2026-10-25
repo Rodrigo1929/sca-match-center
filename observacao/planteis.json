@@ -1,0 +1,1796 @@
+{
+ "fonte": "zerozero.pt",
+ "data": "2026-10-25",
+ "epoca": "2026/27",
+ "equipas": {
+  "Barreiro": {
+   "treinador": "Miguel Lopes",
+   "jogadores": [
+    {
+     "n": "1",
+     "nome": "Álvaro Dinis",
+     "idade": "32",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "23",
+     "nome": "João Bettencourt",
+     "idade": "22",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "23",
+     "nome": "Pedro Rocha",
+     "idade": "19",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Sucata",
+     "idade": "32",
+     "pos": "Defesa Central",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Pedro Simões",
+     "idade": "24",
+     "pos": "Defesa",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "3",
+     "nome": "Rui Valadão",
+     "idade": "26",
+     "pos": "Defesa",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "13",
+     "nome": "Diogo Costa",
+     "idade": "23",
+     "pos": "Defesa Esquerdo / Extremo Esquerdo",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "19",
+     "nome": "Leandro Puga",
+     "idade": "26",
+     "pos": "Defesa Esquerdo / Médio Esquerdo",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "20",
+     "nome": "Francisco Fernandes",
+     "idade": "21",
+     "pos": "Defesa Central / Defesa Direito",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "21",
+     "nome": "Donato Sabença",
+     "idade": "21",
+     "pos": "Defesa Esquerdo",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "24",
+     "nome": "Ivan Pamplona",
+     "idade": "20",
+     "pos": "Defesa Esquerdo",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "13",
+     "nome": "Gonçalo Rodrigo",
+     "idade": "21",
+     "pos": "Fixo / Ala",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "8",
+     "nome": "Gustavo Toste",
+     "idade": "28",
+     "pos": "Médio Ofensivo",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "10",
+     "nome": "Jardel Laranjeira",
+     "idade": "28",
+     "pos": "Médio Ofensivo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "16",
+     "nome": "Pedro Aguiar",
+     "idade": "20",
+     "pos": "Médio Centro",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "18",
+     "nome": "Diogo Silveira",
+     "idade": "27",
+     "pos": "Médio Ofensivo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "20",
+     "nome": "André Martins",
+     "idade": "34",
+     "pos": "Médio Centro / Médio Ofensivo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "22",
+     "nome": "Manuel Mendonça",
+     "idade": "21",
+     "pos": "Médio Centro",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "26",
+     "nome": "Mário Vigário",
+     "idade": "20",
+     "pos": "Médio",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "6",
+     "nome": "Paulo Couto",
+     "idade": "27",
+     "pos": "Médio Defensivo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "André Vieira",
+     "idade": "19",
+     "pos": "Avançado",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "7",
+     "nome": "Pocoyo",
+     "idade": "24",
+     "pos": "Avançado",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "9",
+     "nome": "Benjamim Sousa",
+     "idade": "29",
+     "pos": "Avançado",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "9",
+     "nome": "Marquinho",
+     "idade": "29",
+     "pos": "Extremo Direito / Ponta de Lança",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "11",
+     "nome": "Bruce Ávila",
+     "idade": "29",
+     "pos": "Extremo Esquerdo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "14",
+     "nome": "Kaipira",
+     "idade": "25",
+     "pos": "Avançado",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "17",
+     "nome": "Piri",
+     "idade": "27",
+     "pos": "Avançado",
+     "pe": "Direito",
+     "nac": "Portugal"
+    }
+   ]
+  },
+  "Lusitânia": {
+   "treinador": "José Silva",
+   "jogadores": [
+    {
+     "n": "",
+     "nome": "Tomás Silveira",
+     "idade": "17",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "24",
+     "nome": "Fabrice Okoua",
+     "idade": "34",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Costa do Marfim / Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Henrique Mendes",
+     "idade": "17",
+     "pos": "Defesa",
+     "pe": "Ambidestro",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Kaio Brayan",
+     "idade": "21",
+     "pos": "Defesa Central",
+     "pe": "Direito",
+     "nac": "Brasil"
+    },
+    {
+     "n": "",
+     "nome": "Daniel Silva",
+     "idade": "18",
+     "pos": "Defesa Direito",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "7",
+     "nome": "Mohammed Ismail",
+     "idade": "23",
+     "pos": "Defesa Direito / Defesa Esquerdo",
+     "pe": "Direito",
+     "nac": "Portugal / África do Sul"
+    },
+    {
+     "n": "20",
+     "nome": "Pedro Aníbal",
+     "idade": "24",
+     "pos": "Defesa Central",
+     "pe": "Esquerdo",
+     "nac": "Brasil"
+    },
+    {
+     "n": "",
+     "nome": "Paulo Junior",
+     "idade": "27",
+     "pos": "Defesa Central / Médio Defensivo",
+     "pe": "Direito",
+     "nac": "Brasil"
+    },
+    {
+     "n": "",
+     "nome": "Joelson Mendes",
+     "idade": "17",
+     "pos": "Médio Centro",
+     "pe": "Direito",
+     "nac": "Cabo Verde"
+    },
+    {
+     "n": "",
+     "nome": "Daniel Mendes",
+     "idade": "18",
+     "pos": "Médio",
+     "pe": "Ambidestro",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Gustavo Silveira",
+     "idade": "18",
+     "pos": "",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "3",
+     "nome": "Paulo Rodrigues",
+     "idade": "22",
+     "pos": "Médio Centro / Médio Defensivo",
+     "pe": "Ambidestro",
+     "nac": "Brasil / Itália"
+    },
+    {
+     "n": "4",
+     "nome": "André Costa",
+     "idade": "22",
+     "pos": "Médio",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "5",
+     "nome": "David Mudzingwa",
+     "idade": "19",
+     "pos": "Médio",
+     "pe": "Direito",
+     "nac": "Moçambique"
+    },
+    {
+     "n": "8",
+     "nome": "Marlon Silva",
+     "idade": "19",
+     "pos": "Médio",
+     "pe": "Direito",
+     "nac": "Brasil"
+    },
+    {
+     "n": "10",
+     "nome": "David Cassiano",
+     "idade": "22",
+     "pos": "Médio Ofensivo / Médio Centro",
+     "pe": "Esquerdo",
+     "nac": "Estados Unidos / Brasil"
+    },
+    {
+     "n": "",
+     "nome": "Lucas Miranda",
+     "idade": "17",
+     "pos": "Médio",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Luis Maciel",
+     "idade": "21",
+     "pos": "Ponta de Lança",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "9",
+     "nome": "Davi",
+     "idade": "20",
+     "pos": "Ponta de Lança",
+     "pe": "Ambidestro",
+     "nac": "Brasil"
+    },
+    {
+     "n": "13",
+     "nome": "Charmi Nziza",
+     "idade": "21",
+     "pos": "Ponta de Lança / Extremo Esquerdo",
+     "pe": "Direito",
+     "nac": "Canadá / Burundi"
+    },
+    {
+     "n": "6",
+     "nome": "Rodrigo Ferreira",
+     "idade": "22",
+     "pos": "Extremo Esquerdo / Médio Ofensivo",
+     "pe": "Direito",
+     "nac": "Portugal / Canadá"
+    }
+   ]
+  },
+  "Madalena": {
+   "treinador": "Marco Nascimento",
+   "jogadores": [
+    {
+     "n": "1",
+     "nome": "Edmilson Cambila",
+     "idade": "24",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Angola"
+    },
+    {
+     "n": "99",
+     "nome": "Kyle Pereira",
+     "idade": "33",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "12",
+     "nome": "Pedro Silveira",
+     "idade": "17",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Hugo Oliveira",
+     "idade": "17",
+     "pos": "Defesa",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "3",
+     "nome": "Augusto Imbundé",
+     "idade": "23",
+     "pos": "Defesa Central / Médio Defensivo",
+     "pe": "Direito",
+     "nac": "Guiné-Bissau"
+    },
+    {
+     "n": "30",
+     "nome": "Filipe Lopes",
+     "idade": "18",
+     "pos": "Defesa Central / Médio Defensivo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "33",
+     "nome": "Emanuel Rosa",
+     "idade": "37",
+     "pos": "Defesa Direito / Defesa Central",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "47",
+     "nome": "Bernardo Afonso",
+     "idade": "17",
+     "pos": "Defesa Esquerdo / Médio Esquerdo",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "19",
+     "nome": "Djeison Brito",
+     "idade": "23",
+     "pos": "Defesa Direito / Extremo Direito",
+     "pe": "Direito",
+     "nac": "Cabo Verde"
+    },
+    {
+     "n": "",
+     "nome": "Duarte Machado",
+     "idade": "17",
+     "pos": "Médio",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "5",
+     "nome": "Robson Rodrigues",
+     "idade": "35",
+     "pos": "Médio Defensivo / Defesa Central",
+     "pe": "Ambidestro",
+     "nac": "Brasil"
+    },
+    {
+     "n": "6",
+     "nome": "Jeremias João",
+     "idade": "22",
+     "pos": "Médio Centro",
+     "pe": "Direito",
+     "nac": "Angola"
+    },
+    {
+     "n": "8",
+     "nome": "Guilherme Sousa",
+     "idade": "23",
+     "pos": "Médio Ofensivo",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "10",
+     "nome": "Denis Silva",
+     "idade": "20",
+     "pos": "Médio Defensivo / Médio Centro",
+     "pe": "Direito",
+     "nac": "Cabo Verde"
+    },
+    {
+     "n": "14",
+     "nome": "Duarte Serpa",
+     "idade": "18",
+     "pos": "Médio Defensivo",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "77",
+     "nome": "Rui Godinho",
+     "idade": "32",
+     "pos": "Médio Centro / Médio Ofensivo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Guilherme Garcia",
+     "idade": "18",
+     "pos": "Médio Ofensivo",
+     "pe": "Ambidestro",
+     "nac": "Portugal"
+    },
+    {
+     "n": "88",
+     "nome": "Caião",
+     "idade": "26",
+     "pos": "Médio Ofensivo / Médio Centro",
+     "pe": "Direito",
+     "nac": "Brasil"
+    },
+    {
+     "n": "7",
+     "nome": "Ricardo Soares Moreira",
+     "idade": "25",
+     "pos": "Ponta de Lança",
+     "pe": "Direito",
+     "nac": "Cabo Verde / Portugal"
+    },
+    {
+     "n": "11",
+     "nome": "Simão Lopes",
+     "idade": "27",
+     "pos": "Ponta de Lança / Extremo Esquerdo",
+     "pe": "Ambidestro",
+     "nac": "Portugal"
+    },
+    {
+     "n": "18",
+     "nome": "Manuel",
+     "idade": "17",
+     "pos": "Extremo Direito",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "9",
+     "nome": "Gonçalo Sousa",
+     "idade": "32",
+     "pos": "Ponta de Lança / 2.º avançado",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "17",
+     "nome": "Gerson Lopes",
+     "idade": "38",
+     "pos": "Ponta de Lança",
+     "pe": "Direito",
+     "nac": "Cabo Verde"
+    },
+    {
+     "n": "15",
+     "nome": "Anilton Vaz",
+     "idade": "23",
+     "pos": "Extremo Esquerdo / Médio Ofensivo",
+     "pe": "Esquerdo",
+     "nac": "Cabo Verde / Portugal"
+    },
+    {
+     "n": "21",
+     "nome": "Alesio Caushaj",
+     "idade": "23",
+     "pos": "Extremo Esquerdo / Extremo Direito",
+     "pe": "Direito",
+     "nac": "Albânia"
+    }
+   ]
+  },
+  "Praiense": {
+   "treinador": "João Peixoto",
+   "jogadores": [
+    {
+     "n": "1",
+     "nome": "Emanuel Oliveira",
+     "idade": "22",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "45",
+     "nome": "Carlos Fonseca",
+     "idade": "27",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Brasil"
+    },
+    {
+     "n": "",
+     "nome": "Breno Freitas",
+     "idade": "29",
+     "pos": "Defesa Central / Defesa Direito",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "4",
+     "nome": "Cristiano Andrade",
+     "idade": "20",
+     "pos": "Defesa Central / Médio Defensivo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "17",
+     "nome": "Daniel Robertson",
+     "idade": "25",
+     "pos": "Defesa Direito / Extremo Direito",
+     "pe": "Direito",
+     "nac": "Gana"
+    },
+    {
+     "n": "24",
+     "nome": "Alexandre Sousa",
+     "idade": "18",
+     "pos": "Defesa Central",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "70",
+     "nome": "Simão Luz",
+     "idade": "18",
+     "pos": "Defesa Direito / Extremo Direito",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "20",
+     "nome": "Gonçalo Medeiros",
+     "idade": "22",
+     "pos": "Defesa Direito / Médio Centro",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "45",
+     "nome": "Luan",
+     "idade": "28",
+     "pos": "Defesa Central",
+     "pe": "Direito",
+     "nac": "Brasil"
+    },
+    {
+     "n": "35",
+     "nome": "Gabriel Bolila",
+     "idade": "17",
+     "pos": "Médio",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "11",
+     "nome": "Deywar Salazar",
+     "idade": "23",
+     "pos": "Médio Defensivo / Defesa Central",
+     "pe": "Ambidestro",
+     "nac": "Colômbia"
+    },
+    {
+     "n": "25",
+     "nome": "Gustavo Paim",
+     "idade": "20",
+     "pos": "Médio Defensivo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "8",
+     "nome": "José Dias",
+     "idade": "33",
+     "pos": "Médio Centro / Médio Defensivo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Papis Seidi",
+     "idade": "21",
+     "pos": "Extremo Direito / Defesa Direito",
+     "pe": "Ambidestro",
+     "nac": "Portugal / Guiné-Bissau"
+    },
+    {
+     "n": "16",
+     "nome": "Simão Meneses",
+     "idade": "18",
+     "pos": "Ponta de Lança",
+     "pe": "Ambidestro",
+     "nac": "Portugal"
+    },
+    {
+     "n": "80",
+     "nome": "Santiago Vieira",
+     "idade": "16",
+     "pos": "Ponta de Lança / Extremo Esquerdo",
+     "pe": "Ambidestro",
+     "nac": "Portugal"
+    },
+    {
+     "n": "28",
+     "nome": "Jácome Meneses",
+     "idade": "16",
+     "pos": "Extremo Direito",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Leonardo Neto",
+     "idade": "21",
+     "pos": "2.º avançado / Médio Ofensivo",
+     "pe": "Direito",
+     "nac": "Brasil"
+    },
+    {
+     "n": "9",
+     "nome": "Vasco Goulart",
+     "idade": "33",
+     "pos": "Ponta de Lança / Extremo Esquerdo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    }
+   ]
+  },
+  "Rabo de Peixe": {
+   "treinador": "",
+   "jogadores": [
+    {
+     "n": "24",
+     "nome": "Erico Cabral",
+     "idade": "19",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "29",
+     "nome": "Imerson Soares",
+     "idade": "35",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Cabo Verde / Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Afonso",
+     "idade": "17",
+     "pos": "Universal",
+     "pe": "Ambidestro",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "João Couto",
+     "idade": "24",
+     "pos": "Defesa Central",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Jamil Rodríguez",
+     "idade": "29",
+     "pos": "Defesa Central",
+     "pe": "Direito",
+     "nac": "Colômbia"
+    },
+    {
+     "n": "4",
+     "nome": "Rúben Martins",
+     "idade": "23",
+     "pos": "Defesa",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "8",
+     "nome": "Gonçalo Reyes",
+     "idade": "33",
+     "pos": "Defesa Direito",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "17",
+     "nome": "Eskimó",
+     "idade": "25",
+     "pos": "Defesa Direito / Extremo Direito",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "44",
+     "nome": "Mhleli Mleya",
+     "idade": "26",
+     "pos": "Defesa Central / Defesa Esquerdo",
+     "pe": "Esquerdo",
+     "nac": "África do Sul"
+    },
+    {
+     "n": "55",
+     "nome": "Filipe Otávio",
+     "idade": "20",
+     "pos": "Defesa Esquerdo",
+     "pe": "Esquerdo",
+     "nac": "Portugal / Brasil"
+    },
+    {
+     "n": "55",
+     "nome": "Dinis Pires",
+     "idade": "24",
+     "pos": "Defesa Esquerdo / Defesa Direito",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "10",
+     "nome": "Dani Sousa",
+     "idade": "33",
+     "pos": "Médio Ofensivo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "21",
+     "nome": "João Flôr",
+     "idade": "39",
+     "pos": "Médio Defensivo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "22",
+     "nome": "Fernandinho Bampoque",
+     "idade": "25",
+     "pos": "Médio",
+     "pe": "",
+     "nac": "Guiné-Bissau"
+    },
+    {
+     "n": "66",
+     "nome": "Fredrick Agyemang",
+     "idade": "27",
+     "pos": "Médio Centro",
+     "pe": "Direito",
+     "nac": "Gana"
+    },
+    {
+     "n": "88",
+     "nome": "Marcelo Castro",
+     "idade": "30",
+     "pos": "Médio Centro",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Tomas Espinola",
+     "idade": "17",
+     "pos": "Extremo Esquerdo / Médio Centro",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "9",
+     "nome": "Mateus Caçador",
+     "idade": "19",
+     "pos": "Avançado",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "11",
+     "nome": "Modou Jarju",
+     "idade": "25",
+     "pos": "Extremo Esquerdo / Ponta de Lança",
+     "pe": "Direito",
+     "nac": "Gâmbia"
+    },
+    {
+     "n": "19",
+     "nome": "Wilson Sobreda",
+     "idade": "20",
+     "pos": "Extremo Direito / Extremo Esquerdo",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "77",
+     "nome": "Pier Mendes",
+     "idade": "22",
+     "pos": "Extremo Esquerdo / Extremo Direito",
+     "pe": "Direito",
+     "nac": "Guiné-Bissau"
+    },
+    {
+     "n": "80",
+     "nome": "Pedrinho",
+     "idade": "23",
+     "pos": "Extremo Esquerdo / Extremo Direito",
+     "pe": "Esquerdo",
+     "nac": "Brasil"
+    },
+    {
+     "n": "97",
+     "nome": "Manichy Dju",
+     "idade": "22",
+     "pos": "Ponta de Lança",
+     "pe": "Direito",
+     "nac": "Guiné-Bissau"
+    },
+    {
+     "n": "6",
+     "nome": "Diogo Moniz",
+     "idade": "17",
+     "pos": "Avançado",
+     "pe": "Direito",
+     "nac": "Portugal"
+    }
+   ]
+  },
+  "Santo António": {
+   "treinador": "Helinho",
+   "jogadores": [
+    {
+     "n": "1",
+     "nome": "Paulo Medeiros",
+     "idade": "27",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "24",
+     "nome": "Gonçalo Tavares",
+     "idade": "21",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "99",
+     "nome": "Hugo Viveiros",
+     "idade": "31",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "4",
+     "nome": "Hugo Balbino",
+     "idade": "26",
+     "pos": "Defesa Central / Médio Defensivo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "5",
+     "nome": "André Silva",
+     "idade": "28",
+     "pos": "Defesa Central",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "17",
+     "nome": "Alex Miguel",
+     "idade": "27",
+     "pos": "Defesa Direito",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "55",
+     "nome": "Simão Medeiros",
+     "idade": "19",
+     "pos": "Defesa Esquerdo / Médio Esquerdo",
+     "pe": "Ambidestro",
+     "nac": "Portugal"
+    },
+    {
+     "n": "14",
+     "nome": "Rodrigo Moniz",
+     "idade": "25",
+     "pos": "Defesa Direito",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "7",
+     "nome": "Francisco Carvalho",
+     "idade": "26",
+     "pos": "Defesa Esquerdo",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "15",
+     "nome": "Elson Santos",
+     "idade": "29",
+     "pos": "Defesa Esquerdo",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "25",
+     "nome": "David Faro",
+     "idade": "21",
+     "pos": "Defesa Central / Médio Defensivo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Anderson",
+     "idade": "30",
+     "pos": "Médio Centro / Médio Direito",
+     "pe": "Direito",
+     "nac": "Portugal / São Tomé e Príncipe"
+    },
+    {
+     "n": "6",
+     "nome": "Filipe Briló",
+     "idade": "33",
+     "pos": "Médio Defensivo / Médio Ofensivo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "8",
+     "nome": "Lucas Cavaco",
+     "idade": "21",
+     "pos": "Médio Centro",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "16",
+     "nome": "Afonso Furnas",
+     "idade": "17",
+     "pos": "Médio",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "19",
+     "nome": "Hernâni Oliveira",
+     "idade": "26",
+     "pos": "Médio Defensivo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "20",
+     "nome": "Simão Pedro",
+     "idade": "24",
+     "pos": "Médio Direito",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Bernardo Sampaio",
+     "idade": "27",
+     "pos": "Médio Centro",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "88",
+     "nome": "Pimenta",
+     "idade": "37",
+     "pos": "Médio Centro",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "10",
+     "nome": "Filipe Medeiros",
+     "idade": "29",
+     "pos": "Médio Ofensivo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "28",
+     "nome": "Xavier Almeida",
+     "idade": "19",
+     "pos": "Médio Ofensivo",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "21",
+     "nome": "Diogo Sá",
+     "idade": "23",
+     "pos": "Médio Esquerdo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Tiago Benevides",
+     "idade": "33",
+     "pos": "Médio Centro",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Rodrigo Simão",
+     "idade": "25",
+     "pos": "Ponta de Lança",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "9",
+     "nome": "Ricardo Martins",
+     "idade": "32",
+     "pos": "Ponta de Lança",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "11",
+     "nome": "Manuel Travassos",
+     "idade": "26",
+     "pos": "2.º avançado",
+     "pe": "Ambidestro",
+     "nac": "Portugal"
+    },
+    {
+     "n": "23",
+     "nome": "João Lima",
+     "idade": "23",
+     "pos": "Ponta de Lança / Extremo Esquerdo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "27",
+     "nome": "Rodrigo Rosa",
+     "idade": "30",
+     "pos": "Extremo Direito / Extremo Esquerdo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "73",
+     "nome": "Nuno Furtado",
+     "idade": "30",
+     "pos": "Extremo Direito",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    }
+   ]
+  },
+  "São Roque": {
+   "treinador": "Rodrigo Quaresma",
+   "jogadores": [
+    {
+     "n": "",
+     "nome": "Miguel Mira",
+     "idade": "18",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "1",
+     "nome": "Afonso Coelho",
+     "idade": "17",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "25",
+     "nome": "Frederico Dinis",
+     "idade": "30",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Gustavo Machado",
+     "idade": "17",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "2",
+     "nome": "Fred Almeida",
+     "idade": "22",
+     "pos": "Defesa",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "4",
+     "nome": "Steven Moura",
+     "idade": "22",
+     "pos": "Defesa Direito / Defesa Central",
+     "pe": "Direito",
+     "nac": "Canadá / Portugal"
+    },
+    {
+     "n": "11",
+     "nome": "Samuel Vaz",
+     "idade": "30",
+     "pos": "Defesa Esquerdo / Médio Esquerdo",
+     "pe": "Esquerdo",
+     "nac": "Cabo Verde / Portugal"
+    },
+    {
+     "n": "13",
+     "nome": "João Coelho",
+     "idade": "19",
+     "pos": "Defesa",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "18",
+     "nome": "Rodrigo Neto",
+     "idade": "24",
+     "pos": "Defesa",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "19",
+     "nome": "Jorge Cordeiro",
+     "idade": "26",
+     "pos": "Defesa Direito / Defesa Central",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "22",
+     "nome": "Tomás Gata",
+     "idade": "21",
+     "pos": "Defesa",
+     "pe": "",
+     "nac": "Portugal"
+    },
+    {
+     "n": "80",
+     "nome": "Tiago Matos",
+     "idade": "25",
+     "pos": "Defesa",
+     "pe": "",
+     "nac": "Portugal"
+    },
+    {
+     "n": "6",
+     "nome": "André Ferreira",
+     "idade": "19",
+     "pos": "Médio Ofensivo / Ponta de Lança",
+     "pe": "Ambidestro",
+     "nac": "Portugal"
+    },
+    {
+     "n": "9",
+     "nome": "João Arruda",
+     "idade": "24",
+     "pos": "Médio",
+     "pe": "",
+     "nac": "Portugal"
+    },
+    {
+     "n": "17",
+     "nome": "Mosca",
+     "idade": "32",
+     "pos": "Médio",
+     "pe": "",
+     "nac": "Portugal"
+    },
+    {
+     "n": "21",
+     "nome": "Airton Santos",
+     "idade": "26",
+     "pos": "Médio",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "30",
+     "nome": "Carreiro",
+     "idade": "21",
+     "pos": "Médio",
+     "pe": "",
+     "nac": "Portugal"
+    },
+    {
+     "n": "66",
+     "nome": "Tiago Subdez",
+     "idade": "35",
+     "pos": "Médio Defensivo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "87",
+     "nome": "Carlos Rodrigues",
+     "idade": "24",
+     "pos": "Médio Ofensivo / 2.º avançado",
+     "pe": "",
+     "nac": "Portugal"
+    },
+    {
+     "n": "88",
+     "nome": "José Neto",
+     "idade": "27",
+     "pos": "Médio",
+     "pe": "",
+     "nac": "Brasil"
+    },
+    {
+     "n": "",
+     "nome": "Gonçalo Sousa",
+     "idade": "17",
+     "pos": "Avançado",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "João Medeiros",
+     "idade": "28",
+     "pos": "Ponta de Lança / 2.º avançado",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Tonecas",
+     "idade": "34",
+     "pos": "Extremo Direito / Extremo Esquerdo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "7",
+     "nome": "Luciano Carreiro",
+     "idade": "19",
+     "pos": "Avançado",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "10",
+     "nome": "Valtinha",
+     "idade": "37",
+     "pos": "Extremo Direito / Extremo Esquerdo",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "79",
+     "nome": "Rodrigo Junior",
+     "idade": "21",
+     "pos": "Ponta de Lança / 2.º avançado",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "95",
+     "nome": "Miguel Cardoso",
+     "idade": "21",
+     "pos": "Extremo Esquerdo / Extremo Direito",
+     "pe": "Ambidestro",
+     "nac": "Portugal"
+    }
+   ]
+  },
+  "União Micaelense": {
+   "treinador": "",
+   "jogadores": [
+    {
+     "n": "12",
+     "nome": "Diogo Melo",
+     "idade": "22",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "52",
+     "nome": "Tiago Amaral",
+     "idade": "40",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Rui Costa",
+     "idade": "26",
+     "pos": "Defesa Esquerdo / Defesa Central",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "6",
+     "nome": "Xéxé",
+     "idade": "30",
+     "pos": "Defesa Esquerdo",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "8",
+     "nome": "Álvaro Barbosa",
+     "idade": "30",
+     "pos": "Defesa Direito",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "14",
+     "nome": "Leandro Sousa",
+     "idade": "20",
+     "pos": "Defesa Esquerdo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "17",
+     "nome": "André Cordeiro",
+     "idade": "31",
+     "pos": "Defesa Central / Médio Defensivo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "19",
+     "nome": "Érico Andrade",
+     "idade": "30",
+     "pos": "Defesa Direito / Extremo Direito",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "24",
+     "nome": "Acácio Moura",
+     "idade": "18",
+     "pos": "Defesa Central",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "76",
+     "nome": "João Furtado",
+     "idade": "22",
+     "pos": "Defesa Direito",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "85",
+     "nome": "Henrique Rego",
+     "idade": "18",
+     "pos": "Defesa",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Gonçalo Ponte",
+     "idade": "17",
+     "pos": "Médio",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Tiago",
+     "idade": "16",
+     "pos": "Médio",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "7",
+     "nome": "Afonso Pimentel",
+     "idade": "20",
+     "pos": "Médio",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "9",
+     "nome": "Pedro Santos",
+     "idade": "24",
+     "pos": "Médio",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "20",
+     "nome": "Rafa Benevides",
+     "idade": "30",
+     "pos": "Médio Centro",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "23",
+     "nome": "Gonçalo Cabral",
+     "idade": "25",
+     "pos": "Médio",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "89",
+     "nome": "Tomás Botelho",
+     "idade": "24",
+     "pos": "Médio Centro",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Luis Freitas",
+     "idade": "19",
+     "pos": "Médio",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Gonçalo Costa",
+     "idade": "26",
+     "pos": "Extremo Esquerdo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Francisco Aires",
+     "idade": "28",
+     "pos": "Extremo Esquerdo / Extremo Direito",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "10",
+     "nome": "Miguel Rego",
+     "idade": "30",
+     "pos": "Extremo Esquerdo / Extremo Direito",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "11",
+     "nome": "Francisco Branco",
+     "idade": "20",
+     "pos": "Avançado",
+     "pe": "Ambidestro",
+     "nac": "Portugal"
+    },
+    {
+     "n": "21",
+     "nome": "Tiago Viegas",
+     "idade": "19",
+     "pos": "Avançado",
+     "pe": "",
+     "nac": "Portugal"
+    },
+    {
+     "n": "27",
+     "nome": "João Ventura",
+     "idade": "32",
+     "pos": "Extremo Direito / Extremo Esquerdo",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    }
+   ]
+  },
+  "Vale Formoso": {
+   "treinador": "",
+   "jogadores": [
+    {
+     "n": "1",
+     "nome": "Rodrigo Carvalho",
+     "idade": "26",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "23",
+     "nome": "Celso Mota",
+     "idade": "35",
+     "pos": "Guarda Redes",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "4",
+     "nome": "Jerónimo Vieira",
+     "idade": "22",
+     "pos": "Defesa",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "6",
+     "nome": "Ricky Monteiro",
+     "idade": "27",
+     "pos": "Defesa Direito / Defesa Central",
+     "pe": "Ambidestro",
+     "nac": "Cabo Verde"
+    },
+    {
+     "n": "15",
+     "nome": "Paulo Dinarte",
+     "idade": "39",
+     "pos": "Defesa Central",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "33",
+     "nome": "Igor Cartaxo",
+     "idade": "35",
+     "pos": "Defesa Central",
+     "pe": "Direito",
+     "nac": "Brasil"
+    },
+    {
+     "n": "70",
+     "nome": "Sandro Rodrigues",
+     "idade": "26",
+     "pos": "Defesa",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "5",
+     "nome": "Xavier Raposo",
+     "idade": "18",
+     "pos": "Médio",
+     "pe": "",
+     "nac": "Portugal"
+    },
+    {
+     "n": "7",
+     "nome": "Besugo",
+     "idade": "31",
+     "pos": "Médio Centro / Médio Direito",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "8",
+     "nome": "Diogo Moniz",
+     "idade": "33",
+     "pos": "Médio Centro",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "16",
+     "nome": "André Gamarra",
+     "idade": "27",
+     "pos": "Médio Centro / Defesa Direito",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "19",
+     "nome": "Manuel Pacheco",
+     "idade": "19",
+     "pos": "Médio",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "30",
+     "nome": "Rodrigo Oliveira",
+     "idade": "20",
+     "pos": "Médio",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "87",
+     "nome": "Rodrigo Jorge",
+     "idade": "28",
+     "pos": "Médio Esquerdo / Defesa Esquerdo",
+     "pe": "Esquerdo",
+     "nac": "Portugal"
+    },
+    {
+     "n": "",
+     "nome": "Gabriel Okebe",
+     "idade": "23",
+     "pos": "Extremo Direito / Extremo Esquerdo",
+     "pe": "Direito",
+     "nac": "Nigéria"
+    },
+    {
+     "n": "",
+     "nome": "Simão Sousa",
+     "idade": "18",
+     "pos": "Extremo Direito / Médio Ofensivo",
+     "pe": "Direito",
+     "nac": "Portugal / Canadá"
+    },
+    {
+     "n": "9",
+     "nome": "Caniggia",
+     "idade": "40",
+     "pos": "Avançado",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "10",
+     "nome": "Diogo Pimentel",
+     "idade": "24",
+     "pos": "2.º avançado / Médio Ofensivo",
+     "pe": "Direito",
+     "nac": "Portugal"
+    },
+    {
+     "n": "11",
+     "nome": "Telmo",
+     "idade": "32",
+     "pos": "Avançado",
+     "pe": "",
+     "nac": "Portugal"
+    },
+    {
+     "n": "17",
+     "nome": "Lélé",
+     "idade": "26",
+     "pos": "Avançado",
+     "pe": "Ambidestro",
+     "nac": "Portugal"
+    },
+    {
+     "n": "40",
+     "nome": "Diogo Medeiros",
+     "idade": "24",
+     "pos": "Ponta de Lança",
+     "pe": "Direito",
+     "nac": "Portugal"
+    }
+   ]
+  }
+ }
+}

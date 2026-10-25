@@ -38,7 +38,8 @@ console.log(`dist/index.html · ${(Buffer.byteLength(html) / 1048576).toFixed(2)
 // App de observação de adversários (link próprio, só com este separador)
 {
   const logo = "data:image/png;base64," + readFileSync(join(raiz, "assets/slides/logo.png")).toString("base64");
-  const obs = troca(ler("observacao/page.html"), "{{LOGO}}", logo);
+  let obs = troca(ler("observacao/page.html"), "{{LOGO}}", logo);
+  obs = troca(obs, "{{PLANTEIS}}", JSON.stringify(JSON.parse(ler("observacao/planteis.json"))));
   writeFileSync(join(raiz, "dist/observacao.html"), obs);
   console.log(`dist/observacao.html · ${(Buffer.byteLength(obs) / 1024).toFixed(0)} KB`);
 }
