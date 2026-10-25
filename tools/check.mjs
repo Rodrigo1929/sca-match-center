@@ -21,3 +21,12 @@ scripts.forEach((s, i) => { for (const m of s.matchAll(/^(?:async\s+function|fun
   if (vistos.has(m[1])) repetidos.push(`${m[1]} (scripts ${vistos.get(m[1]) + 1} e ${i + 1})`); else vistos.set(m[1], i); } });
 if (repetidos.length) throw new Error("Nomes de topo repetidos entre scripts: " + repetidos.join(", "));
 console.log(`Sintaxe OK · ${scripts.length} scripts · ${vistos.size} nomes de topo sem repetições`);
+// App de observação: um único <script>
+{
+  const obs = readFileSync(join(raiz, "dist/observacao.html"), "utf8");
+  const sc = [...obs.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+  if (sc.length !== 1) throw new Error(`Observação: esperado 1 bloco <script>, encontrados ${sc.length}`);
+  const f2 = join(tmp, "observacao.js"); writeFileSync(f2, sc[0]);
+  execFileSync(process.execPath, ["--check", f2], { stdio: "inherit" });
+  console.log("Observação · sintaxe OK");
+}

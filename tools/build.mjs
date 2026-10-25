@@ -34,3 +34,11 @@ html = troca(html, "{{TREINO_JS}}", ler("src/js/treino.js") + "\n" + ler("src/js
 mkdirSync(join(raiz, "dist"), { recursive: true });
 writeFileSync(join(raiz, "dist/index.html"), html);
 console.log(`dist/index.html · ${(Buffer.byteLength(html) / 1048576).toFixed(2)} MB`);
+
+// App de observação de adversários (link próprio, só com este separador)
+{
+  const logo = "data:image/png;base64," + readFileSync(join(raiz, "assets/slides/logo.png")).toString("base64");
+  const obs = troca(ler("observacao/page.html"), "{{LOGO}}", logo);
+  writeFileSync(join(raiz, "dist/observacao.html"), obs);
+  console.log(`dist/observacao.html · ${(Buffer.byteLength(obs) / 1024).toFixed(0)} KB`);
+}

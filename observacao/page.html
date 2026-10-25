@@ -1,0 +1,575 @@
+<title>SCA Observação</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: cabeçalho fixo · lista de relatórios OU relatório com secções (lateral no PC, faixa no telemóvel) · botão "+ Nota" sempre à mão */
+:root{
+  --bg:#F3F1EC; --surface:#FFFFFF; --surface-2:#F8F6F1; --ink:#1B1A17; --muted:#6B675E; --line:#DEDAD0;
+  --red:#C00000; --red-ink:#FFFFFF; --gold:#B8963F; --gold-soft:#F4EBD3; --blue:#1F5FBF; --blue-soft:#E3ECF9;
+  --ok:#1E7A46; --ok-soft:#E3F2E8; --warn:#A35A00; --warn-soft:#FBEEDB; --shadow:0 1px 2px rgba(27,26,23,.06),0 4px 14px rgba(27,26,23,.06);
+  --f-display:"Roboto Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"Source Sans 3",-apple-system,"Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141312; --surface:#1D1C1A; --surface-2:#252320; --ink:#F1EEE7; --muted:#A39E93; --line:#36332E;
+  --red:#E0393A; --red-ink:#FFFFFF; --gold:#D6B262; --gold-soft:#352C18; --blue:#5B8FE0; --blue-soft:#1C2A40;
+  --ok:#5BC48A; --ok-soft:#173225; --warn:#E3A44B; --warn-soft:#3A2A12; --shadow:0 1px 2px rgba(0,0,0,.4); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141312; --surface:#1D1C1A; --surface-2:#252320; --ink:#F1EEE7; --muted:#A39E93; --line:#36332E;
+  --red:#E0393A; --red-ink:#FFFFFF; --gold:#D6B262; --gold-soft:#352C18; --blue:#5B8FE0; --blue-soft:#1C2A40;
+  --ok:#5BC48A; --ok-soft:#173225; --warn:#E3A44B; --warn-soft:#3A2A12; --shadow:0 1px 2px rgba(0,0,0,.4); color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--f-body);font-size:15.5px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+h1,h2,h3,h4{font-family:var(--f-display);text-wrap:balance;margin:0}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.top .in{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:1320px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto;min-width:0}
+.brand img{width:34px;height:34px;object-fit:contain}
+.brand h1{font-size:22px;font-weight:800;line-height:1}
+.brand h1 span{color:var(--red)}
+.brand small{display:block;font-family:var(--f-display);color:var(--muted);text-transform:uppercase;letter-spacing:1.1px;font-size:11.5px;margin-top:2px}
+.status{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.status i{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.status.ok i{background:var(--ok)} .status.busy i{background:var(--gold)} .status.local i{background:var(--warn)}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 110px;max-width:1320px;margin:0 auto}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;min-height:42px;display:inline-flex;align-items:center;gap:6px;justify-content:center;font-weight:600}
+.btn.primary{background:var(--red);border-color:var(--red);color:var(--red-ink)}
+.btn.dark{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.btn.ghost{background:transparent}
+.btn.sm{min-height:36px;padding:5px 10px;font-size:14px}
+.btn.danger{color:var(--red);border-color:color-mix(in srgb,var(--red) 40%,var(--line))}
+.btn:disabled{opacity:.45;cursor:default}
+.banner{border-radius:10px;padding:10px 14px;font-size:14.5px;background:var(--warn-soft);color:var(--ink);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);display:flex;gap:10px;align-items:flex-start}
+.banner.info{background:var(--blue-soft);border-color:color-mix(in srgb,var(--blue) 35%,transparent)}
+.banner b{font-weight:700}
+/* lista */
+.lhead{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.lhead h2{font-size:26px;margin-right:auto}
+.lhead p{margin:4px 0 0;color:var(--muted);font-size:14.5px;max-width:62ch}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+.rcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:left;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow);min-width:0}
+.rcard h3{font-size:21px}
+.rcard .meta{font-size:13.5px;color:var(--muted);display:flex;gap:6px 12px;flex-wrap:wrap}
+.rcard .meta b{color:var(--ink);font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--f-display);font-size:12px;letter-spacing:.6px;text-transform:uppercase;border-radius:999px;padding:3px 9px;font-weight:700;white-space:nowrap}
+.chip.rasc{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.chip.env{background:var(--gold-soft);color:var(--warn)}
+.chip.rev{background:var(--ok-soft);color:var(--ok)}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:28px 20px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.empty b{font-family:var(--f-display);font-size:20px}
+.empty span{color:var(--muted);max-width:60ch}
+/* relatório */
+.rhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.rhead h2{font-size:26px;min-width:0;overflow-wrap:anywhere}
+.rhead .sp{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.rgrid{display:grid;grid-template-columns:230px minmax(0,1fr);gap:18px;align-items:start}
+nav.secs{position:sticky;top:calc(env(safe-area-inset-top,0px) + 74px);display:flex;flex-direction:column;gap:2px}
+nav.secs button{border:0;background:transparent;border-radius:8px;padding:8px 10px;min-height:42px;display:flex;align-items:center;gap:8px;text-align:left;font-size:15px}
+nav.secs button .c{margin-left:auto;font-family:var(--f-display);font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+nav.secs button[aria-current="true"]{background:var(--surface);box-shadow:var(--shadow);font-weight:700}
+nav.secs button[aria-current="true"] .c{color:var(--red)}
+nav.secs .grp{font-family:var(--f-display);font-size:11px;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);margin:10px 0 2px 10px}
+@media (max-width:999px){
+  .rgrid{grid-template-columns:minmax(0,1fr)}
+  nav.secs{position:sticky;top:calc(env(safe-area-inset-top,0px) + 62px);z-index:10;flex-direction:row;overflow-x:auto;gap:6px;background:var(--bg);padding-block:6px;margin-inline:-4px;padding-inline:4px}
+  nav.secs .grp{display:none}
+  nav.secs button{white-space:nowrap;flex:none;background:var(--surface);border:1px solid var(--line)}
+  nav.secs button[aria-current="true"]{border-color:var(--red)}
+}
+.sec{display:flex;flex-direction:column;gap:14px;min-width:0}
+.sec > header h3{font-size:24px}
+.sec > header p{margin:4px 0 0;color:var(--muted);max-width:68ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card h4{font-size:17px;line-height:1.25}
+.q{gap:8px}
+.q .qt{display:flex;gap:10px;align-items:baseline}
+.q .qn{font-family:var(--f-display);font-weight:800;color:var(--red);font-size:15px;flex:none;width:24px;font-variant-numeric:tabular-nums}
+.q .qt h4{font-weight:700;font-family:var(--f-body);font-size:16px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);min-width:0}
+input[type=text],input[type=date],input[type=url],select,textarea{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 11px;min-height:44px;width:100%;min-width:0;color:var(--ink)}
+textarea{resize:vertical;min-height:70px;line-height:1.45}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:6px 12px;min-height:38px;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink);font-weight:600}
+.evs{display:flex;flex-direction:column;gap:6px}
+.ev{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;align-items:start;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--surface-2);text-align:left;width:100%}
+.ev .tm{font-family:var(--f-display);font-weight:700;font-variant-numeric:tabular-nums;font-size:15px;min-width:46px}
+.ev .tx{font-size:14.5px;white-space:pre-wrap;overflow-wrap:anywhere}
+.ev .tags{grid-column:2;display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--muted)}
+.ev .tags a{color:var(--blue);font-weight:600}
+.fq{font-family:var(--f-display);font-size:11.5px;letter-spacing:.5px;text-transform:uppercase;font-weight:700;border-radius:4px;padding:1px 6px}
+.fq.rec{background:var(--ok-soft);color:var(--ok)}
+.fq.pont{background:var(--surface);color:var(--muted);border:1px solid var(--line)}
+.fq.conf{background:var(--warn-soft);color:var(--warn)}
+.addev{align-self:flex-start}
+.hint{font-size:13.5px;color:var(--muted)}
+.prin{display:flex;gap:6px;flex-wrap:wrap}
+.prin span{font-family:var(--f-display);font-weight:700;letter-spacing:.6px;text-transform:uppercase;font-size:12.5px;background:var(--red);color:var(--red-ink);border-radius:4px;padding:3px 8px}
+/* campo */
+.pitch{background:#2C7431;border-radius:10px;overflow:hidden;touch-action:none;max-width:520px;width:100%;margin:0 auto}
+.pitch svg{display:block;width:100%;height:auto;user-select:none;-webkit-user-select:none}
+.pitch.half{max-width:680px}
+.leg{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--muted);align-items:center}
+.leg i{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-1px;margin-right:4px;border:1.5px solid #fff;box-shadow:0 0 0 1px var(--line)}
+.estr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:760px){.estr{grid-template-columns:minmax(0,1fr)}}
+.bpl{display:flex;flex-direction:column;gap:8px}
+.bpi{display:flex;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 12px;min-height:50px;width:100%}
+.bpi b{font-family:var(--f-display);font-size:16px}
+.bpi span{color:var(--muted);font-size:13.5px;margin-left:auto}
+.bpi[aria-expanded="true"]{border-color:var(--red)}
+.pl{display:flex;flex-direction:column;gap:10px}
+.plh{display:flex;gap:10px;align-items:center}
+.plh .num{font-family:var(--f-display);font-weight:800;font-size:26px;color:var(--blue);min-width:38px;text-align:center;font-variant-numeric:tabular-nums}
+.three{display:grid;gap:8px}
+.three > div{display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px;align-items:start}
+.three > div > b{font-family:var(--f-display);font-size:20px;color:var(--red);text-align:center;padding-top:8px}
+.three.op > div > b{color:var(--ok)}
+.clip{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--surface-2)}
+.rev{border-color:color-mix(in srgb,var(--ok) 45%,var(--line))}
+/* folha (diálogo) */
+.sheet-bg{position:fixed;inset:0;background:rgba(15,14,12,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:min(620px,100%);border-radius:16px 16px 0 0;padding:16px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));max-height:90vh;overflow:auto;display:flex;flex-direction:column;gap:12px;box-shadow:0 -8px 30px rgba(0,0,0,.25)}
+@media (min-width:761px){.sheet-bg{align-items:center}.sheet{border-radius:16px}}
+.sheet h3{font-size:22px}
+.sheet h4{font-family:var(--f-display);font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin:2px 0 -6px}
+.actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.actions .l{margin-right:auto}
+.fab{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:40;min-height:54px;padding:0 20px;border-radius:999px;font-size:17px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:60;background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:10px;font-size:14.5px;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
+</style>
+
+<header class="top"><div class="in">
+  <div class="brand"><img src="{{LOGO}}" alt=""><div><h1><span>SCA</span> Observação</h1><small>Observação de adversários</small></div></div>
+  <div class="status" id="status" aria-live="polite"><i></i><span>A ligar…</span></div>
+</div></header>
+<main class="wrap" id="main"></main>
+<button class="btn primary fab" id="fab" hidden>+ Nota</button>
+<div id="sheet-root"></div><div id="toast-root"></div>
+
+<script>
+/* ======================= GUIÃO DE OBSERVAÇÃO ======================= */
+const PRINC=["Espírito de equipa","Intensidade","Organização","Objetividade"];
+const SECS=[
+  {k:"ficha",t:"Ficha e jogos",g:"Relatório"},
+  {k:"estr",t:"Estrutura no campo",g:"Relatório"},
+  {k:"com",t:"Com bola",g:"Momentos do jogo",q:[
+    "Como se organizam no pontapé de baliza? Procuram sair curto, jogar direto ou alternam? O que muda quando são pressionados?",
+    "Quem participa na construção? Algum médio baixa? Quem dá largura e quem procura receber por dentro?",
+    "Como ultrapassam a primeira linha de pressão?",
+    "Que movimentos e combinações repetem para progredir? Por que corredor criam mais perigo?",
+    "Quem procura a bola e quem ameaça a profundidade?",
+    "Como chegam à finalização: cruzamentos, combinações interiores, passes nas costas, ações individuais?",
+    "Nos cruzamentos, quem ocupa a área e que zonas procuram atacar?"]},
+  {k:"rec",t:"Quando recuperam",g:"Momentos do jogo",q:[
+    "Aceleram de imediato ou procuram assegurar a posse?",
+    "Quem recebe o primeiro passe e quem sai na profundidade?",
+    "Que jogadores e corredores são mais perigosos nesse momento?"]},
+  {k:"per",t:"Quando perdem",g:"Momentos do jogo",nota:"Interessa-nos perceber os comportamentos que repetem e as condições em que aparecem.",q:[
+    "Reagem para recuperar ou recuam?",
+    "Quem fica a proteger a equipa enquanto ataca?",
+    "Onde aparecem espaços para o adversário explorar?"]},
+  {k:"sem",t:"Sem bola",g:"Momentos do jogo",q:[
+    "Em que estrutura defendem e a que altura colocam o bloco?",
+    "Quando começam a pressionar? Que situações fazem disparar a pressão?",
+    "Encaminham o adversário para fora ou permitem jogar por dentro?",
+    "Quem sai à pressão e quem faz a cobertura?",
+    "Seguem jogadores ou defendem sobretudo os espaços? Como passam as referências entre si?",
+    "Como respondem às mudanças de corredor e aos movimentos nas costas?",
+    "Como defendem cruzamentos e a entrada da área?"]},
+  {k:"bp",t:"Bolas paradas",g:"Bolas paradas e jogadores"},
+  {k:"jog",t:"Jogadores de referência",g:"Bolas paradas e jogadores"},
+  {k:"nos",t:"Ligação ao nosso 3-4-3",g:"O nosso jogo",q:[
+    "Como pressionam os nossos três jogadores da construção e que soluções podem deixar livres?",
+    "Quem acompanha os nossos alas e que espaços surgem quando esse jogador sai?",
+    "Como protegem os espaços interiores e a profundidade?",
+    "Como podemos encaminhar a construção deles para o corredor lateral e pressionar de forma coordenada?",
+    "Onde podemos criar vantagem depois de recuperar e o que precisamos de proteger quando perdemos?"]},
+  {k:"sint",t:"Síntese",g:"Conclusões"},
+  {k:"notas",t:"Notas por arrumar",g:"Conclusões"}];
+const SEC_Q=SECS.filter(s=>s.q);
+const FREQ={rec:"Recorrente",pont:"Pontual",conf:"A confirmar"};
+const CTX={ganhar:"A ganhar",empatar:"Empatado",perder:"A perder"};
+const BP_TIPO={canto:"Canto",livre:"Livre",lanc:"Lançamento lateral"};
+const BP_LADO={of:"Ofensivo",def:"Defensivo"};
+const BP_COR={esq:"Esquerda",dir:"Direita",cen:"Central"};
+const BP_ASP=[["bat","Batedores e jogadores de referência"],["pos","Posicionamentos, movimentos e combinações"],["marc","Tipo de marcação, zonas protegidas e espaços disponíveis"],["seg","Segundas bolas e transições"]];
+const PAPEIS={org:"Organiza",deseq:"Desequilibra",prof:"Ameaça a profundidade",fin:"Finaliza",gr:"Guarda-redes"};
+const SIT={dentro:"Atraído para dentro",pressao:"Quando recebe pressão",prof:"A defender a profundidade",duelo:"Em duelo",outra:"Outra situação"};
+const SISTEMAS={
+  "4-3-3":[["GR",5,34],["DD",30,57],["DC",25,41],["DC",25,27],["DE",30,11],["MDC",38,34],["MC",49,44],["MC",49,24],["ED",63,57],["PL",68,34],["EE",63,11]],
+  "4-4-2":[["GR",5,34],["DD",30,57],["DC",25,41],["DC",25,27],["DE",30,11],["MD",50,57],["MC",45,40],["MC",45,28],["ME",50,11],["PL",64,39],["PL",64,29]],
+  "4-2-3-1":[["GR",5,34],["DD",30,57],["DC",25,41],["DC",25,27],["DE",30,11],["MDC",39,41],["MDC",39,27],["ED",57,57],["MO",54,34],["EE",57,11],["PL",67,34]],
+  "4-1-4-1":[["GR",5,34],["DD",30,57],["DC",25,41],["DC",25,27],["DE",30,11],["MDC",37,34],["MD",51,57],["MC",48,42],["MC",48,26],["ME",51,11],["PL",65,34]],
+  "3-5-2":[["GR",5,34],["DC",25,47],["DC",23,34],["DC",25,21],["ALA",47,60],["MDC",37,34],["MC",47,43],["MC",47,25],["ALA",47,8],["PL",63,39],["PL",63,29]],
+  "3-4-3":[["GR",5,34],["DC",25,47],["DC",23,34],["DC",25,21],["ALA",44,60],["MC",42,40],["MC",42,28],["ALA",44,8],["ED",62,54],["PL",66,34],["EE",62,14]],
+  "5-3-2":[["GR",5,34],["DD",28,60],["DC",22,46],["DC",20,34],["DC",22,22],["DE",28,8],["MC",40,46],["MDC",37,34],["MC",40,22],["PL",58,40],["PL",58,28]],
+  "5-4-1":[["GR",5,34],["DD",26,60],["DC",21,46],["DC",19,34],["DC",21,22],["DE",26,8],["MD",38,55],["MC",36,40],["MC",36,28],["ME",38,13],["PL",55,34]]};
+
+/* ======================= utilitários ======================= */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const clone=o=>JSON.parse(JSON.stringify(o));
+const nid=p=>(p||"x")+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const LS=k=>{ try{ return JSON.parse(localStorage.getItem(k)||"null"); }catch(e){ return null; } };
+const LSset=(k,v)=>{ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} };
+function minNorm(v){ v=String(v||"").trim().replace(/[.,h]/g,":"); if(!v) return ""; if(/^\d{1,3}$/.test(v)) return v+":00"; if(/^\d{3,4}$/.test(v)) return v.slice(0,-2)+":"+v.slice(-2);
+  const m=v.match(/^(\d{1,3}):(\d{1,2})$/); return m?m[1]+":"+m[2].padStart(2,"0"):v; }
+function minSeg(v){ const m=String(v||"").match(/^(\d{1,3}):(\d{2})$/); return m?(+m[1])*60+(+m[2]):null; }
+function ytId(u){ const m=String(u||"").match(/(?:youtu\.be\/|v=|\/live\/|\/embed\/|\/shorts\/)([A-Za-z0-9_-]{6,})/); return m?m[1]:null; }
+function linkVideo(J,min){ if(!J||!J.video) return null; const s=minSeg(min), id=ytId(J.video); if(id) return `https://www.youtube.com/watch?v=${id}${s!=null?"&t="+s+"s":""}`; return /^https?:\/\//.test(J.video)?J.video:null; }
+function dataPt(d){ return d?new Date(d+"T12:00").toLocaleDateString("pt-PT"):""; }
+function toast(m){ const r=$("toast-root"); r.innerHTML=`<div class="toast" role="status">${esc(m)}</div>`; clearTimeout(toast.t); toast.t=setTimeout(()=>r.innerHTML="",2600); }
+function folha(html,onOpen){ const root=$("sheet-root"); root.innerHTML=`<div class="sheet-bg"><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`;
+  const fecha=()=>{ root.innerHTML=""; document.removeEventListener("keydown",k); }; const k=e=>{ if(e.key==="Escape") fecha(); }; document.addEventListener("keydown",k);
+  root.querySelector(".sheet-bg").addEventListener("click",e=>{ if(e.target.classList.contains("sheet-bg")) fecha(); });
+  root.querySelectorAll("[data-close]").forEach(b=>b.onclick=fecha); onOpen(root.querySelector(".sheet"),fecha); }
+function confirma2(btn,txt,acao){ let arm=false,t=null; const o=btn.textContent; btn.onclick=()=>{ if(!arm){ arm=true; btn.textContent=txt; btn.style.background="var(--red)"; btn.style.color="var(--red-ink)"; t=setTimeout(()=>{ arm=false; btn.textContent=o; btn.style.background=""; btn.style.color=""; },3000); return; } clearTimeout(t); acao(); }; }
+function seg(box,opts,val,onCh){ box.innerHTML=opts.map(([k,t])=>`<button type="button" data-k="${esc(k)}" aria-pressed="${k===val}">${esc(t)}</button>`).join(""); box.querySelectorAll("button").forEach(b=>b.onclick=()=>{ val=b.dataset.k===val&&box.dataset.toggle?"":b.dataset.k; box.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.k===val))); onCh(val); }); }
+
+/* ======================= estado ======================= */
+let db=null, usr=null, meId=null, souDono=false, soLeitura=false, semDb=false;
+let rels={}, revs={}, nomes={};      // rels: id -> relatório ; revs: id -> revisão do Rodrigo
+let vista={tipo:"lista",id:null,sec:"ficha"}, bpAberto=null, jogAberto=null;
+const CACHE="sca-obs-cache-v1", PEND="sca-obs-pend-v1";
+(()=>{ const c=LS(CACHE); if(c){ rels=c.rels||{}; revs=c.revs||{}; } const v=LS("sca-obs-vista"); if(v&&v.tipo) vista=v; })();
+function guardaCache(){ LSset(CACHE,{rels,revs}); }
+function guardaVista(){ LSset("sca-obs-vista",vista); }
+
+function normRel(d){ const R={...d}; R.adversario=String(R.adversario||""); R.competicao=String(R.competicao||""); R.estado=["rasc","env"].includes(R.estado)?R.estado:"rasc";
+  R.jogos=Array.isArray(R.jogos)?R.jogos.filter(j=>j&&j.id):[]; R.resp=R.resp&&typeof R.resp==="object"?R.resp:{}; R.evid=Array.isArray(R.evid)?R.evid.filter(e=>e&&e.id):[];
+  const o=R.onze||{}; const st=s=>({sis:SISTEMAS[s?.sis]?s.sis:"4-4-2",pos:s?.pos&&typeof s.pos==="object"?s.pos:{},nota:String(s?.nota||"")});
+  R.onze={com:st(o.com),sem:st(o.sem),jog:Array.from({length:11},(_,i)=>({pos:"",n:"",nome:"",...((o.jog||[])[i]||{})})),nos:!!o.nos};
+  if(!o.com) R.onze.com.sis="4-4-2"; if(!o.sem) R.onze.sem.sis="4-4-2";
+  R.bp=Array.isArray(R.bp)?R.bp.filter(b=>b&&b.id).map(b=>({tipo:"canto",lado:"of",cor:"",asp:{},pecas:[],setas:[],...b})):[];
+  R.refs=Array.isArray(R.refs)?R.refs.filter(p=>p&&p.id).map(p=>({n:"",nome:"",pos:"",papeis:[],fortes:"",...p})):[];
+  const S=R.sint||{}; R.sint={estrutura:String(S.estrutura||""),ameacas:[0,1,2].map(i=>String((S.ameacas||[])[i]||"")),oport:[0,1,2].map(i=>String((S.oport||[])[i]||"")),bpref:String(S.bpref||"")};
+  R.clips=Array.isArray(R.clips)?R.clips.filter(c=>c&&c.id):[]; return R; }
+function novoRel(){ return normRel({id:nid("r"),autor:meId||"local",criadoEm:new Date().toISOString()}); }
+function relAtual(){ return vista.id&&rels[vista.id]?rels[vista.id]:null; }
+function podeEditar(R){ return !soLeitura&&R&&(R.autor===meId||souDono||semDb); }
+
+/* ======================= gravação com fila (funciona sem rede) ======================= */
+let pend=LS(PEND)||{}, pendSeq=0; const filas={};
+const salvaPend=()=>LSset(PEND,pend);
+function setStatus(k,t){ const s=$("status"); s.className="status "+k; s.querySelector("span").textContent=t; }
+function estado(falhou){ if(semDb){ setStatus("local","Guardado só neste aparelho"); return; } if(soLeitura){ setStatus("local","Só leitura"); return; } const n=Object.keys(pend).length;
+  if(!n){ setStatus("ok","Guardado"); return; } const off=falhou||navigator.onLine===false; setStatus(off?"local":"busy",(off?"Sem rede · ":"A enviar · ")+n+(n===1?" alteração por enviar":" alterações por enviar")); }
+function envia(path){ const P=pend[path]; if(!P||!db||soLeitura) return; const st=P.s;
+  filas[path]=(filas[path]||Promise.resolve()).catch(()=>{}).then(()=>{ const c=pend[path]; if(!c||c.s!==st) return; return c.del?db.doc(path).delete():db.doc(path).set({...c.b,atualizadoEm:new Date().toISOString()}); })
+    .then(()=>{ if(pend[path]&&pend[path].s===st){ delete pend[path]; salvaPend(); } estado(false); })
+    .catch(e=>{ if(e?.code==="invalid_argument"){ soLeitura=true; delete pend[path]; salvaPend(); estado(); render(); return; } estado(true); }); }
+function gravaDoc(path,body){ if(semDb||!db) return; pend[path]={s:(++pendSeq)+"-"+Date.now(),b:body}; salvaPend(); estado(false); envia(path); }
+function apagaDoc(path){ if(semDb||!db) return; pend[path]={s:(++pendSeq)+"-"+Date.now(),del:true}; salvaPend(); estado(false); envia(path); }
+const reenvia=()=>Object.keys(pend).forEach(envia);
+addEventListener("online",()=>{ reenvia(); estado(false); }); addEventListener("offline",()=>estado(true));
+setInterval(()=>{ if(db&&Object.keys(pend).length) reenvia(); },20000);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden&&db) reenvia(); });
+
+const relPath=R=>`obs/${R.autor}/relatorios/${R.id}`, revPath=R=>`obs/${R.autor}/revisoes/${R.id}`;
+const tSave={};
+function guardaRel(R,ja){ R.atualizadoEm=new Date().toISOString(); rels[R.id]=R; guardaCache(); clearTimeout(tSave[R.id]);
+  const f=()=>{ const b=clone(rels[R.id]); delete b.atualizadoEm; gravaDoc(relPath(R),b); }; if(ja) f(); else tSave[R.id]=setTimeout(f,700); }
+function editaRel(fn,semRender){ const R=relAtual(); if(!R||!podeEditar(R)) return; fn(R); guardaRel(R,true); if(!semRender) render(); }
+
+/* ======================= campo (vertical: x 0–68 m largura, y 0–105 m comprimento) ======================= */
+const K=10;
+function campoSvg(meio){ const L=68*K, C=(meio?36:105)*K, s="stroke=\"rgba(255,255,255,.9)\" stroke-width=\"3\" fill=\"none\""; let h="";
+  const n=meio?6:14; for(let i=0;i<n;i++) h+=`<rect x="0" y="${i*C/n}" width="${L}" height="${C/n+.5}" fill="${i%2?"#38893D":"#3F9444"}"/>`;
+  h+=meio?`<path d="M 0 ${C} L 0 0 L ${L} 0 L ${L} ${C}" ${s}/>`:`<rect x="0" y="0" width="${L}" height="${C}" ${s}/>`;
+  const area=(top)=>{ const y0=top?0:1050, d=top?1:-1, yb=y0+d*165, yg=y0+d*55, sp=y0+d*110;
+    h+=`<rect x="138.4" y="${Math.min(y0,yb)}" width="403.2" height="165" ${s}/><rect x="248.4" y="${Math.min(y0,yg)}" width="183.2" height="55" ${s}/>`;
+    h+=`<circle cx="340" cy="${sp}" r="3.5" fill="#fff"/><path d="M 266.9 ${yb} A 91.5 91.5 0 0 ${top?0:1} 413.1 ${yb}" ${s}/>`;
+    h+=`<rect x="303.4" y="${top?-20:1050}" width="73.2" height="20" fill="rgba(255,255,255,.3)" ${s.replace("fill=\"none\"","")}/>`; };
+  area(true);
+  if(meio){ h+=`<rect x="0" y="0" width="${L}" height="${C}" fill="none"/>`; }
+  else { h+=`<line x1="0" y1="525" x2="${L}" y2="525" ${s}/><circle cx="340" cy="525" r="91.5" ${s}/><circle cx="340" cy="525" r="3.5" fill="#fff"/>`; area(false); }
+  return h; }
+function svgPt(svg,e){ const p=svg.createSVGPoint(); p.x=e.clientX; p.y=e.clientY; const q=p.matrixTransform(svg.getScreenCTM().inverse()); return {x:q.x/K,y:q.y/K}; }
+function peca(x,y,txt,cor,fg,extra,anel){ const r=24; const fs=txt.length<=2?20:txt.length===3?16:13;
+  return `<g ${extra||""}><circle cx="${x*K+2}" cy="${y*K+3}" r="${r}" fill="#000" opacity=".3"/><circle cx="${x*K}" cy="${y*K}" r="${r}" fill="${cor}" stroke="${anel||"#fff"}" stroke-width="${anel?5:3}"/>`+
+    `<text x="${x*K}" y="${y*K+fs*.36}" text-anchor="middle" font-size="${fs}" font-weight="700" font-family="Roboto Condensed,Arial Narrow,Arial,sans-serif" fill="${fg}" pointer-events="none">${esc(txt)}</text><circle cx="${x*K}" cy="${y*K}" r="40" fill="transparent"/></g>`; }
+function bolaSvg(x,y,extra){ return `<g ${extra||""}><circle cx="${x*K}" cy="${y*K}" r="11" fill="#fff" stroke="#111" stroke-width="2.5"/><circle cx="${x*K}" cy="${y*K}" r="4" fill="#111"/><circle cx="${x*K}" cy="${y*K}" r="34" fill="transparent"/></g>`; }
+const posAdv=(sis,i)=>{ const b=(SISTEMAS[sis]||SISTEMAS["4-4-2"])[i]||["",52,34]; return {x:b[2],y:105-b[1],pos:b[0]}; };
+const posNos=i=>{ const b=SISTEMAS["3-4-3"][i]; return {x:68-b[2],y:b[1],pos:b[0]}; };
+function arrasta(svg,{onDown,onMove,onUp}){ let ativo=null;
+  svg.addEventListener("pointerdown",e=>{ const r=onDown(e,svgPt(svg,e)); if(r){ ativo=r; e.preventDefault(); try{ svg.setPointerCapture(e.pointerId); }catch(x){} } });
+  svg.addEventListener("pointermove",e=>{ if(!ativo) return; e.preventDefault(); onMove(ativo,svgPt(svg,e)); });
+  const fim=e=>{ if(!ativo) return; const a=ativo; ativo=null; onUp(a,svgPt(svg,e)); }; svg.addEventListener("pointerup",fim); svg.addEventListener("pointercancel",fim); }
+
+/* ======================= render ======================= */
+let precisaRender=false;
+function aEscrever(){ const a=document.activeElement; return a&&$("main").contains(a)&&/INPUT|TEXTAREA|SELECT/.test(a.tagName); }
+document.addEventListener("focusout",()=>setTimeout(()=>{ if(precisaRender&&!aEscrever()){ precisaRender=false; render(); } },60));
+function render(){ const R=relAtual(); if(vista.tipo==="rel"&&!R){ vista={tipo:"lista",id:null,sec:"ficha"}; }
+  $("fab").hidden=vista.tipo!=="rel"||!podeEditar(relAtual()); guardaVista();
+  const sy=scrollY; vista.tipo==="rel"?renderRel(relAtual()):renderLista(); if(render.mesma) scrollTo(0,sy); render.mesma=false; }
+
+function contagens(R){ const resp=SEC_Q.reduce((a,s)=>a+s.q.filter((_,i)=>(R.resp[s.k+(i+1)]||"").trim()).length,0), tot=SEC_Q.reduce((a,s)=>a+s.q.length,0);
+  return {resp,tot,ev:R.evid.length,soltas:R.evid.filter(e=>!e.q).length}; }
+function renderLista(){ const ls=Object.values(rels).sort((a,b)=>String(b.atualizadoEm||b.criadoEm).localeCompare(String(a.atualizadoEm||a.criadoEm)));
+  const avisos=bannerAcesso(); let h=`${avisos}<div class="lhead"><div><h2>${souDono?"Relatórios de observação":"Os meus relatórios"}</h2><p>${souDono?"Todos os relatórios dos observadores. Cada observador só vê os relatórios que criou.":"Um relatório por adversário. Podes juntar vários jogos observados no mesmo relatório."}</p></div>${!soLeitura?`<button class="btn primary" id="novo">+ Novo relatório</button>`:""}</div>`;
+  if(!ls.length) h+=`<div class="empty"><b>Ainda não há relatórios.</b><span>Cria um relatório por adversário. Dentro dele tens o guião de perguntas, o campo para a estrutura, as bolas paradas, os jogadores de referência e a síntese final. No estádio, usa o botão <b>+ Nota</b> para registar depressa e arrumar depois.</span>${!soLeitura?`<button class="btn primary" id="novo2">+ Criar o primeiro relatório</button>`:""}</div>`;
+  else { h+=`<div class="cards">`; ls.forEach(R=>{ const c=contagens(R), rv=revs[R.id], est=rv&&rv.revisto?["rev","Revisto"]:R.estado==="env"?["env","Para revisão"]:["rasc","Em curso"];
+      h+=`<button class="rcard" data-id="${esc(R.id)}"><div class="row" style="justify-content:space-between;width:100%"><span class="chip ${est[0]}">${est[1]}</span>${souDono&&R.autor!==meId?`<span class="hint">${esc(nomes[R.autor]||"Observador")}</span>`:""}</div>
+        <h3>${esc(R.adversario||"Adversário por definir")}</h3><div class="meta"><span><b>${R.jogos.length}</b> ${R.jogos.length===1?"jogo":"jogos"}</span><span><b>${c.resp}/${c.tot}</b> perguntas</span><span><b>${c.ev}</b> evidências</span>${c.soltas?`<span style="color:var(--warn)"><b>${c.soltas}</b> por arrumar</span>`:""}</div>
+        <div class="meta">${R.competicao?esc(R.competicao)+" · ":""}Atualizado ${new Date(R.atualizadoEm||R.criadoEm).toLocaleDateString("pt-PT")}</div></button>`; }); h+=`</div>`; }
+  $("main").innerHTML=h;
+  [$("novo"),$("novo2")].forEach(b=>b&&(b.onclick=()=>{ const R=novoRel(); guardaRel(R,true); if(db&&meId) gravaDoc(`obs/${meId}`,{ativo:true}); vista={tipo:"rel",id:R.id,sec:"ficha"}; render(); }));
+  $("main").querySelectorAll(".rcard").forEach(b=>b.onclick=()=>{ vista={tipo:"rel",id:b.dataset.id,sec:"ficha"}; bpAberto=null; jogAberto=null; render(); scrollTo(0,0); });
+  carregaNomes(ls.map(r=>r.autor)); }
+function bannerAcesso(){ if(soLeitura) return `<div class="banner" style="margin-bottom:12px"><span>🔒</span><span><b>Sem permissão para gravar.</b> Pede ao Rodrigo acesso de <b>Editor</b> a esta página.</span></div>`;
+  if(semDb) return `<div class="banner" style="margin-bottom:12px"><span>⚠</span><span><b>Sem ligação à base de dados.</b> O que registares fica só neste aparelho até a ligação voltar a funcionar.</span></div>`; return ""; }
+
+function renderRel(R){ const ed=podeEditar(R), c=contagens(R), rv=revs[R.id];
+  const cont=s=>{ if(s.q){ const n=s.q.filter((_,i)=>(R.resp[s.k+(i+1)]||"").trim()).length; return `${n}/${s.q.length}`; } if(s.k==="bp") return R.bp.length||""; if(s.k==="jog") return R.refs.length||""; if(s.k==="ficha") return R.jogos.length||""; if(s.k==="notas") return c.soltas||""; return ""; };
+  let nav="", g=""; SECS.forEach(s=>{ if(s.g!==g){ g=s.g; nav+=`<div class="grp">${esc(g)}</div>`; } nav+=`<button data-s="${s.k}" aria-current="${s.k===vista.sec}">${esc(s.t)}<span class="c"${s.k==="notas"&&c.soltas?' style="color:var(--warn)"':""}>${cont(s)}</span></button>`; });
+  const est=rv&&rv.revisto?`<span class="chip rev">Revisto</span>`:R.estado==="env"?`<span class="chip env">Para revisão</span>`:`<span class="chip rasc">Em curso</span>`;
+  $("main").innerHTML=`${bannerAcesso()}<div class="rhead"><button class="btn sm ghost" id="voltar" aria-label="Voltar aos relatórios">← Relatórios</button><h2>${esc(R.adversario||"Adversário por definir")}</h2>${est}<div class="sp">${souDono&&R.autor!==meId?`<span class="hint">Observador: ${esc(nomes[R.autor]||"—")}</span>`:""}</div></div>
+    ${rv&&rv.texto&&vista.sec!=="sint"?`<div class="banner info" style="margin-bottom:12px"><span>💬</span><span><b>Revisão do Rodrigo:</b> ${esc(rv.texto).slice(0,240)}${rv.texto.length>240?"…":""} <a href="#" id="verrev">Ver na Síntese</a></span></div>`:""}
+    <div class="rgrid"><nav class="secs" aria-label="Secções do relatório">${nav}</nav><section class="sec" id="sec"></section></div>`;
+  $("voltar").onclick=()=>{ vista={tipo:"lista",id:null,sec:"ficha"}; render(); scrollTo(0,0); };
+  if($("verrev")) $("verrev").onclick=e=>{ e.preventDefault(); vista.sec="sint"; render(); };
+  $("main").querySelectorAll("nav.secs button").forEach(b=>b.onclick=()=>{ vista.sec=b.dataset.s; render(); const n=$("sec"); if(n&&n.getBoundingClientRect().top<0) n.scrollIntoView({block:"start"}); });
+  const cur=$("main").querySelector('nav.secs button[aria-current="true"]'); if(cur&&cur.scrollIntoView&&innerWidth<1000) cur.scrollIntoView({inline:"center",block:"nearest"});
+  const S=SECS.find(s=>s.k===vista.sec)||SECS[0], box=$("sec");
+  if(S.q) secPerguntas(R,S,box,ed); else ({ficha:secFicha,estr:secEstr,bp:secBp,jog:secJog,sint:secSint,notas:secNotas})[S.k](R,box,ed);
+  liga(box,R,ed); }
+
+/* ligação genérica dos campos de texto: data-b="caminho.no.relatorio" (listas por id) */
+function getP(o,p){ return p.split(".").reduce((a,k)=>a==null?a:Array.isArray(a)&&!/^\d+$/.test(k)?a.find(x=>x.id===k):a[k],o); }
+function setP(o,p,v){ const ks=p.split("."), last=ks.pop(); const t=ks.reduce((a,k)=>{ let n=Array.isArray(a)&&!/^\d+$/.test(k)?a.find(x=>x.id===k):a[k]; if(n==null){ n={}; a[k]=n; } return n; },o); t[last]=v; }
+function liga(box,R,ed){ box.querySelectorAll("[data-b]").forEach(el=>{ const v=getP(R,el.dataset.b); el.value=v==null?"":v; if(!ed){ el.readOnly=true; if(el.tagName==="SELECT") el.disabled=true; return; }
+    const on=()=>{ const Rr=relAtual(); if(!Rr) return; let v=el.value; if(el.dataset.min!=null) v=minNorm(v); setP(Rr,el.dataset.b,v); guardaRel(Rr); if(el.dataset.rr!=null) render(); };
+    el.addEventListener(el.tagName==="SELECT"?"change":"input",on); if(el.dataset.min!=null) el.addEventListener("change",()=>{ el.value=minNorm(el.value); on(); }); });
+  box.querySelectorAll("textarea").forEach(t=>{ const a=()=>{ t.style.height="auto"; t.style.height=Math.max(70,t.scrollHeight+2)+"px"; }; a(); t.addEventListener("input",a); }); }
+
+/* ---------- evidências ---------- */
+function jogoDe(R,id){ return R.jogos.find(j=>j.id===id); }
+function jogoCurto(J){ return J?(J.vs?"vs "+J.vs:"Jogo")+(J.data?" · "+dataPt(J.data):""):""; }
+function listaEv(R,q,ed){ const es=R.evid.filter(e=>e.q===q).sort((a,b)=>R.jogos.findIndex(j=>j.id===a.jogo)-R.jogos.findIndex(j=>j.id===b.jogo)||(minSeg(a.min)??1e9)-(minSeg(b.min)??1e9));
+  return `<div class="evs">${es.map(e=>{ const J=jogoDe(R,e.jogo), lk=linkVideo(J,e.min); return `<button class="ev" data-ev="${esc(e.id)}"><span class="tm">${esc(e.min||"—")}</span><span class="tx">${esc(e.txt||"(sem texto)")}</span>
+    <span class="tags"><span class="fq ${e.freq||"conf"}">${FREQ[e.freq||"conf"]}</span>${e.sit?`<span>${esc(SIT[e.sit]||"")}</span>`:""}${J?`<span>${esc(jogoCurto(J))}</span>`:""}${e.ctx?`<span>${CTX[e.ctx]}</span>`:""}${e.clip?"<span>🎬 clip</span>":""}${lk?`<a href="${esc(lk)}" target="_blank" rel="noopener" data-lk>▶ vídeo</a>`:""}</span></button>`; }).join("")}</div>
+    ${ed?`<button class="btn sm addev" data-addev="${esc(q)}">+ Evidência</button>`:""}`; }
+function ligaEv(box,R){ box.querySelectorAll("[data-ev]").forEach(b=>b.onclick=e=>{ if(e.target.closest("[data-lk]")) return; folhaEv(b.dataset.ev); });
+  box.querySelectorAll("[data-addev]").forEach(b=>b.onclick=()=>folhaEv(null,b.dataset.addev)); }
+function opcPerguntas(R,q){ let h=`<option value="">Por arrumar</option>`; SEC_Q.forEach(s=>{ h+=`<optgroup label="${esc(s.t)}">`+s.q.map((t,i)=>`<option value="${s.k+(i+1)}"${q===s.k+(i+1)?" selected":""}>${i+1}. ${esc(t.length>70?t.slice(0,68)+"…":t)}</option>`).join("")+`</optgroup>`; });
+  if(R.bp.length) h+=`<optgroup label="Bolas paradas">`+R.bp.map(b=>`<option value="bp:${esc(b.id)}"${q==="bp:"+b.id?" selected":""}>${esc(nomeBp(b))}</option>`).join("")+`</optgroup>`;
+  if(R.refs.length) h+=`<optgroup label="Jogadores (dificuldades)">`+R.refs.map(p=>`<option value="jogd:${esc(p.id)}"${q==="jogd:"+p.id?" selected":""}>${esc(nomeJog(p))}</option>`).join("")+`</optgroup>`;
+  return h; }
+function folhaEv(id,q0,rapida){ const R=relAtual(); if(!R) return; const ed=podeEditar(R); const E0=id?R.evid.find(e=>e.id===id):null; if(id&&!E0) return;
+  const E=E0?clone(E0):{id:nid("e"),q:q0||"",txt:"",jogo:(R.jogos[R.jogos.length-1]||{}).id||"",min:"",freq:rapida?"conf":"rec",ctx:"",clip:false,sit:"",criadoEm:new Date().toISOString()};
+  const qTxt=q=>{ const s=SEC_Q.find(s=>q&&q.startsWith(s.k)&&/^\d+$/.test(q.slice(s.k.length))); return s?s.q[+q.slice(s.k.length)-1]:""; };
+  folha(`<h3>${rapida?"Nota rápida":E0?"Evidência":"Nova evidência"}</h3>
+    <label class="f">Onde fica<select id="e-q" ${ed?"":"disabled"}>${opcPerguntas(R,E.q)}</select></label><p class="hint" id="e-qt" style="margin:-4px 0 0"></p>
+    <label class="f">O que viste (o que fazem e em que condição aparece)<textarea id="e-t" rows="3" ${ed?"":"readonly"} placeholder="Ex.: Quando o nosso ala fecha por dentro, o lateral deles sobe sempre e o extremo baixa para receber.">${esc(E.txt)}</textarea></label>
+    <div id="e-sitw" hidden><h4>Situação</h4><div class="seg" id="e-sit"></div></div>
+    <div class="fields"><label class="f">Jogo<select id="e-j" ${ed?"":"disabled"}><option value="">Sem jogo associado</option>${R.jogos.map(j=>`<option value="${esc(j.id)}"${j.id===E.jogo?" selected":""}>${esc(jogoCurto(j))}</option>`).join("")}</select></label>
+    <label class="f">Minuto do vídeo (mm:ss)<input type="text" id="e-m" inputmode="numeric" placeholder="23:10" value="${esc(E.min)}" ${ed?"":"readonly"}></label></div>
+    <h4>Frequência</h4><div class="seg" id="e-f"></div>
+    <h4>Resultado no momento</h4><div class="seg" id="e-c" data-toggle="1"></div>
+    <label class="row" style="gap:10px;font-size:14.5px;min-height:40px"><input type="checkbox" id="e-clip" style="width:20px;height:20px" ${E.clip?"checked":""} ${ed?"":"disabled"}> 🎬 Bom exemplo para clip</label>
+    <div class="actions">${E0&&ed?`<button class="btn danger l" id="e-del">Apagar</button>`:""}<button class="btn" data-close>${ed?"Cancelar":"Fechar"}</button>${ed?`<button class="btn primary" id="e-ok">Guardar</button>`:""}</div>`,(s,fecha)=>{
+    const sq=s.querySelector("#e-q"), sw=s.querySelector("#e-sitw");
+    const upd=()=>{ s.querySelector("#e-qt").textContent=qTxt(sq.value); sw.hidden=!sq.value.startsWith("jogd:"); }; sq.onchange=upd; upd();
+    seg(s.querySelector("#e-sit"),Object.entries(SIT),E.sit,v=>E.sit=v); seg(s.querySelector("#e-f"),Object.entries(FREQ),E.freq,v=>E.freq=v); seg(s.querySelector("#e-c"),Object.entries(CTX),E.ctx,v=>E.ctx=v);
+    if(!ed){ s.querySelectorAll(".seg button").forEach(b=>b.disabled=true); return; }
+    const del=s.querySelector("#e-del"); if(del) confirma2(del,"Toca outra vez para apagar",()=>{ fecha(); editaRel(R=>{ R.evid=R.evid.filter(e=>e.id!==E.id); }); toast("Evidência apagada"); });
+    s.querySelector("#e-ok").onclick=()=>{ E.q=sq.value; E.txt=s.querySelector("#e-t").value.trim(); E.jogo=s.querySelector("#e-j").value; E.min=minNorm(s.querySelector("#e-m").value); E.clip=s.querySelector("#e-clip").checked; if(!E.q.startsWith("jogd:")) E.sit="";
+      if(!E.txt){ toast("Escreve o que viste."); return; } fecha(); editaRel(R=>{ const i=R.evid.findIndex(e=>e.id===E.id); if(i>=0) R.evid[i]=E; else R.evid.push(E); }); toast(E.q?"Guardado":"Nota guardada em Notas por arrumar"); };
+    if(!E0) setTimeout(()=>s.querySelector("#e-t").focus(),50); }); }
+
+/* ---------- secções ---------- */
+function secPerguntas(R,S,box,ed){ const nos=S.k==="nos";
+  box.innerHTML=`<header><h3>${esc(S.t)}</h3>${nos?`<p>Ligar a observação ao nosso jogo, tendo como referência o nosso 3-4-3.</p><div class="prin" style="margin-top:8px">${PRINC.map(p=>`<span>${esc(p)}</span>`).join("")}</div>`:""}${S.nota?`<p>${esc(S.nota)}</p>`:""}
+    <p class="hint" style="margin-top:6px">Perguntas de partida, não conclusões a encontrar. Se as imagens mostrarem outra coisa, é isso que fica registado.</p></header>
+    ${S.q.map((t,i)=>{ const q=S.k+(i+1); return `<div class="card q"><div class="qt"><span class="qn">${i+1}</span><h4>${esc(t)}</h4></div>
+      <textarea data-b="resp.${q}" rows="2" placeholder="Padrão observado e em que condições aparece"></textarea>${listaEv(R,q,ed)}</div>`; }).join("")}`;
+  ligaEv(box,R); }
+
+function secFicha(R,box,ed){ box.innerHTML=`<header><h3>Ficha e jogos observados</h3><p>Um relatório por adversário. Junta aqui todos os jogos que viste: cada evidência fica ligada a um jogo e ao minuto do vídeo.</p></header>
+  <div class="card"><div class="fields"><label class="f">Adversário<input type="text" data-b="adversario" data-rr placeholder="Nome da equipa"></label><label class="f">Competição<input type="text" data-b="competicao" placeholder="Campeonato dos Açores"></label></div></div>
+  <div class="card"><div class="row" style="justify-content:space-between"><h4>Jogos observados</h4>${ed?`<button class="btn sm" id="j-add">+ Jogo</button>`:""}</div>
+    ${R.jogos.length?R.jogos.map(J=>`<div class="card" style="background:var(--surface-2)"><div class="row" style="justify-content:space-between"><b style="font-family:var(--f-display);font-size:17px">${esc(jogoCurto(J))}${J.res?" · "+esc(J.res):""}</b>${ed?`<button class="btn sm ghost" data-jdel="${esc(J.id)}">Apagar</button>`:""}</div>
+      <div class="fields"><label class="f">Contra (equipa que defrontaram)<input type="text" data-b="jogos.${J.id}.vs" data-rr></label><label class="f">Data<input type="date" data-b="jogos.${J.id}.data" data-rr></label>
+      <label class="f">Local<select data-b="jogos.${J.id}.local"><option value="">—</option><option value="casa">Em casa</option><option value="fora">Fora</option></select></label><label class="f">Resultado final<input type="text" data-b="jogos.${J.id}.res" data-rr placeholder="2-1"></label>
+      <label class="f">Como observaste<select data-b="jogos.${J.id}.como"><option value="">—</option><option value="vivo">Ao vivo</option><option value="video">Vídeo</option><option value="ambos">Ao vivo e vídeo</option></select></label>
+      <label class="f">Link do vídeo<input type="url" data-b="jogos.${J.id}.video" placeholder="https://youtube.com/…"></label></div>
+      <label class="f">Contexto do jogo (golos, expulsões, alterações, o que estava em jogo)<textarea data-b="jogos.${J.id}.ctx" rows="2"></textarea></label></div>`).join(""):`<p class="hint">Ainda sem jogos. Adiciona o primeiro jogo que observaste.</p>`}</div>
+  <div class="card"><h4>Estado do relatório</h4><p class="hint" style="margin:0">${R.estado==="env"?"Enviado para revisão. Podes continuar a acrescentar.":"Quando estiver pronto para revermos juntos, envia para revisão."}</p>
+    ${ed?`<div class="row">${R.estado==="env"?`<button class="btn" id="st-rasc">Voltar a "Em curso"</button>`:`<button class="btn dark" id="st-env">Enviar para revisão</button>`}</div>`:""}
+    ${ed?`<div style="border-top:1px solid var(--line);padding-top:10px;margin-top:4px"><button class="btn danger" id="r-del">Apagar relatório</button></div>`:""}</div>`;
+  if(!ed) return;
+  $("j-add").onclick=()=>editaRel(R=>R.jogos.push({id:nid("j"),vs:"",data:"",local:"",res:"",como:"",video:"",ctx:""}));
+  box.querySelectorAll("[data-jdel]").forEach(b=>confirma2(b,"Apagar?",()=>editaRel(R=>{ R.jogos=R.jogos.filter(j=>j.id!==b.dataset.jdel); R.evid.forEach(e=>{ if(e.jogo===b.dataset.jdel) e.jogo=""; }); })));
+  if($("st-env")) $("st-env").onclick=()=>{ editaRel(R=>R.estado="env"); toast("Enviado para revisão"); };
+  if($("st-rasc")) $("st-rasc").onclick=()=>editaRel(R=>R.estado="rasc");
+  confirma2($("r-del"),"Toca outra vez para apagar o relatório",()=>{ apagaDoc(relPath(R)); delete rels[R.id]; guardaCache(); vista={tipo:"lista",id:null,sec:"ficha"}; render(); toast("Relatório apagado"); }); }
+
+function secEstr(R,box,ed){ const est=vista.estr||"com", O=R.onze, st=O[est];
+  box.innerHTML=`<header><h3>Estrutura no campo</h3><p>Arrasta os jogadores para a posição habitual. Toca num jogador para pôr o número e o nome. Os jogadores são os mesmos nos dois momentos.</p></header>
+  <div class="card"><div class="row" style="justify-content:space-between"><div class="seg" id="es-m"></div><label class="row hint" style="gap:8px"><input type="checkbox" id="es-nos" ${O.nos?"checked":""} style="width:20px;height:20px" ${ed?"":"disabled"}> Mostrar o nosso 3-4-3</label></div>
+    <div class="estr"><div class="pitch" id="es-p"></div><div style="display:flex;flex-direction:column;gap:10px">
+      <label class="f">Sistema ${est==="com"?"com bola":"sem bola"}<select id="es-sis" ${ed?"":"disabled"}>${Object.keys(SISTEMAS).map(s=>`<option${s===st.sis?" selected":""}>${s}</option>`).join("")}</select></label>
+      <div class="leg"><span><i style="background:#1F5FBF"></i>${esc(R.adversario||"Adversário")} (ataca para cima)</span>${O.nos?`<span><i style="background:#C00000"></i>SC Angrense 3-4-3</span>`:""}</div>
+      <label class="f">${est==="com"?"Notas da estrutura com bola (largura, quem baixa, quem fixa)":"Notas da estrutura sem bola (altura do bloco, distâncias, referências)"}<textarea data-b="onze.${est}.nota" rows="4"></textarea></label>
+      ${ed?`<button class="btn sm" id="es-rp">Repor posições do sistema</button>`:""}</div></div></div>`;
+  seg($("es-m"),[["com","Com bola"],["sem","Sem bola"]],est,v=>{ vista.estr=v; render.mesma=true; render(); });
+  const desenha=()=>{ const Rr=relAtual(), O=Rr.onze, st=O[est]; let h=`<svg viewBox="-40 -40 760 1130" role="img" aria-label="Estrutura ${est==="com"?"com":"sem"} bola">${campoSvg(false)}`;
+    if(O.nos) for(let i=0;i<11;i++){ const p=posNos(i); h+=peca(p.x,p.y,p.pos,"rgba(192,0,0,.78)","#fff",'pointer-events="none"'); }
+    for(let i=0;i<11;i++){ const b=posAdv(st.sis,i), p=st.pos[i]||b, J=O.jog[i]; h+=peca(p.x,p.y,J.n||J.pos||b.pos,i===0?"#0E2F66":"#1F5FBF","#fff",`data-i="${i}" style="cursor:${ed?"grab":"pointer"}"`,i===0?"#E8C547":null); }
+    $("es-p").innerHTML=h+"</svg>"; const svg=$("es-p").querySelector("svg");
+    arrasta(svg,{onDown:(e,m)=>{ const g=e.target.closest("[data-i]"); if(!g) return null; const i=+g.dataset.i, p=st.pos[i]||posAdv(st.sis,i); return {i,dx:p.x-m.x,dy:p.y-m.y,ox:p.x,oy:p.y,mov:false,g}; },
+      onMove:(a,m)=>{ if(!ed) return; const x=clamp(m.x+a.dx,1,67), y=clamp(m.y+a.dy,1,104); if(Math.hypot(x-a.ox,y-a.oy)>.6) a.mov=true; a.x=x; a.y=y; a.g.setAttribute("transform",`translate(${(x-a.ox)*K},${(y-a.oy)*K})`); },
+      onUp:a=>{ if(a.mov&&ed){ editaRel(R=>{ R.onze[est].pos[a.i]={x:Math.round(a.x*10)/10,y:Math.round(a.y*10)/10}; },true); desenha(); } else folhaPecaOnze(a.i,est); }}); };
+  desenha();
+  if(!ed) return;
+  $("es-nos").onchange=e=>{ editaRel(R=>R.onze.nos=e.target.checked); };
+  $("es-sis").onchange=e=>editaRel(R=>{ const s=e.target.value; R.onze[est]={...R.onze[est],sis:s,pos:{}}; R.onze.jog.forEach((J,i)=>{ if(!J.pos||est==="com") J.pos=posAdv(s,i).pos; }); });
+  $("es-rp").onclick=()=>editaRel(R=>{ R.onze[est].pos={}; }); }
+function folhaPecaOnze(i,est){ const R=relAtual(); if(!R) return; const ed=podeEditar(R), J=R.onze.jog[i];
+  folha(`<h3>Jogador ${i+1}</h3><div class="fields"><label class="f">Número<input type="text" id="po-n" inputmode="numeric" maxlength="3" value="${esc(J.n)}" ${ed?"":"readonly"}></label><label class="f">Posição<input type="text" id="po-p" maxlength="4" value="${esc(J.pos||posAdv(R.onze[est].sis,i).pos)}" ${ed?"":"readonly"}></label></div>
+    <label class="f">Nome<input type="text" id="po-nm" value="${esc(J.nome)}" ${ed?"":"readonly"}></label>
+    <div class="actions">${ed?`<button class="btn l" id="po-ref">+ Jogador de referência</button>`:""}<button class="btn" data-close>Fechar</button>${ed?`<button class="btn primary" id="po-ok">Guardar</button>`:""}</div>`,(s,fecha)=>{
+    if(!ed) return; const ler=()=>({n:s.querySelector("#po-n").value.trim(),pos:s.querySelector("#po-p").value.trim().toUpperCase(),nome:s.querySelector("#po-nm").value.trim()});
+    s.querySelector("#po-ok").onclick=()=>{ const v=ler(); fecha(); editaRel(R=>{ R.onze.jog[i]=v; }); };
+    s.querySelector("#po-ref").onclick=()=>{ const v=ler(); fecha(); editaRel(R=>{ R.onze.jog[i]=v; if(!R.refs.some(p=>p.n&&p.n===v.n&&v.n)) R.refs.push({id:nid("p"),n:v.n,nome:v.nome,pos:v.pos,papeis:i===0?["gr"]:[],fortes:""}); },true); vista.sec="jog"; render(); toast("Adicionado aos jogadores de referência"); }; }); }
+
+function nomeBp(b){ return `${BP_TIPO[b.tipo]||"Bola parada"} ${BP_LADO[b.lado]==="Ofensivo"?"ofensivo":"defensivo"}${b.cor?" · "+BP_COR[b.cor]:""}`; }
+function novaBp(tipo,lado){ const b={id:nid("b"),tipo,lado,cor:"",asp:{},pecas:[],setas:[]}; const P=(eq,x,y,n)=>b.pecas.push({id:nid("k"),eq,x,y,n:n||""});
+  if(tipo==="canto"){ b.cor="dir"; P("bola",67,1); if(lado==="of"){ P("adv",66,4,""); [[28,9],[33,12],[38,10],[42,13],[30,15],[36,18]].forEach(([x,y])=>P("adv",x,y)); [[30,4],[34,6],[38,5],[32,10],[40,8]].forEach(([x,y])=>P("out",x,y)); }
+    else { P("adv",34,2,"GR"); [[30,5],[37,5],[34,8],[28,10],[40,10],[34,13],[30,17],[38,17]].forEach(([x,y])=>P("adv",x,y)); [[66,4],[33,11],[37,12],[31,8]].forEach(([x,y])=>P("out",x,y)); } }
+  else if(tipo==="livre"){ P("bola",24,28); if(lado==="of"){ P("adv",22,30); [[28,12],[34,10],[39,13],[31,15]].forEach(([x,y])=>P("adv",x,y)); [[30,20],[32,20],[34,20],[36,20]].forEach(([x,y])=>P("out",x,y)); }
+    else { P("adv",34,2,"GR"); [[27,19],[29,20],[31,21]].forEach(([x,y])=>P("adv",x,y)); [[30,11],[35,10],[40,12],[33,14]].forEach(([x,y])=>P("adv",x,y)); [[22,30],[33,12],[38,11]].forEach(([x,y])=>P("out",x,y)); } }
+  else { b.cor="dir"; P("bola",68,30); if(lado==="of"){ P("adv",67,31); [[62,26],[60,34],[54,30],[46,22]].forEach(([x,y])=>P("adv",x,y)); } else { [[62,27],[61,35],[55,30],[48,24]].forEach(([x,y])=>P("adv",x,y)); P("out",67,31); } }
+  return b; }
+function secBp(R,box,ed){ const of=R.bp.filter(b=>b.lado==="of"), df=R.bp.filter(b=>b.lado==="def");
+  const item=b=>{ const ab=bpAberto===b.id, ne=R.evid.filter(e=>e.q==="bp:"+b.id).length; return `<button class="bpi" data-bp="${esc(b.id)}" aria-expanded="${ab}"><b>${esc(nomeBp(b))}</b><span>${ne?ne+(ne===1?" evidência":" evidências"):""} ${ab?"▴":"▾"}</span></button>${ab?`<div class="card" id="bp-ed"></div>`:""}`; };
+  box.innerHTML=`<header><h3>Bolas paradas</h3><p>Cantos, livres e lançamentos laterais, ofensivos e defensivos. Para cada um: batedores e referências, movimentos e combinações, marcação e espaços, segundas bolas e transições.</p></header>
+    ${ed?`<div class="card"><h4>Acrescentar</h4><div class="row">${Object.entries(BP_TIPO).map(([t,n])=>`<button class="btn sm" data-nbp="${t}:of">+ ${n} ofensivo</button><button class="btn sm" data-nbp="${t}:def">+ ${n} defensivo</button>`).join("")}</div></div>`:""}
+    <div class="card"><h4>Ofensivas</h4><div class="bpl">${of.map(item).join("")||`<p class="hint">Nenhuma registada.</p>`}</div></div>
+    <div class="card"><h4>Defensivas</h4><div class="bpl">${df.map(item).join("")||`<p class="hint">Nenhuma registada.</p>`}</div></div>`;
+  box.querySelectorAll("[data-nbp]").forEach(b=>b.onclick=()=>{ const [t,l]=b.dataset.nbp.split(":"), nb=novaBp(t,l); bpAberto=nb.id; editaRel(R=>R.bp.push(nb)); });
+  box.querySelectorAll("[data-bp]").forEach(b=>b.onclick=()=>{ bpAberto=bpAberto===b.dataset.bp?null:b.dataset.bp; render.mesma=true; render(); });
+  const B=R.bp.find(b=>b.id===bpAberto); if(B) edBp(R,B,$("bp-ed"),ed); }
+let bpModo="mover", bpSeta="corrida";
+function edBp(R,B,el,ed){ el.innerHTML=`<div class="fields"><label class="f">Tipo<select data-b="bp.${B.id}.tipo" data-rr>${Object.entries(BP_TIPO).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></label>
+    <label class="f">Lado<select data-b="bp.${B.id}.lado" data-rr>${Object.entries(BP_LADO).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></label>
+    <label class="f">Corredor<select data-b="bp.${B.id}.cor" data-rr><option value="">—</option>${Object.entries(BP_COR).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></label></div>
+    ${ed?`<div class="row"><div class="seg" id="bp-m"></div><div class="seg" id="bp-s"></div></div><div class="row"><button class="btn sm" data-add="adv">+ ${esc(R.adversario||"Adversário")}</button><button class="btn sm" data-add="out">+ Outra equipa</button><button class="btn sm" data-add="bola"${B.pecas.some(p=>p.eq==="bola")?" disabled":""}>+ Bola</button></div>`:""}
+    <div class="pitch half" id="bp-p"></div>
+    <div class="leg"><span><i style="background:#1F5FBF"></i>${esc(R.adversario||"Adversário")}</span><span><i style="background:#8A8F96"></i>Outra equipa</span><span>━ corrida</span><span style="color:var(--gold)">╍ bola</span><span>A baliza atacada está em cima</span></div>
+    ${BP_ASP.map(([k,t])=>`<label class="f">${t}<textarea data-b="bp.${B.id}.asp.${k}" rows="2"></textarea></label>`).join("")}
+    <div><h4 style="margin-bottom:6px">Evidências</h4>${listaEv(R,"bp:"+B.id,ed)}</div>
+    ${ed?`<div class="actions"><button class="btn danger l" id="bp-del">Apagar esta bola parada</button></div>`:""}`;
+  if(ed){ seg($("bp-m"),[["mover","✥ Mover"],["seta","↗ Seta"]],bpModo,v=>{ bpModo=v; $("bp-s").hidden=v!=="seta"; }); seg($("bp-s"),[["corrida","Corrida"],["bola","Trajetória da bola"]],bpSeta,v=>bpSeta=v); $("bp-s").hidden=bpModo!=="seta";
+    el.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>editaRel(R=>{ const X=R.bp.find(x=>x.id===B.id), eq=b.dataset.add, n=X.pecas.filter(p=>p.eq===eq).length; X.pecas.push({id:nid("k"),eq,x:eq==="bola"?34:20+(n%6)*5,y:eq==="bola"?20:eq==="adv"?24:30,n:""}); }));
+    confirma2($("bp-del"),"Toca outra vez para apagar",()=>{ bpAberto=null; editaRel(R=>{ R.bp=R.bp.filter(x=>x.id!==B.id); R.evid.forEach(e=>{ if(e.q==="bp:"+B.id) e.q=""; }); }); }); }
+  ligaEv(el,R);
+  const desenha=(tmp)=>{ const X=relAtual().bp.find(x=>x.id===B.id); if(!X) return; let h=`<svg viewBox="-40 -40 760 440" role="img" aria-label="${esc(nomeBp(X))}"><defs>${["#fff","#F2C744"].map((c,i)=>`<marker id="ah${i}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="${c}"/></marker>`).join("")}</defs>${campoSvg(true)}`;
+    const seta=(s,attr)=>{ const b=s.t==="bola"; return `<g ${attr||""}><line x1="${s.x1*K}" y1="${s.y1*K}" x2="${s.x2*K}" y2="${s.y2*K}" stroke="${b?"#F2C744":"#fff"}" stroke-width="5" ${b?'stroke-dasharray="14 9"':""} marker-end="url(#ah${b?1:0})"/><line x1="${s.x1*K}" y1="${s.y1*K}" x2="${s.x2*K}" y2="${s.y2*K}" stroke="transparent" stroke-width="30"/></g>`; };
+    X.setas.forEach(s=>h+=seta(s,`data-s="${s.id}"`)); if(tmp) h+=seta(tmp);
+    [...X.pecas.filter(p=>p.eq==="out"),...X.pecas.filter(p=>p.eq==="adv"),...X.pecas.filter(p=>p.eq==="bola")].forEach(p=>{ h+=p.eq==="bola"?bolaSvg(p.x,p.y,`data-k="${p.id}"`):peca(p.x,p.y,p.n||"",p.eq==="adv"?(p.n==="GR"?"#0E2F66":"#1F5FBF"):"#8A8F96","#fff",`data-k="${p.id}"`,p.n==="GR"?"#E8C547":null); });
+    $("bp-p").innerHTML=h+"</svg>"; const svg=$("bp-p").querySelector("svg");
+    arrasta(svg,{onDown:(e,m)=>{ if(!ed){ return null; } const g=e.target.closest("[data-k],[data-s]");
+        if(bpModo==="seta"){ const k=g&&g.dataset.k&&X.pecas.find(p=>p.id===g.dataset.k); const o=k?{x:k.x,y:k.y}:m; return {seta:true,x1:o.x,y1:o.y,x2:o.x,y2:o.y}; }
+        if(g&&g.dataset.s) return {sid:g.dataset.s};
+        if(g&&g.dataset.k){ const p=X.pecas.find(p=>p.id===g.dataset.k); return {k:p.id,dx:p.x-m.x,dy:p.y-m.y,ox:p.x,oy:p.y,mov:false,g}; } return null; },
+      onMove:(a,m)=>{ if(a.seta){ a.x2=m.x; a.y2=m.y; desenha({t:bpSeta,...a}); return; } if(!a.k) return; const x=clamp(m.x+a.dx,-2,70), y=clamp(m.y+a.dy,-2,37); if(Math.hypot(x-a.ox,y-a.oy)>.5) a.mov=true; a.x=x; a.y=y; a.g.setAttribute("transform",`translate(${(x-a.ox)*K},${(y-a.oy)*K})`); },
+      onUp:a=>{ if(a.seta){ if(Math.hypot(a.x2-a.x1,a.y2-a.y1)>1.5) editaRel(R=>R.bp.find(x=>x.id===B.id).setas.push({id:nid("s"),t:bpSeta,x1:a.x1,y1:a.y1,x2:a.x2,y2:a.y2}),true); desenha(); return; }
+        if(a.sid){ folhaSetaBp(B.id,a.sid,desenha); return; }
+        if(a.mov) { editaRel(R=>{ const p=R.bp.find(x=>x.id===B.id).pecas.find(p=>p.id===a.k); p.x=Math.round(a.x*10)/10; p.y=Math.round(a.y*10)/10; },true); desenha(); } else folhaPecaBp(B.id,a.k); }}); };
+  desenha(); }
+function folhaPecaBp(bid,kid){ const R=relAtual(), X=R.bp.find(x=>x.id===bid), P=X&&X.pecas.find(p=>p.id===kid); if(!P) return;
+  folha(`<h3>${P.eq==="bola"?"Bola":P.eq==="adv"?esc(R.adversario||"Adversário"):"Outra equipa"}</h3>${P.eq!=="bola"?`<label class="f">Número ou função (ex.: 9, GR, B = batedor)<input type="text" id="pb-n" maxlength="4" value="${esc(P.n)}"></label>`:""}
+    <div class="actions"><button class="btn danger l" id="pb-del">Apagar</button><button class="btn" data-close>Fechar</button>${P.eq!=="bola"?`<button class="btn primary" id="pb-ok">Guardar</button>`:""}</div>`,(s,fecha)=>{
+    confirma2(s.querySelector("#pb-del"),"Toca outra vez",()=>{ fecha(); editaRel(R=>{ const X=R.bp.find(x=>x.id===bid); X.pecas=X.pecas.filter(p=>p.id!==kid); }); });
+    const ok=s.querySelector("#pb-ok"); if(ok) ok.onclick=()=>{ const n=s.querySelector("#pb-n").value.trim().toUpperCase(); fecha(); editaRel(R=>{ R.bp.find(x=>x.id===bid).pecas.find(p=>p.id===kid).n=n; }); }; }); }
+function folhaSetaBp(bid,sid,redesenha){ folha(`<h3>Seta</h3><div class="actions"><button class="btn danger l" id="sb-del">Apagar seta</button><button class="btn" id="sb-inv">⇄ Inverter</button><button class="btn primary" data-close>Fechar</button></div>`,(s,fecha)=>{
+  s.querySelector("#sb-del").onclick=()=>{ fecha(); editaRel(R=>{ const X=R.bp.find(x=>x.id===bid); X.setas=X.setas.filter(x=>x.id!==sid); },true); redesenha(); };
+  s.querySelector("#sb-inv").onclick=()=>{ editaRel(R=>{ const a=R.bp.find(x=>x.id===bid).setas.find(x=>x.id===sid); [a.x1,a.y1,a.x2,a.y2]=[a.x2,a.y2,a.x1,a.y1]; },true); redesenha(); }; }); }
+
+function nomeJog(p){ return [p.n,p.nome].filter(Boolean).join(" · ")||"Jogador sem nome"; }
+function secJog(R,box,ed){ box.innerHTML=`<header><h3>Jogadores de referência</h3><p>Quem organiza, quem desequilibra, quem ameaça a profundidade e quem finaliza. Inclui o guarda-redes, sobretudo pela participação na construção e pelo controlo do espaço nas costas da defesa.</p>
+    <p class="hint" style="margin-top:6px">Nas dificuldades, exemplos concretos: em vez de “o lateral defende mal”, em que situação tem dificuldade. O objetivo é encontrar situações que possamos provocar no jogo.</p></header>
+    ${ed?`<div><button class="btn primary" id="jg-add">+ Jogador</button></div>`:""}
+    ${R.refs.length?R.refs.map(p=>{ const ab=jogAberto===p.id, nd=R.evid.filter(e=>e.q==="jogd:"+p.id).length; return `<div class="card pl"><button class="bpi" data-jg="${esc(p.id)}" aria-expanded="${ab}" style="border:0;padding:0;min-height:44px"><span class="plh" style="margin:0"><span class="num">${esc(p.n||"–")}</span><b>${esc(p.nome||"Sem nome")}${p.pos?" · "+esc(p.pos):""}</b></span><span>${p.papeis.map(k=>PAPEIS[k]).filter(Boolean).join(", ")}${nd?` · ${nd} ${nd===1?"dificuldade":"dificuldades"}`:""} ${ab?"▴":"▾"}</span></button>
+      ${ab?`<div class="fields"><label class="f">Número<input type="text" data-b="refs.${p.id}.n" data-rr inputmode="numeric"></label><label class="f">Nome<input type="text" data-b="refs.${p.id}.nome" data-rr></label><label class="f">Posição<input type="text" data-b="refs.${p.id}.pos" data-rr></label></div>
+        <div><h4 style="margin-bottom:6px">Papel na equipa</h4><div class="seg" data-pap="${esc(p.id)}">${Object.entries(PAPEIS).map(([k,v])=>`<button type="button" data-k="${k}" aria-pressed="${p.papeis.includes(k)}"${ed?"":" disabled"}>${v}</button>`).join("")}</div></div>
+        <label class="f">O que faz bem e como influencia o jogo${p.papeis.includes("gr")?" (construção, controlo do espaço nas costas)":""}<textarea data-b="refs.${p.id}.fortes" rows="3"></textarea></label>
+        <div><h4 style="margin-bottom:6px">Dificuldades em situações concretas</h4>${listaEv(R,"jogd:"+p.id,ed).replace("+ Evidência","+ Dificuldade")}</div>
+        ${ed?`<div class="actions"><button class="btn danger l" data-jgdel="${esc(p.id)}">Apagar jogador</button></div>`:""}`:""}</div>`; }).join(""):`<div class="empty"><b>Sem jogadores de referência.</b><span>Acrescenta aqui, ou toca num jogador no separador Estrutura e escolhe “+ Jogador de referência”.</span></div>`}`;
+  box.querySelectorAll("[data-jg]").forEach(b=>b.onclick=()=>{ jogAberto=jogAberto===b.dataset.jg?null:b.dataset.jg; render.mesma=true; render(); });
+  ligaEv(box,R);
+  if(!ed) return;
+  $("jg-add").onclick=()=>{ const p={id:nid("p"),n:"",nome:"",pos:"",papeis:[],fortes:""}; jogAberto=p.id; editaRel(R=>R.refs.push(p)); };
+  box.querySelectorAll("[data-pap]").forEach(w=>w.querySelectorAll("button").forEach(b=>b.onclick=()=>{ const id=w.dataset.pap, k=b.dataset.k; editaRel(R=>{ const p=R.refs.find(x=>x.id===id); p.papeis=p.papeis.includes(k)?p.papeis.filter(x=>x!==k):[...p.papeis,k]; },true); b.setAttribute("aria-pressed",b.getAttribute("aria-pressed")!=="true"); }));
+  box.querySelectorAll("[data-jgdel]").forEach(b=>confirma2(b,"Toca outra vez para apagar",()=>{ const id=b.dataset.jgdel; editaRel(R=>{ R.refs=R.refs.filter(x=>x.id!==id); R.evid.forEach(e=>{ if(e.q==="jogd:"+id) e.q=""; }); }); })); }
+
+function secSint(R,box,ed){ const rv=revs[R.id]||{}, cand=R.evid.filter(e=>e.clip&&!R.clips.some(c=>c.ev===e.id));
+  box.innerHTML=`<header><h3>Síntese</h3><p>Distingue o que é recorrente, o que apareceu pontualmente e o que ainda precisa de confirmação. Considera o resultado e o contexto de cada jogo.</p></header>
+  <div class="card"><h4>1. Estrutura e comportamentos principais</h4><textarea data-b="sint.estrutura" rows="4"></textarea></div>
+  <div class="card"><h4>2. Três ameaças que precisamos de controlar</h4><div class="three">${[0,1,2].map(i=>`<div><b>${i+1}</b><textarea data-b="sint.ameacas.${i}" rows="2"></textarea></div>`).join("")}</div></div>
+  <div class="card"><h4>3. Três oportunidades que podemos explorar</h4><div class="three op">${[0,1,2].map(i=>`<div><b>${i+1}</b><textarea data-b="sint.oport.${i}" rows="2"></textarea></div>`).join("")}</div></div>
+  <div class="card"><h4>4. Bolas paradas e jogadores de referência</h4><textarea data-b="sint.bpref" rows="4"></textarea></div>
+  <div class="card"><h4>5. Clips</h4><p class="hint" style="margin:0">Clips curtos que sustentem as conclusões, cada um com uma frase a explicar o que devemos observar.</p>
+    ${R.clips.map((c,i)=>{ const J=jogoDe(R,c.jogo), lk=linkVideo(J,c.ini); return `<div class="clip"><div class="fields" style="grid-column:1/-1"><label class="f">Jogo<select data-b="clips.${c.id}.jogo" data-rr><option value="">—</option>${R.jogos.map(j=>`<option value="${esc(j.id)}">${esc(jogoCurto(j))}</option>`).join("")}</select></label><label class="f">Início<input type="text" data-b="clips.${c.id}.ini" data-min data-rr placeholder="23:10"></label><label class="f">Fim<input type="text" data-b="clips.${c.id}.fim" data-min placeholder="23:40"></label></div>
+      <label class="f" style="grid-column:1/-1">O que devemos observar<input type="text" data-b="clips.${c.id}.frase"></label><div class="row" style="grid-column:1/-1;justify-content:space-between">${lk?`<a href="${esc(lk)}" target="_blank" rel="noopener" class="btn sm">▶ Abrir no vídeo</a>`:"<span></span>"}${ed?`<button class="btn sm ghost" data-cdel="${esc(c.id)}">Apagar</button>`:""}</div></div>`; }).join("")}
+    ${ed?`<div class="row"><button class="btn sm" id="c-add">+ Clip</button></div>`:""}
+    ${ed&&cand.length?`<div><h4 style="margin:6px 0">Evidências marcadas como 🎬</h4><div class="evs">${cand.map(e=>`<div class="ev" style="grid-template-columns:auto minmax(0,1fr) auto"><span class="tm">${esc(e.min||"—")}</span><span class="tx">${esc(e.txt)}</span><button class="btn sm" data-cev="${esc(e.id)}">Usar</button></div>`).join("")}</div></div>`:""}</div>
+  <div class="card rev"><h4>Revisão do Rodrigo</h4>${souDono?`<textarea id="rv-t" rows="4" placeholder="Comentários para o observador: nível de detalhe, o que acrescentar, como apresentar.">${esc(rv.texto||"")}</textarea><label class="row" style="gap:10px;min-height:40px"><input type="checkbox" id="rv-ok" style="width:20px;height:20px" ${rv.revisto?"checked":""}> Relatório revisto</label>`
+      :rv.texto?`<p style="margin:0;white-space:pre-wrap">${esc(rv.texto)}</p>${rv.revisto?`<span class="chip rev" style="align-self:flex-start">Revisto</span>`:""}`:`<p class="hint" style="margin:0">Ainda sem comentários. Quando enviares para revisão, o Rodrigo deixa aqui as notas.</p>`}</div>`;
+  if(souDono&&!soLeitura){ let t=null; const grava=()=>{ const v={texto:$("rv-t").value,revisto:$("rv-ok").checked,em:new Date().toISOString()}; revs[R.id]=v; guardaCache(); gravaDoc(revPath(R),v); };
+    $("rv-t").oninput=()=>{ clearTimeout(t); t=setTimeout(grava,700); }; $("rv-ok").onchange=()=>{ grava(); toast($("rv-ok").checked?"Marcado como revisto":"Revisão reaberta"); }; }
+  if(!ed) return;
+  $("c-add").onclick=()=>editaRel(R=>R.clips.push({id:nid("c"),jogo:(R.jogos[R.jogos.length-1]||{}).id||"",ini:"",fim:"",frase:""}));
+  box.querySelectorAll("[data-cdel]").forEach(b=>confirma2(b,"Apagar?",()=>editaRel(R=>R.clips=R.clips.filter(c=>c.id!==b.dataset.cdel))));
+  box.querySelectorAll("[data-cev]").forEach(b=>b.onclick=()=>editaRel(R=>{ const e=R.evid.find(x=>x.id===b.dataset.cev); const s=minSeg(e.min); R.clips.push({id:nid("c"),ev:e.id,jogo:e.jogo,ini:e.min,fim:s!=null?minNorm(Math.floor((s+20)/60)+":"+String((s+20)%60).padStart(2,"0")):"",frase:e.txt}); })); }
+
+function secNotas(R,box,ed){ const ns=R.evid.filter(e=>!e.q);
+  box.innerHTML=`<header><h3>Notas por arrumar</h3><p>As notas rápidas ficam aqui até as ligares a uma pergunta, a uma bola parada ou a um jogador. Toca numa nota para a arrumar.</p></header>
+    ${ns.length?`<div class="card">${listaEv(R,"",ed).replace(/<button class="btn sm addev"[^>]*>[^<]*<\/button>/,"")}</div>`:`<div class="empty"><b>Tudo arrumado.</b><span>No estádio, usa o botão <b>+ Nota</b> para registar depressa. As notas aparecem aqui.</span></div>`}`;
+  ligaEv(box,R); }
+
+$("fab").onclick=()=>{ const S=SECS.find(s=>s.k===vista.sec); folhaEv(null,S&&S.q?"":"",true); };
+
+/* ======================= nomes dos observadores ======================= */
+async function carregaNomes(ids){ if(!usr||!souDono) return; const falta=[...new Set(ids)].filter(i=>i&&i!=="local"&&!(i in nomes)); if(!falta.length) return;
+  try{ const ps=await usr.profiles(falta); let mud=false; falta.forEach(i=>{ const n=(ps[i]&&ps[i].name)||""; if(nomes[i]!==n){ nomes[i]=n; mud=true; } }); if(mud&&!aEscrever()) render(); }catch(e){} }
+
+/* ======================= arranque ======================= */
+render(); estado();
+(async()=>{
+  try{ db=window.claude&&window.claude.use?await window.claude.use("db"):null; }catch(e){ db=null; }
+  try{ usr=await window.claude.use("user"); }catch(e){ usr=null; }
+  if(usr){ try{ meId=await usr.id(); }catch(e){} try{ souDono=!!(await usr.isOwner()); }catch(e){} try{ if(await usr.can("data.write")===false&&!souDono){ /* as regras próprias decidem: tenta e, se recusar, fica só leitura */ } }catch(e){} }
+  if(!db||!meId){ semDb=true; meId=meId||"local"; Object.values(rels).forEach(R=>{ if(!R.autor) R.autor=meId; }); estado(); render(); return; }
+  /* relatórios criados sem ligação passam para o autor certo */
+  Object.values(rels).forEach(R=>{ if(R.autor==="local"){ R.autor=meId; guardaRel(R,true); } });
+  estado(); reenvia();
+  const subs={};
+  const ouveAutor=uid=>{ if(subs[uid]) return; subs[uid]=true;
+    db.collection(`obs/${uid}/relatorios`).onSnapshot(q=>{ if(q.metadata?.hasPendingWrites) return; let mud=false; const vistos=new Set();
+      q.docs.forEach(d=>{ const x=d.data(); if(!x) return; vistos.add(d.id); const p=`obs/${uid}/relatorios/${d.id}`; if(pend[p]||tSave[d.id]&&rels[d.id]&&aEscrever()) return;
+        const R=normRel({...x,id:d.id,autor:uid}); if(JSON.stringify(R)!==JSON.stringify(rels[d.id])){ rels[d.id]=R; mud=true; } });
+      Object.values(rels).forEach(R=>{ if(R.autor===uid&&!vistos.has(R.id)&&!pend[relPath(R)]&&!q.metadata?.fromCache){ delete rels[R.id]; mud=true; } });
+      if(mud){ guardaCache(); if(aEscrever()) precisaRender=true; else render(); } estado(); },e=>{ if(e?.code==="revoked") setStatus("local","Acesso retirado"); });
+    db.collection(`obs/${uid}/revisoes`).onSnapshot(q=>{ if(q.metadata?.hasPendingWrites) return; let mud=false;
+      q.docs.forEach(d=>{ const x=d.data(); if(!x||pend[`obs/${uid}/revisoes/${d.id}`]) return; const v={texto:String(x.texto||""),revisto:!!x.revisto,em:x.em||""}; if(JSON.stringify(v)!==JSON.stringify(revs[d.id])){ revs[d.id]=v; mud=true; } });
+      if(mud){ guardaCache(); if(aEscrever()) precisaRender=true; else render(); } },()=>{}); };
+  ouveAutor(meId);
+  if(souDono) db.collection("obs").onSnapshot(q=>{ q.docs.forEach(d=>ouveAutor(d.id)); carregaNomes(q.docs.map(d=>d.id)); },()=>{});
+  render();
+})();
+</script>

@@ -44,6 +44,15 @@ Os **dados de toda a equipa** (lances, jogos, histórico, análises, Modelo de J
 - Se a sessão não conseguir publicar no link, gerar `dist/index.html` e dizer ao Rodrigo que a publicação tem de ser feita numa conversa do Projeto "SCA Match Center" no claude.ai. Não procurar outra forma de alojar a app.
 - Em dia de jogo, não publicar alterações ao Ao vivo sem o Rodrigo confirmar.
 
+## App de observação de adversários (link à parte)
+`observacao/page.html` → `dist/observacao.html` (um só ficheiro, um só `<script>`, sem partilhar código com a app principal).
+Publica-se **só** para https://claude.ai/artifact/L7rJPrEcxmw86DbHyT5vEw — nunca para o link da SCA Match Center, e a SCA Match Center nunca para este.
+- Existe para dar acesso a um observador de fora do clube sem ele ver o resto da app. Não acrescentar aqui dados da app principal.
+- Regras de acesso da base de dados (manter numa republicação, omitindo `capabilities`): raiz e `obs` só o dono; `obs/{self}` lê e escreve o próprio observador (nível `interact` ou mais). O observador precisa de ser convidado como **Editor** (convidado de fora do clube como Leitor não grava) e a página não pode estar partilhada por link público.
+- Caminhos: `obs/<uid>` (marca), `obs/<uid>/relatorios/<id>` (um relatório por adversário), `obs/<uid>/revisoes/<id>` (comentários do Rodrigo; só o dono escreve).
+- O guião de perguntas, a síntese (estrutura, 3 ameaças, 3 oportunidades, bolas paradas e jogadores, clips) e os princípios (espírito de equipa, intensidade, organização, objetividade; referência 3-4-3) foram definidos pelo Rodrigo: não mudar sem ele.
+- Cada evidência guarda jogo, minuto do vídeo (mm:ss), frequência (recorrente, pontual, a confirmar) e resultado no momento.
+
 ## Regras técnicas
 - **Gravação por registo**: cada evento, substituição, ação de vídeo, lance e quadro do Modelo de Jogo é um documento próprio (`gravaDoc`/`apagaDoc`). Nunca gravar listas inteiras num só documento: dois aparelhos trabalham ao mesmo tempo.
 - **Fila offline**: as escritas passam pela fila `pendentes` (sobrevive a falhas de rede e a recarregar). Não escrever na base de dados por fora dessa fila.
