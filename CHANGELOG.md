@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| Obs. 7 | Observação: o desenho do plantel segue o sistema habitual (8 sistemas, cada um com a sua numeração); onze provável e onze alternativo, cada um com o seu sistema; escolher um jogador no onze provável muda a posição dele no plantel; treinador de guarda-redes; listas de nomes nunca se sobrepõem |
 | Obs. 6 | Observação: corrige a página em branco ao abrir um relatório criado antes do Plantel; um erro de desenho passa a mostrar aviso e caminho de volta |
 | Obs. 5 | Observação: campos brancos com linhas pretas e balizas cinzentas, bolinhas e bola iguais às da SCA Match Center (SCA vermelho, GR amarelo, adversário azul) |
 | Obs. 4 | Observação: plantel editável em lista (número, nome, posição no campo, pé, confirmada), arrastar nomes entre posições no campo, treinador, adjunto, sistema habitual, capitão e notas do plantel; corrigido o campo de texto que perdia o foco a cada letra (ficha dos jogos e jogadores) |

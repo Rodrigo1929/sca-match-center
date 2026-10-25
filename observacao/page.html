@@ -170,17 +170,42 @@ const COMP="Campeonato de Futebol dos Açores", EPOCA="2026/27";
 /* equipas do CFA 2026/27 (Açoriano Oriental, 02/09/2026); o SC Angrense não entra na lista de adversários */
 const EQUIPAS=[["Barreiro","Terceira"],["Lusitânia","Terceira"],["Madalena","Pico"],["Praiense","Terceira"],["Rabo de Peixe","São Miguel"],["Santo António","São Miguel"],["São Roque","São Miguel"],["União Micaelense","São Miguel"],["Vale Formoso","São Miguel"]];
 const PLANTEIS={{PLANTEIS}};
-/* campo do plantel do adversário (estilo do plantel da SCA Match Center), numeração clássica 4-3-3; baliza em cima, direita do adversário à esquerda do ecrã */
-const SLOTS=[["1","GR",.5,.035],["2","Lateral direito",.12,.25],["3","Central direito",.345,.20],["4","Central esquerdo",.655,.20],["5","Lateral esquerdo",.88,.25],["6","Médio defensivo",.5,.46],["8","Médio centro",.29,.53],["10","Médio ofensivo",.71,.53],["7","Extremo direito",.12,.75],["9","Ponta de lança",.5,.78],["11","Extremo esquerdo",.88,.75]];
-const SLOT_CURTO={"1":"GR","2":"LD","3":"DC","4":"DC","5":"LE","6":"MDC","8":"MC","10":"MO","7":"ED","9":"PL","11":"EE"};
+/* campo do plantel do adversário (estilo do plantel da SCA Match Center). Cada sistema tem as suas 11 posições:
+   [código, número, nome, x, y] em frações do meio-campo (baliza em cima; a direita do adversário fica à esquerda do ecrã).
+   Os jogadores guardam o código da posição; num sistema sem esse código vão para a posição mais parecida (POS_ALT). */
+const POS_NOME={GR:"Guarda-redes",LD:"Lateral direito",LE:"Lateral esquerdo",ALD:"Ala direito",ALE:"Ala esquerdo",DCD:"Central direito",DC:"Central",DCE:"Central esquerdo",
+  MDC:"Médio defensivo",MDCD:"Médio defensivo direito",MDCE:"Médio defensivo esquerdo",MCD:"Médio centro direito",MCE:"Médio centro esquerdo",MO:"Médio ofensivo",
+  MD:"Médio direito",ME:"Médio esquerdo",ED:"Extremo direito",EE:"Extremo esquerdo",AVD:"Avançado direito",AVE:"Avançado esquerdo",PL:"Ponta de lança",PLD:"Ponta de lança direito",PLE:"Ponta de lança esquerdo"};
+const POS_ALT={GR:[],LD:["ALD","DCD","MD","ED"],LE:["ALE","DCE","ME","EE"],ALD:["LD","MD","ED","DCD"],ALE:["LE","ME","EE","DCE"],DCD:["DC","DCE","LD"],DCE:["DC","DCD","LE"],DC:["DCD","DCE"],
+  MDC:["MDCD","MDCE","MCD","MCE","DC"],MDCD:["MDC","MCD","MDCE","MCE"],MDCE:["MDC","MCE","MDCD","MCD"],MCD:["MDCD","MDC","MCE","MO"],MCE:["MDCE","MO","MDC","MCD"],MO:["MCE","MCD","MDC","PLE","PL"],
+  MD:["ED","ALD","MCD","LD","AVD"],ME:["EE","ALE","MCE","LE","AVE"],ED:["AVD","MD","ALD","PLD","PL"],EE:["AVE","ME","ALE","PLE","PL"],AVD:["ED","PLD","MD","PL"],AVE:["EE","PLE","ME","PL"],
+  PL:["PLD","PLE","AVD","AVE"],PLD:["PL","PLE","AVD"],PLE:["PL","PLD","AVE"]};
+const L4=[["GR","1",.5,.035],["LD","2",.10,.25],["DCD","3",.31,.20],["DCE","4",.69,.20],["LE","5",.90,.25]];
+const LAYOUTS={
+  "4-3-3":[...L4,["MDC","6",.5,.46],["MCD","8",.31,.53],["MO","10",.69,.53],["ED","7",.10,.75],["PL","9",.5,.78],["EE","11",.90,.75]],
+  "4-4-2":[...L4,["MD","7",.10,.55],["MCD","6",.31,.50],["MCE","8",.69,.50],["ME","11",.90,.55],["PLD","9",.31,.78],["PLE","10",.69,.78]],
+  "4-2-3-1":[...L4,["MDCD","6",.31,.45],["MDCE","8",.69,.45],["ED","7",.10,.62],["MO","10",.5,.58],["EE","11",.90,.62],["PL","9",.5,.80]],
+  "4-1-4-1":[...L4,["MDC","6",.5,.40],["MD","7",.10,.58],["MCD","8",.31,.56],["MCE","10",.69,.56],["ME","11",.90,.58],["PL","9",.5,.80]],
+  "3-5-2":[["GR","1",.5,.035],["DCD","2",.31,.22],["DC","3",.5,.30],["DCE","4",.69,.22],["ALD","7",.10,.45],["ALE","5",.90,.45],["MDC","6",.5,.58],["MCD","8",.31,.55],["MCE","10",.69,.55],["PLD","9",.31,.80],["PLE","11",.69,.80]],
+  "3-4-3":[["GR","1",.5,.05],["DCD","2",.278,.36],["DC","3",.5,.35],["DCE","4",.722,.36],["ALD","7",.075,.5],["ALE","5",.925,.5],["MCD","8",.32,.61],["MCE","6",.68,.62],["AVD","10",.16,.775],["PL","9",.5,.795],["AVE","11",.84,.775]],
+  "5-3-2":[["GR","1",.5,.035],["ALD","2",.10,.32],["DCD","3",.31,.22],["DC","4",.5,.30],["DCE","6",.69,.22],["ALE","5",.90,.32],["MCD","8",.31,.55],["MDC","7",.5,.58],["MCE","10",.69,.55],["PLD","9",.31,.80],["PLE","11",.69,.80]],
+  "5-4-1":[["GR","1",.5,.035],["ALD","2",.10,.30],["DCD","3",.31,.22],["DC","4",.5,.30],["DCE","6",.69,.22],["ALE","5",.90,.30],["MD","7",.10,.60],["MCD","8",.31,.55],["MCE","10",.69,.55],["ME","11",.90,.60],["PL","9",.5,.80]]};
+const layoutDe=sis=>LAYOUTS[sis]||LAYOUTS["4-3-3"];
+/* posição guardada → posição no sistema mostrado ("" = sem posição) */
+function posNoSis(code,sis){ const L=layoutDe(sis); if(!code) return ""; if(L.some(s=>s[0]===code)) return code; const a=(POS_ALT[code]||[]).find(c=>L.some(s=>s[0]===c)); return a||""; }
+const ordPl=(R,j)=>{ const i=layoutDe(R.sistema).findIndex(x=>x[0]===posNoSis(j.slot,R.sistema||"4-3-3")); return i<0?99:i; };
+const slotInfo=(code,sis)=>layoutDe(sis).find(s=>s[0]===code);
+const rotPos=(code,sis)=>{ const s=slotInfo(code,sis); return s?`${s[1]} · ${POS_NOME[code]}`:""; };
 const POS_ZZ=["Guarda Redes","Defesa Central","Defesa Direito","Defesa Esquerdo","Médio Defensivo","Médio Centro","Médio Ofensivo","Médio Direito","Médio Esquerdo","Extremo Direito","Extremo Esquerdo","Ponta de Lança","2.º avançado","Defesa","Médio","Avançado","Fixo","Ala","Universal","Pivot"];
 function partePos(t){ const out=[]; let r=String(t||""); while(r){ const m=POS_ZZ.find(x=>r.startsWith(x)); if(!m) break; out.push(m); r=r.slice(m.length).replace(/^[\s\/]+/,""); } return out; }
-/* posição do zerozero → número no campo; conf=false quando o zerozero só dá a linha (defesa, médio, avançado) */
-function slotDe(pos,pe,cont){ const [p1,p2]=partePos(pos), M={"Guarda Redes":"1","Defesa Direito":"2","Defesa Esquerdo":"5","Médio Defensivo":"6","Médio Centro":"8","Médio Ofensivo":"10","Médio Direito":"7","Médio Esquerdo":"11","Extremo Direito":"7","Extremo Esquerdo":"11","Ponta de Lança":"9","2.º avançado":"10"};
-  const dc=()=>{ if(/esquerdo/i.test(pe||"")) return "4"; const a=cont["3"]||0,b=cont["4"]||0; return a<=b?"3":"4"; };
+/* posição do zerozero → código; conf=false quando o zerozero só dá a linha (defesa, médio, avançado) */
+function slotDe(pos,pe,cont){ const [p1,p2]=partePos(pos), M={"Guarda Redes":"GR","Defesa Direito":"LD","Defesa Esquerdo":"LE","Médio Defensivo":"MDC","Médio Centro":"MCD","Médio Ofensivo":"MO","Médio Direito":"MD","Médio Esquerdo":"ME","Extremo Direito":"ED","Extremo Esquerdo":"EE","Ponta de Lança":"PL","2.º avançado":"MO"};
+  const dc=()=>{ if(/esquerdo/i.test(pe||"")) return "DCE"; const a=cont.DCD||0,b=cont.DCE||0; return a<=b?"DCD":"DCE"; };
   if(p1==="Defesa Central") return {slot:dc(),conf:true}; if(M[p1]) return {slot:M[p1],conf:true};
-  if(p1==="Defesa"||p1==="Médio"||p1==="Avançado"){ if(p2==="Defesa Central") return {slot:dc(),conf:false}; if(M[p2]) return {slot:M[p2],conf:false}; return {slot:p1==="Defesa"?dc():p1==="Médio"?"8":"9",conf:false}; }
+  if(p1==="Defesa"||p1==="Médio"||p1==="Avançado"){ if(p2==="Defesa Central") return {slot:dc(),conf:false}; if(M[p2]) return {slot:M[p2],conf:false}; return {slot:p1==="Defesa"?dc():p1==="Médio"?"MCD":"PL",conf:false}; }
   return {slot:"",conf:false}; }
+/* relatórios guardados antes dos sistemas: números da numeração 4-3-3 → códigos */
+const NUM_433={"1":"GR","2":"LD","3":"DCD","4":"DCE","5":"LE","6":"MDC","8":"MCD","10":"MO","7":"ED","9":"PL","11":"EE"};
 function plantelZZ(adv){ const E=PLANTEIS.equipas&&PLANTEIS.equipas[adv]; if(!E) return null; const cont={};
   const js=E.jogadores.map(j=>{ const s=slotDe(j.pos,j.pe,cont); if(s.slot) cont[s.slot]=(cont[s.slot]||0)+1; return {id:nid("j"),n:j.n||"",nome:j.nome,idade:j.idade||"",pos:j.pos||"",pe:j.pe||"",nac:j.nac||"",slot:s.slot,conf:s.conf}; });
   return {jogadores:js,treinador:E.treinador||"",fonte:`zerozero.pt · ${dataPt(PLANTEIS.data)}`}; }
@@ -283,7 +308,11 @@ function normRel(d){ const R={...d}; R.adversario=String(R.adversario||""); R.co
   R.refs=Array.isArray(R.refs)?R.refs.filter(p=>p&&p.id).map(p=>({n:"",nome:"",pos:"",papeis:[],fortes:"",...p})):[];
   const S=R.sint||{}; R.sint={estrutura:String(S.estrutura||""),ameacas:[0,1,2].map(i=>String((S.ameacas||[])[i]||"")),oport:[0,1,2].map(i=>String((S.oport||[])[i]||"")),bpref:String(S.bpref||"")};
   R.plantel=Array.isArray(R.plantel)?R.plantel.filter(j=>j&&j.id).map(j=>({n:"",nome:"",idade:"",pos:"",pe:"",nac:"",slot:"",conf:true,...j})):[]; R.plantelFonte=String(R.plantelFonte||"");
-  ["treinador","adjunto","sistema","capitao","plantelNotas"].forEach(k=>R[k]=String(R[k]||""));
+  R.plantel.forEach(j=>{ if(NUM_433[j.slot]) j.slot=NUM_433[j.slot]; else if(j.slot&&!POS_NOME[j.slot]) j.slot=""; });
+  ["treinador","adjunto","trGR","sistema","capitao","plantelNotas"].forEach(k=>R[k]=String(R[k]||"")); if(R.sistema&&!LAYOUTS[R.sistema]) R.sistema="";
+  const on=R.onzes||{}, nOnze=o=>{ const sis=LAYOUTS[o?.sis]?o.sis:"", lay=layoutDe(sis||R.sistema), ids=new Set(R.plantel.map(j=>j.id)), pos={};
+    Object.entries(o?.pos||{}).forEach(([c,id])=>{ if(lay.some(x=>x[0]===c)&&ids.has(id)) pos[c]=id; }); return {sis,pos,nota:String(o?.nota||"")}; };
+  R.onzes={prov:nOnze(on.prov),alt:nOnze(on.alt)};
   R.clips=Array.isArray(R.clips)?R.clips.filter(c=>c&&c.id):[]; return R; }
 function novoRel(adv){ const P=plantelZZ(adv); return normRel({id:nid("r"),autor:meId||"local",adversario:adv||"",competicao:COMP+" "+EPOCA,criadoEm:new Date().toISOString(),...(P?{plantel:P.jogadores,plantelFonte:P.fonte,treinador:P.treinador}:{})}); }
 function relAtual(){ return vista.id&&rels[vista.id]?rels[vista.id]:null; }
@@ -463,83 +492,121 @@ function secFicha(R,box,ed){ box.innerHTML=`<header><h3>Ficha e jogos observados
   confirma2($("r-del"),"Toca outra vez para apagar o relatório",()=>{ apagaDoc(relPath(R)); delete rels[R.id]; guardaCache(); vista={tipo:"lista",id:null,sec:"ficha"}; render(); toast("Relatório apagado"); }); }
 
 /* ---------- plantel do adversário ---------- */
-function plantelSvgStr(R){ const VW=1680, fx=40, fy=80, fw=1600, fh=1120, kx=fw/68, ky=fh/52.5, cx=fx+fw/2, L='fill="none" stroke="#111" stroke-width="5"';
-  const semPos=R.plantel.filter(j=>!j.slot), linhas=semPos.length?Math.ceil(semPos.length/6):0, VH=fy+fh+30+(linhas?44+linhas*46:0);
-  let h=`<svg viewBox="0 0 ${VW} ${VH}" role="img" aria-label="Plantel de ${esc(R.adversario)} por posição"><rect x="0" y="0" width="${VW}" height="${VH}" fill="#fff"/>`;
-  for(let i=0;i<10;i++) h+=`<rect x="${fx}" y="${fy+i*fh/10}" width="${fw}" height="${fh/10}" fill="${i%2?"#F1F1F1":"#FAFAFA"}"/>`;
-  h+=`<rect x="${cx-3.66*kx}" y="${fy-2.2*ky}" width="${7.32*kx}" height="${2.2*ky}" fill="#D9D9D9" stroke="#111" stroke-width="4"/><rect x="${fx}" y="${fy}" width="${fw}" height="${fh}" fill="none" stroke="#111" stroke-width="7"/>`;
-  h+=`<rect x="${cx-20.16*kx}" y="${fy}" width="${40.32*kx}" height="${16.5*ky}" ${L}/><rect x="${cx-9.16*kx}" y="${fy}" width="${18.32*kx}" height="${5.5*ky}" ${L}/>`;
-  h+=`<path d="M ${cx-7.31*kx} ${fy+16.5*ky} A ${9.15*kx} ${9.15*ky} 0 0 0 ${cx+7.31*kx} ${fy+16.5*ky}" ${L}/><path d="M ${cx-9.15*kx} ${fy+fh} A ${9.15*kx} ${9.15*ky} 0 0 1 ${cx+9.15*kx} ${fy+fh}" ${L}/>`;
-  const F="Roboto Condensed,Arial Narrow,Arial,sans-serif";
-  const caixa=(x,y,j,w)=>{ const t=(j.nome||"?")+(R.capitao===j.id?" (C)":""), lab=(j.n?j.n+"  ":"")+t, fs=23, lim=w-16, cw=lab.length*fs*.5;
-    return `<g data-pl="${esc(j.id)}" style="cursor:grab;touch-action:none"><rect x="${x-w/2}" y="${y}" width="${w}" height="38" rx="5" fill="#fff" stroke="${j.conf?"#4A4A4A":"#C98A1B"}" stroke-width="3"${j.conf?"":' stroke-dasharray="9 6"'}/>`+
-      `<text x="${x}" y="${y+27}" text-anchor="middle" font-size="${fs}" font-weight="700" font-family="${F}" fill="#1B1A17"${cw>lim?` textLength="${lim}" lengthAdjust="spacingAndGlyphs"`:""}>${j.n?`<tspan fill="#8A857B" font-weight="400">${esc(j.n)}  </tspan>`:""}${esc(t)}</text></g>`; };
+const PLF={VW:1680,fx:40,fy:80,fw:1600,fh:1120,bw:236};
+function posicoesPx(lay,cont){ const {fx,fy,fw,fh,bw}=PLF, P={}, ord=lay.slice().sort((a,b)=>a[3]-b[3]); let fundo=fy+fh;
+  ord.forEach(([c,,px,py])=>{ const x=fx+px*fw; let y=fy+py*fh;
+    ord.forEach(([c2])=>{ const q=P[c2]; if(q&&Math.abs(q.x-x)<bw+8){ const fim=q.y+34+Math.max(1,cont[c2]||0)*44; if(fim+40>y) y=fim+40; } });
+    P[c]={x,y}; fundo=Math.max(fundo,y+34+Math.max(1,cont[c]||0)*44+16); });
+  return {P,fh:Math.max(fh,fundo-fy)}; }
+/* desenho: modo "plantel" (todos os jogadores por posição) ou um onze (um nome por posição) */
+function plantelSvgStr(R,modo){ const {VW,fx,fy,fw,fh,bw}=PLF, kx=fw/68, ky=fh/52.5, cx=fx+fw/2, L='fill="none" stroke="#111" stroke-width="5"', F="Roboto Condensed,Arial Narrow,Arial,sans-serif";
+  const O=modo==="plantel"?null:R.onzes[modo], sis=O?(O.sis||R.sistema||"4-3-3"):(R.sistema||"4-3-3"), lay=layoutDe(sis), porId=new Map(R.plantel.map(j=>[j.id,j]));
+  const grupos={}; lay.forEach(s=>grupos[s[0]]=[]); const semPos=[];
+  if(O) lay.forEach(([c])=>{ const j=porId.get(O.pos[c]); if(j) grupos[c].push(j); });
+  else R.plantel.forEach(j=>{ const c=posNoSis(j.slot,sis); if(c) grupos[c].push(j); else semPos.push(j); });
   const ord=(a,b)=>(a.conf===b.conf?0:a.conf?-1:1)||(parseInt(a.n)||999)-(parseInt(b.n)||999);
-  SLOTS.forEach(([k,,px,py])=>{ const x=fx+px*fw, y=fy+py*fh, gr=k==="1";
-    h+=`<circle cx="${x}" cy="${y}" r="27" fill="${gr?"#FFFF00":"#C00000"}" stroke="#1B1A17" stroke-width="3"/><text x="${x}" y="${y+9}" text-anchor="middle" font-size="26" font-weight="700" font-family="${F}" fill="${gr?"#000":"#fff"}">${k}</text>`;
-    R.plantel.filter(j=>j.slot===k).sort(ord).forEach((j,i)=>h+=caixa(x,y+34+i*44,j,236)); });
-  const gr=R.plantel.filter(j=>j.slot==="1").length, campo=R.plantel.length-gr-semPos.length;
-  const resumo=`GR: ${gr}  //  Campo: ${campo}${semPos.length?"  //  Sem posição: "+semPos.length:""}${R.sistema?"  //  "+R.sistema:""}${R.treinador?"  //  Treinador: "+R.treinador:""}`, rw=Math.min(fw,resumo.length*12.4+60);
+  const cont={}; lay.forEach(([c])=>cont[c]=O?1:grupos[c].length); const {P:PX,fh:fh2}=posicoesPx(lay,cont);
+  const linhas=semPos.length?Math.ceil(semPos.length/6):0, base=fy+fh2+30, VH=base+(linhas?44+linhas*46:0);
+  let h=`<svg viewBox="0 0 ${VW} ${VH}" role="img" aria-label="${O?(modo==="prov"?"Onze provável":"Onze alternativo"):"Plantel"} de ${esc(R.adversario)} em ${sis}"><rect x="0" y="0" width="${VW}" height="${VH}" fill="#fff"/>`;
+  const nf=Math.round(fh2/(fh/10)); for(let i=0;i<nf;i++) h+=`<rect x="${fx}" y="${fy+i*fh2/nf}" width="${fw}" height="${fh2/nf}" fill="${i%2?"#F1F1F1":"#FAFAFA"}"/>`;
+  h+=`<rect x="${cx-3.66*kx}" y="${fy-2.2*ky}" width="${7.32*kx}" height="${2.2*ky}" fill="#D9D9D9" stroke="#111" stroke-width="4"/><rect x="${fx}" y="${fy}" width="${fw}" height="${fh2}" fill="none" stroke="#111" stroke-width="7"/>`;
+  h+=`<rect x="${cx-20.16*kx}" y="${fy}" width="${40.32*kx}" height="${16.5*ky}" ${L}/><rect x="${cx-9.16*kx}" y="${fy}" width="${18.32*kx}" height="${5.5*ky}" ${L}/>`;
+  h+=`<path d="M ${cx-7.31*kx} ${fy+16.5*ky} A ${9.15*kx} ${9.15*ky} 0 0 0 ${cx+7.31*kx} ${fy+16.5*ky}" ${L}/><path d="M ${cx-9.15*kx} ${fy+fh2} A ${9.15*kx} ${9.15*ky} 0 0 1 ${cx+9.15*kx} ${fy+fh2}" ${L}/>`;
+  const caixa=(x,y,j,w,attr)=>{ const t=(j.nome||"?")+(R.capitao===j.id?" (C)":""), lab=(j.n?j.n+"  ":"")+t, fs=23, lim=w-16, cw=lab.length*fs*.5, conf=O?true:j.conf;
+    return `<g ${attr} style="cursor:grab;touch-action:none"><rect x="${x-w/2}" y="${y}" width="${w}" height="38" rx="5" fill="#fff" stroke="${conf?"#4A4A4A":"#C98A1B"}" stroke-width="3"${conf?"":' stroke-dasharray="9 6"'}/>`+
+      `<text x="${x}" y="${y+27}" text-anchor="middle" font-size="${fs}" font-weight="700" font-family="${F}" fill="#1B1A17"${cw>lim?` textLength="${lim}" lengthAdjust="spacingAndGlyphs"`:""}>${j.n?`<tspan fill="#8A857B" font-weight="400">${esc(j.n)}  </tspan>`:""}${esc(t)}</text></g>`; };
+  lay.forEach(([c,num])=>{ const {x,y}=PX[c], gr=c==="GR";
+    h+=`<circle cx="${x}" cy="${y}" r="27" fill="${gr?"#FFFF00":"#C00000"}" stroke="#1B1A17" stroke-width="3"/><text x="${x}" y="${y+9}" text-anchor="middle" font-size="26" font-weight="700" font-family="${F}" fill="${gr?"#000":"#fff"}">${num}</text>`;
+    if(O){ const j=grupos[c][0]; h+=j?caixa(x,y+34,j,bw,`data-os="${c}"`):`<g data-os="${c}" style="cursor:pointer"><rect x="${x-bw/2}" y="${y+34}" width="${bw}" height="38" rx="5" fill="#fff" stroke="#B9B4AA" stroke-width="3" stroke-dasharray="9 6"/><text x="${x}" y="${y+61}" text-anchor="middle" font-size="21" font-family="${F}" fill="#8A857B">Escolher</text></g>`; }
+    else grupos[c].sort(ord).forEach((j,i)=>h+=caixa(x,y+34+i*44,j,bw,`data-pl="${esc(j.id)}"`)); });
+  const gr=O?"":R.plantel.filter(j=>posNoSis(j.slot,sis)==="GR").length;
+  const resumo=O?`${modo==="prov"?"ONZE PROVÁVEL":"ONZE ALTERNATIVO"}  //  ${sis}${R.treinador?"  //  Treinador: "+R.treinador:""}`
+    :`GR: ${gr}  //  Campo: ${R.plantel.length-gr-semPos.length}${semPos.length?"  //  Sem posição: "+semPos.length:""}  //  ${sis}${R.treinador?"  //  Treinador: "+R.treinador:""}`;
+  const rw=Math.min(fw,resumo.length*12.4+60);
   h+=`<path d="M ${fx} ${fy-58} H ${fx+rw} L ${fx+rw-24} ${fy-12} H ${fx} Z" fill="#1B1A17"/><text x="${fx+18}" y="${fy-26}" font-size="24" font-weight="700" font-family="${F}" fill="#fff">${esc(resumo)}</text>`;
-  if(semPos.length){ const y0=fy+fh+30; h+=`<text x="${fx}" y="${y0+26}" font-size="24" font-weight="800" font-family="${F}" fill="#C00000">SEM POSIÇÃO NO CAMPO:</text>`;
-    semPos.forEach((j,i)=>h+=caixa(fx+128+(i%6)*268,y0+44+Math.floor(i/6)*46,j,250)); }
+  if(semPos.length){ h+=`<text x="${fx}" y="${base+26}" font-size="24" font-weight="800" font-family="${F}" fill="#C00000">SEM POSIÇÃO NO CAMPO:</text>`;
+    semPos.forEach((j,i)=>h+=caixa(fx+128+(i%6)*268,base+44+Math.floor(i/6)*46,j,250,`data-pl="${esc(j.id)}"`)); }
   return h+"</svg>"; }
-function secPlantel(R,box,ed){ const temZZ=!!(PLANTEIS.equipas&&PLANTEIS.equipas[R.adversario]);
-  const ordSlot=k=>{ const i=SLOTS.findIndex(x=>x[0]===k); return i<0?99:i; };
-  const lista=R.plantel.slice().sort((a,b)=>ordSlot(a.slot)-ordSlot(b.slot)||(parseInt(a.n)||999)-(parseInt(b.n)||999)||a.nome.localeCompare(b.nome,"pt"));
-  const opSlot=`<option value="">Sem posição</option>${SLOTS.map(([k,n])=>`<option value="${k}">${k} · ${n}</option>`).join("")}`;
-  box.innerHTML=`<header><h3>Plantel${R.adversario?" · "+esc(R.adversario):""}</h3><p>Ponto de partida do zerozero, corrigido com o que vês nos jogos. Arrasta um nome para outra posição, toca nele para o editar, ou muda tudo na lista em baixo.</p>
-    <p class="hint" style="margin-top:6px">Contorno tracejado laranja: posição por confirmar (o zerozero só indica a linha). Fica confirmada quando a mudas ou marcas “Confirmada”.</p></header>
+function secPlantel(R,box,ed){ const temZZ=!!(PLANTEIS.equipas&&PLANTEIS.equipas[R.adversario]), modo=vista.plv||"plantel", sis=R.sistema||"4-3-3", lay=layoutDe(sis);
+  const ordSlot=j=>{ const c=posNoSis(j.slot,sis), i=lay.findIndex(x=>x[0]===c); return i<0?99:i; };
+  const lista=R.plantel.slice().sort((a,b)=>ordSlot(a)-ordSlot(b)||(parseInt(a.n)||999)-(parseInt(b.n)||999)||a.nome.localeCompare(b.nome,"pt"));
+  const opSis=sel=>`${Object.keys(LAYOUTS).map(x=>`<option${x===sel?" selected":""}>${x}</option>`).join("")}`;
+  const O=modo==="plantel"?null:R.onzes[modo];
+  box.innerHTML=`<header><h3>Plantel${R.adversario?" · "+esc(R.adversario):""}</h3><p>Ponto de partida do zerozero, corrigido com o que vês nos jogos. Arrasta um nome para outra posição, toca nele para o editar, ou muda tudo na lista em baixo.</p></header>
     <div class="card"><h4>Equipa técnica e equipa</h4><div class="fields">
-      <label class="f">Treinador<input type="text" data-b="treinador" placeholder="Nome do treinador"></label>
+      <label class="f">Treinador<input type="text" data-b="treinador" data-rr placeholder="Nome do treinador"></label>
       <label class="f">Treinador adjunto<input type="text" data-b="adjunto"></label>
-      <label class="f">Sistema habitual<select data-b="sistema"><option value="">—</option>${Object.keys(SISTEMAS).map(x=>`<option>${x}</option>`).join("")}</select></label>
-      <label class="f">Capitão<select data-b="capitao"><option value="">—</option>${lista.map(j=>`<option value="${esc(j.id)}">${esc((j.n?j.n+" ":"")+j.nome)}</option>`).join("")}</select></label></div>
+      <label class="f">Treinador de guarda-redes<input type="text" data-b="trGR"></label>
+      <label class="f">Sistema habitual<select id="pl-sis" ${ed?"":"disabled"}><option value="">—</option>${opSis(R.sistema)}</select></label>
+      <label class="f">Capitão<select data-b="capitao" data-rr><option value="">—</option>${lista.map(j=>`<option value="${esc(j.id)}">${esc((j.n?j.n+" ":"")+j.nome)}</option>`).join("")}</select></label></div>
       <label class="f">Notas do plantel (lesionados, castigados, reforços, saídas)<textarea data-b="plantelNotas" rows="2"></textarea></label></div>
-    ${R.plantel.length?`<div class="card" style="padding:8px;overflow-x:auto"><div id="pl-svg" style="min-width:560px"></div></div>`:`<div class="empty"><b>Ainda sem plantel.</b><span>${temZZ?`Carrega o plantel do zerozero (${esc(dataPt(PLANTEIS.data))}) ou acrescenta os jogadores à mão.`:"Acrescenta os jogadores à mão."}</span></div>`}
-    ${ed?`<div class="row">${temZZ?`<button class="btn" id="pl-zz">${R.plantel.length?"Substituir pelo plantel do zerozero":"Carregar plantel do zerozero"}</button>`:""}<button class="btn primary" id="pl-add">+ Jogador</button></div>`:""}
-    ${R.plantel.length?`<div class="card" style="padding:0;overflow-x:auto"><table class="ptab"><thead><tr><th>Nº</th><th>Nome</th><th>Posição no campo</th><th>Pé</th><th title="Posição confirmada nos jogos">Confirmada</th><th></th></tr></thead><tbody>
+    ${R.plantel.length?`<div class="card"><div class="row" style="justify-content:space-between"><div class="seg" id="pl-m"></div>
+        ${O?`<label class="f" style="flex-direction:row;align-items:center;gap:8px">Sistema<select id="pl-osis" style="width:auto" ${ed?"":"disabled"}>${opSis(O.sis||sis)}</select></label>`:""}</div>
+      ${O?`<p class="hint" style="margin:0">${modo==="prov"?"O onze que esperas ver. Toca numa posição para escolher o jogador.":"Outra forma de jogar que já lhes viste (outro sistema ou outros jogadores). Toca numa posição para escolher o jogador."}</p>
+        <label class="f">${modo==="prov"?"Notas do onze provável":"Quando aparece (resultado, adversário, momento do jogo)"}<textarea data-b="onzes.${modo}.nota" rows="2"></textarea></label>`
+        :`<p class="hint" style="margin:0">Contorno tracejado laranja: posição por confirmar (o zerozero só indica a linha). Fica confirmada quando a mudas ou marcas “Confirmada”.</p>`}
+      <div style="overflow-x:auto"><div id="pl-svg" style="min-width:560px"></div></div></div>`
+      :`<div class="empty"><b>Ainda sem plantel.</b><span>${temZZ?`Carrega o plantel do zerozero (${esc(dataPt(PLANTEIS.data))}) ou acrescenta os jogadores à mão.`:"Acrescenta os jogadores à mão."}</span></div>`}
+    ${ed&&modo==="plantel"?`<div class="row">${temZZ?`<button class="btn" id="pl-zz">${R.plantel.length?"Substituir pelo plantel do zerozero":"Carregar plantel do zerozero"}</button>`:""}<button class="btn primary" id="pl-add">+ Jogador</button></div>`:""}
+    ${R.plantel.length&&modo==="plantel"?`<div class="card" style="padding:0;overflow-x:auto"><table class="ptab"><thead><tr><th>Nº</th><th>Nome</th><th>Posição no campo (${esc(sis)})</th><th>Pé</th><th title="Posição confirmada nos jogos">Confirmada</th><th></th></tr></thead><tbody>
       ${lista.map(j=>`<tr${j.conf?"":' class="porconf"'}><td><input type="text" data-b="plantel.${j.id}.n" data-rr inputmode="numeric" maxlength="3" aria-label="Número" style="width:62px"></td>
         <td><input type="text" data-b="plantel.${j.id}.nome" data-rr aria-label="Nome" style="min-width:150px"><small>${esc([partePos(j.pos).join(" / "),j.idade?j.idade+" anos":""].filter(Boolean).join(" · "))}</small></td>
-        <td><select data-b="plantel.${j.id}.slot" data-pslot="${esc(j.id)}" aria-label="Posição no campo" style="min-width:170px">${opSlot}</select></td>
+        <td><select data-pslot="${esc(j.id)}" aria-label="Posição no campo" style="min-width:190px" ${ed?"":"disabled"}><option value="">Sem posição</option>${lay.map(([c,n])=>`<option value="${c}"${posNoSis(j.slot,sis)===c?" selected":""}>${n} · ${POS_NOME[c]}</option>`).join("")}</select></td>
         <td><select data-b="plantel.${j.id}.pe" aria-label="Pé preferido"><option value="">—</option><option>Direito</option><option>Esquerdo</option><option>Ambidestro</option></select></td>
         <td style="text-align:center"><input type="checkbox" data-b="plantel.${j.id}.conf" data-rr aria-label="Posição confirmada" style="width:22px;height:22px"></td>
         <td>${ed?`<button class="btn sm ghost" data-pdel="${esc(j.id)}" aria-label="Tirar ${esc(j.nome)} do plantel">✕</button>`:""}</td></tr>`).join("")}</tbody></table></div>`:""}`;
-  if(R.plantel.length){ $("pl-svg").innerHTML=plantelSvgStr(R); ligaPlantelSvg($("pl-svg").querySelector("svg"),ed); }
+  if(R.plantel.length){ seg($("pl-m"),[["plantel","Plantel por posição"],["prov","Onze provável"],["alt","Onze alternativo"]],modo,v=>{ vista.plv=v; render.mesma=true; render(); });
+    $("pl-svg").innerHTML=plantelSvgStr(R,modo); ligaPlantelSvg($("pl-svg").querySelector("svg"),ed,modo); }
   if(!ed) return;
-  /* mudar a posição na lista confirma-a */
+  $("pl-sis").onchange=e=>{ const v=e.target.value; editaRel(R=>{ R.sistema=v; ["prov","alt"].forEach(k=>{ if(!R.onzes[k].sis||k==="prov"&&!Object.keys(R.onzes[k].pos).length) R.onzes[k].sis=v; }); },true); render.mesma=true; render(); toast(v?`Sistema ${v}: o desenho do plantel passa a ${v}`:"Sistema habitual retirado"); };
+  if($("pl-osis")) $("pl-osis").onchange=e=>{ const v=e.target.value; editaRel(R=>{ const O=R.onzes[modo], velho=O.sis||R.sistema||"4-3-3", pos={};
+      Object.entries(O.pos).forEach(([c,id])=>{ const n=posNoSis(c,v)||posNoSis(posNoSis(c,velho),v); if(n&&!pos[n]) pos[n]=id; }); O.sis=v; O.pos=pos; },true); render.mesma=true; render(); };
   box.querySelectorAll("[data-pslot]").forEach(sel=>sel.addEventListener("change",()=>{ const id=sel.dataset.pslot; editaRel(R=>{ const j=R.plantel.find(x=>x.id===id); if(j){ j.slot=sel.value; j.conf=true; } },true); render.mesma=true; render(); }));
-  box.querySelectorAll("[data-pdel]").forEach(b=>confirma2(b,"Tirar?",()=>{ const id=b.dataset.pdel; render.mesma=true; editaRel(R=>{ R.plantel=R.plantel.filter(x=>x.id!==id); if(R.capitao===id) R.capitao=""; }); }));
-  const carrega=()=>{ const P=plantelZZ(R.adversario); editaRel(R=>{ R.plantel=P.jogadores; R.plantelFonte=P.fonte; if(!R.treinador) R.treinador=P.treinador; R.capitao=""; }); toast(`Plantel carregado · ${P.jogadores.length} jogadores`); };
+  box.querySelectorAll("[data-pdel]").forEach(b=>confirma2(b,"Tirar?",()=>{ const id=b.dataset.pdel; render.mesma=true; editaRel(R=>{ R.plantel=R.plantel.filter(x=>x.id!==id); if(R.capitao===id) R.capitao=""; ["prov","alt"].forEach(k=>Object.keys(R.onzes[k].pos).forEach(c=>{ if(R.onzes[k].pos[c]===id) delete R.onzes[k].pos[c]; })); }); }));
+  const carrega=()=>{ const P=plantelZZ(R.adversario); editaRel(R=>{ R.plantel=P.jogadores; R.plantelFonte=P.fonte; if(!R.treinador) R.treinador=P.treinador; R.capitao=""; R.onzes.prov.pos={}; R.onzes.alt.pos={}; }); toast(`Plantel carregado · ${P.jogadores.length} jogadores`); };
   const zz=$("pl-zz"); if(zz){ if(R.plantel.length) confirma2(zz,"Toca outra vez: substitui o plantel atual",carrega); else zz.onclick=carrega; }
-  $("pl-add").onclick=()=>{ const j={id:nid("j"),n:"",nome:"",idade:"",pos:"",pe:"",nac:"",slot:"",conf:true}; editaRel(R=>R.plantel.push(j),true); folhaJogPlantel(j.id,true); }; }
-/* arrastar um nome para outra posição; tocar sem arrastar abre o jogador */
-function ligaPlantelSvg(svg,ed){ const VW=1680, fx=40, fy=80, fw=1600, fh=1120; let A=null;
+  if($("pl-add")) $("pl-add").onclick=()=>{ const j={id:nid("j"),n:"",nome:"",idade:"",pos:"",pe:"",nac:"",slot:"",conf:true}; editaRel(R=>R.plantel.push(j),true); folhaJogPlantel(j.id,true); }; }
+/* plantel: arrastar um nome para outra posição, tocar abre o jogador. Onze: tocar numa posição escolhe o jogador */
+function ligaPlantelSvg(svg,ed,modo){ const {fx,fy,fw,fh}=PLF; let A=null; const R0=relAtual();
+  const O=modo==="plantel"?null:R0.onzes[modo], sis=O?(O.sis||R0.sistema||"4-3-3"):(R0.sistema||"4-3-3"), lay=layoutDe(sis);
   const pt=e=>{ const p=svg.createSVGPoint(); p.x=e.clientX; p.y=e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); };
+  if(O){ svg.querySelectorAll("[data-os]").forEach(g=>g.addEventListener("click",()=>folhaOnzePos(modo,g.dataset.os))); return; }
   svg.addEventListener("pointerdown",e=>{ const g=e.target.closest("[data-pl]"); if(!g) return; const p=pt(e); A={g,id:g.dataset.pl,x0:p.x,y0:p.y,mov:false}; if(ed){ e.preventDefault(); try{ svg.setPointerCapture(e.pointerId); }catch(x){} } });
   svg.addEventListener("pointermove",e=>{ if(!A||!ed) return; const p=pt(e), dx=p.x-A.x0, dy=p.y-A.y0; if(Math.hypot(dx,dy)>12) A.mov=true; if(A.mov){ A.g.setAttribute("transform",`translate(${dx},${dy})`); A.g.style.opacity=".85"; A.px=p.x; A.py=p.y; } });
   const fim=()=>{ if(!A) return; const a=A; A=null; if(!a.mov||!ed){ folhaJogPlantel(a.id); return; }
-    let melhor=null, dm=1e9; SLOTS.forEach(([k,,px,py])=>{ const d=Math.hypot(fx+px*fw-a.px,(fy+py*fh)-(a.py-60)); if(d<dm){ dm=d; melhor=k; } });
-    const fora=a.py>fy+fh+10; const slot=fora?"":melhor;
-    editaRel(R=>{ const j=R.plantel.find(x=>x.id===a.id); if(j){ j.slot=slot; j.conf=true; } },true); render.mesma=true; render(); toast(slot?`Posição ${slot} · ${SLOTS.find(x=>x[0]===slot)[1]}`:"Sem posição"); };
+    const cont={}; lay.forEach(([c])=>cont[c]=R0.plantel.filter(j=>posNoSis(j.slot,sis)===c).length); const {P:PX,fh:fh2}=posicoesPx(lay,cont);
+    let melhor=null, dm=1e9; lay.forEach(([c])=>{ const d=Math.hypot(PX[c].x-a.px,PX[c].y-(a.py-60)); if(d<dm){ dm=d; melhor=c; } });
+    const slot=a.py>fy+fh2+10&&dm>260?"":melhor;
+    editaRel(R=>{ const j=R.plantel.find(x=>x.id===a.id); if(j){ j.slot=slot; j.conf=true; } },true); render.mesma=true; render(); toast(slot?`Posição ${rotPos(slot,sis)}`:"Sem posição"); };
   svg.addEventListener("pointerup",fim); svg.addEventListener("pointercancel",()=>{ if(A){ A.g.removeAttribute("transform"); A=null; } }); }
-function folhaJogPlantel(id,novo){ const R=relAtual(); if(!R) return; const ed=podeEditar(R), J0=R.plantel.find(j=>j.id===id); if(!J0) return; const J=clone(J0);
+function folhaOnzePos(modo,code){ const R=relAtual(); if(!R) return; const ed=podeEditar(R), O=R.onzes[modo], sis=O.sis||R.sistema||"4-3-3", atual=O.pos[code]||"";
+  const usados=new Set(Object.entries(O.pos).filter(([c])=>c!==code).map(([,id])=>id));
+  const prio=j=>posNoSis(j.slot,sis)===code?0:j.slot?1:2;
+  const ls=R.plantel.slice().sort((a,b)=>prio(a)-prio(b)||(parseInt(a.n)||999)-(parseInt(b.n)||999));
+  folha(`<h3>${esc(rotPos(code,sis))}</h3><p class="hint" style="margin:0">${modo==="prov"?"Onze provável":"Onze alternativo"} · ${esc(sis)}. Primeiro aparecem os jogadores desta posição no plantel.</p>
+    <div class="evs" style="max-height:52vh;overflow:auto">${ls.map(j=>`<button class="ev" data-j="${esc(j.id)}" style="grid-template-columns:44px minmax(0,1fr);${j.id===atual?"border-color:var(--red);":""}"${ed?"":" disabled"}><span class="tm">${esc(j.n||"–")}</span><span class="tx"><b>${esc(j.nome)}</b>${usados.has(j.id)?' <span class="hint">· já está noutra posição</span>':""}<br><span class="hint">${esc(rotPos(posNoSis(j.slot,sis),sis)||"Sem posição")}</span></span></button>`).join("")}</div>
+    <div class="actions">${ed&&atual?`<button class="btn l" id="op-x">Deixar vazio</button>`:""}<button class="btn" data-close>Fechar</button></div>`,(s,fecha)=>{
+    if(!ed) return;
+    s.querySelectorAll("[data-j]").forEach(b=>b.onclick=()=>{ const id=b.dataset.j; fecha(); editaRel(R=>{ const P=R.onzes[modo]; if(!P.sis) P.sis=sis; Object.keys(P.pos).forEach(c=>{ if(P.pos[c]===id) delete P.pos[c]; }); P.pos[code]=id; if(modo==="prov"){ const j=R.plantel.find(x=>x.id===id); if(j){ j.slot=code; j.conf=true; } } },true); render.mesma=true; render(); if(modo==="prov") toast("Posição atualizada também no plantel"); });
+    const x=s.querySelector("#op-x"); if(x) x.onclick=()=>{ fecha(); editaRel(R=>{ delete R.onzes[modo].pos[code]; },true); render.mesma=true; render(); }; }); }
+function folhaJogPlantel(id,novo){ const R=relAtual(); if(!R) return; const ed=podeEditar(R), J0=R.plantel.find(j=>j.id===id); if(!J0) return; const J=clone(J0), sis=R.sistema||"4-3-3";
+  J.slot=posNoSis(J.slot,sis)||(J.slot&&!slotInfo(J.slot,sis)?"":J.slot);
   folha(`<h3>${novo?"Novo jogador":esc(J.nome||"Jogador")}</h3>
     <div class="fields"><label class="f">Número<input type="text" id="jp-n" inputmode="numeric" maxlength="3" value="${esc(J.n)}" ${ed?"":"readonly"}></label><label class="f">Nome<input type="text" id="jp-nm" value="${esc(J.nome)}" ${ed?"":"readonly"}></label></div>
     <div class="fields"><label class="f">Posição (zerozero)<input type="text" id="jp-p" value="${esc(partePos(J.pos).join(" / ")||J.pos)}" ${ed?"":"readonly"}></label><label class="f">Pé preferido<select id="jp-pe" ${ed?"":"disabled"}>${["","Direito","Esquerdo","Ambidestro"].map(x=>`<option${x===J.pe?" selected":""}>${x}</option>`).join("")}</select></label></div>
     ${J.idade||J.nac?`<p class="hint" style="margin:0">${[J.idade?J.idade+" anos":"",J.nac].filter(Boolean).join(" · ")}</p>`:""}
-    <h4>Posição no campo</h4><div class="seg" id="jp-s"></div>
+    <h4>Posição no campo (${esc(sis)})</h4><div class="seg" id="jp-s"></div>
     <label class="row" style="gap:10px;font-size:14.5px;min-height:40px"><input type="checkbox" id="jp-c" style="width:20px;height:20px" ${J.conf?"checked":""} ${ed?"":"disabled"}> Posição confirmada nos jogos</label>
     <div class="actions">${ed&&!novo?`<button class="btn danger l" id="jp-del">Tirar do plantel</button>`:""}${ed?`<button class="btn" id="jp-ref">+ Jogador de referência</button>`:""}<button class="btn" data-close>${ed?"Cancelar":"Fechar"}</button>${ed?`<button class="btn primary" id="jp-ok">Guardar</button>`:""}</div>`,(s,fecha)=>{
-    seg(s.querySelector("#jp-s"),[...SLOTS.map(([k])=>[k,k+" "+SLOT_CURTO[k]]),["","Sem posição"]],J.slot,v=>{ J.slot=v; s.querySelector("#jp-c").checked=true; });
+    seg(s.querySelector("#jp-s"),[...layoutDe(sis).map(([c,n])=>[c,n+" "+c]),["","Sem posição"]],J.slot,v=>{ J.slot=v; s.querySelector("#jp-c").checked=true; });
     if(!ed){ s.querySelectorAll(".seg button").forEach(b=>b.disabled=true); return; }
     const ler=()=>({...J,n:s.querySelector("#jp-n").value.trim(),nome:s.querySelector("#jp-nm").value.trim(),pos:s.querySelector("#jp-p").value.trim(),pe:s.querySelector("#jp-pe").value,conf:s.querySelector("#jp-c").checked});
-    const grava=v=>editaRel(R=>{ const i=R.plantel.findIndex(j=>j.id===id); if(i>=0) R.plantel[i]=v; });
+    const grava=v=>editaRel(R=>{ const i=R.plantel.findIndex(j=>j.id===id); if(i>=0){ if(v.slot===posNoSis(R.plantel[i].slot,sis)) v.slot=R.plantel[i].slot; R.plantel[i]=v; } });
     s.querySelector("#jp-ok").onclick=()=>{ const v=ler(); if(!v.nome){ toast("Escreve o nome."); return; } fecha(); grava(v); };
     s.querySelector("[data-close]").addEventListener("click",()=>{ if(novo&&!(relAtual().plantel.find(j=>j.id===id)||{}).nome) editaRel(R=>{ R.plantel=R.plantel.filter(j=>j.id!==id); }); });
-    s.querySelector("#jp-ref").onclick=()=>{ const v=ler(); if(!v.nome){ toast("Escreve o nome."); return; } fecha(); const papeis=v.slot==="1"?["gr"]:[];
-      editaRel(R=>{ const i=R.plantel.findIndex(j=>j.id===id); if(i>=0) R.plantel[i]=v; if(!R.refs.some(p=>p.nome===v.nome)) R.refs.push({id:nid("p"),n:v.n,nome:v.nome,pos:SLOT_CURTO[v.slot]||"",papeis,fortes:""}); },true); vista.sec="jog"; render(); toast("Adicionado aos jogadores de referência"); };
-    const d=s.querySelector("#jp-del"); if(d) confirma2(d,"Toca outra vez",()=>{ fecha(); editaRel(R=>{ R.plantel=R.plantel.filter(j=>j.id!==id); }); }); }); }
+    s.querySelector("#jp-ref").onclick=()=>{ const v=ler(); if(!v.nome){ toast("Escreve o nome."); return; } fecha(); const papeis=v.slot==="GR"?["gr"]:[];
+      editaRel(R=>{ const i=R.plantel.findIndex(j=>j.id===id); if(i>=0) R.plantel[i]=v; if(!R.refs.some(p=>p.nome===v.nome)) R.refs.push({id:nid("p"),n:v.n,nome:v.nome,pos:v.slot||"",papeis,fortes:""}); },true); vista.sec="jog"; render(); toast("Adicionado aos jogadores de referência"); };
+    const d=s.querySelector("#jp-del"); if(d) confirma2(d,"Toca outra vez",()=>{ fecha(); editaRel(R=>{ R.plantel=R.plantel.filter(j=>j.id!==id); ["prov","alt"].forEach(k=>Object.keys(R.onzes[k].pos).forEach(c=>{ if(R.onzes[k].pos[c]===id) delete R.onzes[k].pos[c]; })); }); }); }); }
 
 function secEstr(R,box,ed){ const est=vista.estr||"com", O=R.onze, st=O[est];
   box.innerHTML=`<header><h3>Estrutura no campo</h3><p>Arrasta os jogadores para a posição habitual. Toca num jogador para pôr o número e o nome. Os jogadores são os mesmos nos dois momentos.</p></header>
@@ -565,9 +632,9 @@ function secEstr(R,box,ed){ const est=vista.estr||"com", O=R.onze, st=O[est];
 function folhaPecaOnze(i,est){ const R=relAtual(); if(!R) return; const ed=podeEditar(R), J=R.onze.jog[i];
   folha(`<h3>Jogador ${i+1}</h3><div class="fields"><label class="f">Número<input type="text" id="po-n" inputmode="numeric" maxlength="3" value="${esc(J.n)}" ${ed?"":"readonly"}></label><label class="f">Posição<input type="text" id="po-p" maxlength="4" value="${esc(J.pos||posAdv(R.onze[est].sis,i).pos)}" ${ed?"":"readonly"}></label></div>
     <label class="f">Nome<input type="text" id="po-nm" value="${esc(J.nome)}" ${ed?"":"readonly"}></label>
-    ${ed&&R.plantel.length?`<label class="f">Escolher do plantel<select id="po-pl"><option value="">—</option>${R.plantel.slice().sort((a,b)=>(+a.slot||99)-(+b.slot||99)||(parseInt(a.n)||999)-(parseInt(b.n)||999)).map(j=>`<option value="${esc(j.id)}">${esc((j.slot?SLOT_CURTO[j.slot]+" · ":"")+(j.n?j.n+" ":"")+j.nome)}</option>`).join("")}</select></label>`:""}
+    ${ed&&R.plantel.length?`<label class="f">Escolher do plantel<select id="po-pl"><option value="">—</option>${R.plantel.slice().sort((a,b)=>ordPl(R,a)-ordPl(R,b)||(parseInt(a.n)||999)-(parseInt(b.n)||999)).map(j=>`<option value="${esc(j.id)}">${esc((posNoSis(j.slot,R.sistema||"4-3-3")?posNoSis(j.slot,R.sistema||"4-3-3")+" · ":"")+(j.n?j.n+" ":"")+j.nome)}</option>`).join("")}</select></label>`:""}
     <div class="actions">${ed?`<button class="btn l" id="po-ref">+ Jogador de referência</button>`:""}<button class="btn" data-close>Fechar</button>${ed?`<button class="btn primary" id="po-ok">Guardar</button>`:""}</div>`,(s,fecha)=>{
-    if(!ed) return; const pl=s.querySelector("#po-pl"); if(pl) pl.onchange=()=>{ const j=R.plantel.find(x=>x.id===pl.value); if(!j) return; s.querySelector("#po-n").value=j.n; s.querySelector("#po-nm").value=j.nome; if(j.slot) s.querySelector("#po-p").value=SLOT_CURTO[j.slot]; };
+    if(!ed) return; const pl=s.querySelector("#po-pl"); if(pl) pl.onchange=()=>{ const j=R.plantel.find(x=>x.id===pl.value); if(!j) return; s.querySelector("#po-n").value=j.n; s.querySelector("#po-nm").value=j.nome; const c=posNoSis(j.slot,R.sistema||"4-3-3"); if(c) s.querySelector("#po-p").value=c; };
     const ler=()=>({n:s.querySelector("#po-n").value.trim(),pos:s.querySelector("#po-p").value.trim().toUpperCase(),nome:s.querySelector("#po-nm").value.trim()});
     s.querySelector("#po-ok").onclick=()=>{ const v=ler(); fecha(); editaRel(R=>{ R.onze.jog[i]=v; }); };
     s.querySelector("#po-ref").onclick=()=>{ const v=ler(); fecha(); editaRel(R=>{ R.onze.jog[i]=v; if(!R.refs.some(p=>p.n&&p.n===v.n&&v.n)) R.refs.push({id:nid("p"),n:v.n,nome:v.nome,pos:v.pos,papeis:i===0?["gr"]:[],fortes:""}); },true); vista.sec="jog"; render(); toast("Adicionado aos jogadores de referência"); }; }); }

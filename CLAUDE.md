@@ -53,6 +53,7 @@ Publica-se **só** para https://claude.ai/artifact/L7rJPrEcxmw86DbHyT5vEw — nu
 - O guião de perguntas, a síntese (estrutura, 3 ameaças, 3 oportunidades, bolas paradas e jogadores, clips) e os princípios (espírito de equipa, intensidade, organização, objetividade; referência 3-4-3) foram definidos pelo Rodrigo: não mudar sem ele.
 - Adversários: as equipas do Campeonato de Futebol dos Açores da época em curso (`EQUIPAS` e `EPOCA` no início do script). Na época seguinte, atualizar a lista com a fonte oficial.
 - Planteis de partida em `observacao/planteis.json` (zerozero, com data). Cada relatório guarda a sua cópia (`plantel`), que o observador corrige; atualizar o ficheiro não mexe nos relatórios já criados. O zerozero bloqueia leituras automáticas: recolher pelo Chrome do Rodrigo, devagar (no máximo umas dezenas de páginas, com pausas de vários segundos). Em 25/10/2026, ~230 páginas seguidas fizeram o zerozero passar a mostrar páginas trocadas nesse browser.
+- Plantel: cada jogador guarda um código de posição (LD, DCD, MCD, PL…), não um número; o número e o lugar no desenho vêm do sistema (`LAYOUTS`), e num sistema sem esse código o jogador vai para a posição mais parecida (`POS_ALT`). Escolher um jogador no onze provável muda a posição dele no plantel; o onze alternativo não mexe no plantel.
 - Cada evidência guarda jogo, minuto do vídeo (mm:ss), frequência (recorrente, pontual, a confirmar) e resultado no momento.
 
 ## Regras técnicas
