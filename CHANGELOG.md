@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| Obs. 5 | Observação: campos brancos com linhas pretas e balizas cinzentas, bolinhas e bola iguais às da SCA Match Center (SCA vermelho, GR amarelo, adversário azul) |
 | Obs. 4 | Observação: plantel editável em lista (número, nome, posição no campo, pé, confirmada), arrastar nomes entre posições no campo, treinador, adjunto, sistema habitual, capitão e notas do plantel; corrigido o campo de texto que perdia o foco a cada letra (ficha dos jogos e jogadores) |
 | Obs. 3 | Observação: separador Plantel com os planteis dos 9 adversários tirados do zerozero (25/10/2026), no estilo do plantel da SCA Match Center; posição tracejada quando o zerozero só indica a linha; ligação à Estrutura e aos jogadores de referência |
 | Obs. 2 | Observação: página inicial com os 9 adversários do Campeonato de Futebol dos Açores 2026/27 (o que já tem relatório e o que falta), adversário escolhido da lista e competição preenchida |

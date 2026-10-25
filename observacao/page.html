@@ -116,7 +116,7 @@ textarea{resize:vertical;min-height:70px;line-height:1.45}
 .prin{display:flex;gap:6px;flex-wrap:wrap}
 .prin span{font-family:var(--f-display);font-weight:700;letter-spacing:.6px;text-transform:uppercase;font-size:12.5px;background:var(--red);color:var(--red-ink);border-radius:4px;padding:3px 8px}
 /* campo */
-.pitch{background:#2C7431;border-radius:10px;overflow:hidden;touch-action:none;max-width:520px;width:100%;margin:0 auto}
+.pitch{background:#fff;border:1px solid #CFCFCF;border-radius:6px;overflow:hidden;touch-action:none;max-width:520px;width:100%;margin:0 auto}
 .pitch svg{display:block;width:100%;height:auto;user-select:none;-webkit-user-select:none}
 .pitch.half{max-width:680px}
 .leg{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--muted);align-items:center}
@@ -314,22 +314,24 @@ function editaRel(fn,semRender){ const R=relAtual(); if(!R||!podeEditar(R)) retu
 
 /* ======================= campo (vertical: x 0–68 m largura, y 0–105 m comprimento) ======================= */
 const K=10;
-function campoSvg(meio){ const L=68*K, C=(meio?36:105)*K, s="stroke=\"rgba(255,255,255,.9)\" stroke-width=\"3\" fill=\"none\""; let h="";
-  const n=meio?6:14; for(let i=0;i<n;i++) h+=`<rect x="0" y="${i*C/n}" width="${L}" height="${C/n+.5}" fill="${i%2?"#38893D":"#3F9444"}"/>`;
-  h+=meio?`<path d="M 0 ${C} L 0 0 L ${L} 0 L ${L} ${C}" ${s}/>`:`<rect x="0" y="0" width="${L}" height="${C}" ${s}/>`;
+/* campo branco, linhas pretas e balizas cinzentas, como os quadros da SCA Match Center */
+function campoSvg(meio){ const L=68*K, C=(meio?36:105)*K, s='stroke="#111" stroke-width="3" fill="none"'; let h="";
+  const n=meio?6:18; for(let i=0;i<n;i++) h+=`<rect x="0" y="${i*C/n}" width="${L}" height="${C/n+.5}" fill="${i%2?"#EEEEEE":"#FFFFFF"}"/>`;
+  const baliza=top=>{ const y=top?-20:1050; let g=`<rect x="303.4" y="${y}" width="73.2" height="20" fill="#D9D9D9" stroke="#111" stroke-width="2.4"/>`; for(let k=1;k<4;k++) g+=`<line x1="${303.4+k*73.2/4}" y1="${y}" x2="${303.4+k*73.2/4}" y2="${y+20}" stroke="#888" stroke-width="1"/>`; return g; };
   const area=(top)=>{ const y0=top?0:1050, d=top?1:-1, yb=y0+d*165, yg=y0+d*55, sp=y0+d*110;
     h+=`<rect x="138.4" y="${Math.min(y0,yb)}" width="403.2" height="165" ${s}/><rect x="248.4" y="${Math.min(y0,yg)}" width="183.2" height="55" ${s}/>`;
-    h+=`<circle cx="340" cy="${sp}" r="3.5" fill="#fff"/><path d="M 266.9 ${yb} A 91.5 91.5 0 0 ${top?0:1} 413.1 ${yb}" ${s}/>`;
-    h+=`<rect x="303.4" y="${top?-20:1050}" width="73.2" height="20" fill="rgba(255,255,255,.3)" ${s.replace("fill=\"none\"","")}/>`; };
+    h+=`<circle cx="340" cy="${sp}" r="3.5" fill="#111"/><path d="M 266.9 ${yb} A 91.5 91.5 0 0 ${top?0:1} 413.1 ${yb}" ${s}/>`+baliza(top); };
   area(true);
-  if(meio){ h+=`<rect x="0" y="0" width="${L}" height="${C}" fill="none"/>`; }
-  else { h+=`<line x1="0" y1="525" x2="${L}" y2="525" ${s}/><circle cx="340" cy="525" r="91.5" ${s}/><circle cx="340" cy="525" r="3.5" fill="#fff"/>`; area(false); }
+  if(!meio){ h+=`<line x1="0" y1="525" x2="${L}" y2="525" ${s}/><circle cx="340" cy="525" r="91.5" ${s}/><circle cx="340" cy="525" r="3.5" fill="#111"/>`; area(false); }
+  h+=meio?`<path d="M 0 ${C} L 0 0 L ${L} 0 L ${L} ${C}" stroke="#111" stroke-width="4" fill="none"/>`:`<rect x="0" y="0" width="${L}" height="${C}" stroke="#111" stroke-width="4" fill="none"/>`;
+  [[0,0,0,1],[L,0,-1,1]].concat(meio?[]:[[0,C,1,-1],[L,C,-1,-1]]).forEach(([x,y,dx,dy])=>h+=`<path d="M ${x+dx*10} ${y} A 10 10 0 0 ${dx*dy>0?1:0} ${x} ${y+dy*10}" ${s}/>`);
   return h; }
 function svgPt(svg,e){ const p=svg.createSVGPoint(); p.x=e.clientX; p.y=e.clientY; const q=p.matrixTransform(svg.getScreenCTM().inverse()); return {x:q.x/K,y:q.y/K}; }
-function peca(x,y,txt,cor,fg,extra,anel){ const r=24; const fs=txt.length<=2?20:txt.length===3?16:13;
-  return `<g ${extra||""}><circle cx="${x*K+2}" cy="${y*K+3}" r="${r}" fill="#000" opacity=".3"/><circle cx="${x*K}" cy="${y*K}" r="${r}" fill="${cor}" stroke="${anel||"#fff"}" stroke-width="${anel?5:3}"/>`+
-    `<text x="${x*K}" y="${y*K+fs*.36}" text-anchor="middle" font-size="${fs}" font-weight="700" font-family="Roboto Condensed,Arial Narrow,Arial,sans-serif" fill="${fg}" pointer-events="none">${esc(txt)}</text><circle cx="${x*K}" cy="${y*K}" r="40" fill="transparent"/></g>`; }
-function bolaSvg(x,y,extra){ return `<g ${extra||""}><circle cx="${x*K}" cy="${y*K}" r="11" fill="#fff" stroke="#111" stroke-width="2.5"/><circle cx="${x*K}" cy="${y*K}" r="4" fill="#111"/><circle cx="${x*K}" cy="${y*K}" r="34" fill="transparent"/></g>`; }
+const COR={sca:"#C00000",gr:"#FFFF00",adv:"#0070C0",out:"#7F7F7F"};
+function peca(x,y,txt,cor,fg,extra){ const r=19, fs=txt.length<=2?17:txt.length===3?13.5:11;
+  return `<g ${extra||""}><circle cx="${x*K}" cy="${y*K}" r="${r}" fill="${cor}" stroke="#000" stroke-width="1.4"/>`+
+    `<text x="${x*K}" y="${y*K+fs*.35}" text-anchor="middle" font-size="${fs}" font-weight="700" font-family="Roboto Condensed,Arial Narrow,Arial,sans-serif" fill="${fg}" pointer-events="none">${esc(txt)}</text><circle cx="${x*K}" cy="${y*K}" r="38" fill="transparent"/></g>`; }
+function bolaSvg(x,y,extra){ return `<g ${extra||""}><image href="{{BOLA}}" x="${x*K-10}" y="${y*K-10}" width="20" height="20" pointer-events="none"/><circle cx="${x*K}" cy="${y*K}" r="34" fill="transparent"/></g>`; }
 const posAdv=(sis,i)=>{ const b=(SISTEMAS[sis]||SISTEMAS["4-4-2"])[i]||["",52,34]; return {x:b[2],y:105-b[1],pos:b[0]}; };
 const posNos=i=>{ const b=SISTEMAS["3-4-3"][i]; return {x:68-b[2],y:b[1],pos:b[0]}; };
 function arrasta(svg,{onDown,onMove,onUp}){ let ativo=null;
@@ -540,13 +542,13 @@ function secEstr(R,box,ed){ const est=vista.estr||"com", O=R.onze, st=O[est];
   <div class="card"><div class="row" style="justify-content:space-between"><div class="seg" id="es-m"></div><label class="row hint" style="gap:8px"><input type="checkbox" id="es-nos" ${O.nos?"checked":""} style="width:20px;height:20px" ${ed?"":"disabled"}> Mostrar o nosso 3-4-3</label></div>
     <div class="estr"><div class="pitch" id="es-p"></div><div style="display:flex;flex-direction:column;gap:10px">
       <label class="f">Sistema ${est==="com"?"com bola":"sem bola"}<select id="es-sis" ${ed?"":"disabled"}>${Object.keys(SISTEMAS).map(s=>`<option${s===st.sis?" selected":""}>${s}</option>`).join("")}</select></label>
-      <div class="leg"><span><i style="background:#1F5FBF"></i>${esc(R.adversario||"Adversário")} (ataca para cima)</span>${O.nos?`<span><i style="background:#C00000"></i>SC Angrense 3-4-3</span>`:""}</div>
+      <div class="leg"><span><i style="background:${COR.adv}"></i>${esc(R.adversario||"Adversário")} (ataca para cima)</span>${O.nos?`<span><i style="background:${COR.sca}"></i>SC Angrense 3-4-3</span>`:""}</div>
       <label class="f">${est==="com"?"Notas da estrutura com bola (largura, quem baixa, quem fixa)":"Notas da estrutura sem bola (altura do bloco, distâncias, referências)"}<textarea data-b="onze.${est}.nota" rows="4"></textarea></label>
       ${ed?`<button class="btn sm" id="es-rp">Repor posições do sistema</button>`:""}</div></div></div>`;
   seg($("es-m"),[["com","Com bola"],["sem","Sem bola"]],est,v=>{ vista.estr=v; render.mesma=true; render(); });
   const desenha=()=>{ const Rr=relAtual(), O=Rr.onze, st=O[est]; let h=`<svg viewBox="-40 -40 760 1130" role="img" aria-label="Estrutura ${est==="com"?"com":"sem"} bola">${campoSvg(false)}`;
-    if(O.nos) for(let i=0;i<11;i++){ const p=posNos(i); h+=peca(p.x,p.y,p.pos,"rgba(192,0,0,.78)","#fff",'pointer-events="none"'); }
-    for(let i=0;i<11;i++){ const b=posAdv(st.sis,i), p=st.pos[i]||b, J=O.jog[i]; h+=peca(p.x,p.y,J.n||J.pos||b.pos,i===0?"#0E2F66":"#1F5FBF","#fff",`data-i="${i}" style="cursor:${ed?"grab":"pointer"}"`,i===0?"#E8C547":null); }
+    if(O.nos) for(let i=0;i<11;i++){ const p=posNos(i); h+=peca(p.x,p.y,p.pos,p.pos==="GR"?COR.gr:COR.sca,p.pos==="GR"?"#000":"#fff",'pointer-events="none" opacity=".85"'); }
+    for(let i=0;i<11;i++){ const b=posAdv(st.sis,i), p=st.pos[i]||b, J=O.jog[i]; h+=peca(p.x,p.y,J.n||J.pos||b.pos,COR.adv,"#fff",`data-i="${i}" style="cursor:${ed?"grab":"pointer"}"`); }
     $("es-p").innerHTML=h+"</svg>"; const svg=$("es-p").querySelector("svg");
     arrasta(svg,{onDown:(e,m)=>{ const g=e.target.closest("[data-i]"); if(!g) return null; const i=+g.dataset.i, p=st.pos[i]||posAdv(st.sis,i); return {i,dx:p.x-m.x,dy:p.y-m.y,ox:p.x,oy:p.y,mov:false,g}; },
       onMove:(a,m)=>{ if(!ed) return; const x=clamp(m.x+a.dx,1,67), y=clamp(m.y+a.dy,1,104); if(Math.hypot(x-a.ox,y-a.oy)>.6) a.mov=true; a.x=x; a.y=y; a.g.setAttribute("transform",`translate(${(x-a.ox)*K},${(y-a.oy)*K})`); },
@@ -589,7 +591,7 @@ function edBp(R,B,el,ed){ el.innerHTML=`<div class="fields"><label class="f">Tip
     <label class="f">Corredor<select data-b="bp.${B.id}.cor" data-rr><option value="">—</option>${Object.entries(BP_COR).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></label></div>
     ${ed?`<div class="row"><div class="seg" id="bp-m"></div><div class="seg" id="bp-s"></div></div><div class="row"><button class="btn sm" data-add="adv">+ ${esc(R.adversario||"Adversário")}</button><button class="btn sm" data-add="out">+ Outra equipa</button><button class="btn sm" data-add="bola"${B.pecas.some(p=>p.eq==="bola")?" disabled":""}>+ Bola</button></div>`:""}
     <div class="pitch half" id="bp-p"></div>
-    <div class="leg"><span><i style="background:#1F5FBF"></i>${esc(R.adversario||"Adversário")}</span><span><i style="background:#8A8F96"></i>Outra equipa</span><span>━ corrida</span><span style="color:var(--gold)">╍ bola</span><span>A baliza atacada está em cima</span></div>
+    <div class="leg"><span><i style="background:${COR.adv}"></i>${esc(R.adversario||"Adversário")}</span><span><i style="background:${COR.out}"></i>Outra equipa</span><span>━ corrida</span><span>╍ trajetória da bola</span><span>A baliza atacada está em cima</span></div>
     ${BP_ASP.map(([k,t])=>`<label class="f">${t}<textarea data-b="bp.${B.id}.asp.${k}" rows="2"></textarea></label>`).join("")}
     <div><h4 style="margin-bottom:6px">Evidências</h4>${listaEv(R,"bp:"+B.id,ed)}</div>
     ${ed?`<div class="actions"><button class="btn danger l" id="bp-del">Apagar esta bola parada</button></div>`:""}`;
@@ -597,10 +599,10 @@ function edBp(R,B,el,ed){ el.innerHTML=`<div class="fields"><label class="f">Tip
     el.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>editaRel(R=>{ const X=R.bp.find(x=>x.id===B.id), eq=b.dataset.add, n=X.pecas.filter(p=>p.eq===eq).length; X.pecas.push({id:nid("k"),eq,x:eq==="bola"?34:20+(n%6)*5,y:eq==="bola"?20:eq==="adv"?24:30,n:""}); }));
     confirma2($("bp-del"),"Toca outra vez para apagar",()=>{ bpAberto=null; editaRel(R=>{ R.bp=R.bp.filter(x=>x.id!==B.id); R.evid.forEach(e=>{ if(e.q==="bp:"+B.id) e.q=""; }); }); }); }
   ligaEv(el,R);
-  const desenha=(tmp)=>{ const X=relAtual().bp.find(x=>x.id===B.id); if(!X) return; let h=`<svg viewBox="-40 -40 760 440" role="img" aria-label="${esc(nomeBp(X))}"><defs>${["#fff","#F2C744"].map((c,i)=>`<marker id="ah${i}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="${c}"/></marker>`).join("")}</defs>${campoSvg(true)}`;
-    const seta=(s,attr)=>{ const b=s.t==="bola"; return `<g ${attr||""}><line x1="${s.x1*K}" y1="${s.y1*K}" x2="${s.x2*K}" y2="${s.y2*K}" stroke="${b?"#F2C744":"#fff"}" stroke-width="5" ${b?'stroke-dasharray="14 9"':""} marker-end="url(#ah${b?1:0})"/><line x1="${s.x1*K}" y1="${s.y1*K}" x2="${s.x2*K}" y2="${s.y2*K}" stroke="transparent" stroke-width="30"/></g>`; };
+  const desenha=(tmp)=>{ const X=relAtual().bp.find(x=>x.id===B.id); if(!X) return; let h=`<svg viewBox="-40 -40 760 440" role="img" aria-label="${esc(nomeBp(X))}"><defs>${["#000","#000"].map((c,i)=>`<marker id="ah${i}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="${c}"/></marker>`).join("")}</defs>${campoSvg(true)}`;
+    const seta=(s,attr)=>{ const b=s.t==="bola"; return `<g ${attr||""}><line x1="${s.x1*K}" y1="${s.y1*K}" x2="${s.x2*K}" y2="${s.y2*K}" stroke="#000" stroke-width="4" ${b?'stroke-dasharray="12 8"':""} marker-end="url(#ah${b?1:0})"/><line x1="${s.x1*K}" y1="${s.y1*K}" x2="${s.x2*K}" y2="${s.y2*K}" stroke="transparent" stroke-width="30"/></g>`; };
     X.setas.forEach(s=>h+=seta(s,`data-s="${s.id}"`)); if(tmp) h+=seta(tmp);
-    [...X.pecas.filter(p=>p.eq==="out"),...X.pecas.filter(p=>p.eq==="adv"),...X.pecas.filter(p=>p.eq==="bola")].forEach(p=>{ h+=p.eq==="bola"?bolaSvg(p.x,p.y,`data-k="${p.id}"`):peca(p.x,p.y,p.n||"",p.eq==="adv"?(p.n==="GR"?"#0E2F66":"#1F5FBF"):"#8A8F96","#fff",`data-k="${p.id}"`,p.n==="GR"?"#E8C547":null); });
+    [...X.pecas.filter(p=>p.eq==="out"),...X.pecas.filter(p=>p.eq==="adv"),...X.pecas.filter(p=>p.eq==="bola")].forEach(p=>{ h+=p.eq==="bola"?bolaSvg(p.x,p.y,`data-k="${p.id}"`):peca(p.x,p.y,p.n||"",p.eq==="adv"?COR.adv:COR.out,"#fff",`data-k="${p.id}"`); });
     $("bp-p").innerHTML=h+"</svg>"; const svg=$("bp-p").querySelector("svg");
     arrasta(svg,{onDown:(e,m)=>{ if(!ed){ return null; } const g=e.target.closest("[data-k],[data-s]");
         if(bpModo==="seta"){ const k=g&&g.dataset.k&&X.pecas.find(p=>p.id===g.dataset.k); const o=k?{x:k.x,y:k.y}:m; return {seta:true,x1:o.x,y1:o.y,x2:o.x,y2:o.y}; }
