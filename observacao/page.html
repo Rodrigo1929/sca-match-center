@@ -136,6 +136,12 @@ textarea{resize:vertical;min-height:70px;line-height:1.45}
 .three > div > b{font-family:var(--f-display);font-size:20px;color:var(--red);text-align:center;padding-top:8px}
 .three.op > div > b{color:var(--ok)}
 .clip{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--surface-2)}
+.ptab{width:100%;border-collapse:collapse;font-size:14.5px}
+.ptab th{text-align:left;font-family:var(--f-display);font-size:11.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:10px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.ptab td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+.ptab td small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.ptab input[type=text],.ptab select{min-height:40px;padding:6px 8px}
+.ptab tr.porconf td:nth-child(3) select{border-color:var(--warn);border-style:dashed}
 .rev{border-color:color-mix(in srgb,var(--ok) 45%,var(--line))}
 /* folha (diálogo) */
 .sheet-bg{position:fixed;inset:0;background:rgba(15,14,12,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center}
@@ -276,7 +282,8 @@ function normRel(d){ const R={...d}; R.adversario=String(R.adversario||""); R.co
   R.bp=Array.isArray(R.bp)?R.bp.filter(b=>b&&b.id).map(b=>({tipo:"canto",lado:"of",cor:"",asp:{},pecas:[],setas:[],...b})):[];
   R.refs=Array.isArray(R.refs)?R.refs.filter(p=>p&&p.id).map(p=>({n:"",nome:"",pos:"",papeis:[],fortes:"",...p})):[];
   const S=R.sint||{}; R.sint={estrutura:String(S.estrutura||""),ameacas:[0,1,2].map(i=>String((S.ameacas||[])[i]||"")),oport:[0,1,2].map(i=>String((S.oport||[])[i]||"")),bpref:String(S.bpref||"")};
-  R.plantel=Array.isArray(R.plantel)?R.plantel.filter(j=>j&&j.id).map(j=>({n:"",nome:"",idade:"",pos:"",pe:"",nac:"",slot:"",conf:true,...j})):[]; R.plantelFonte=String(R.plantelFonte||""); R.treinador=String(R.treinador||"");
+  R.plantel=Array.isArray(R.plantel)?R.plantel.filter(j=>j&&j.id).map(j=>({n:"",nome:"",idade:"",pos:"",pe:"",nac:"",slot:"",conf:true,...j})):[]; R.plantelFonte=String(R.plantelFonte||"");
+  ["treinador","adjunto","sistema","capitao","plantelNotas"].forEach(k=>R[k]=String(R[k]||""));
   R.clips=Array.isArray(R.clips)?R.clips.filter(c=>c&&c.id):[]; return R; }
 function novoRel(adv){ const P=plantelZZ(adv); return normRel({id:nid("r"),autor:meId||"local",adversario:adv||"",competicao:COMP+" "+EPOCA,criadoEm:new Date().toISOString(),...(P?{plantel:P.jogadores,plantelFonte:P.fonte,treinador:P.treinador}:{})}); }
 function relAtual(){ return vista.id&&rels[vista.id]?rels[vista.id]:null; }
@@ -381,9 +388,10 @@ function renderRel(R){ const ed=podeEditar(R), c=contagens(R), rv=revs[R.id];
 /* ligação genérica dos campos de texto: data-b="caminho.no.relatorio" (listas por id) */
 function getP(o,p){ return p.split(".").reduce((a,k)=>a==null?a:Array.isArray(a)&&!/^\d+$/.test(k)?a.find(x=>x.id===k):a[k],o); }
 function setP(o,p,v){ const ks=p.split("."), last=ks.pop(); const t=ks.reduce((a,k)=>{ let n=Array.isArray(a)&&!/^\d+$/.test(k)?a.find(x=>x.id===k):a[k]; if(n==null){ n={}; a[k]=n; } return n; },o); t[last]=v; }
-function liga(box,R,ed){ box.querySelectorAll("[data-b]").forEach(el=>{ const v=getP(R,el.dataset.b); el.value=v==null?"":v; if(!ed){ el.readOnly=true; if(el.tagName==="SELECT") el.disabled=true; return; }
-    const on=()=>{ const Rr=relAtual(); if(!Rr) return; let v=el.value; if(el.dataset.min!=null) v=minNorm(v); setP(Rr,el.dataset.b,v); guardaRel(Rr); if(el.dataset.rr!=null) render(); };
-    el.addEventListener(el.tagName==="SELECT"?"change":"input",on); if(el.dataset.min!=null) el.addEventListener("change",()=>{ el.value=minNorm(el.value); on(); }); });
+function liga(box,R,ed){ box.querySelectorAll("[data-b]").forEach(el=>{ const v=getP(R,el.dataset.b); if(el.type==="checkbox") el.checked=!!v; else el.value=v==null?"":v; if(!ed){ el.readOnly=true; if(el.tagName==="SELECT") el.disabled=true; return; }
+    const on=()=>{ const Rr=relAtual(); if(!Rr) return; let v=el.type==="checkbox"?el.checked:el.value; if(el.dataset.min!=null) v=minNorm(v); setP(Rr,el.dataset.b,v); guardaRel(Rr); };
+    el.addEventListener(el.tagName==="SELECT"||el.type==="checkbox"?"change":"input",on); if(el.dataset.min!=null) el.addEventListener("change",()=>{ el.value=minNorm(el.value); on(); });
+    if(el.dataset.rr!=null) el.addEventListener("change",()=>setTimeout(()=>{ const a=document.activeElement, k=a&&a.dataset&&a.dataset.b; render.mesma=true; render(); if(k){ const n=$("main").querySelector(`[data-b="${CSS.escape(k)}"]`); if(n) n.focus(); } },0)); });
   box.querySelectorAll("textarea").forEach(t=>{ const a=()=>{ t.style.height="auto"; t.style.height=Math.max(70,t.scrollHeight+2)+"px"; }; a(); t.addEventListener("input",a); }); }
 
 /* ---------- evidências ---------- */
@@ -457,30 +465,58 @@ function plantelSvgStr(R){ const VW=1680, fx=40, fy=80, fw=1600, fh=1120, kx=fw/
   h+=`<rect x="${cx-20.16*kx}" y="${fy}" width="${40.32*kx}" height="${16.5*ky}" ${L}/><rect x="${cx-9.16*kx}" y="${fy}" width="${18.32*kx}" height="${5.5*ky}" ${L}/>`;
   h+=`<path d="M ${cx-7.31*kx} ${fy+16.5*ky} A ${9.15*kx} ${9.15*ky} 0 0 0 ${cx+7.31*kx} ${fy+16.5*ky}" ${L}/><path d="M ${cx-9.15*kx} ${fy+fh} A ${9.15*kx} ${9.15*ky} 0 0 1 ${cx+9.15*kx} ${fy+fh}" ${L}/>`;
   const F="Roboto Condensed,Arial Narrow,Arial,sans-serif";
-  const caixa=(x,y,j,w)=>{ const t=j.nome||"?", lab=(j.n?j.n+"  ":"")+t, fs=23, lim=w-16, cw=lab.length*fs*.5;
-    return `<g data-pl="${esc(j.id)}" style="cursor:pointer"><rect x="${x-w/2}" y="${y}" width="${w}" height="38" rx="5" fill="#fff" stroke="${j.conf?"#4A4A4A":"#C98A1B"}" stroke-width="3"${j.conf?"":' stroke-dasharray="9 6"'}/>`+
+  const caixa=(x,y,j,w)=>{ const t=(j.nome||"?")+(R.capitao===j.id?" (C)":""), lab=(j.n?j.n+"  ":"")+t, fs=23, lim=w-16, cw=lab.length*fs*.5;
+    return `<g data-pl="${esc(j.id)}" style="cursor:grab;touch-action:none"><rect x="${x-w/2}" y="${y}" width="${w}" height="38" rx="5" fill="#fff" stroke="${j.conf?"#4A4A4A":"#C98A1B"}" stroke-width="3"${j.conf?"":' stroke-dasharray="9 6"'}/>`+
       `<text x="${x}" y="${y+27}" text-anchor="middle" font-size="${fs}" font-weight="700" font-family="${F}" fill="#1B1A17"${cw>lim?` textLength="${lim}" lengthAdjust="spacingAndGlyphs"`:""}>${j.n?`<tspan fill="#8A857B" font-weight="400">${esc(j.n)}  </tspan>`:""}${esc(t)}</text></g>`; };
   const ord=(a,b)=>(a.conf===b.conf?0:a.conf?-1:1)||(parseInt(a.n)||999)-(parseInt(b.n)||999);
   SLOTS.forEach(([k,,px,py])=>{ const x=fx+px*fw, y=fy+py*fh, gr=k==="1";
     h+=`<circle cx="${x}" cy="${y}" r="27" fill="${gr?"#FFFF00":"#C00000"}" stroke="#1B1A17" stroke-width="3"/><text x="${x}" y="${y+9}" text-anchor="middle" font-size="26" font-weight="700" font-family="${F}" fill="${gr?"#000":"#fff"}">${k}</text>`;
     R.plantel.filter(j=>j.slot===k).sort(ord).forEach((j,i)=>h+=caixa(x,y+34+i*44,j,236)); });
   const gr=R.plantel.filter(j=>j.slot==="1").length, campo=R.plantel.length-gr-semPos.length;
-  const resumo=`GR: ${gr}  //  Campo: ${campo}${semPos.length?"  //  Sem posição: "+semPos.length:""}  //  ${R.plantelFonte||"Plantel"}`, rw=Math.min(fw,resumo.length*12.4+60);
+  const resumo=`GR: ${gr}  //  Campo: ${campo}${semPos.length?"  //  Sem posição: "+semPos.length:""}${R.sistema?"  //  "+R.sistema:""}${R.treinador?"  //  Treinador: "+R.treinador:""}`, rw=Math.min(fw,resumo.length*12.4+60);
   h+=`<path d="M ${fx} ${fy-58} H ${fx+rw} L ${fx+rw-24} ${fy-12} H ${fx} Z" fill="#1B1A17"/><text x="${fx+18}" y="${fy-26}" font-size="24" font-weight="700" font-family="${F}" fill="#fff">${esc(resumo)}</text>`;
   if(semPos.length){ const y0=fy+fh+30; h+=`<text x="${fx}" y="${y0+26}" font-size="24" font-weight="800" font-family="${F}" fill="#C00000">SEM POSIÇÃO NO CAMPO:</text>`;
     semPos.forEach((j,i)=>h+=caixa(fx+128+(i%6)*268,y0+44+Math.floor(i/6)*46,j,250)); }
   return h+"</svg>"; }
 function secPlantel(R,box,ed){ const temZZ=!!(PLANTEIS.equipas&&PLANTEIS.equipas[R.adversario]);
-  box.innerHTML=`<header><h3>Plantel${R.adversario?" · "+esc(R.adversario):""}</h3><p>Ponto de partida do zerozero, ajustado com o que vês nos jogos. Toca num nome para mudar a posição, o número ou para o marcar como jogador de referência.</p>
-    <p class="hint" style="margin-top:6px">Contorno tracejado laranja: o zerozero só indica a linha (defesa, médio, avançado), por isso a posição exata está por confirmar.</p></header>
-    ${R.treinador||ed?`<div class="card"><div class="fields"><label class="f">Treinador<input type="text" data-b="treinador"></label></div></div>`:""}
+  const ordSlot=k=>{ const i=SLOTS.findIndex(x=>x[0]===k); return i<0?99:i; };
+  const lista=R.plantel.slice().sort((a,b)=>ordSlot(a.slot)-ordSlot(b.slot)||(parseInt(a.n)||999)-(parseInt(b.n)||999)||a.nome.localeCompare(b.nome,"pt"));
+  const opSlot=`<option value="">Sem posição</option>${SLOTS.map(([k,n])=>`<option value="${k}">${k} · ${n}</option>`).join("")}`;
+  box.innerHTML=`<header><h3>Plantel${R.adversario?" · "+esc(R.adversario):""}</h3><p>Ponto de partida do zerozero, corrigido com o que vês nos jogos. Arrasta um nome para outra posição, toca nele para o editar, ou muda tudo na lista em baixo.</p>
+    <p class="hint" style="margin-top:6px">Contorno tracejado laranja: posição por confirmar (o zerozero só indica a linha). Fica confirmada quando a mudas ou marcas “Confirmada”.</p></header>
+    <div class="card"><h4>Equipa técnica e equipa</h4><div class="fields">
+      <label class="f">Treinador<input type="text" data-b="treinador" placeholder="Nome do treinador"></label>
+      <label class="f">Treinador adjunto<input type="text" data-b="adjunto"></label>
+      <label class="f">Sistema habitual<select data-b="sistema"><option value="">—</option>${Object.keys(SISTEMAS).map(x=>`<option>${x}</option>`).join("")}</select></label>
+      <label class="f">Capitão<select data-b="capitao"><option value="">—</option>${lista.map(j=>`<option value="${esc(j.id)}">${esc((j.n?j.n+" ":"")+j.nome)}</option>`).join("")}</select></label></div>
+      <label class="f">Notas do plantel (lesionados, castigados, reforços, saídas)<textarea data-b="plantelNotas" rows="2"></textarea></label></div>
     ${R.plantel.length?`<div class="card" style="padding:8px;overflow-x:auto"><div id="pl-svg" style="min-width:560px"></div></div>`:`<div class="empty"><b>Ainda sem plantel.</b><span>${temZZ?`Carrega o plantel do zerozero (${esc(dataPt(PLANTEIS.data))}) ou acrescenta os jogadores à mão.`:"Acrescenta os jogadores à mão."}</span></div>`}
-    ${ed?`<div class="row">${temZZ?`<button class="btn" id="pl-zz">${R.plantel.length?"Substituir pelo plantel do zerozero":"Carregar plantel do zerozero"}</button>`:""}<button class="btn" id="pl-add">+ Jogador</button></div>`:""}`;
-  if(R.plantel.length){ $("pl-svg").innerHTML=plantelSvgStr(R); $("pl-svg").querySelectorAll("[data-pl]").forEach(g=>g.addEventListener("click",()=>folhaJogPlantel(g.dataset.pl))); }
+    ${ed?`<div class="row">${temZZ?`<button class="btn" id="pl-zz">${R.plantel.length?"Substituir pelo plantel do zerozero":"Carregar plantel do zerozero"}</button>`:""}<button class="btn primary" id="pl-add">+ Jogador</button></div>`:""}
+    ${R.plantel.length?`<div class="card" style="padding:0;overflow-x:auto"><table class="ptab"><thead><tr><th>Nº</th><th>Nome</th><th>Posição no campo</th><th>Pé</th><th title="Posição confirmada nos jogos">Confirmada</th><th></th></tr></thead><tbody>
+      ${lista.map(j=>`<tr${j.conf?"":' class="porconf"'}><td><input type="text" data-b="plantel.${j.id}.n" data-rr inputmode="numeric" maxlength="3" aria-label="Número" style="width:62px"></td>
+        <td><input type="text" data-b="plantel.${j.id}.nome" data-rr aria-label="Nome" style="min-width:150px"><small>${esc([partePos(j.pos).join(" / "),j.idade?j.idade+" anos":""].filter(Boolean).join(" · "))}</small></td>
+        <td><select data-b="plantel.${j.id}.slot" data-pslot="${esc(j.id)}" aria-label="Posição no campo" style="min-width:170px">${opSlot}</select></td>
+        <td><select data-b="plantel.${j.id}.pe" aria-label="Pé preferido"><option value="">—</option><option>Direito</option><option>Esquerdo</option><option>Ambidestro</option></select></td>
+        <td style="text-align:center"><input type="checkbox" data-b="plantel.${j.id}.conf" data-rr aria-label="Posição confirmada" style="width:22px;height:22px"></td>
+        <td>${ed?`<button class="btn sm ghost" data-pdel="${esc(j.id)}" aria-label="Tirar ${esc(j.nome)} do plantel">✕</button>`:""}</td></tr>`).join("")}</tbody></table></div>`:""}`;
+  if(R.plantel.length){ $("pl-svg").innerHTML=plantelSvgStr(R); ligaPlantelSvg($("pl-svg").querySelector("svg"),ed); }
   if(!ed) return;
-  const carrega=()=>{ const P=plantelZZ(R.adversario); editaRel(R=>{ R.plantel=P.jogadores; R.plantelFonte=P.fonte; if(!R.treinador) R.treinador=P.treinador; }); toast(`Plantel carregado · ${P.jogadores.length} jogadores`); };
+  /* mudar a posição na lista confirma-a */
+  box.querySelectorAll("[data-pslot]").forEach(sel=>sel.addEventListener("change",()=>{ const id=sel.dataset.pslot; editaRel(R=>{ const j=R.plantel.find(x=>x.id===id); if(j){ j.slot=sel.value; j.conf=true; } },true); render.mesma=true; render(); }));
+  box.querySelectorAll("[data-pdel]").forEach(b=>confirma2(b,"Tirar?",()=>{ const id=b.dataset.pdel; render.mesma=true; editaRel(R=>{ R.plantel=R.plantel.filter(x=>x.id!==id); if(R.capitao===id) R.capitao=""; }); }));
+  const carrega=()=>{ const P=plantelZZ(R.adversario); editaRel(R=>{ R.plantel=P.jogadores; R.plantelFonte=P.fonte; if(!R.treinador) R.treinador=P.treinador; R.capitao=""; }); toast(`Plantel carregado · ${P.jogadores.length} jogadores`); };
   const zz=$("pl-zz"); if(zz){ if(R.plantel.length) confirma2(zz,"Toca outra vez: substitui o plantel atual",carrega); else zz.onclick=carrega; }
   $("pl-add").onclick=()=>{ const j={id:nid("j"),n:"",nome:"",idade:"",pos:"",pe:"",nac:"",slot:"",conf:true}; editaRel(R=>R.plantel.push(j),true); folhaJogPlantel(j.id,true); }; }
+/* arrastar um nome para outra posição; tocar sem arrastar abre o jogador */
+function ligaPlantelSvg(svg,ed){ const VW=1680, fx=40, fy=80, fw=1600, fh=1120; let A=null;
+  const pt=e=>{ const p=svg.createSVGPoint(); p.x=e.clientX; p.y=e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); };
+  svg.addEventListener("pointerdown",e=>{ const g=e.target.closest("[data-pl]"); if(!g) return; const p=pt(e); A={g,id:g.dataset.pl,x0:p.x,y0:p.y,mov:false}; if(ed){ e.preventDefault(); try{ svg.setPointerCapture(e.pointerId); }catch(x){} } });
+  svg.addEventListener("pointermove",e=>{ if(!A||!ed) return; const p=pt(e), dx=p.x-A.x0, dy=p.y-A.y0; if(Math.hypot(dx,dy)>12) A.mov=true; if(A.mov){ A.g.setAttribute("transform",`translate(${dx},${dy})`); A.g.style.opacity=".85"; A.px=p.x; A.py=p.y; } });
+  const fim=()=>{ if(!A) return; const a=A; A=null; if(!a.mov||!ed){ folhaJogPlantel(a.id); return; }
+    let melhor=null, dm=1e9; SLOTS.forEach(([k,,px,py])=>{ const d=Math.hypot(fx+px*fw-a.px,(fy+py*fh)-(a.py-60)); if(d<dm){ dm=d; melhor=k; } });
+    const fora=a.py>fy+fh+10; const slot=fora?"":melhor;
+    editaRel(R=>{ const j=R.plantel.find(x=>x.id===a.id); if(j){ j.slot=slot; j.conf=true; } },true); render.mesma=true; render(); toast(slot?`Posição ${slot} · ${SLOTS.find(x=>x[0]===slot)[1]}`:"Sem posição"); };
+  svg.addEventListener("pointerup",fim); svg.addEventListener("pointercancel",()=>{ if(A){ A.g.removeAttribute("transform"); A=null; } }); }
 function folhaJogPlantel(id,novo){ const R=relAtual(); if(!R) return; const ed=podeEditar(R), J0=R.plantel.find(j=>j.id===id); if(!J0) return; const J=clone(J0);
   folha(`<h3>${novo?"Novo jogador":esc(J.nome||"Jogador")}</h3>
     <div class="fields"><label class="f">Número<input type="text" id="jp-n" inputmode="numeric" maxlength="3" value="${esc(J.n)}" ${ed?"":"readonly"}></label><label class="f">Nome<input type="text" id="jp-nm" value="${esc(J.nome)}" ${ed?"":"readonly"}></label></div>

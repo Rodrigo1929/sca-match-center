@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| Obs. 4 | Observação: plantel editável em lista (número, nome, posição no campo, pé, confirmada), arrastar nomes entre posições no campo, treinador, adjunto, sistema habitual, capitão e notas do plantel; corrigido o campo de texto que perdia o foco a cada letra (ficha dos jogos e jogadores) |
 | Obs. 3 | Observação: separador Plantel com os planteis dos 9 adversários tirados do zerozero (25/10/2026), no estilo do plantel da SCA Match Center; posição tracejada quando o zerozero só indica a linha; ligação à Estrutura e aos jogadores de referência |
 | Obs. 2 | Observação: página inicial com os 9 adversários do Campeonato de Futebol dos Açores 2026/27 (o que já tem relatório e o que falta), adversário escolhido da lista e competição preenchida |
 | Obs. 1 | Nova app SCA Observação, em link próprio, para observadores de fora do clube: relatório por adversário com o guião de perguntas, evidências por jogo e minuto, estrutura no campo, bolas paradas, jogadores de referência, síntese e revisão do Rodrigo |
