@@ -33,6 +33,7 @@ Os 4 scripts partilham o âmbito global: uma `function` repetida noutro script s
 - `npm run build` → `dist/index.html`
 - `npm run check` → build + sintaxe (correr sempre antes de publicar)
 - `npm test` → build + teste no browser (precisa de `npm install` e `npx playwright install chromium`)
+- `npm run test:obs` → build + teste no browser da app de observação (PC e telemóvel; `-- --ipad` para WebKit)
 - `npm run test:ipad` → o mesmo teste no WebKit (motor do Safari) com ecrã e toque de iPad (precisa de `npx playwright install webkit`)
 
 ## Publicação — regra crítica
@@ -46,6 +47,7 @@ Os **dados de toda a equipa** (lances, jogos, histórico, análises, Modelo de J
 
 ## App de observação de adversários (link à parte)
 `observacao/page.html` → `dist/observacao.html` (um só ficheiro, um só `<script>`, sem partilhar código com a app principal).
+Estado, modelo de dados, decisões e **pendentes**: `docs/observacao.md` (ler antes de mexer). Testar com `npm run check` e `npm run test:obs` (`-- --ipad` para WebKit). Atualizar os pendentes desse ficheiro e o `CHANGELOG.md` (linhas "Obs. N") a cada publicação.
 Publica-se **só** para https://claude.ai/artifact/L7rJPrEcxmw86DbHyT5vEw — nunca para o link da SCA Match Center, e a SCA Match Center nunca para este.
 - Existe para dar acesso a um observador de fora do clube sem ele ver o resto da app. Não acrescentar aqui dados da app principal.
 - Regras de acesso da base de dados (manter numa republicação, omitindo `capabilities`): raiz e `obs` só o dono; `obs/{self}` lê e escreve o próprio observador (nível `interact` ou mais). O observador precisa de ser convidado como **Editor** (convidado de fora do clube como Leitor não grava) e a página não pode estar partilhada por link público.

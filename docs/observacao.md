@@ -1,0 +1,65 @@
+# SCA Observação — estado e pendentes
+
+App à parte da SCA Match Center para observar os adversários do **Campeonato de Futebol dos Açores 2026/27**.
+Existe para dar acesso a um observador de fora do clube sem ele ver o resto da app.
+
+- **Link:** https://claude.ai/artifact/L7rJPrEcxmw86DbHyT5vEw (privado; publica-se só para aqui)
+- **Código:** `observacao/page.html` (um só ficheiro, um só `<script>`) + `observacao/planteis.json`
+- **Build:** `npm run build` → `dist/observacao.html` (a página, o logo, a bola e os planteis embutidos)
+- **Testes:** `npm run check` (sintaxe) e `npm run test:obs` (browser, PC e telemóvel; `-- --ipad` para WebKit)
+- **Versão publicada:** Obs. 10 (25/10/2026) — ver `CHANGELOG.md`
+
+## Quem usa e com que acesso
+| Quem | O que vê | O que faz |
+|---|---|---|
+| Rodrigo (dono) | Todos os relatórios de todos os observadores | Revê, comenta na Síntese, marca como revisto; pode editar tudo |
+| Observador (de fora do clube) | Só os relatórios que ele criou | Cria e preenche relatórios; envia para revisão |
+
+- O observador tem de ser convidado por email com o nível **Editor**. Um convidado de fora como Leitor só lê e não grava.
+- A página **não pode** estar partilhada por link público: isso tira ao Editor de fora a permissão de gravar.
+- Risco aceite: como Editor, o observador também pode publicar versões desta página. Não tem acesso à SCA Match Center.
+
+### Regras da base de dados (declaradas no publish; numa republicação omitir `capabilities`)
+```
+""          read owner      write owner
+"obs"       read owner      write owner
+"obs/{self}" read interact  write interact
+user: scopes ["profile"]   (nomes dos observadores para o Rodrigo)
+```
+Verificado em 25/10/2026: ao nível Editor não se lê nem escreve no espaço de outro observador; o dono lê tudo.
+
+## Dados
+| Caminho | Conteúdo |
+|---|---|
+| `obs/<uid>` | Marca de que o observador existe (o dono lista esta coleção para encontrar os observadores) |
+| `obs/<uid>/relatorios/<id>` | Um relatório por adversário (documento inteiro; só o autor escreve normalmente) |
+| `obs/<uid>/revisoes/<id>` | Comentários do Rodrigo a esse relatório (só o dono escreve; documento separado para não haver choques) |
+
+No aparelho: `sca-obs-cache-v1` (cópia dos relatórios), `sca-obs-pend-v1` (fila de envios sem rede), `sca-obs-vista` (onde estava).
+A cache carrega-se em `carregaCache()`, **depois** de todas as constantes existirem (um erro disto fez desaparecer relatórios na Obs. 9).
+
+### Relatório (campos principais)
+- `adversario`, `competicao`, `estado` (`rasc`/`env`), `jogos[]` (contra, data, local, resultado, vídeo, contexto)
+- `plantel[]` (n, nome, idade, pos do zerozero, pe, nac, `slot` = código de posição, `conf`), `treinador`, `adjunto`, `trGR`, `sistema`, `capitao`, `plantelNotas`, `cores` {cam, cam2, num, gr}
+- `onzes` {prov, alt} → {sis, pos {código: idJogador}, nota}
+- `onze` (Estrutura no campo) {com, sem → {sis, pos, nota}, jog[11], nos, nosPos {com, sem}}
+- `chk[idPergunta]` {op[], freq, jog[], nota, quadro {pecas[], setas[]}}
+- `evid[]` (q, txt, jogo, min, freq rec/pont/conf, ctx, clip, sit)
+- `bp[]` (bolas paradas com desenho e 4 aspetos), `refs[]` (jogadores de referência), `sint`, `clips[]`
+
+## Decisões do Rodrigo (não mudar sem ele)
+- **Guião em checklist** (`GUIAO`, 36 perguntas): opções para tocar, frequência (sempre / muitas vezes / às vezes), jogadores do plantel, notas opcionais, evidências; quadro tático nas 12 perguntas em que a posição conta. A Ligação ao 3-4-3 fica para o observador com opções simples; o Rodrigo completa na revisão.
+- **Síntese:** estrutura e comportamentos; 3 ameaças; 3 oportunidades; bolas paradas e jogadores; clips com frase.
+- **Princípios:** espírito de equipa, intensidade, organização, objetividade; referência o nosso 3-4-3.
+- **Plantel:** estilo do plantel da SCA Match Center (campo branco, números 1–11, nomes por baixo). O desenho segue o **sistema habitual**; há **onze provável** e **onze alternativo**, cada um com o seu sistema. Escolher um jogador no onze provável muda a posição dele no plantel; o alternativo não mexe.
+- **Sistemas:** 4-3-3, 4-4-2, 4-4-2 losango, 4-2-3-1, 4-1-4-1, 3-5-2, 3-4-3, 5-3-2, 5-4-1.
+- **Campos e bolinhas** iguais aos da SCA Match Center. SCA a vermelho, GR amarelo; o adversário **com as cores do equipamento dele**, nunca o vermelho da SCA por defeito.
+- **Estrutura no campo:** as bolinhas das duas equipas ficam onde o observador as põe; o sistema só dá o ponto de partida.
+
+## Pendentes
+- [ ] **Cores dos clubes:** só Lusitânia (verde e branco) e Praiense (vermelho) estão confirmadas. Faltam Barreiro, Madalena, Rabo de Peixe, Santo António, São Roque, União Micaelense e Vale Formoso — pedir ao Rodrigo e pôr em `CORES_EQ`. Não inventar.
+- [ ] **Teste no iPad / Safari:** `npm run test:obs -- --ipad` ainda não correu (o WebKit não estava instalado). Ver sobretudo arrastar nomes no Plantel e bolinhas nos quadros com o dedo.
+- [ ] **Convidar o observador** (Editor, por email) e fazer a primeira análise juntos; a partir daí ajustar o nível de detalhe do guião.
+- [ ] **Posições a confirmar:** ~54 jogadores ficaram com posição provável (tracejado laranja) porque o zerozero só dá a linha; 3 sem posição (Gonçalo Rodrigo/Barreiro, Afonso/Rabo de Peixe, Gustavo Silveira/Lusitânia).
+- [ ] **zerozero:** em 25/10/2026 a rede do Rodrigo ficou bloqueada depois de ~230 páginas lidas seguidas. Para atualizar planteis: poucas páginas, com pausas. Época 2027/28: o formato do campeonato muda; rever `EQUIPAS`, `EPOCA` e `planteis.json`.
+- [ ] Ideias por decidir com o Rodrigo: exportar o relatório (PDF/imagem) para a reunião de pré-jogo; levar a síntese para a SCA Match Center (hoje as duas apps não partilham dados, de propósito).
