@@ -270,7 +270,7 @@ let db=null, usr=null, meId=null, souDono=false, soLeitura=false, semDb=false;
 let rels={}, revs={}, nomes={};      // rels: id -> relatório ; revs: id -> revisão do Rodrigo
 let vista={tipo:"lista",id:null,sec:"ficha"}, bpAberto=null, jogAberto=null;
 const CACHE="sca-obs-cache-v1", PEND="sca-obs-pend-v1";
-(()=>{ const c=LS(CACHE); if(c){ rels=c.rels||{}; revs=c.revs||{}; } const v=LS("sca-obs-vista"); if(v&&v.tipo) vista=v; })();
+(()=>{ const c=LS(CACHE); if(c){ revs=c.revs||{}; Object.entries(c.rels||{}).forEach(([id,R])=>{ try{ rels[id]=normRel({...R,id}); }catch(e){} }); } const v=LS("sca-obs-vista"); if(v&&v.tipo) vista=v; })();
 function guardaCache(){ LSset(CACHE,{rels,revs}); }
 function guardaVista(){ LSset("sca-obs-vista",vista); }
 
@@ -343,7 +343,11 @@ function arrasta(svg,{onDown,onMove,onUp}){ let ativo=null;
 let precisaRender=false;
 function aEscrever(){ const a=document.activeElement; return a&&$("main").contains(a)&&/INPUT|TEXTAREA|SELECT/.test(a.tagName); }
 document.addEventListener("focusout",()=>setTimeout(()=>{ if(precisaRender&&!aEscrever()){ precisaRender=false; render(); } },60));
-function render(){ const R=relAtual(); if(vista.tipo==="rel"&&!R){ vista={tipo:"lista",id:null,sec:"ficha"}; }
+/* um erro a desenhar nunca deixa a página em branco: mostra o aviso e o caminho de volta */
+function render(){ try{ render0(); }catch(e){ console.error(e); $("fab").hidden=true;
+  $("main").innerHTML=`<div class="banner"><span>⚠</span><span><b>Não foi possível mostrar esta página.</b> Os dados estão guardados. <button class="btn sm" id="err-v">Voltar aos relatórios</button></span></div>`;
+  $("err-v").onclick=()=>{ vista={tipo:"lista",id:null,sec:"ficha"}; guardaVista(); try{ render0(); }catch(x){ console.error(x); } }; } }
+function render0(){ const R=relAtual(); if(vista.tipo==="rel"&&!R){ vista={tipo:"lista",id:null,sec:"ficha"}; }
   $("fab").hidden=vista.tipo!=="rel"||!podeEditar(relAtual()); guardaVista();
   const sy=scrollY; vista.tipo==="rel"?renderRel(relAtual()):renderLista(); if(render.mesma) scrollTo(0,sy); render.mesma=false; }
 

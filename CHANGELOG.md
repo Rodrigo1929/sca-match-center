@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| Obs. 6 | Observação: corrige a página em branco ao abrir um relatório criado antes do Plantel; um erro de desenho passa a mostrar aviso e caminho de volta |
 | Obs. 5 | Observação: campos brancos com linhas pretas e balizas cinzentas, bolinhas e bola iguais às da SCA Match Center (SCA vermelho, GR amarelo, adversário azul) |
 | Obs. 4 | Observação: plantel editável em lista (número, nome, posição no campo, pé, confirmada), arrastar nomes entre posições no campo, treinador, adjunto, sistema habitual, capitão e notas do plantel; corrigido o campo de texto que perdia o foco a cada letra (ficha dos jogos e jogadores) |
 | Obs. 3 | Observação: separador Plantel com os planteis dos 9 adversários tirados do zerozero (25/10/2026), no estilo do plantel da SCA Match Center; posição tracejada quando o zerozero só indica a linha; ligação à Estrutura e aos jogadores de referência |
