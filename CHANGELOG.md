@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| Obs. 9 | Observação: cores do equipamento de cada adversário (camisola, segunda cor, número, guarda-redes) no plantel, na estrutura e nas bolas paradas; Lusitânia e Praiense já preenchidos, os outros por escolher; na estrutura as bolinhas das duas equipas ficam onde o observador as põe |
 | Obs. 8 | Observação: novo sistema 4-4-2 losango no plantel, nos onzes e na estrutura no campo |
 | Obs. 7 | Observação: o desenho do plantel segue o sistema habitual (8 sistemas, cada um com a sua numeração); onze provável e onze alternativo, cada um com o seu sistema; escolher um jogador no onze provável muda a posição dele no plantel; treinador de guarda-redes; listas de nomes nunca se sobrepõem |
 | Obs. 6 | Observação: corrige a página em branco ao abrir um relatório criado antes do Plantel; um erro de desenho passa a mostrar aviso e caminho de volta |
