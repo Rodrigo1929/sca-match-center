@@ -138,6 +138,22 @@ textarea{resize:vertical;min-height:70px;line-height:1.45}
 .clip{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--surface-2)}
 .cores input[type=color]{width:52px;height:44px;padding:2px;border:1px solid var(--line);border-radius:8px;background:var(--surface);flex:none}
 .sw{display:flex;gap:6px;flex-wrap:wrap}.sw button{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);padding:0;min-height:0}
+.q.qok{border-color:color-mix(in srgb,var(--ok) 45%,var(--line))}
+.q.qok .qn{color:var(--ok)}
+.qop button{text-align:left}
+.qrod{justify-content:space-between;gap:8px}
+.qfq button{min-height:40px;padding:4px 12px;font-size:13.5px}
+.qac{display:flex;gap:6px;flex-wrap:wrap}
+.qjog{gap:6px}
+.jchip{display:inline-flex;align-items:center;gap:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:3px 4px 3px 10px;font-size:14px;font-weight:600}
+.jchip button{border:0;background:transparent;min-height:30px;min-width:30px;color:var(--muted)}
+.qq{display:flex;flex-direction:column;gap:8px;border-top:1px dashed var(--line);padding-top:10px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;max-height:56vh;overflow:auto}
+.pgrid button{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:8px 10px;text-align:left;min-height:58px;display:flex;flex-direction:column;gap:1px}
+.pgrid button b{font-family:var(--f-display);font-size:20px;color:var(--blue);line-height:1}
+.pgrid button span{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pgrid button small{font-size:11px;color:var(--muted)}
+.pgrid button[aria-pressed="true"]{border-color:var(--red);box-shadow:inset 0 0 0 2px var(--red)}
 .ptab{width:100%;border-collapse:collapse;font-size:14.5px}
 .ptab th{text-align:left;font-family:var(--f-display);font-size:11.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:10px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
 .ptab td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
@@ -213,43 +229,68 @@ function plantelZZ(adv){ const E=PLANTEIS.equipas&&PLANTEIS.equipas[adv]; if(!E)
   const js=E.jogadores.map(j=>{ const s=slotDe(j.pos,j.pe,cont); if(s.slot) cont[s.slot]=(cont[s.slot]||0)+1; return {id:nid("j"),n:j.n||"",nome:j.nome,idade:j.idade||"",pos:j.pos||"",pe:j.pe||"",nac:j.nac||"",slot:s.slot,conf:s.conf}; });
   return {jogadores:js,treinador:E.treinador||"",fonte:`zerozero.pt · ${dataPt(PLANTEIS.data)}`}; }
 const TODAS=["Angrense",...EQUIPAS.map(e=>e[0])].sort((a,b)=>a.localeCompare(b,"pt"));
+/* ======================= GUIÃO DE OBSERVAÇÃO (checklist) =======================
+   Cada pergunta: id, t (texto), op (opções para tocar), multi (várias opções), jog (escolher jogadores do plantel: rótulo),
+   quadro ("inteiro" = campo todo, o adversário ataca para cima; "meio" = último terço, baliza atacada em cima), base (estrutura de partida: com/sem). */
 const PRINC=["Espírito de equipa","Intensidade","Organização","Objetividade"];
+const GUIAO={
+  com:[
+    {id:"c_pb",t:"Como saem no pontapé de baliza?",op:["Curto, a partir dos centrais","Longo para o ponta de lança","Longo para um corredor","Alternam"],quadro:"inteiro",base:"com"},
+    {id:"c_pbp",t:"E quando são pressionados no pontapé de baliza?",op:["Mantêm a saída curta","Passam a jogar longo","O GR procura o lateral","Perdem a bola com facilidade"],multi:true},
+    {id:"c_est",t:"Como se organizam na 1.ª fase de construção?",op:["2 centrais e médio à frente","Médio baixa entre os centrais (3 atrás)","Lateral fecha e ficam 3 atrás","GR como mais um","4 atrás em linha"],multi:true,quadro:"inteiro",base:"com"},
+    {id:"c_larg",t:"Quem dá largura na construção?",op:["Laterais","Alas","Extremos","Um médio abre"],multi:true},
+    {id:"c_dentro",t:"Quem procura receber por dentro?",op:["Médio defensivo","Médios interiores","Médio ofensivo","Extremos por dentro","Ponta de lança a baixar"],multi:true,jog:"Jogadores"},
+    {id:"c_1l",t:"Como ultrapassam a 1.ª linha de pressão?",op:["Passe vertical no médio","Pelo lateral ou ala","Bola longa no ponta de lança","Condução do central","GR joga por cima","Terceiro homem"],multi:true,quadro:"inteiro",base:"com"},
+    {id:"c_estilo",t:"Qual é o estilo com bola?",op:["Posse e paciência","Misto","Jogo direto e segundas bolas","Vivem do contra-ataque"]},
+    {id:"c_comb",t:"Que movimentos e combinações repetem para progredir?",op:["Tabelas","Sobreposição do lateral","Apoio e rutura","Mudança de corredor","Passe nas costas","1x1 do extremo"],multi:true},
+    {id:"c_corr",t:"Por que corredor criam mais perigo?",op:["Esquerdo","Central","Direito"],multi:true},
+    {id:"c_apoio",t:"Quem vem buscar a bola (apoios)?",jog:"Jogadores"},
+    {id:"c_rut",t:"Quem ameaça a profundidade?",jog:"Jogadores"},
+    {id:"c_fin",t:"Como chegam à finalização?",op:["Cruzamentos","Combinações interiores","Passes nas costas","Ações individuais","Remate de fora da área"],multi:true},
+    {id:"c_cruz",t:"Nos cruzamentos, quem ocupa a área e que zonas atacam?",op:["1.º poste","Zona do penálti","2.º poste","Entrada da área (2.ª bola)"],multi:true,jog:"Quem ataca a área",quadro:"meio"}],
+  rec:[
+    {id:"r_vel",t:"Depois de recuperar: aceleram de imediato ou asseguram a posse?",op:["Aceleram logo","Asseguram a posse","Depende da zona"]},
+    {id:"r_zona",t:"Onde recuperam mais vezes a bola?",op:["Último terço","Meio-campo","Junto à própria área"],multi:true},
+    {id:"r_1p",t:"Quem recebe o primeiro passe?",jog:"Jogadores"},
+    {id:"r_prof",t:"Quem sai na profundidade?",jog:"Jogadores"},
+    {id:"r_perigo",t:"Que corredores são mais perigosos nesse momento?",op:["Esquerdo","Central","Direito"],multi:true,jog:"Jogadores perigosos",quadro:"inteiro",base:"com"}],
+  per:[
+    {id:"p_reac",t:"Reagem para recuperar ou recuam?",op:["Pressão imediata","Recuam para o bloco","Faltas táticas para travar","Depende do resultado"],multi:true},
+    {id:"p_prot",t:"Quem fica a proteger a equipa enquanto ataca?",op:["2 centrais","2 centrais e médio defensivo","3 atrás","Lateral do lado contrário fecha"],multi:true,jog:"Jogadores",quadro:"inteiro",base:"com"},
+    {id:"p_esp",t:"Onde aparecem espaços para explorar?",op:["Costas dos laterais","Entre linhas","Entre central e lateral","Lado contrário à bola","Costas da defesa"],multi:true,quadro:"inteiro",base:"com"}],
+  sem:[
+    {id:"s_est",t:"Em que estrutura defendem e a que altura colocam o bloco?",op:["Bloco alto","Bloco médio","Bloco baixo"],estr:true},
+    {id:"s_pb",t:"Como defendem o pontapé de baliza do adversário?",op:["Pressão alta homem a homem","Pressão alta à zona","Deixam sair e esperam no meio-campo","Recuam todos"],quadro:"inteiro",base:"sem"},
+    {id:"s_gat",t:"Que situações fazem disparar a pressão?",op:["Passe para o lateral","Passe atrasado","Receção de costas","Má receção","Passe para o GR","Bola junto à linha"],multi:true},
+    {id:"s_enc",t:"Encaminham o adversário para fora ou deixam jogar por dentro?",op:["Encaminham para fora","Fecham por dentro sem pressionar","Deixam jogar por dentro"]},
+    {id:"s_press",t:"Quem sai à pressão e quem faz a cobertura?",op:["Ponta de lança sozinho","Avançados e extremos","Ponta de lança e um médio","Médios saem alto"],multi:true,jog:"Jogadores",quadro:"inteiro",base:"sem"},
+    {id:"s_ref",t:"Seguem jogadores ou defendem os espaços?",op:["Defendem a zona","Homem a homem","Misto","Seguem até ao fim"]},
+    {id:"s_mud",t:"Como respondem às mudanças de corredor e aos movimentos nas costas?",op:["Basculam bem","Chegam tarde à mudança","Linha alta, sofrem nas costas","Linha recua cedo"],multi:true},
+    {id:"s_cruz",t:"Como defendem cruzamentos e a entrada da área?",op:["À zona","Homem a homem","Misto","Deixam a entrada da área livre","Atacam bem a 1.ª bola"],multi:true,quadro:"meio"}],
+  nos:[
+    {id:"n_3c",t:"Com quantos jogadores pressionam os nossos 3 jogadores da construção?",op:["1","2","3","Não pressionam"]},
+    {id:"n_livre",t:"Quem costuma ficar livre na nossa construção?",op:["Central direito","Central do meio","Central esquerdo","Um dos médios","GR"],multi:true,quadro:"inteiro",base:"sem",sca:true},
+    {id:"n_alas",t:"Quem acompanha os nossos alas e que espaço deixa?",op:["O lateral sobe","O extremo baixa","Um médio sai","Ninguém: o ala fica livre"],multi:true,quadro:"inteiro",base:"sem",sca:true},
+    {id:"n_int",t:"Como protegem os espaços interiores e a profundidade?",op:["Médios juntos e fechados","Linha defensiva alta","Linha defensiva baixa","Muito espaço entre linhas"],multi:true},
+    {id:"n_enc",t:"Conseguimos encaminhar a construção deles para o corredor?",op:["Sim, procuram o lateral","Às vezes","Não, saem por dentro"]},
+    {id:"n_rec",t:"Quando recuperarmos, onde está a vantagem?",op:["Costas dos laterais","Entre linhas","Lado contrário","Profundidade"],multi:true},
+    {id:"n_per",t:"Quando perdermos, o que temos de proteger?",op:["Contra-ataque pelo meio","Contra-ataque pelos corredores","Bola longa no ponta de lança","Extremo rápido"],multi:true}]};
+const FREQ_Q=[["sempre","Sempre"],["muitas","Muitas vezes"],["as","Às vezes"]];
+/* relatórios guardados com o guião antigo (texto por pergunta) */
+const Q_ANTIGO={com1:"c_pb",com2:"c_est",com3:"c_1l",com4:"c_comb",com5:"c_rut",com6:"c_fin",com7:"c_cruz",rec1:"r_vel",rec2:"r_1p",rec3:"r_perigo",per1:"p_reac",per2:"p_prot",per3:"p_esp",
+  sem1:"s_est",sem2:"s_gat",sem3:"s_enc",sem4:"s_press",sem5:"s_ref",sem6:"s_mud",sem7:"s_cruz",nos1:"n_livre",nos2:"n_alas",nos3:"n_int",nos4:"n_enc",nos5:"n_rec"};
+const TODAS_Q=Object.values(GUIAO).flat(), Q_POR_ID=Object.fromEntries(TODAS_Q.map(q=>[q.id,q]));
 const SECS=[
   {k:"ficha",t:"Ficha e jogos",g:"Relatório"},
   {k:"plantel",t:"Plantel",g:"Relatório"},
   {k:"estr",t:"Estrutura no campo",g:"Relatório"},
-  {k:"com",t:"Com bola",g:"Momentos do jogo",q:[
-    "Como se organizam no pontapé de baliza? Procuram sair curto, jogar direto ou alternam? O que muda quando são pressionados?",
-    "Quem participa na construção? Algum médio baixa? Quem dá largura e quem procura receber por dentro?",
-    "Como ultrapassam a primeira linha de pressão?",
-    "Que movimentos e combinações repetem para progredir? Por que corredor criam mais perigo?",
-    "Quem procura a bola e quem ameaça a profundidade?",
-    "Como chegam à finalização: cruzamentos, combinações interiores, passes nas costas, ações individuais?",
-    "Nos cruzamentos, quem ocupa a área e que zonas procuram atacar?"]},
-  {k:"rec",t:"Quando recuperam",g:"Momentos do jogo",q:[
-    "Aceleram de imediato ou procuram assegurar a posse?",
-    "Quem recebe o primeiro passe e quem sai na profundidade?",
-    "Que jogadores e corredores são mais perigosos nesse momento?"]},
-  {k:"per",t:"Quando perdem",g:"Momentos do jogo",nota:"Interessa-nos perceber os comportamentos que repetem e as condições em que aparecem.",q:[
-    "Reagem para recuperar ou recuam?",
-    "Quem fica a proteger a equipa enquanto ataca?",
-    "Onde aparecem espaços para o adversário explorar?"]},
-  {k:"sem",t:"Sem bola",g:"Momentos do jogo",q:[
-    "Em que estrutura defendem e a que altura colocam o bloco?",
-    "Quando começam a pressionar? Que situações fazem disparar a pressão?",
-    "Encaminham o adversário para fora ou permitem jogar por dentro?",
-    "Quem sai à pressão e quem faz a cobertura?",
-    "Seguem jogadores ou defendem sobretudo os espaços? Como passam as referências entre si?",
-    "Como respondem às mudanças de corredor e aos movimentos nas costas?",
-    "Como defendem cruzamentos e a entrada da área?"]},
+  {k:"com",t:"Com bola",g:"Momentos do jogo",q:true},
+  {k:"rec",t:"Quando recuperam",g:"Momentos do jogo",q:true},
+  {k:"per",t:"Quando perdem",g:"Momentos do jogo",q:true,nota:"Interessa-nos perceber os comportamentos que repetem e as condições em que aparecem."},
+  {k:"sem",t:"Sem bola",g:"Momentos do jogo",q:true},
   {k:"bp",t:"Bolas paradas",g:"Bolas paradas e jogadores"},
   {k:"jog",t:"Jogadores de referência",g:"Bolas paradas e jogadores"},
-  {k:"nos",t:"Ligação ao nosso 3-4-3",g:"O nosso jogo",q:[
-    "Como pressionam os nossos três jogadores da construção e que soluções podem deixar livres?",
-    "Quem acompanha os nossos alas e que espaços surgem quando esse jogador sai?",
-    "Como protegem os espaços interiores e a profundidade?",
-    "Como podemos encaminhar a construção deles para o corredor lateral e pressionar de forma coordenada?",
-    "Onde podemos criar vantagem depois de recuperar e o que precisamos de proteger quando perdemos?"]},
+  {k:"nos",t:"Ligação ao nosso 3-4-3",g:"O nosso jogo",q:true},
   {k:"sint",t:"Síntese",g:"Conclusões"},
   {k:"notas",t:"Notas por arrumar",g:"Conclusões"}];
 const SEC_Q=SECS.filter(s=>s.q);
@@ -299,7 +340,7 @@ let db=null, usr=null, meId=null, souDono=false, soLeitura=false, semDb=false;
 let rels={}, revs={}, nomes={};      // rels: id -> relatório ; revs: id -> revisão do Rodrigo
 let vista={tipo:"lista",id:null,sec:"ficha"}, bpAberto=null, jogAberto=null;
 const CACHE="sca-obs-cache-v1", PEND="sca-obs-pend-v1";
-(()=>{ const c=LS(CACHE); if(c){ revs=c.revs||{}; Object.entries(c.rels||{}).forEach(([id,R])=>{ try{ rels[id]=normRel({...R,id}); }catch(e){} }); } const v=LS("sca-obs-vista"); if(v&&v.tipo) vista=v; })();
+/* a cache do aparelho carrega-se no arranque, depois de todas as constantes existirem */
 function guardaCache(){ LSset(CACHE,{rels,revs}); }
 function guardaVista(){ LSset("sca-obs-vista",vista); }
 
@@ -319,6 +360,11 @@ function normRel(d){ const R={...d}; R.adversario=String(R.adversario||""); R.co
   const on=R.onzes||{}, nOnze=o=>{ const sis=LAYOUTS[o?.sis]?o.sis:"", lay=layoutDe(sis||R.sistema), ids=new Set(R.plantel.map(j=>j.id)), pos={};
     Object.entries(o?.pos||{}).forEach(([c,id])=>{ if(lay.some(x=>x[0]===c)&&ids.has(id)) pos[c]=id; }); return {sis,pos,nota:String(o?.nota||"")}; };
   R.onzes={prov:nOnze(on.prov),alt:nOnze(on.alt)};
+  const ch=R.chk&&typeof R.chk==="object"?R.chk:{}; R.chk={};
+  Object.entries(ch).forEach(([id,c])=>{ if(!Q_POR_ID[id]||!c) return; const qd=c.quadro||{}; R.chk[id]={op:Array.isArray(c.op)?c.op.map(String):[],freq:["sempre","muitas","as"].includes(c.freq)?c.freq:"",jog:Array.isArray(c.jog)?c.jog.map(String):[],nota:String(c.nota||""),
+    quadro:{pecas:Array.isArray(qd.pecas)?qd.pecas.filter(p=>p&&p.id):[],setas:Array.isArray(qd.setas)?qd.setas.filter(x=>x&&x.id):[]}}; });
+  Object.entries(R.resp||{}).forEach(([k,t])=>{ const id=Q_ANTIGO[k]; if(!id||!String(t||"").trim()) return; if(!R.chk[id]) R.chk[id]={op:[],freq:"",jog:[],nota:"",quadro:{pecas:[],setas:[]}}; if(!R.chk[id].nota.includes(String(t).trim())) R.chk[id].nota=(R.chk[id].nota?R.chk[id].nota+"\n":"")+String(t).trim(); });
+  R.resp={}; R.evid.forEach(e=>{ if(Q_ANTIGO[e.q]) e.q=Q_ANTIGO[e.q]; });
   R.clips=Array.isArray(R.clips)?R.clips.filter(c=>c&&c.id):[]; return R; }
 function novoRel(adv){ const P=plantelZZ(adv); return normRel({id:nid("r"),autor:meId||"local",adversario:adv||"",competicao:COMP+" "+EPOCA,criadoEm:new Date().toISOString(),...(P?{plantel:P.jogadores,plantelFonte:P.fonte,treinador:P.treinador}:{})}); }
 function relAtual(){ return vista.id&&rels[vista.id]?rels[vista.id]:null; }
@@ -391,7 +437,7 @@ function render0(){ const R=relAtual(); if(vista.tipo==="rel"&&!R){ vista={tipo:
   $("fab").hidden=vista.tipo!=="rel"||!podeEditar(relAtual()); guardaVista();
   const sy=scrollY; vista.tipo==="rel"?renderRel(relAtual()):renderLista(); if(render.mesma) scrollTo(0,sy); render.mesma=false; }
 
-function contagens(R){ const resp=SEC_Q.reduce((a,s)=>a+s.q.filter((_,i)=>(R.resp[s.k+(i+1)]||"").trim()).length,0), tot=SEC_Q.reduce((a,s)=>a+s.q.length,0);
+function contagens(R){ const resp=TODAS_Q.filter(q=>respondida(R,q.id)).length, tot=TODAS_Q.length;
   return {resp,tot,ev:R.evid.length,soltas:R.evid.filter(e=>!e.q).length}; }
 function renderLista(){ const ls=Object.values(rels).sort((a,b)=>String(b.atualizadoEm||b.criadoEm).localeCompare(String(a.atualizadoEm||a.criadoEm)));
   const avisos=bannerAcesso(); let h=`${avisos}<div class="lhead"><div><h2>${souDono?"Relatórios de observação":"Os meus relatórios"}</h2><p>${souDono?"Todos os relatórios dos observadores. Cada observador só vê os relatórios que criou.":"Um relatório por adversário do campeonato. Podes juntar vários jogos observados no mesmo relatório."}</p></div>${!soLeitura?`<button class="btn" id="novo">+ Outro adversário</button>`:""}</div>`;
@@ -417,7 +463,7 @@ function bannerAcesso(){ if(soLeitura) return `<div class="banner" style="margin
   if(semDb) return `<div class="banner" style="margin-bottom:12px"><span>⚠</span><span><b>Sem ligação à base de dados.</b> O que registares fica só neste aparelho até a ligação voltar a funcionar.</span></div>`; return ""; }
 
 function renderRel(R){ const ed=podeEditar(R), c=contagens(R), rv=revs[R.id];
-  const cont=s=>{ if(s.q){ const n=s.q.filter((_,i)=>(R.resp[s.k+(i+1)]||"").trim()).length; return `${n}/${s.q.length}`; } if(s.k==="bp") return R.bp.length||""; if(s.k==="jog") return R.refs.length||""; if(s.k==="ficha") return R.jogos.length||""; if(s.k==="plantel") return R.plantel.length||""; if(s.k==="notas") return c.soltas||""; return ""; };
+  const cont=s=>{ if(s.q){ const qs=GUIAO[s.k]; return `${qs.filter(q=>respondida(R,q.id)).length}/${qs.length}`; } if(s.k==="bp") return R.bp.length||""; if(s.k==="jog") return R.refs.length||""; if(s.k==="ficha") return R.jogos.length||""; if(s.k==="plantel") return R.plantel.length||""; if(s.k==="notas") return c.soltas||""; return ""; };
   let nav="", g=""; SECS.forEach(s=>{ if(s.g!==g){ g=s.g; nav+=`<div class="grp">${esc(g)}</div>`; } nav+=`<button data-s="${s.k}" aria-current="${s.k===vista.sec}">${esc(s.t)}<span class="c"${s.k==="notas"&&c.soltas?' style="color:var(--warn)"':""}>${cont(s)}</span></button>`; });
   const est=rv&&rv.revisto?`<span class="chip rev">Revisto</span>`:R.estado==="env"?`<span class="chip env">Para revisão</span>`:`<span class="chip rasc">Em curso</span>`;
   $("main").innerHTML=`${bannerAcesso()}<div class="rhead"><button class="btn sm ghost" id="voltar" aria-label="Voltar aos relatórios">← Relatórios</button><h2>${esc(R.adversario||"Adversário por definir")}</h2>${est}<div class="sp">${souDono&&R.autor!==meId?`<span class="hint">Observador: ${esc(nomes[R.autor]||"—")}</span>`:""}</div></div>
@@ -449,13 +495,13 @@ function listaEv(R,q,ed){ const es=R.evid.filter(e=>e.q===q).sort((a,b)=>R.jogos
     ${ed?`<button class="btn sm addev" data-addev="${esc(q)}">+ Evidência</button>`:""}`; }
 function ligaEv(box,R){ box.querySelectorAll("[data-ev]").forEach(b=>b.onclick=e=>{ if(e.target.closest("[data-lk]")) return; folhaEv(b.dataset.ev); });
   box.querySelectorAll("[data-addev]").forEach(b=>b.onclick=()=>folhaEv(null,b.dataset.addev)); }
-function opcPerguntas(R,q){ let h=`<option value="">Por arrumar</option>`; SEC_Q.forEach(s=>{ h+=`<optgroup label="${esc(s.t)}">`+s.q.map((t,i)=>`<option value="${s.k+(i+1)}"${q===s.k+(i+1)?" selected":""}>${i+1}. ${esc(t.length>70?t.slice(0,68)+"…":t)}</option>`).join("")+`</optgroup>`; });
+function opcPerguntas(R,q){ let h=`<option value="">Por arrumar</option>`; SEC_Q.forEach(s=>{ h+=`<optgroup label="${esc(s.t)}">`+GUIAO[s.k].map((x,i)=>`<option value="${x.id}"${q===x.id?" selected":""}>${i+1}. ${esc(x.t.length>70?x.t.slice(0,68)+"…":x.t)}</option>`).join("")+`</optgroup>`; });
   if(R.bp.length) h+=`<optgroup label="Bolas paradas">`+R.bp.map(b=>`<option value="bp:${esc(b.id)}"${q==="bp:"+b.id?" selected":""}>${esc(nomeBp(b))}</option>`).join("")+`</optgroup>`;
   if(R.refs.length) h+=`<optgroup label="Jogadores (dificuldades)">`+R.refs.map(p=>`<option value="jogd:${esc(p.id)}"${q==="jogd:"+p.id?" selected":""}>${esc(nomeJog(p))}</option>`).join("")+`</optgroup>`;
   return h; }
 function folhaEv(id,q0,rapida){ const R=relAtual(); if(!R) return; const ed=podeEditar(R); const E0=id?R.evid.find(e=>e.id===id):null; if(id&&!E0) return;
   const E=E0?clone(E0):{id:nid("e"),q:q0||"",txt:"",jogo:(R.jogos[R.jogos.length-1]||{}).id||"",min:"",freq:rapida?"conf":"rec",ctx:"",clip:false,sit:"",criadoEm:new Date().toISOString()};
-  const qTxt=q=>{ const s=SEC_Q.find(s=>q&&q.startsWith(s.k)&&/^\d+$/.test(q.slice(s.k.length))); return s?s.q[+q.slice(s.k.length)-1]:""; };
+  const qTxt=q=>(Q_POR_ID[q]||{}).t||"";
   folha(`<h3>${rapida?"Nota rápida":E0?"Evidência":"Nova evidência"}</h3>
     <label class="f">Onde fica<select id="e-q" ${ed?"":"disabled"}>${opcPerguntas(R,E.q)}</select></label><p class="hint" id="e-qt" style="margin:-4px 0 0"></p>
     <label class="f">O que viste (o que fazem e em que condição aparece)<textarea id="e-t" rows="3" ${ed?"":"readonly"} placeholder="Ex.: Quando o nosso ala fecha por dentro, o lateral deles sobe sempre e o extremo baixa para receber.">${esc(E.txt)}</textarea></label>
@@ -476,12 +522,77 @@ function folhaEv(id,q0,rapida){ const R=relAtual(); if(!R) return; const ed=pode
     if(!E0) setTimeout(()=>s.querySelector("#e-t").focus(),50); }); }
 
 /* ---------- secções ---------- */
-function secPerguntas(R,S,box,ed){ const nos=S.k==="nos";
-  box.innerHTML=`<header><h3>${esc(S.t)}</h3>${nos?`<p>Ligar a observação ao nosso jogo, tendo como referência o nosso 3-4-3.</p><div class="prin" style="margin-top:8px">${PRINC.map(p=>`<span>${esc(p)}</span>`).join("")}</div>`:""}${S.nota?`<p>${esc(S.nota)}</p>`:""}
-    <p class="hint" style="margin-top:6px">Perguntas de partida, não conclusões a encontrar. Se as imagens mostrarem outra coisa, é isso que fica registado.</p></header>
-    ${S.q.map((t,i)=>{ const q=S.k+(i+1); return `<div class="card q"><div class="qt"><span class="qn">${i+1}</span><h4>${esc(t)}</h4></div>
-      <textarea data-b="resp.${q}" rows="2" placeholder="Padrão observado e em que condições aparece"></textarea>${listaEv(R,q,ed)}</div>`; }).join("")}`;
+/* ---------- perguntas em checklist ---------- */
+const respondida=(R,id)=>{ const c=R.chk[id]; return !!c&&(c.op.length>0||c.jog.length>0||!!c.nota.trim()||c.quadro.pecas.length>0); };
+function secPerguntas(R,S,box,ed){ const nos=S.k==="nos", qs=GUIAO[S.k], feitas=qs.filter(q=>respondida(R,q.id)).length;
+  box.innerHTML=`<header><h3>${esc(S.t)} <span class="hint" style="font-family:var(--f-body);font-size:15px;font-weight:600">${feitas}/${qs.length}</span></h3>${nos?`<p>Ligar a observação ao nosso jogo, tendo como referência o nosso 3-4-3. Responde ao que viste; o Rodrigo completa na revisão.</p><div class="prin" style="margin-top:8px">${PRINC.map(p=>`<span>${esc(p)}</span>`).join("")}</div>`:""}${S.nota?`<p>${esc(S.nota)}</p>`:""}
+    <p class="hint" style="margin-top:6px">Toca nas opções que se aplicam e na frequência. As notas, os jogadores e o quadro são opcionais. Perguntas de partida: se as imagens mostrarem outra coisa, escreve-o nas notas.</p></header>
+    ${qs.map((q,i)=>cartaoQ(R,q,i,ed)).join("")}`;
+  qs.forEach(q=>{ const c=box.querySelector(`[data-q="${q.id}"]`); if(!c) return;
+    if(ed){ c.querySelectorAll("[data-op]").forEach(b=>b.onclick=()=>{ const o=b.dataset.op; editaRel(R=>{ const C=chkDe(R,q.id); if(q.multi) C.op=C.op.includes(o)?C.op.filter(x=>x!==o):[...C.op,o]; else C.op=C.op[0]===o?[]:[o]; },true); render.mesma=true; render(); });
+      c.querySelectorAll("[data-fq]").forEach(b=>b.onclick=()=>{ const f=b.dataset.fq; editaRel(R=>{ const C=chkDe(R,q.id); C.freq=C.freq===f?"":f; },true); render.mesma=true; render(); });
+      c.querySelectorAll("[data-jx]").forEach(b=>b.onclick=()=>{ const id=b.dataset.jx; editaRel(R=>{ const C=chkDe(R,q.id); C.jog=C.jog.filter(x=>x!==id); },true); render.mesma=true; render(); });
+      const ja=c.querySelector("[data-jadd]"); if(ja) ja.onclick=()=>folhaJogQ(q);
+      const nt=c.querySelector("[data-nota]"); if(nt) nt.onclick=()=>{ vista.notaAberta=q.id; render.mesma=true; render(); const t=$("main").querySelector(`[data-b="chk.${q.id}.nota"]`); if(t) t.focus(); }; }
+    const qb=c.querySelector("[data-qq]"); if(qb) qb.onclick=()=>{ vista.quadro=vista.quadro===q.id?null:q.id; render.mesma=true; render(); };
+    const ve=c.querySelector("[data-verestr]"); if(ve) ve.onclick=()=>{ vista.sec="estr"; vista.estr="sem"; render(); scrollTo(0,0); };
+    if(vista.quadro===q.id&&q.quadro) quadroQ(c.querySelector(".qq"),R,q,ed); });
   ligaEv(box,R); }
+function chkDe(R,id){ if(!R.chk[id]) R.chk[id]={op:[],freq:"",jog:[],nota:"",quadro:{pecas:[],setas:[]}}; return R.chk[id]; }
+function cartaoQ(R,q,i,ed){ const C=R.chk[q.id]||{op:[],freq:"",jog:[],nota:"",quadro:{pecas:[],setas:[]}}, ok=respondida(R,q.id), porId=new Map(R.plantel.map(j=>[j.id,j]));
+  const notaVis=!!C.nota.trim()||vista.notaAberta===q.id, temQ=C.quadro.pecas.length>0;
+  return `<div class="card q${ok?" qok":""}" data-q="${q.id}"><div class="qt"><span class="qn">${ok?"✓":i+1}</span><h4>${esc(q.t)}</h4></div>
+    ${q.op?`<div class="seg qop">${q.op.map(o=>`<button type="button" data-op="${esc(o)}" aria-pressed="${C.op.includes(o)}"${ed?"":" disabled"}>${esc(o)}</button>`).join("")}</div>`:""}
+    ${q.jog?`<div class="row qjog"><span class="hint">${esc(q.jog)}:</span>${C.jog.map(id=>{ const j=porId.get(id); return j?`<span class="jchip">${esc((j.n?j.n+" ":"")+j.nome)}${ed?`<button type="button" data-jx="${esc(id)}" aria-label="Tirar ${esc(j.nome)}">✕</button>`:""}</span>`:""; }).join("")}${ed?`<button type="button" class="btn sm" data-jadd>+ Jogador</button>`:""}</div>`:""}
+    <div class="row qrod"><div class="seg qfq">${FREQ_Q.map(([k,t])=>`<button type="button" data-fq="${k}" aria-pressed="${C.freq===k}"${ed?"":" disabled"}>${t}</button>`).join("")}</div>
+      <span class="qac">${!notaVis&&ed?`<button type="button" class="btn sm ghost" data-nota>✎ Notas</button>`:""}${q.quadro?`<button type="button" class="btn sm${vista.quadro===q.id?" dark":""}" data-qq>▦ Quadro tático${temQ?" ✓":""}</button>`:""}${q.estr?`<button type="button" class="btn sm" data-verestr>Ver estrutura sem bola</button>`:""}</span></div>
+    ${notaVis?`<textarea data-b="chk.${q.id}.nota" rows="2" placeholder="Notas: o que fazem e em que condição aparece"></textarea>`:""}
+    ${q.quadro&&vista.quadro===q.id?`<div class="qq"></div>`:""}
+    ${listaEv(R,q.id,ed)}</div>`; }
+function folhaJogQ(q){ const R=relAtual(); if(!R) return; const C=R.chk[q.id]||{jog:[]}, sel=new Set(C.jog), sis=R.sistema||"4-3-3";
+  if(!R.plantel.length){ toast("Primeiro carrega o plantel no separador Plantel."); return; }
+  const ls=R.plantel.slice().sort((a,b)=>ordPl(R,a)-ordPl(R,b)||(parseInt(a.n)||999)-(parseInt(b.n)||999));
+  folha(`<h3>${esc(q.jog)}</h3><p class="hint" style="margin:0">${esc(q.t)}</p>
+    <div class="pgrid" id="jq-l">${ls.map(j=>`<button type="button" data-k="${esc(j.id)}" aria-pressed="${sel.has(j.id)}"><b>${esc(j.n||"–")}</b><span>${esc(j.nome)}</span><small>${esc(posNoSis(j.slot,sis)||"")}</small></button>`).join("")}</div>
+    <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="jq-ok">Guardar</button></div>`,(s,fecha)=>{
+    s.querySelectorAll("#jq-l button").forEach(b=>b.onclick=()=>{ const k=b.dataset.k; sel.has(k)?sel.delete(k):sel.add(k); b.setAttribute("aria-pressed",String(sel.has(k))); });
+    s.querySelector("#jq-ok").onclick=()=>{ fecha(); editaRel(R=>{ chkDe(R,q.id).jog=ls.map(j=>j.id).filter(id=>sel.has(id)); },true); render.mesma=true; render(); }; }); }
+
+/* ---------- quadro tático de uma pergunta ---------- */
+let qqModo="mover", qqSeta="corrida";
+function quadroQ(el,R,q,ed){ const meio=q.quadro==="meio", Lm=meio?36:105, C=corEq(R);
+  el.innerHTML=`${ed?`<div class="row"><div class="seg" id="qq-m"></div><div class="seg" id="qq-s"></div></div>
+      <div class="row"><button type="button" class="btn sm" data-qadd="adv">+ ${esc(R.adversario||"Adversário")}</button><button type="button" class="btn sm" data-qadd="${q.sca?"sca":"out"}">+ ${q.sca?"SC Angrense":"Outra equipa"}</button><button type="button" class="btn sm" data-qadd="bola">+ Bola</button>
+        ${meio?"":`<button type="button" class="btn sm" id="qq-11">Pôr os 11 do ${esc(R.adversario||"adversário")}</button>${q.sca?`<button type="button" class="btn sm" id="qq-sca">Pôr o nosso 3-4-3</button>`:""}`}<button type="button" class="btn sm ghost" id="qq-lim">Limpar</button></div>`:""}
+    <div class="pitch${meio?" half":""}" id="qq-p" style="${meio?"":"max-width:420px"}"></div>
+    <div class="leg"><span><i style="background:${C.cam}"></i>${esc(R.adversario||"Adversário")}${meio?"":" (ataca para cima)"}</span>${q.sca?`<span><i style="background:${COR.sca}"></i>SC Angrense</span>`:`<span><i style="background:${COR.out}"></i>Outra equipa</span>`}<span>━ corrida</span><span>╍ bola</span>${meio?"<span>Baliza em cima</span>":""}</div>`;
+  const editaQ=fn=>editaRel(R=>fn(chkDe(R,q.id).quadro),true);
+  if(ed){ seg($("qq-m"),[["mover","✥ Mover"],["seta","↗ Seta"]],qqModo,v=>{ qqModo=v; $("qq-s").hidden=v!=="seta"; }); seg($("qq-s"),[["corrida","Corrida"],["bola","Trajetória da bola"]],qqSeta,v=>qqSeta=v); $("qq-s").hidden=qqModo!=="seta";
+    el.querySelectorAll("[data-qadd]").forEach(b=>b.onclick=()=>{ const eq=b.dataset.qadd; editaQ(Q=>{ if(eq==="bola"&&Q.pecas.some(p=>p.eq==="bola")) return; const n=Q.pecas.filter(p=>p.eq===eq).length; Q.pecas.push({id:nid("k"),eq,x:eq==="bola"?34:14+(n%8)*6,y:eq==="bola"?Lm/2:eq==="adv"?Lm*.55:Lm*.4,n:""}); }); desenha(); });
+    const p11=$("qq-11"); if(p11) p11.onclick=()=>{ const O=relAtual().onze, st=O[q.base||"com"]; editaQ(Q=>{ Q.pecas=Q.pecas.filter(p=>p.eq!=="adv"); for(let i=0;i<11;i++){ const b=posAdv(st.sis,i), p=st.pos[i]||b, J=O.jog[i]; Q.pecas.push({id:nid("k"),eq:"adv",x:p.x,y:p.y,n:J.n||(i===0?"GR":J.pos||b.pos)}); } if(!Q.pecas.some(p=>p.eq==="bola")&&q.base!=="sem") Q.pecas.push({id:nid("k"),eq:"bola",x:34,y:98,n:""}); }); desenha(); };
+    const psc=$("qq-sca"); if(psc) psc.onclick=()=>{ editaQ(Q=>{ Q.pecas=Q.pecas.filter(p=>p.eq!=="sca"); for(let i=0;i<11;i++){ const b=posNos(i); Q.pecas.push({id:nid("k"),eq:"sca",x:b.x,y:b.y,n:b.pos==="GR"?"GR":""}); } }); desenha(); };
+    confirma2($("qq-lim"),"Toca outra vez para limpar",()=>{ editaQ(Q=>{ Q.pecas=[]; Q.setas=[]; }); render.mesma=true; render(); }); }
+  const desenha=tmp=>{ const Q=(relAtual().chk[q.id]||{quadro:{pecas:[],setas:[]}}).quadro, CC=corEq(relAtual());
+    let h=`<svg viewBox="-40 -40 760 ${meio?440:1130}" role="img" aria-label="Quadro tático: ${esc(q.t)}"><defs><marker id="qa0" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#000"/></marker></defs>${campoSvg(meio)}`;
+    const seta=(s,attr)=>`<g ${attr||""}><line x1="${s.x1*K}" y1="${s.y1*K}" x2="${s.x2*K}" y2="${s.y2*K}" stroke="#000" stroke-width="4" ${s.t==="bola"?'stroke-dasharray="12 8"':""} marker-end="url(#qa0)"/><line x1="${s.x1*K}" y1="${s.y1*K}" x2="${s.x2*K}" y2="${s.y2*K}" stroke="transparent" stroke-width="30"/></g>`;
+    Q.setas.forEach(s=>h+=seta(s,`data-s="${s.id}"`)); if(tmp) h+=seta(tmp);
+    ["out","sca","adv","bola"].forEach(eq=>Q.pecas.filter(p=>p.eq===eq).forEach(p=>{ const gr=p.n==="GR";
+      h+=eq==="bola"?bolaSvg(p.x,p.y,`data-k="${p.id}"`):peca(p.x,p.y,p.n||"",eq==="adv"?(gr?CC.gr:CC.cam):eq==="sca"?(gr?COR.gr:COR.sca):COR.out,eq==="adv"?(gr?CC.grNum:CC.num):eq==="sca"&&gr?"#000":"#fff",`data-k="${p.id}"`,eq==="adv"&&!gr?CC.cam2:null); }));
+    $("qq-p").innerHTML=h+"</svg>"; const svg=$("qq-p").querySelector("svg");
+    arrasta(svg,{onDown:(e,m)=>{ if(!ed) return null; const g=e.target.closest("[data-k],[data-s]");
+        if(qqModo==="seta"){ const k=g&&g.dataset.k&&Q.pecas.find(p=>p.id===g.dataset.k); const o=k?{x:k.x,y:k.y}:m; return {seta:true,x1:o.x,y1:o.y,x2:o.x,y2:o.y}; }
+        if(g&&g.dataset.s) return {sid:g.dataset.s};
+        if(g&&g.dataset.k){ const p=Q.pecas.find(p=>p.id===g.dataset.k); return {k:p.id,dx:p.x-m.x,dy:p.y-m.y,ox:p.x,oy:p.y,mov:false,g}; } return null; },
+      onMove:(a,m)=>{ if(a.seta){ a.x2=m.x; a.y2=m.y; desenha({t:qqSeta,...a}); return; } if(!a.k) return; const x=clamp(m.x+a.dx,-2,70), y=clamp(m.y+a.dy,-2,Lm+2); if(Math.hypot(x-a.ox,y-a.oy)>.5) a.mov=true; a.x=x; a.y=y; a.g.setAttribute("transform",`translate(${(x-a.ox)*K},${(y-a.oy)*K})`); },
+      onUp:a=>{ if(a.seta){ if(Math.hypot(a.x2-a.x1,a.y2-a.y1)>1.5) editaQ(Q=>Q.setas.push({id:nid("s"),t:qqSeta,x1:a.x1,y1:a.y1,x2:a.x2,y2:a.y2})); desenha(); return; }
+        if(a.sid){ folha(`<h3>Seta</h3><div class="actions"><button class="btn danger l" id="qs-del">Apagar seta</button><button class="btn primary" data-close>Fechar</button></div>`,(s,fecha)=>{ s.querySelector("#qs-del").onclick=()=>{ fecha(); editaQ(Q=>{ Q.setas=Q.setas.filter(x=>x.id!==a.sid); }); desenha(); }; }); return; }
+        if(a.mov){ editaQ(Q=>{ const p=Q.pecas.find(p=>p.id===a.k); p.x=Math.round(a.x*10)/10; p.y=Math.round(a.y*10)/10; }); desenha(); return; }
+        const P=Q.pecas.find(p=>p.id===a.k); if(!P) return;
+        folha(`<h3>${P.eq==="bola"?"Bola":P.eq==="adv"?esc(relAtual().adversario||"Adversário"):P.eq==="sca"?"SC Angrense":"Outra equipa"}</h3>${P.eq!=="bola"?`<label class="f">Número ou posição<input type="text" id="qp-n" maxlength="4" value="${esc(P.n)}"></label>`:""}
+          <div class="actions"><button class="btn danger l" id="qp-del">Apagar</button><button class="btn" data-close>Fechar</button>${P.eq!=="bola"?`<button class="btn primary" id="qp-ok">Guardar</button>`:""}</div>`,(s,fecha)=>{
+          confirma2(s.querySelector("#qp-del"),"Toca outra vez",()=>{ fecha(); editaQ(Q=>{ Q.pecas=Q.pecas.filter(p=>p.id!==a.k); }); desenha(); });
+          const ok=s.querySelector("#qp-ok"); if(ok) ok.onclick=()=>{ const n=s.querySelector("#qp-n").value.trim().toUpperCase(); fecha(); editaQ(Q=>{ Q.pecas.find(p=>p.id===a.k).n=n; }); desenha(); }; }); }}); };
+  desenha(); }
 
 function secFicha(R,box,ed){ box.innerHTML=`<header><h3>Ficha e jogos observados</h3><p>Um relatório por adversário. Junta aqui todos os jogos que viste: cada evidência fica ligada a um jogo e ao minuto do vídeo.</p></header>
   <div class="card"><div class="fields"><label class="f">Adversário<select data-b="adversario" data-rr><option value="">Escolher equipa</option>${EQUIPAS.map(([n,i])=>`<option value="${esc(n)}">${esc(n)} (${esc(i)})</option>`).join("")}${R.adversario&&!EQUIPAS.some(([n])=>n===R.adversario)?`<option value="${esc(R.adversario)}">${esc(R.adversario)}</option>`:""}</select></label><label class="f">Competição<input type="text" data-b="competicao"></label></div></div>
@@ -767,6 +878,8 @@ async function carregaNomes(ids){ if(!usr||!souDono) return; const falta=[...new
   try{ const ps=await usr.profiles(falta); let mud=false; falta.forEach(i=>{ const n=(ps[i]&&ps[i].name)||""; if(nomes[i]!==n){ nomes[i]=n; mud=true; } }); if(mud&&!aEscrever()) render(); }catch(e){} }
 
 /* ======================= arranque ======================= */
+function carregaCache(){ const c=LS(CACHE); if(c){ revs=c.revs||{}; Object.entries(c.rels||{}).forEach(([id,R])=>{ try{ rels[id]=normRel({...R,id}); }catch(e){} }); } const v=LS("sca-obs-vista"); if(v&&v.tipo) vista=v; }
+carregaCache();
 $("dl-eq").innerHTML=TODAS.map(n=>`<option value="${esc(n)}"></option>`).join("");
 render(); estado();
 (async()=>{
