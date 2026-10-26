@@ -7,7 +7,7 @@ Existe para dar acesso a um observador de fora do clube sem ele ver o resto da a
 - **Código:** `observacao/page.html` (um só ficheiro, um só `<script>`) + `observacao/planteis.json`
 - **Build:** `npm run build` → `dist/observacao.html` (a página, o logo, a bola e os planteis embutidos)
 - **Testes:** `npm run check` (sintaxe) e `npm run test:obs` (browser, PC e telemóvel; `-- --ipad` para WebKit)
-- **Versão publicada:** Obs. 20 (26/10/2026) — ver `CHANGELOG.md`
+- **Versão publicada:** Obs. 21 (26/10/2026) — ver `CHANGELOG.md`
 
 ## Quem usa e com que acesso
 | Quem | O que vê | O que faz |
@@ -27,6 +27,7 @@ Existe para dar acesso a um observador de fora do clube sem ele ver o resto da a
 "obs/{self}" read interact  write interact   (cada um escreve só no seu espaço)
 "base"      read interact   write interact   (planteis base; Obs. 13 escrevia só o dono, Obs. 14 todos)
 user: scopes ["profile"]   (nomes de quem observa)
+downloads: true             (PDF e PowerPoint, desde a Obs. 21)
 ```
 Verificado em 26/10/2026 (Obs. 13): ao nível `interact` lê-se `base` e não se escreve (regra da Obs. 13).
 
@@ -34,7 +35,7 @@ Verificado em 26/10/2026 (Obs. 13): ao nível `interact` lê-se `base` e não se
 | Caminho | Conteúdo |
 |---|---|
 | `obs/<uid>` | Marca de que o observador existe (o dono lista esta coleção para encontrar os observadores) |
-| `obs/<uid>/relatorios/<id>` | Um relatório por adversário (documento inteiro; só o autor escreve normalmente) |
+| `obs/<uid>/relatorios/<id>` | Um relatório por **jogo observado** (documento inteiro; só o autor escreve). `pend` {chave: true} = pontos que vieram do jogo anterior por confirmar (`chk:<id>`, `plantel`, `estr`, `bp:<id>`, `ref:<id>`, `sint`); `baseDe` {id, vs, data} = de que jogo vieram |
 | `obs/<uid>/revisoes/<id>` | Comentários do Rodrigo a esse relatório (só o dono escreve; documento separado para não haver choques) |
 | `base/<equipa>` | Plantel base de cada equipa (id = nome sem acentos, ex.: `sao-roque`): `equipa` + `plantel`, `plantelFonte`, `treinador`, `adjunto`, `trGR`, `sistema`, `capitao`, `plantelNotas`, `cores`, `plXY`, `plNom`. Quem observa lê e escreve. Um relatório novo copia-o (se não houver, usa o zerozero); no relatório há "Repor o plantel base" e "Guardar como plantel base" |
 
@@ -54,6 +55,9 @@ A cache carrega-se em `carregaCache()`, **depois** de todas as constantes existi
 ## Decisões do Rodrigo (não mudar sem ele)
 - **Guião em checklist** (`GUIAO`, 36 perguntas): opções para tocar, frequência (sempre / muitas vezes / às vezes), jogadores do plantel, notas opcionais, evidências; quadro tático nas 12 perguntas em que a posição conta. A Ligação ao 3-4-3 fica para o observador com opções simples; o Rodrigo completa na revisão.
 - **Ajustes do Rodrigo Fonte (26/10/2026, Obs. 19):** momentos do jogo chamam-se Organização ofensiva, Transição defesa-ataque, Transição ataque-defesa, Organização defensiva, Bolas paradas ofensivas e Bolas paradas defensivas (as bolas paradas passaram a duas secções, `bpo`/`bpd`); "Enviar para revisão" passa a "Submeter relatório"; sem botão nem referências ao zerozero; perguntas c_apoio, c_rut, r_1p e r_prof escolhem a posição e depois o jogador; p_prot ganha "3+1"; s_pb ganha "A meio do meio-campo adversário (2/3 do campo)"; jogos observados com onze inicial e acontecimentos; jogadores de referência escolhidos do plantel.
+- **Relatório por jogo (Rodrigo Fonte, 26/10/2026, Obs. 21):** cada relatório é um jogo. «+ Novo jogo» numa equipa copia do último jogo (o do próprio observador, senão o mais recente) as respostas, plantel e estrutura, bolas paradas, referências e síntese; cada ponto copiado fica a laranja ("por confirmar") até se confirmar ou mudar; evidências e ficha do jogo começam vazias. Submeter com pontos por confirmar pede 2 toques. O onze da ficha do jogo preenche as bolinhas da Estrutura (cada jogador na posição mais parecida do sistema habitual). Relatórios antigos com vários jogos: botão «Separar em relatórios por jogo».
+- **Histórico da equipa** (botão 📈 com 2 ou mais jogos): cada pergunta jogo a jogo, a laranja o que mudou em relação ao jogo anterior.
+- **PDF de cada jogo** (📄 PDF) e **PowerPoint para os jogadores** (📽 Apresentação: escolhem-se os pontos — estrutura, perguntas, bolas paradas, referências, síntese; cada evidência ligada a um ponto dá um diapositivo em branco com o jogo e o minuto, para pôr o clip). Bibliotecas carregadas só ao exportar: jsPDF (cdnjs) e PptxGenJS (jsDelivr); ficheiros entregues pela capacidade `downloads`.
 - **Síntese:** estrutura e comportamentos; 3 ameaças; 3 oportunidades; bolas paradas e jogadores; clips com frase.
 - **Princípios:** espírito de equipa, intensidade, organização, objetividade; referência o nosso 3-4-3.
 - **Plantel:** estilo do plantel da SCA Match Center (campo branco, números 1–11, nomes por baixo). O desenho segue o **sistema habitual**; há **onze provável** e **onze alternativo**, cada um com o seu sistema. Escolher um jogador no onze provável muda a posição dele no plantel; o alternativo não mexe.

@@ -140,6 +140,11 @@ textarea{resize:vertical;min-height:70px;line-height:1.45}
 .cores input[type=color]{width:52px;height:44px;padding:2px;border:1px solid var(--line);border-radius:8px;background:var(--surface);flex:none}
 .sw{display:flex;gap:6px;flex-wrap:wrap}.sw button{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);padding:0;min-height:0}
 .q.qok{border-color:color-mix(in srgb,var(--ok) 45%,var(--line))}
+.htab{border-collapse:collapse;font-size:13.5px;min-width:100%}.htab th,.htab td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;min-width:170px}
+.htab tbody th{position:sticky;left:0;background:var(--surface);font-weight:600;min-width:220px;max-width:300px}.htab tr.g th{background:var(--surface-2);font-family:var(--f-display);text-transform:uppercase;letter-spacing:.8px;font-size:12px;color:var(--muted)}
+.htab td.mud{background:var(--warn-soft);color:var(--ink)}
+.q.qpend{border:2px dashed var(--warn);background:color-mix(in srgb,var(--warn-soft) 55%,var(--surface))}
+.pendl{gap:8px;justify-content:space-between;font-size:14px;color:var(--warn);font-weight:600}
 .q.qok .qn{color:var(--ok)}
 .qop button{text-align:left}
 .qrod{justify-content:space-between;gap:8px}
@@ -378,7 +383,9 @@ function normRel(d){ const R={...d}; R.adversario=String(R.adversario||""); R.co
     quadro:{pecas:Array.isArray(qd.pecas)?qd.pecas.filter(p=>p&&p.id):[],setas:Array.isArray(qd.setas)?qd.setas.filter(x=>x&&x.id):[]}}; });
   Object.entries(R.resp||{}).forEach(([k,t])=>{ const id=Q_ANTIGO[k]; if(!id||!String(t||"").trim()) return; if(!R.chk[id]) R.chk[id]={op:[],freq:"",jog:[],nota:"",quadro:{pecas:[],setas:[]}}; if(!R.chk[id].nota.includes(String(t).trim())) R.chk[id].nota=(R.chk[id].nota?R.chk[id].nota+"\n":"")+String(t).trim(); });
   R.resp={}; R.evid.forEach(e=>{ if(Q_ANTIGO[e.q]) e.q=Q_ANTIGO[e.q]; });
-  R.clips=Array.isArray(R.clips)?R.clips.filter(c=>c&&c.id):[]; return R; }
+  R.clips=Array.isArray(R.clips)?R.clips.filter(c=>c&&c.id):[];
+  R.pend=Object.fromEntries(Object.entries(R.pend&&typeof R.pend==="object"?R.pend:{}).filter(([,v])=>v).map(([k])=>[k,true]));
+  R.baseDe=R.baseDe&&typeof R.baseDe==="object"?{id:String(R.baseDe.id||""),vs:String(R.baseDe.vs||""),data:String(R.baseDe.data||"")}:null; return R; }
 /* plantel base de cada equipa (base/<equipa>): quem observa lê e escreve (só no nível Editor); os relatórios novos partem dele.
    No ecrã é um "relatório" só com o Plantel (base:true), para usar o mesmo editor */
 const CAMPOS_BASE=["plantel","plantelFonte","treinador","adjunto","trGR","sistema","capitao","plantelNotas","cores","plXY","plNom"];
@@ -389,6 +396,40 @@ function docBase(R){ const b={equipa:R.adversario}; CAMPOS_BASE.forEach(k=>b[k]=
 function novoRel(adv){ const B=bases[slugEq(adv)], P=B?null:plantelZZ(adv);
   const daBase=B?{...docBase(B),plantelFonte:`Plantel base · ${new Date(B.atualizadoEm||Date.now()).toLocaleDateString("pt-PT")}`}:P?{plantel:P.jogadores,plantelFonte:P.fonte,treinador:P.treinador}:{};
   delete daBase.equipa; return normRel({id:nid("r"),autor:meId||"local",adversario:adv||"",competicao:COMP+" "+EPOCA,criadoEm:new Date().toISOString(),...daBase}); }
+/* um relatório = um jogo. Um jogo novo da mesma equipa parte do último (respostas, plantel, estrutura, bolas paradas,
+   referências e síntese); o que veio de lá fica em alerta (pend) até o observador confirmar ou mudar */
+const dataJogo=R=>String((R.jogos[0]&&R.jogos[0].data)||String(R.criadoEm||"").slice(0,10));
+const jogosDe=adv=>Object.values(rels).filter(R=>R.adversario===adv).sort((a,b)=>dataJogo(a).localeCompare(dataJogo(b))||String(a.criadoEm).localeCompare(String(b.criadoEm)));
+function ultimoDe(adv){ const ls=jogosDe(adv), meus=ls.filter(R=>R.autor===meId); return (meus.length?meus:ls).slice(-1)[0]||null; }
+const tituloJogo=R=>{ const J=R.jogos[0]; return J&&(J.vs||J.data)?`${J.vs?"vs "+J.vs:"Jogo"}${J.data?" · "+dataPt(J.data):""}`:"Jogo por preencher"; };
+const COPIA_JOGO=["plantel","plantelFonte","treinador","adjunto","trGR","sistema","capitao","plantelNotas","cores","plXY","plNom","onzes","onze","chk","bp","refs","sint"];
+function novoRelJogo(adv){ const R=novoRel(adv); R.jogos=[{id:nid("j"),vs:"",data:"",local:"",res:"",como:"",video:"",ctx:"",onze:[],acont:[]}];
+  const A=adv&&ultimoDe(adv); if(!A) return R;
+  const C=clone(A), pend={}; COPIA_JOGO.forEach(k=>{ if(C[k]!==undefined) R[k]=C[k]; });
+  Object.keys(R.chk||{}).forEach(id=>pend["chk:"+id]=true); if((R.plantel||[]).length) pend.plantel=true; pend.estr=true;
+  (R.bp||[]).forEach(b=>pend["bp:"+b.id]=true); (R.refs||[]).forEach(x=>pend["ref:"+x.id]=true);
+  const S=R.sint||{}; if(S.estrutura||(S.ameacas||[]).some(Boolean)||(S.oport||[]).some(Boolean)||S.bpref) pend.sint=true;
+  R.pend=pend; R.baseDe={id:A.id,vs:(A.jogos[0]||{}).vs||"",data:(A.jogos[0]||{}).data||""}; return normRel(R); }
+function tiraPend(R,k){ if(R&&R.pend&&R.pend[k]){ delete R.pend[k]; return true; } return false; }
+/* que alerta limpa uma alteração num campo (caminho do data-b) */
+function pendDeCaminho(c){ let m=/^chk\.([^.]+)/.exec(c); if(m) return "chk:"+m[1]; m=/^bp\.([^.]+)/.exec(c); if(m) return "bp:"+m[1]; m=/^refs\.([^.]+)/.exec(c); if(m) return "ref:"+m[1];
+  if(/^sint\./.test(c)) return "sint"; if(/^onze\./.test(c)) return "estr"; if(/^(plantel|treinador|adjunto|trGR|capitao|plantelNotas|cores|sistema|onzes)/.test(c)) return "plantel"; return null; }
+const nPendR=R=>Object.keys(R.pend||{}).length;
+function nPendSec(R,s){ const P=R.pend||{}; if(s.q) return GUIAO[s.k].filter(q=>P["chk:"+q.id]).length; if(s.lado) return R.bp.filter(b=>b.lado===s.lado&&P["bp:"+b.id]).length;
+  if(s.k==="jog") return R.refs.filter(x=>P["ref:"+x.id]).length; return P[{plantel:"plantel",estr:"estr",sint:"sint"}[s.k]]?1:0; }
+const vemDe=R=>R.baseDe&&(R.baseDe.vs||R.baseDe.data)?` (${[R.baseDe.vs?"vs "+R.baseDe.vs:"",R.baseDe.data?dataPt(R.baseDe.data):""].filter(Boolean).join(" · ")})`:"";
+function bannerPend(R,k,ed,txt){ return R.pend&&R.pend[k]?`<div class="banner pendb" style="margin:0"><span>⚠</span><span style="flex:1"><b>${txt||"Vem do jogo anterior"}${esc(vemDe(R))}.</b> Confirma se se mantém ou muda o que for diferente.</span>${ed?`<button type="button" class="btn sm" data-pconf="${esc(k)}">✓ Confirmar</button>`:""}</div>`:""; }
+/* onze da ficha do jogo → bolinhas da Estrutura no campo (sistema habitual; cada jogador vai para a posição mais parecida) */
+function onzeParaEstrutura(R){ const J=R.jogos[0]; if(!J||!J.onze.length) return; const sisP=R.sistema||"4-3-3", sis=SISTEMAS[sisP]?sisP:R.onze.com.sis, slots=SISTEMAS[sis], lay=layoutDe(sisP);
+  const js=J.onze.map(id=>R.plantel.find(j=>j.id===id)).filter(Boolean).map(j=>{ const c=posNoSis(j.slot,sisP), L=lay.find(x=>x[0]===c); return {j,gr:c==="GR",x:L?1-L[2]:.5,y:L?L[3]/.82:.5}; });
+  const res=Array(11).fill(null), g=js.findIndex(x=>x.gr); if(g>=0) res[0]=js.splice(g,1)[0];
+  const livres=slots.map((x,i)=>({i,x:x[2]/68,y:x[1]/68})).filter(x=>!res[x.i]);
+  while(js.length&&livres.length){ let b=null; js.forEach((p,a)=>livres.forEach((l,k)=>{ const d=Math.hypot(p.x-l.x,p.y-l.y)+(l.i===0&&!p.gr?9:0); if(!b||d<b.d) b={d,a,k}; })); res[livres[b.k].i]=js.splice(b.a,1)[0]; livres.splice(b.k,1); }
+  if(R.onze.com.sis!==sis){ R.onze.com={...R.onze.com,sis,pos:{}}; }
+  R.onze.jog=res.map((x,i)=>x?{n:x.j.n||"",pos:slots[i][0],nome:x.j.nome}:{n:"",pos:slots[i][0],nome:""}); tiraPend(R,"estr"); }
+/* relatórios antigos com vários jogos: um relatório por jogo */
+function separaJogos(R){ const [J0,...resto]=R.jogos; resto.forEach(J=>{ const N=clone(R); N.id=nid("r"); N.jogos=[J]; N.evid=R.evid.filter(e=>e.jogo===J.id); N.criadoEm=new Date().toISOString(); N.pend={}; guardaRel(normRel(N),true); });
+  editaRel(X=>{ X.jogos=[J0]; X.evid=X.evid.filter(e=>!resto.some(J=>J.id===e.jogo)); }); toast(`Separado em ${resto.length+1} relatórios`); }
 function relAtual(){ if(vista.tipo==="base") return bases[vista.id]||null; return vista.id&&rels[vista.id]?rels[vista.id]:null; }
 function podeEditar(R){ return !soLeitura&&R&&(R.base||R.autor===meId||souDono||semDb); }
 
@@ -436,7 +477,8 @@ function guardaRel(R,ja){ R.atualizadoEm=new Date().toISOString(); clearTimeout(
   if(R.base){ const s=R.id.slice(5); bases[s]=R; guardaCacheBase(); const f=()=>{ delete tSave[R.id]; gravaDoc(`base/${s}`,docBase(bases[s])); }; if(ja) f(); else tSave[R.id]=setTimeout(f,700); return; }
   rels[R.id]=R; guardaCache();
   const f=()=>{ delete tSave[R.id]; const b=clone(rels[R.id]); delete b.atualizadoEm; gravaDoc(relPath(R),b); }; if(ja) f(); else tSave[R.id]=setTimeout(f,700); }
-function editaRel(fn,semRender){ const R=relAtual(); if(!R||!podeEditar(R)) return; fn(R); guardaRel(R,true); if(!semRender) render(); }
+function editaRel(fn,semRender){ const R=relAtual(); if(!R||!podeEditar(R)) return; fn(R);
+  if(vista.tipo==="rel"){ const sc=vista.sec, pk=sc==="plantel"?"plantel":sc==="estr"?"estr":sc==="sint"?"sint":(sc==="bpo"||sc==="bpd")&&bpAberto?"bp:"+bpAberto:sc==="jog"&&jogAberto?"ref:"+jogAberto:null; if(pk) tiraPend(R,pk); } guardaRel(R,true); if(!semRender) render(); }
 
 /* ======================= campo (vertical: x 0–68 m largura, y 0–105 m comprimento) ======================= */
 const K=10;
@@ -452,6 +494,128 @@ function campoSvg(meio){ const L=68*K, C=(meio?36:105)*K, s='stroke="#111" strok
   h+=meio?`<path d="M 0 ${C} L 0 0 L ${L} 0 L ${L} ${C}" stroke="#111" stroke-width="4" fill="none"/>`:`<rect x="0" y="0" width="${L}" height="${C}" stroke="#111" stroke-width="4" fill="none"/>`;
   [[0,0,0,1],[L,0,-1,1]].concat(meio?[]:[[0,C,1,-1],[L,C,-1,-1]]).forEach(([x,y,dx,dy])=>h+=`<path d="M ${x+dx*10} ${y} A 10 10 0 0 ${dx*dy>0?1:0} ${x} ${y+dy*10}" ${s}/>`);
   return h; }
+/* ======================= histórico da equipa: cada pergunta, jogo a jogo ======================= */
+function respTexto(R,q){ const C=R.chk[q.id]; if(!C) return ""; const m=new Map(R.plantel.map(j=>[j.id,j])), fr=(FREQ_Q.find(f=>f[0]===C.freq)||[])[1];
+  const jg=C.jog.map(id=>{ const j=m.get(id); return j?(C.jp&&C.jp[id]?C.jp[id]+" ":"")+(j.n?j.n+" ":"")+j.nome:""; }).filter(Boolean);
+  return [C.op.join(", "),fr,jg.join(", ")].filter(Boolean).join(" · "); }
+function renderHist(adv){ const ls=jogosDe(adv); if(!ls.length){ vista={tipo:"lista",id:null,sec:"ficha"}; renderLista(); return; }
+  const cel=(t,mud)=>`<td${mud?' class="mud"':""}>${t?esc(t):'<span class="hint">—</span>'}</td>`;
+  const linha=(rot,fn)=>{ let ant=null; return `<tr><th>${rot}</th>${ls.map(R=>{ const t=fn(R), m=ant!==null&&ant!==""&&t!==ant; ant=t; return cel(t,m); }).join("")}</tr>`; };
+  let h=`${bannerAcesso()}<div class="rhead"><button class="btn sm ghost" id="voltar">← Relatórios</button><h2>${esc(adv)}</h2><span class="chip rasc">Histórico · ${ls.length} jogos</span></div>
+    <p class="hint" style="margin:-4px 0 12px;max-width:72ch">Cada resposta jogo a jogo, do mais antigo para o mais recente. A laranja: mudou em relação ao jogo anterior.</p>
+    <div class="card" style="padding:0;overflow:auto"><table class="htab"><thead><tr><th></th>${ls.map(R=>`<th><button type="button" class="btn sm ghost" data-id="${esc(R.id)}">${esc(tituloJogo(R))}</button>${R.jogos[0]&&R.jogos[0].res?`<br><span class="hint">${esc(R.jogos[0].res)}</span>`:""}</th>`).join("")}</tr></thead><tbody>
+    <tr class="g"><th colspan="${ls.length+1}">Equipa</th></tr>${linha("Sistema habitual",R=>R.sistema||"")}${linha("Treinador",R=>R.treinador||"")}`;
+  SEC_Q.forEach(S=>{ h+=`<tr class="g"><th colspan="${ls.length+1}">${esc(S.t)}</th></tr>`; GUIAO[S.k].forEach((q,i)=>h+=linha(`${i+1}. ${esc(q.t)}`,R=>respTexto(R,q))); });
+  h+=`<tr class="g"><th colspan="${ls.length+1}">Síntese</th></tr>${linha("Ameaças",R=>R.sint.ameacas.filter(Boolean).join(" | "))}${linha("Oportunidades",R=>R.sint.oport.filter(Boolean).join(" | "))}</tbody></table></div>`;
+  $("main").innerHTML=h;
+  $("voltar").onclick=()=>{ vista={tipo:"lista",id:null,sec:"ficha"}; render(); scrollTo(0,0); };
+  $("main").querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>{ vista={tipo:"rel",id:b.dataset.id,sec:"ficha"}; render(); scrollTo(0,0); }); }
+
+/* ======================= desenhos para exportar (sem nada de arrastar) ======================= */
+function svgQuadro(R,Q,meio,t){ const CC=corEq(R), H=meio?480:1170; let h=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 -40 760 ${H}" width="760" height="${H}"><rect x="-40" y="-40" width="760" height="${H}" fill="#fff"/><defs><marker id="ex0" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#000"/></marker></defs>${campoSvg(meio)}`;
+  (Q.setas||[]).forEach(x=>h+=`<line x1="${x.x1*K}" y1="${x.y1*K}" x2="${x.x2*K}" y2="${x.y2*K}" stroke="#000" stroke-width="4" ${x.t==="bola"?'stroke-dasharray="12 8"':""} marker-end="url(#ex0)"/>`);
+  ["out","sca","adv","bola"].forEach(eq=>(Q.pecas||[]).filter(x=>x.eq===eq).forEach(x=>{ const gr=x.n==="GR";
+    h+=eq==="bola"?bolaSvg(x.x,x.y,""):peca(x.x,x.y,x.n||"",eq==="adv"?(gr?CC.gr:CC.cam):eq==="sca"?(gr?COR.gr:COR.sca):COR.out,eq==="adv"?(gr?CC.grNum:CC.num):eq==="sca"&&gr?"#000":"#fff","",eq==="adv"&&!gr?CC.cam2:null,t||1); }));
+  return h+"</svg>"; }
+function svgEstrutura(R,est){ const O=R.onze, st=O[est], C=corEq(R); let h=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 -40 760 1170" width="760" height="1170"><rect x="-40" y="-40" width="760" height="1170" fill="#fff"/>${campoSvg(false)}`;
+  if(O.nos) for(let i=0;i<11;i++){ const b=posNos(i), x=O.nosPos[est][i]||b; h+=peca(x.x,x.y,b.pos,b.pos==="GR"?COR.gr:COR.sca,b.pos==="GR"?"#000":"#fff",""); }
+  for(let i=0;i<11;i++){ const b=posAdv(st.sis,i), x=st.pos[i]||b, J=O.jog[i], gr=i===0; h+=peca(x.x,x.y,J.n||J.pos||b.pos,gr?C.gr:C.cam,gr?C.grNum:C.num,"",gr?null:C.cam2); }
+  return h+"</svg>"; }
+/* jpg=true para o PDF (muito mais leve); PNG para o PowerPoint */
+function svgPng(svg,jpg){ return new Promise((ok,erro)=>{ const im=new Image(); im.onload=()=>{ const c=document.createElement("canvas"); c.width=im.naturalWidth||760; c.height=im.naturalHeight||1170; const x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); x.drawImage(im,0,0); ok({url:jpg?c.toDataURL("image/jpeg",.82):c.toDataURL("image/png"),w:c.width,h:c.height}); }; im.onerror=()=>erro(new Error("desenho")); im.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg); }); }
+const temQuadro=Q=>Q&&(Q.pecas||[]).length>0;
+const temEstrutura=R=>R.onze.jog.some(j=>j.n||j.nome);
+
+/* ======================= ficheiros: bibliotecas (só quando se exporta) e entrega ======================= */
+const LIBS={pdf:"https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",ppt:"https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"};
+const libsCarregadas={};
+function carregaLib(k){ return libsCarregadas[k]||(libsCarregadas[k]=new Promise((ok,erro)=>{ const sc=document.createElement("script"); sc.src=LIBS[k]; sc.onload=()=>ok(); sc.onerror=()=>{ libsCarregadas[k]=null; erro(new Error("Sem rede: não foi possível preparar o ficheiro")); }; document.head.appendChild(sc); })); }
+async function entregaFicheiro(nome,blob){ let dl=null; try{ dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null; }catch(e){ dl=null; }
+  if(dl){ try{ await dl.save({filename:nome,data:blob}); toast("Ficheiro pronto"); }catch(e){ if(e?.code!=="declined") toast("Não foi possível entregar o ficheiro ("+(e?.code||"erro")+")"); } return; }
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=nome; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),5000); }
+const nomeFicheiro=(R,ext)=>`Observacao_${slugEq(R.adversario||"adversario")}_${(R.jogos[0]&&R.jogos[0].data)||"jogo"}_${slugEq((R.jogos[0]&&R.jogos[0].vs)||"")||"x"}.${ext}`;
+const textoAc=(R,a)=>{ const n=id=>{ const j=R.plantel.find(x=>x.id===id); return j?(j.n?j.n+" ":"")+j.nome:"?"; }; return a.t==="golo"?(a.eq==="contra"?"Golo do adversário":"Golo · "+n(a.jog)):a.t==="sub"?`Substituição · sai ${n(a.jog)} · entra ${n(a.jog2)}`:(a.t==="am"?"Amarelo · ":"Vermelho · ")+n(a.jog); };
+const minEv=e=>e.min?e.min+(/:/.test(e.min)?"":"'"):"";
+
+/* ======================= PDF do relatório de um jogo ======================= */
+async function geraPdf(R){ await carregaLib("pdf"); const {jsPDF}=window.jspdf, d=new jsPDF({unit:"mm",format:"a4"}), W=210, M=14, LW=W-2*M; let y=0;
+  const novaPag=()=>{ d.addPage(); y=M; }, cabe=h=>{ if(y+h>285) novaPag(); };
+  const txt=(t,{t:tam=10,b=false,cor=[27,26,23],x=M,w=LW,esp=1.2}={})=>{ if(!t) return; d.setFont("helvetica",b?"bold":"normal"); d.setFontSize(tam); d.setTextColor(...cor); const ls=d.splitTextToSize(String(t),w), lh=tam*.36*esp; ls.forEach(l=>{ cabe(lh); d.text(l,x,y+lh*.8); y+=lh; }); };
+  const tit=t=>{ cabe(14); y+=3; d.setFillColor(192,0,0); d.rect(M,y,LW,7,"F"); d.setFont("helvetica","bold"); d.setFontSize(11); d.setTextColor(255,255,255); d.text(t.toUpperCase(),M+2,y+5); y+=10; };
+  const img=async(svg,w)=>{ try{ const P=await svgPng(svg,true), h=w*P.h/P.w; cabe(h+2); d.addImage(P.url,"JPEG",M,y,w,h); y+=h+3; }catch(e){} };
+  const J=R.jogos[0]||{acont:[],onze:[]}, nm=id=>{ const j=R.plantel.find(x=>x.id===id); return j?(j.n?j.n+" ":"")+j.nome:""; };
+  d.setFillColor(27,26,23); d.rect(0,0,W,26,"F"); d.setFont("helvetica","bold"); d.setFontSize(18); d.setTextColor(255,255,255); d.text(`${R.adversario||"Adversário"} ${J.vs?"vs "+J.vs:""}`,M,12);
+  d.setFontSize(10); d.setFont("helvetica","normal"); d.text([`SC Angrense · Observação de adversários`,[J.data?dataPt(J.data):"",J.local==="casa"?"Em casa":J.local==="fora"?"Fora":"",J.res?"Resultado "+J.res:"",R.autor!==meId&&nomes[R.autor]?"Observador: "+nomes[R.autor]:""].filter(Boolean).join(" · ")].join("   "),M,20); y=32;
+  tit("Ficha do jogo"); txt([R.competicao,J.como?"Observado: "+({vivo:"ao vivo",video:"vídeo",ambos:"ao vivo e vídeo"}[J.como]||J.como):"",J.video?"Vídeo: "+J.video:""].filter(Boolean).join(" · "));
+  if(J.onze.length) txt("Onze inicial: "+J.onze.map(nm).filter(Boolean).join(", "));
+  J.acont.slice().sort((a,b)=>(parseInt(a.min)||0)-(parseInt(b.min)||0)).forEach(a=>txt(`${a.min?a.min+"'":"–"}  ${textoAc(R,a)}`));
+  if(J.ctx) txt("Contexto: "+J.ctx);
+  tit("Equipa"); txt([R.sistema?"Sistema habitual: "+R.sistema:"",R.treinador?"Treinador: "+R.treinador:"",R.capitao?"Capitão: "+nm(R.capitao):""].filter(Boolean).join(" · ")); if(R.plantelNotas) txt(R.plantelNotas);
+  if(temEstrutura(R)){ tit("Estrutura no campo"); const y0=y; cabe(140); const yy=y; for(const [k,x] of [["com",M],["sem",M+LW/2+2]]){ try{ const P=await svgPng(svgEstrutura(R,k),true), w=LW/2-2, h=w*P.h/P.w; d.addImage(P.url,"JPEG",x,yy+5,w,h); d.setFont("helvetica","bold"); d.setFontSize(9); d.setTextColor(27,26,23); d.text(k==="com"?`Com bola · ${R.onze.com.sis}`:`Sem bola · ${R.onze.sem.sis}`,x,yy+3); y=Math.max(y,yy+5+h+3); }catch(e){} }
+    [R.onze.com.nota,R.onze.sem.nota].forEach((n,i)=>n&&txt((i?"Sem bola: ":"Com bola: ")+n)); }
+  for(const S of SEC_Q){ const qs=GUIAO[S.k].filter(q=>respondida(R,q.id)); if(!qs.length) continue; tit(S.t);
+    for(const q of qs){ const C=R.chk[q.id], i=GUIAO[S.k].indexOf(q)+1; y+=1; txt(`${i}. ${q.t}`,{b:true,t:10.5}); const r=respTexto(R,q); if(r) txt(r,{cor:[60,60,60]}); if(C.nota) txt("Notas: "+C.nota,{cor:[90,90,90],t:9.5});
+      if(q.quadro&&temQuadro(C.quadro)) await img(svgQuadro(R,C.quadro,q.quadro==="meio"),q.quadro==="meio"?110:70);
+      R.evid.filter(e=>e.q===q.id).forEach(e=>txt(`• ${minEv(e)?minEv(e)+" · ":""}${e.txt||""}${e.freq?" ("+(FREQ[e.freq]||e.freq).toLowerCase()+")":""}`,{t:9.5})); } }
+  for(const [lado,nmL] of [["of","Bolas paradas ofensivas"],["def","Bolas paradas defensivas"]]){ const bs=R.bp.filter(b=>b.lado===lado); if(!bs.length) continue; tit(nmL);
+    for(const B of bs){ y+=1; txt(nomeBp(B),{b:true,t:10.5}); BP_ASP.forEach(([k,t])=>B.asp[k]&&txt(`${t}: ${B.asp[k]}`,{t:9.5})); if(temQuadro(B)) await img(svgQuadro(R,B,true,.65),110);
+      R.evid.filter(e=>e.q==="bp:"+B.id).forEach(e=>txt(`• ${minEv(e)?minEv(e)+" · ":""}${e.txt||""}`,{t:9.5})); } }
+  if(R.refs.length){ tit("Jogadores de referência"); R.refs.forEach(x=>{ y+=1; txt(`${x.n?x.n+" ":""}${x.nome||"Sem nome"}${x.pos?" · "+x.pos:""}`,{b:true,t:10.5}); const pp=x.papeis.map(k=>PAPEIS[k]).filter(Boolean).join(", "); if(pp) txt(pp,{cor:[90,90,90],t:9.5}); if(x.fortes) txt(x.fortes,{t:9.5});
+    R.evid.filter(e=>e.q==="jogd:"+x.id).forEach(e=>txt(`• Dificuldade: ${minEv(e)?minEv(e)+" · ":""}${e.txt||""}`,{t:9.5})); }); }
+  const S=R.sint; if(S.estrutura||S.ameacas.some(Boolean)||S.oport.some(Boolean)||S.bpref){ tit("Síntese"); if(S.estrutura) txt(S.estrutura);
+    S.ameacas.forEach((a,i)=>a&&txt(`Ameaça ${i+1}: ${a}`)); S.oport.forEach((a,i)=>a&&txt(`Oportunidade ${i+1}: ${a}`)); if(S.bpref) txt("Bolas paradas e jogadores: "+S.bpref); }
+  const n=d.getNumberOfPages(); for(let i=1;i<=n;i++){ d.setPage(i); d.setFont("helvetica","normal"); d.setFontSize(8); d.setTextColor(140,140,140); d.text(`${R.adversario} · ${tituloJogo(R)} · ${i}/${n}`,W-M,292,{align:"right"}); }
+  return d.output("blob"); }
+async function exportaPdf(R,btn){ const o=btn&&btn.textContent; if(btn){ btn.disabled=true; btn.textContent="A preparar…"; }
+  try{ await entregaFicheiro(nomeFicheiro(R,"pdf"),await geraPdf(R)); }catch(e){ toast(e.message||"Não foi possível gerar o PDF"); } finally{ if(btn){ btn.disabled=false; btn.textContent=o; } } }
+
+/* ======================= PowerPoint para os jogadores: só os pontos escolhidos; cada evidência dá um diapositivo em branco para o clip ======================= */
+function pontosApresentacao(R){ const P=[]; if(temEstrutura(R)) P.push({k:"estr",g:"Estrutura",t:"Estrutura no campo (com e sem bola)"});
+  SEC_Q.forEach(S=>GUIAO[S.k].forEach((q,i)=>{ if(respondida(R,q.id)) P.push({k:"q:"+q.id,g:S.t,t:`${i+1}. ${q.t}`}); }));
+  [["of","Bolas paradas ofensivas"],["def","Bolas paradas defensivas"]].forEach(([l,g])=>R.bp.filter(b=>b.lado===l).forEach(B=>P.push({k:"bp:"+B.id,g,t:nomeBp(B)})));
+  R.refs.forEach(x=>P.push({k:"ref:"+x.id,g:"Jogadores de referência",t:`${x.n?x.n+" ":""}${x.nome||"Sem nome"}`}));
+  if(R.sint.ameacas.some(Boolean)||R.sint.oport.some(Boolean)) P.push({k:"sint",g:"Síntese",t:"Ameaças e oportunidades"}); return P; }
+function folhaApresentacao(R){ const P=pontosApresentacao(R); if(!P.length){ toast("Ainda não há respostas para mostrar."); return; } const sel=new Set(); let g="";
+  folha(`<h3>Apresentação para os jogadores</h3><p class="hint" style="margin:0">Escolhe os pontos a mostrar. Cada evidência ligada a um ponto dá um diapositivo em branco, com o jogo e o minuto, para pores o clip.</p>
+    <div class="evs" id="ap-l" style="max-height:52vh;overflow:auto">${P.map(x=>{ const h=x.g!==g?`<h4 style="margin:8px 0 2px">${esc(x.g)}</h4>`:""; g=x.g; const ne=x.k.startsWith("q:")?R.evid.filter(e=>e.q===x.k.slice(2)).length:x.k.startsWith("bp:")?R.evid.filter(e=>e.q===x.k).length:x.k.startsWith("ref:")?R.evid.filter(e=>e.q==="jogd:"+x.k.slice(4)).length:0;
+      return h+`<button type="button" class="ev" data-k="${esc(x.k)}" aria-pressed="false" style="grid-template-columns:28px minmax(0,1fr)"><span class="tm">☐</span><span class="tx">${esc(x.t)}${ne?` <span class="hint">· ${ne} ${ne===1?"clip":"clips"}</span>`:""}</span></button>`; }).join("")}</div>
+    <div class="actions"><button class="btn l" id="ap-todos">Escolher todos</button><button class="btn" data-close>Cancelar</button><button class="btn primary" id="ap-ok" disabled>Gerar PowerPoint</button></div>`,(s_,fecha)=>{
+    const pinta=()=>{ s_.querySelectorAll("#ap-l [data-k]").forEach(b=>{ const on=sel.has(b.dataset.k); b.setAttribute("aria-pressed",String(on)); b.querySelector(".tm").textContent=on?"☑":"☐"; b.style.borderColor=on?"var(--red)":""; }); const ok=s_.querySelector("#ap-ok"); ok.disabled=!sel.size; ok.textContent=sel.size?`Gerar PowerPoint (${sel.size})`:"Gerar PowerPoint"; };
+    s_.querySelectorAll("#ap-l [data-k]").forEach(b=>b.onclick=()=>{ const k=b.dataset.k; sel.has(k)?sel.delete(k):sel.add(k); pinta(); });
+    s_.querySelector("#ap-todos").onclick=()=>{ P.forEach(x=>sel.add(x.k)); pinta(); };
+    s_.querySelector("#ap-ok").onclick=async()=>{ const b=s_.querySelector("#ap-ok"); b.disabled=true; b.textContent="A preparar…"; try{ const blob=await geraPptx(R,P.filter(x=>sel.has(x.k)).map(x=>x.k)); fecha(); await entregaFicheiro(nomeFicheiro(R,"pptx"),blob); }catch(e){ b.disabled=false; pinta(); toast(e.message||"Não foi possível gerar o PowerPoint"); } }; }); }
+async function geraPptx(R,chaves){ await carregaLib("ppt"); const pp=new window.PptxGenJS(); pp.layout="LAYOUT_WIDE"; pp.title=`${R.adversario} · ${tituloJogo(R)}`;
+  const J=R.jogos[0]||{}, F="Arial", logo=(document.querySelector(".brand img")||{}).src||"", sem=u=>u.replace(/^data:/,"");
+  const cab=(sl,a,b)=>{ sl.background={color:"FFFFFF"}; sl.addText([{text:a,options:{color:"1B1A17",bold:true}},{text:b?"  "+b:"",options:{color:"C00000",bold:true}}],{x:.5,y:.3,w:11.3,h:.8,fontFace:F,fontSize:24,valign:"middle",isTextBox:true,margin:0,fit:"shrink"});
+    sl.addShape(pp.ShapeType.rect,{x:.5,y:1.12,w:11.3,h:.06,fill:{color:"C9B26B"},line:{color:"C9B26B"}}); if(logo) sl.addImage({data:sem(logo),x:12.25,y:.25,w:.75,h:.7}); };
+  const lista=(sl,linhas,x,y,w,h)=>{ const runs=[]; linhas.forEach(([t,o],i)=>runs.push({text:t,options:{...o,breakLine:i<linhas.length-1}})); if(runs.length) sl.addText(runs,{x,y,w,h,fontFace:F,fontSize:16,color:"1B1A17",valign:"top",isTextBox:true,margin:0,paraSpaceAfter:6,fit:"shrink"}); };
+  const clip=(grupo,titulo,e)=>{ const sl=pp.addSlide(); sl.background={color:"FFFFFF"}; sl.addText(`Clip · ${grupo}`,{x:.5,y:.3,w:12.3,h:.5,fontFace:F,fontSize:16,bold:true,color:"C00000",isTextBox:true,margin:0});
+    sl.addText(`${titulo}  ·  ${J.vs?"vs "+J.vs+" · ":""}${minEv(e)?"minuto "+minEv(e):"minuto por indicar"}`,{x:.5,y:.8,w:12.3,h:.45,fontFace:F,fontSize:13,color:"6B675E",isTextBox:true,margin:0,fit:"shrink"});
+    sl.addShape(pp.ShapeType.rect,{x:.5,y:1.45,w:12.33,h:5.75,fill:{color:"F3F1EC"},line:{color:"C9C4B8",dashType:"dash",width:1}}); };
+  const capa=pp.addSlide(); capa.background={color:"1B1A17"}; if(logo) capa.addImage({data:sem(logo),x:.7,y:.6,w:1.3,h:1.2});
+  capa.addText(R.adversario||"Adversário",{x:.7,y:2.4,w:11.9,h:1.2,fontFace:F,fontSize:44,bold:true,color:"FFFFFF",isTextBox:true,margin:0});
+  capa.addText([J.vs?"vs "+J.vs:"",J.data?dataPt(J.data):"",J.res||""].filter(Boolean).join("  ·  "),{x:.7,y:3.6,w:11.9,h:.6,fontFace:F,fontSize:20,color:"C9B26B",isTextBox:true,margin:0});
+  capa.addText("SC Angrense · Observação de adversários",{x:.7,y:6.6,w:11.9,h:.4,fontFace:F,fontSize:12,color:"A39E93",isTextBox:true,margin:0});
+  const m=new Map(R.plantel.map(j=>[j.id,j]));
+  for(const k of chaves){
+    if(k==="estr"){ const sl=pp.addSlide(); cab(sl,"Estrutura no campo",""); for(const [e,x] of [["com",1.2],["sem",7.2]]){ try{ const P=await svgPng(svgEstrutura(R,e)), h=5.6, w=h*P.w/P.h; sl.addImage({data:sem(P.url),x,y:1.55,w,h}); sl.addText(e==="com"?`Com bola · ${R.onze.com.sis}`:`Sem bola · ${R.onze.sem.sis}`,{x,y:1.3,w:4,h:.3,fontFace:F,fontSize:12,bold:true,color:"1B1A17",isTextBox:true,margin:0}); }catch(er){} } continue; }
+    if(k.startsWith("q:")){ const q=Q_POR_ID[k.slice(2)], S=SEC_Q.find(x=>GUIAO[x.k].includes(q)), C=R.chk[q.id], sl=pp.addSlide(); cab(sl,S.t,q.t);
+      const fr=(FREQ_Q.find(f=>f[0]===C.freq)||[])[1], L=[]; C.op.forEach(o=>L.push([o,{bullet:true,bold:true}])); if(fr) L.push([`Frequência: ${fr}`,{color:"6B675E"}]);
+      C.jog.forEach(id=>{ const j=m.get(id); if(j) L.push([`${C.jp&&C.jp[id]?C.jp[id]+" · ":""}${j.n?j.n+" ":""}${j.nome}`,{bullet:true}]); }); if(C.nota) L.push([C.nota,{italic:true,color:"6B675E"}]);
+      const qd=q.quadro&&temQuadro(C.quadro); lista(sl,L,.5,1.5,qd?6:12.3,5.6);
+      if(qd){ try{ const P=await svgPng(svgQuadro(R,C.quadro,q.quadro==="meio")), mh=5.7, mw=6, r=P.w/P.h, w=Math.min(mw,mh*r), h=w/r; sl.addImage({data:sem(P.url),x:6.8+(mw-w)/2,y:1.45,w,h}); }catch(er){} }
+      R.evid.filter(e=>e.q===q.id).forEach(e=>clip(S.t,q.t,e)); continue; }
+    if(k.startsWith("bp:")){ const B=R.bp.find(b=>"bp:"+b.id===k); if(!B) continue; const g=B.lado==="of"?"Bolas paradas ofensivas":"Bolas paradas defensivas", sl=pp.addSlide(); cab(sl,g,nomeBp(B));
+      const L=[]; BP_ASP.forEach(([a,t])=>{ if(B.asp[a]){ L.push([t,{bold:true}]); L.push([B.asp[a],{}]); } }); lista(sl,L,.5,1.5,temQuadro(B)?5.3:12.3,5.6);
+      if(temQuadro(B)){ try{ const P=await svgPng(svgQuadro(R,B,true,.65)), w=6.9, h=w*P.h/P.w; sl.addImage({data:sem(P.url),x:6,y:1.5,w,h}); }catch(er){} }
+      R.evid.filter(e=>e.q===k).forEach(e=>clip(g,nomeBp(B),e)); continue; }
+    if(k.startsWith("ref:")){ const x=R.refs.find(r=>"ref:"+r.id===k); if(!x) continue; const sl=pp.addSlide(); cab(sl,"Jogador de referência",`${x.n?x.n+" ":""}${x.nome}${x.pos?" · "+x.pos:""}`);
+      const L=[]; const pa=x.papeis.map(a=>PAPEIS[a]).filter(Boolean); if(pa.length) L.push([pa.join(", "),{bold:true}]); if(x.fortes) L.push([x.fortes,{}]); lista(sl,L,.5,1.5,12.3,5.6);
+      R.evid.filter(e=>e.q==="jogd:"+x.id).forEach(e=>clip("Jogador de referência",`${x.nome} · dificuldade`,e)); continue; }
+    if(k==="sint"){ const sl=pp.addSlide(); cab(sl,"Síntese","Ameaças e oportunidades"); const A=R.sint.ameacas.filter(Boolean), O=R.sint.oport.filter(Boolean);
+      lista(sl,[["Ameaças",{bold:true,color:"C00000"}],...A.map(t=>[t,{bullet:true}])],.5,1.5,6,5.6); lista(sl,[["Oportunidades",{bold:true,color:"1E7A46"}],...O.map(t=>[t,{bullet:true}])],6.8,1.5,6,5.6); } }
+  return pp.write({outputType:"blob"}); }
+
 function svgPt(svg,e){ const p=svg.createSVGPoint(); p.x=e.clientX; p.y=e.clientY; const q=p.matrixTransform(svg.getScreenCTM().inverse()); return {x:q.x/K,y:q.y/K}; }
 const COR={sca:"#C00000",gr:"#FFFF00",out:"#7F7F7F"};
 /* cores do equipamento dos adversários, confirmadas pelo Rodrigo Fonte (26/10/2026); o observador muda-as no relatório */
@@ -488,7 +652,7 @@ function render(){ try{ render0(); }catch(e){ console.error(e); $("fab").hidden=
 function render0(){ if(vista.tipo==="base"&&!bases[vista.id]){ const eq=EQUIPAS.find(([n])=>slugEq(n)===vista.id); if(eq) bases[vista.id]=baseNova(eq[0]); }
   const R=relAtual(); if((vista.tipo==="rel"||vista.tipo==="base")&&!R){ vista={tipo:"lista",id:null,sec:"ficha"}; }
   $("fab").hidden=vista.tipo!=="rel"||!podeEditar(relAtual()); guardaVista();
-  const sy=scrollY; vista.tipo==="rel"?renderRel(relAtual()):vista.tipo==="base"?renderBase(relAtual()):renderLista(); if(render.mesma) scrollTo(0,sy); render.mesma=false; }
+  const sy=scrollY; vista.tipo==="rel"?renderRel(relAtual()):vista.tipo==="base"?renderBase(relAtual()):vista.tipo==="hist"?renderHist(vista.id):renderLista(); if(render.mesma) scrollTo(0,sy); render.mesma=false; }
 /* plantel base de uma equipa: só a secção Plantel, sem relatório */
 function renderBase(R){ const ed=podeEditar(R);
   $("main").innerHTML=`${bannerAcesso()}<div class="rhead"><button class="btn sm ghost" id="voltar" aria-label="Voltar aos relatórios">← Relatórios</button><h2>${esc(R.adversario)}</h2><span class="chip rasc">Plantel base</span></div>
@@ -502,46 +666,51 @@ function renderBase(R){ const ed=podeEditar(R);
 function contagens(R){ const resp=TODAS_Q.filter(q=>respondida(R,q.id)).length, tot=TODAS_Q.length;
   return {resp,tot,ev:R.evid.length,soltas:R.evid.filter(e=>!e.q).length}; }
 function renderLista(){ const ls=Object.values(rels).sort((a,b)=>String(b.atualizadoEm||b.criadoEm).localeCompare(String(a.atualizadoEm||a.criadoEm)));
-  const avisos=bannerAcesso(); let h=`${avisos}<div class="lhead"><div><h2>Relatórios de observação</h2><p>Um relatório por adversário do campeonato, com vários jogos observados. Vês os relatórios de todos; cada um edita os seus e a equipa técnica revê.</p></div>${!soLeitura?`<button class="btn" id="novo">+ Outro adversário</button>`:""}</div>`;
-  const cartao=R=>{ const c=contagens(R), rv=revs[R.id], est=rv&&rv.revisto?["rev","Revisto"]:R.estado==="env"?["env","Submetido"]:["rasc","Em curso"];
-      return `<button class="rcard" data-id="${esc(R.id)}"><div class="row" style="justify-content:space-between;width:100%"><span class="chip ${est[0]}">${est[1]}</span>${R.autor!==meId?`<span class="hint">${esc(nomes[R.autor]||"Observador")}</span>`:""}</div>
-        <h3>${esc(R.adversario||"Adversário por definir")}</h3><div class="meta"><span><b>${R.jogos.length}</b> ${R.jogos.length===1?"jogo":"jogos"}</span><span><b>${c.resp}/${c.tot}</b> perguntas</span><span><b>${c.ev}</b> evidências</span>${c.soltas?`<span style="color:var(--warn)"><b>${c.soltas}</b> por arrumar</span>`:""}</div>
-        <div class="meta">Atualizado ${new Date(R.atualizadoEm||R.criadoEm).toLocaleDateString("pt-PT")}</div></button>`; };
+  const avisos=bannerAcesso(); let h=`${avisos}<div class="lhead"><div><h2>Relatórios de observação</h2><p>Um relatório por jogo observado. Num jogo novo da mesma equipa, o relatório vem preenchido com o último jogo, para confirmar ou mudar. Vês os relatórios de todos; cada um edita os seus e a equipa técnica revê.</p></div>${!soLeitura?`<button class="btn" id="novo">+ Outro adversário</button>`:""}</div>`;
+  const estDe=R=>{ const rv=revs[R.id]; return rv&&rv.revisto?["rev","Revisto"]:R.estado==="env"?["env","Submetido"]:["rasc","Em curso"]; };
+  const linhaJogo=R=>{ const c=contagens(R), e=estDe(R), np=nPendR(R);
+      return `<button class="ev" data-id="${esc(R.id)}" style="grid-template-columns:minmax(0,1fr) auto;align-items:center"><span class="tx"><b>${esc(tituloJogo(R))}</b><br><span class="hint">${c.resp}/${c.tot} perguntas · ${c.ev} evidências${np?` · <span style="color:var(--warn)">⚠ ${np} por confirmar</span>`:""}${R.autor!==meId?" · "+esc(nomes[R.autor]||"Observador"):""}</span></span><span class="chip ${e[0]}">${e[1]}</span></button>`; };
+  const cartaoEq=(n,ilha,rs)=>`<div class="rcard"${rs.length?"":' style="box-shadow:none;background:var(--surface-2);border-style:dashed"'}><div class="row" style="justify-content:space-between;width:100%"><span class="hint">${esc(ilha||"")}</span>${rs.length>1?`<button type="button" class="btn sm ghost" data-hist="${esc(n)}">📈 Histórico</button>`:""}</div>
+      <h3>${esc(n||"Adversário por definir")}</h3>${rs.length?`<div class="evs">${rs.slice().reverse().map(linhaJogo).join("")}</div>`:`<div class="meta">Ainda sem jogos observados</div>`}
+      ${!soLeitura&&n?`<button type="button" class="btn sm${rs.length?"":" primary"}" data-novo="${esc(n)}" style="align-self:flex-start">+ ${rs.length?"Novo jogo":"Começar observação"}</button>`:""}</div>`;
   const feitas=EQUIPAS.filter(([n])=>ls.some(R=>R.adversario===n)).length;
   h+=`<div class="row" style="justify-content:space-between;margin:0 0 10px"><h3 style="font-size:19px">${COMP} ${EPOCA}</h3><span class="hint"><b style="color:var(--ink)">${feitas}/${EQUIPAS.length}</b> adversários com relatório</span></div><div class="cards" style="margin-bottom:22px">`;
-  EQUIPAS.forEach(([n,ilha])=>{ const rs=ls.filter(R=>R.adversario===n);
-    if(rs.length) rs.forEach(R=>h+=cartao(R));
-    else h+=`<div class="rcard" style="box-shadow:none;background:var(--surface-2);border-style:dashed"><span class="hint">${esc(ilha)}</span><h3>${esc(n)}</h3><div class="meta">Ainda sem relatório</div>${!soLeitura?`<button class="btn sm" data-novo="${esc(n)}" style="align-self:flex-start">+ Começar observação</button>`:""}</div>`; });
+  EQUIPAS.forEach(([n,ilha])=>{ h+=cartaoEq(n,ilha,jogosDe(n)); });
   h+=`</div>`;
   /* planteis base: mexer no plantel de cada equipa sem começar um relatório */
   h+=`<div class="row" style="justify-content:space-between;margin:0 0 10px"><h3 style="font-size:19px">Planteis base</h3><span class="hint">${soLeitura?"Planteis de partida dos relatórios novos (só leitura).":"Mexe no plantel de cada equipa sem começar um relatório; os relatórios novos partem dele."}</span></div>
     <div class="row" style="margin-bottom:22px">${EQUIPAS.map(([n])=>{ const B=bases[slugEq(n)]; return `<button class="btn" data-base="${slugEq(n)}">${esc(n)}${B&&B.atualizadoEm?`<span class="hint" style="font-weight:400"> · ${B.plantel.length}</span>`:""}</button>`; }).join("")}</div>`;
   const outros=ls.filter(R=>!EQUIPAS.some(([n])=>n===R.adversario));
-  if(outros.length){ h+=`<h3 style="font-size:19px;margin:0 0 10px">Outros adversários</h3><div class="cards">`; outros.forEach(R=>h+=cartao(R)); h+=`</div>`; }
+  if(outros.length){ h+=`<h3 style="font-size:19px;margin:0 0 10px">Outros adversários</h3><div class="cards">`; [...new Set(outros.map(R=>R.adversario))].forEach(n=>h+=cartaoEq(n,"",jogosDe(n))); h+=`</div>`; }
   if(false) h+=`<div class="empty"><b>Ainda não há relatórios.</b><span>Cria um relatório por adversário. Dentro dele tens o guião de perguntas, o campo para a estrutura, as bolas paradas, os jogadores de referência e a síntese final. No estádio, usa o botão <b>+ Nota</b> para registar depressa e arrumar depois.</span>${!soLeitura?`<button class="btn primary" id="novo2">+ Criar o primeiro relatório</button>`:""}</div>`;
   $("main").innerHTML=h;
-  const cria=adv=>{ const R=novoRel(adv); guardaRel(R,true); if(db&&meId) gravaDoc(`obs/${meId}`,{ativo:true}); vista={tipo:"rel",id:R.id,sec:"ficha"}; render(); scrollTo(0,0); };
+  const cria=adv=>{ const R=novoRelJogo(adv); guardaRel(R,true); if(db&&meId) gravaDoc(`obs/${meId}`,{ativo:true}); vista={tipo:"rel",id:R.id,sec:"ficha"}; render(); scrollTo(0,0); };
   [$("novo"),$("novo2")].forEach(b=>b&&(b.onclick=()=>cria(""))); $("main").querySelectorAll("[data-novo]").forEach(b=>b.onclick=()=>cria(b.dataset.novo));
   $("main").querySelectorAll("[data-base]").forEach(b=>b.onclick=()=>{ vista={tipo:"base",id:b.dataset.base,sec:"plantel"}; render(); scrollTo(0,0); });
-  $("main").querySelectorAll("button.rcard").forEach(b=>b.onclick=()=>{ vista={tipo:"rel",id:b.dataset.id,sec:"ficha"}; bpAberto=null; jogAberto=null; render(); scrollTo(0,0); });
+  $("main").querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>{ vista={tipo:"rel",id:b.dataset.id,sec:"ficha"}; bpAberto=null; jogAberto=null; render(); scrollTo(0,0); });
+  $("main").querySelectorAll("[data-hist]").forEach(b=>b.onclick=()=>{ vista={tipo:"hist",id:b.dataset.hist,sec:"ficha"}; render(); scrollTo(0,0); });
   carregaNomes(ls.map(r=>r.autor)); }
 function bannerAcesso(){ if(soLeitura) return `<div class="banner" style="margin-bottom:12px"><span>🔒</span><span><b>Sem permissão para gravar.</b> Pede à equipa técnica acesso de <b>Editor</b> a esta página.</span></div>`;
   if(semDb) return `<div class="banner" style="margin-bottom:12px"><span>⚠</span><span><b>Sem ligação à base de dados.</b> O que registares fica só neste aparelho até a ligação voltar a funcionar.</span></div>`; return ""; }
 
 function renderRel(R){ const ed=podeEditar(R), c=contagens(R), rv=revs[R.id]; if(vista.sec==="bp") vista.sec="bpo";
   const cont=s=>{ if(s.q){ const qs=GUIAO[s.k]; return `${qs.filter(q=>respondida(R,q.id)).length}/${qs.length}`; } if(s.lado) return R.bp.filter(b=>b.lado===s.lado).length||""; if(s.k==="jog") return R.refs.length||""; if(s.k==="ficha") return R.jogos.length||""; if(s.k==="plantel") return R.plantel.length||""; if(s.k==="notas") return c.soltas||""; return ""; };
-  let nav="", g=""; SECS.forEach(s=>{ if(s.g!==g){ g=s.g; nav+=`<div class="grp">${esc(g)}</div>`; } nav+=`<button data-s="${s.k}" aria-current="${s.k===vista.sec}">${esc(s.t)}<span class="c"${s.k==="notas"&&c.soltas?' style="color:var(--warn)"':""}>${cont(s)}</span></button>`; });
+  let nav="", g=""; SECS.forEach(s=>{ if(s.g!==g){ g=s.g; nav+=`<div class="grp">${esc(g)}</div>`; } const np=nPendSec(R,s); nav+=`<button data-s="${s.k}" aria-current="${s.k===vista.sec}">${esc(s.t)}<span class="c"${s.k==="notas"&&c.soltas?' style="color:var(--warn)"':""}>${np?`<span style="color:var(--warn)">⚠${np}</span> `:""}${cont(s)}</span></button>`; });
   const est=rv&&rv.revisto?`<span class="chip rev">Revisto</span>`:R.estado==="env"?`<span class="chip env">Submetido</span>`:`<span class="chip rasc">Em curso</span>`;
-  $("main").innerHTML=`${bannerAcesso()}<div class="rhead"><button class="btn sm ghost" id="voltar" aria-label="Voltar aos relatórios">← Relatórios</button><h2>${esc(R.adversario||"Adversário por definir")}</h2>${est}<div class="sp">${souDono&&R.autor!==meId?`<span class="hint">Observador: ${esc(nomes[R.autor]||"—")}</span>`:""}</div></div>
+  $("main").innerHTML=`${bannerAcesso()}<div class="rhead"><button class="btn sm ghost" id="voltar" aria-label="Voltar aos relatórios">← Relatórios</button><h2>${esc(R.adversario||"Adversário por definir")} <span class="hint" style="font-family:var(--f-body);font-size:16px;font-weight:600">${esc(tituloJogo(R))}</span></h2>${est}<div class="sp">${souDono&&R.autor!==meId?`<span class="hint">Observador: ${esc(nomes[R.autor]||"—")}</span>`:""}<button type="button" class="btn sm" id="ex-pdf">📄 PDF</button><button type="button" class="btn sm" id="ex-ppt">📽 Apresentação</button></div></div>
     ${rv&&rv.texto&&vista.sec!=="sint"?`<div class="banner info" style="margin-bottom:12px"><span>💬</span><span><b>Revisão da equipa técnica:</b> ${esc(rv.texto).slice(0,240)}${rv.texto.length>240?"…":""} <a href="#" id="verrev">Ver na Síntese</a></span></div>`:""}
+    ${nPendR(R)&&ed?`<div class="banner pendb" style="margin-bottom:12px"><span>⚠</span><span style="flex:1"><b>${nPendR(R)} ${nPendR(R)===1?"ponto vem":"pontos vêm"} do jogo anterior${esc(vemDe(R))}</b> e ${nPendR(R)===1?"está":"estão"} por confirmar (a laranja). Confirma o que se mantém e muda o que for diferente.</span><button type="button" class="btn sm" id="pend-tudo">Confirmar tudo</button></div>`:""}
     <div class="rgrid"><nav class="secs" aria-label="Secções do relatório">${nav}</nav><section class="sec" id="sec"></section></div>`;
   $("voltar").onclick=()=>{ vista={tipo:"lista",id:null,sec:"ficha"}; render(); scrollTo(0,0); };
+  $("ex-pdf").onclick=()=>exportaPdf(R,$("ex-pdf")); $("ex-ppt").onclick=()=>folhaApresentacao(R);
   if($("verrev")) $("verrev").onclick=e=>{ e.preventDefault(); vista.sec="sint"; render(); };
   $("main").querySelectorAll("nav.secs button").forEach(b=>b.onclick=()=>{ vista.sec=b.dataset.s; render(); const n=$("sec"); if(n&&n.getBoundingClientRect().top<0) n.scrollIntoView({block:"start"}); });
   const cur=$("main").querySelector('nav.secs button[aria-current="true"]'); if(cur&&cur.scrollIntoView&&innerWidth<1000) cur.scrollIntoView({inline:"center",block:"nearest"});
   const S=SECS.find(s=>s.k===vista.sec)||SECS[0], box=$("sec");
   if(S.q) secPerguntas(R,S,box,ed); else S.lado?secBp(R,box,ed,S.lado):({ficha:secFicha,plantel:secPlantel,estr:secEstr,jog:secJog,sint:secSint,notas:secNotas})[S.k](R,box,ed);
-  liga(box,R,ed); }
+  liga(box,R,ed);
+  box.querySelectorAll("[data-pconf]").forEach(b=>b.onclick=()=>{ const k=b.dataset.pconf; editaRel(R=>tiraPend(R,k),true); render.mesma=true; render(); });
+  const pt=$("pend-tudo"); if(pt) confirma2(pt,"Toca outra vez: confirma tudo",()=>{ editaRel(R=>{ R.pend={}; },true); render.mesma=true; render(); toast("Tudo confirmado"); }); }
 
 /* um campo grava ao perder o foco (ao tocar noutro sítio); redesenhar a meio desse toque fazia perder o botão tocado (ex.: "← Relatórios" no Safari) */
 let dedoEmBaixo=false;
@@ -551,7 +720,7 @@ function depoisDoToque(fn){ if(dedoEmBaixo) document.addEventListener("pointerup
 function getP(o,p){ return p.split(".").reduce((a,k)=>a==null?a:Array.isArray(a)&&!/^\d+$/.test(k)?a.find(x=>x.id===k):a[k],o); }
 function setP(o,p,v){ const ks=p.split("."), last=ks.pop(); const t=ks.reduce((a,k)=>{ let n=Array.isArray(a)&&!/^\d+$/.test(k)?a.find(x=>x.id===k):a[k]; if(n==null){ n={}; a[k]=n; } return n; },o); t[last]=v; }
 function liga(box,R,ed){ box.querySelectorAll("[data-b]").forEach(el=>{ const v=getP(R,el.dataset.b); if(el.type==="checkbox") el.checked=!!v; else el.value=v==null||v===""?(el.dataset.def||""):v; if(!ed){ el.readOnly=true; if(el.tagName==="SELECT") el.disabled=true; return; }
-    const on=()=>{ const Rr=relAtual(); if(!Rr) return; let v=el.type==="checkbox"?el.checked:el.value; if(el.dataset.min!=null) v=minNorm(v); setP(Rr,el.dataset.b,v); guardaRel(Rr); };
+    const on=()=>{ const Rr=relAtual(); if(!Rr) return; let v=el.type==="checkbox"?el.checked:el.value; if(el.dataset.min!=null) v=minNorm(v); setP(Rr,el.dataset.b,v); const pk=pendDeCaminho(el.dataset.b); if(pk&&tiraPend(Rr,pk)) document.querySelectorAll(`[data-pconf="${pk}"]`).forEach(x=>{ const b=x.closest(".pendb"); if(b) b.remove(); }); guardaRel(Rr); };
     el.addEventListener(el.tagName==="SELECT"||el.type==="checkbox"?"change":"input",on); if(el.dataset.min!=null) el.addEventListener("change",()=>{ el.value=minNorm(el.value); on(); });
     if(el.dataset.rr!=null) el.addEventListener("change",()=>depoisDoToque(()=>{ const a=document.activeElement, k=a&&a.dataset&&a.dataset.b; render.mesma=true; render(); if(k){ const n=$("main").querySelector(`[data-b="${CSS.escape(k)}"]`); if(n) n.focus(); } })); });
   box.querySelectorAll("textarea").forEach(t=>{ const a=()=>{ t.style.height="auto"; t.style.height=Math.max(70,t.scrollHeight+2)+"px"; }; a(); t.addEventListener("input",a); }); }
@@ -608,10 +777,12 @@ function secPerguntas(R,S,box,ed){ const nos=S.k==="nos", qs=GUIAO[S.k], feitas=
     const ve=c.querySelector("[data-verestr]"); if(ve) ve.onclick=()=>{ vista.sec="estr"; vista.estr="sem"; render(); scrollTo(0,0); };
     if(vista.quadro===q.id&&q.quadro) quadroQ(c.querySelector(".qq"),R,q,ed); });
   ligaEv(box,R); }
-function chkDe(R,id){ if(!R.chk[id]) R.chk[id]={op:[],freq:"",jog:[],jp:{},nota:"",quadro:{pecas:[],setas:[]}}; if(!R.chk[id].jp) R.chk[id].jp={}; return R.chk[id]; }
+function chkDe(R,id){ tiraPend(R,"chk:"+id); if(!R.chk[id]) R.chk[id]={op:[],freq:"",jog:[],jp:{},nota:"",quadro:{pecas:[],setas:[]}}; if(!R.chk[id].jp) R.chk[id].jp={}; return R.chk[id]; }
 function cartaoQ(R,q,i,ed){ const C=R.chk[q.id]||{op:[],freq:"",jog:[],nota:"",quadro:{pecas:[],setas:[]}}, ok=respondida(R,q.id), porId=new Map(R.plantel.map(j=>[j.id,j]));
   const notaVis=!!C.nota.trim()||vista.notaAberta===q.id, temQ=C.quadro.pecas.length>0;
-  return `<div class="card q${ok?" qok":""}" data-q="${q.id}"><div class="qt"><span class="qn">${ok?"✓":i+1}</span><h4>${esc(q.t)}</h4></div>
+  const pq=R.pend&&R.pend["chk:"+q.id];
+  return `<div class="card q${ok?" qok":""}${pq?" qpend":""}" data-q="${q.id}"><div class="qt"><span class="qn">${ok?"✓":i+1}</span><h4>${esc(q.t)}</h4></div>
+    ${pq?`<div class="row pendl"><span>⚠ Resposta do jogo anterior${esc(vemDe(R))}: confirma ou muda.</span>${ed?`<button type="button" class="btn sm" data-pconf="chk:${q.id}">✓ Confirmar</button>`:""}</div>`:""}
     ${q.op?`<div class="seg qop">${q.op.map(o=>`<button type="button" data-op="${esc(o)}" aria-pressed="${C.op.includes(o)}"${ed?"":" disabled"}>${esc(o)}</button>`).join("")}</div>`:""}
     ${q.jog?`<div class="row qjog"><span class="hint">${esc(q.jog)}:</span>${C.jog.map(id=>{ const j=porId.get(id); return j?`<span class="jchip">${C.jp&&C.jp[id]?esc(C.jp[id])+" · ":""}${esc((j.n?j.n+" ":"")+j.nome)}${ed?`<button type="button" data-jx="${esc(id)}" aria-label="Tirar ${esc(j.nome)}">✕</button>`:""}</span>`:""; }).join("")}${ed?`<button type="button" class="btn sm" data-jadd>+ Jogador</button>`:""}</div>`:""}
     <div class="row qrod"><div class="seg qfq">${FREQ_Q.map(([k,t])=>`<button type="button" data-fq="${k}" aria-pressed="${C.freq===k}"${ed?"":" disabled"}>${t}</button>`).join("")}</div>
@@ -682,7 +853,7 @@ function folhaOnzeJogo(jid){ const R=relAtual(), J=R&&R.jogos.find(j=>j.id===jid
     <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="oj-ok">Guardar</button></div>`,(s_,fecha)=>{
     const conta=()=>s_.querySelector("#oj-n").textContent=`${sel.size}/11 escolhidos`; conta();
     s_.querySelectorAll("#oj-l button").forEach(b=>b.onclick=()=>{ const k=b.dataset.k; if(sel.has(k)) sel.delete(k); else { if(sel.size>=11){ toast("Já tens 11. Tira um primeiro."); return; } sel.add(k); } b.setAttribute("aria-pressed",String(sel.has(k))); conta(); });
-    s_.querySelector("#oj-ok").onclick=()=>{ fecha(); editaRel(R=>{ const X=R.jogos.find(j=>j.id===jid); if(X) X.onze=ls.map(j=>j.id).filter(id=>sel.has(id)); }); }; }); }
+    s_.querySelector("#oj-ok").onclick=()=>{ fecha(); editaRel(R=>{ const X=R.jogos.find(j=>j.id===jid); if(X) X.onze=ls.map(j=>j.id).filter(id=>sel.has(id)); if(X===R.jogos[0]) onzeParaEstrutura(R); }); toast("Onze guardado e passado para a Estrutura no campo"); }; }); }
 function folhaAcont(jid,t){ const R=relAtual(), J=R&&R.jogos.find(j=>j.id===jid); if(!J||!ACONT[t]) return; const emCampo=new Set(J.onze);
   J.acont.slice().sort((a,b)=>(parseInt(a.min)||0)-(parseInt(b.min)||0)).forEach(a=>{ if(a.t==="sub"){ emCampo.delete(a.jog); emCampo.add(a.jog2); } });
   const temOnze=J.onze.length>0, fEm=temOnze?j=>emCampo.has(j.id):null, fFora=temOnze?j=>!emCampo.has(j.id):null;
@@ -697,9 +868,9 @@ function folhaAcont(jid,t){ const R=relAtual(), J=R&&R.jogos.find(j=>j.id===jid)
       if(t!=="golo"&&!a.jog){ toast("Escolhe o jogador."); return; } if(t==="sub"&&!a.jog2){ toast("Escolhe quem entra."); return; }
       fecha(); editaRel(R=>{ const X=R.jogos.find(j=>j.id===jid); if(X) X.acont.push(a); }); }; }); }
 const vsOutra=new Set(); /* jogos em que se escolheu "Outra equipa…" e ainda não se escreveu o nome */
-function secFicha(R,box,ed){ box.innerHTML=`<header><h3>Ficha e jogos observados</h3><p>Um relatório por adversário. Junta aqui todos os jogos que viste: cada evidência fica ligada a um jogo e ao minuto do vídeo.</p></header>
+function secFicha(R,box,ed){ box.innerHTML=`<header><h3>Ficha do jogo</h3><p>Um relatório por jogo. Para outro jogo desta equipa, volta à página inicial e toca em «+ Novo jogo»: vem preenchido com o último jogo, para confirmares ou mudares.</p></header>
   <div class="card"><div class="fields"><label class="f">Adversário<select data-b="adversario" data-rr><option value="">Escolher equipa</option>${EQUIPAS.map(([n,i])=>`<option value="${esc(n)}">${esc(n)} (${esc(i)})</option>`).join("")}${R.adversario&&!EQUIPAS.some(([n])=>n===R.adversario)?`<option value="${esc(R.adversario)}">${esc(R.adversario)}</option>`:""}</select></label><label class="f">Competição<input type="text" data-b="competicao"></label></div></div>
-  <div class="card"><div class="row" style="justify-content:space-between"><h4>Jogos observados</h4>${ed?`<button class="btn sm" id="j-add">+ Jogo</button>`:""}</div>
+  <div class="card"><div class="row" style="justify-content:space-between"><h4>Jogo observado</h4>${ed&&!R.jogos.length?`<button class="btn sm" id="j-add">+ Jogo</button>`:""}</div>${R.jogos.length>1?`<div class="banner"><span>⚠</span><span style="flex:1">Este relatório tem <b>${R.jogos.length} jogos</b>. Agora cada relatório é de um só jogo.</span>${ed?`<button type="button" class="btn sm" id="j-sep">Separar em relatórios por jogo</button>`:""}</div>`:""}
     ${R.jogos.length?R.jogos.map(J=>`<div class="card" style="background:var(--surface-2)"><div class="row" style="justify-content:space-between"><b style="font-family:var(--f-display);font-size:17px">${esc(jogoCurto(J))}${J.res?" · "+esc(J.res):""}</b>${ed?`<button class="btn sm ghost" data-jdel="${esc(J.id)}">Apagar</button>`:""}</div>
       <div class="fields"><label class="f">Contra (equipa que defrontaram)<select data-jvs="${esc(J.id)}" ${ed?"":"disabled"}><option value="">Escolher equipa</option>${TODAS.filter(n=>n!==R.adversario).map(n=>`<option value="${esc(n)}"${n===J.vs?" selected":""}>${esc(n)}</option>`).join("")}<option value="__outra"${J.vs&&!TODAS.includes(J.vs)||vsOutra.has(J.id)?" selected":""}>Outra equipa…</option></select></label>
       ${J.vs&&!TODAS.includes(J.vs)||vsOutra.has(J.id)?`<label class="f">Nome da outra equipa<input type="text" data-b="jogos.${J.id}.vs" data-rr placeholder="Ex.: Sporting Ideal"></label>`:""}<label class="f">Data<input type="date" data-b="jogos.${J.id}.data" data-rr></label>
@@ -720,9 +891,10 @@ function secFicha(R,box,ed){ box.innerHTML=`<header><h3>Ficha e jogos observados
   box.querySelectorAll("[data-fjo]").forEach(b=>b.onclick=()=>folhaOnzeJogo(b.dataset.fjo));
   box.querySelectorAll("[data-fja]").forEach(b=>b.onclick=()=>{ const [jid,t]=b.dataset.fja.split(":"); folhaAcont(jid,t); });
   box.querySelectorAll("[data-fjx]").forEach(b=>confirma2(b,"Apagar?",()=>{ const [jid,aid]=b.dataset.fjx.split(":"); editaRel(R=>{ const J=R.jogos.find(j=>j.id===jid); if(J) J.acont=J.acont.filter(a=>a.id!==aid); }); }));
-  $("j-add").onclick=()=>editaRel(R=>R.jogos.push({id:nid("j"),vs:"",data:"",local:"",res:"",como:"",video:"",ctx:"",onze:[],acont:[]}));
+  if($("j-sep")) confirma2($("j-sep"),"Toca outra vez para separar",()=>separaJogos(relAtual()));
+  if($("j-add")) $("j-add").onclick=()=>editaRel(R=>R.jogos.push({id:nid("j"),vs:"",data:"",local:"",res:"",como:"",video:"",ctx:"",onze:[],acont:[]}));
   box.querySelectorAll("[data-jdel]").forEach(b=>confirma2(b,"Apagar?",()=>editaRel(R=>{ R.jogos=R.jogos.filter(j=>j.id!==b.dataset.jdel); R.evid.forEach(e=>{ if(e.jogo===b.dataset.jdel) e.jogo=""; }); })));
-  if($("st-env")) $("st-env").onclick=()=>{ editaRel(R=>R.estado="env"); toast("Relatório submetido"); };
+  if($("st-env")){ const sub=()=>{ editaRel(R=>R.estado="env"); toast("Relatório submetido"); }, np=nPendR(R); if(np) confirma2($("st-env"),`Há ${np} por confirmar · toca outra vez para submeter`,sub); else $("st-env").onclick=sub; }
   if($("st-rasc")) $("st-rasc").onclick=()=>editaRel(R=>R.estado="rasc");
   confirma2($("r-del"),"Toca outra vez para apagar o relatório",()=>{ apagaDoc(relPath(R)); delete rels[R.id]; guardaCache(); vista={tipo:"lista",id:null,sec:"ficha"}; render(); toast("Relatório apagado"); }); }
 
@@ -776,7 +948,7 @@ function secPlantel(R,box,ed){ const modo=R.base?"plantel":(vista.plv||"plantel"
   const lista=R.plantel.slice().sort((a,b)=>ordSlot(a)-ordSlot(b)||(parseInt(a.n)||999)-(parseInt(b.n)||999)||a.nome.localeCompare(b.nome,"pt"));
   const opSis=sel=>`${Object.keys(LAYOUTS).map(x=>`<option${x===sel?" selected":""}>${x}</option>`).join("")}`;
   const O=modo==="plantel"?null:R.onzes[modo];
-  box.innerHTML=`<header><h3>Plantel${R.adversario?" · "+esc(R.adversario):""}</h3><p>Plantel de partida, corrigido com o que vês nos jogos. Arrasta um nome para outra posição, toca nele para o editar, ou muda tudo na lista em baixo.</p></header>
+  box.innerHTML=`<header><h3>Plantel${R.adversario?" · "+esc(R.adversario):""}</h3><p>Plantel de partida, corrigido com o que vês nos jogos. Arrasta um nome para outra posição, toca nele para o editar, ou muda tudo na lista em baixo.</p></header>${bannerPend(R,"plantel",ed,"Plantel, sistema e cores vêm do jogo anterior")}
     <div class="card"><h4>Equipa técnica e equipa</h4><div class="fields">
       <label class="f">Treinador<input type="text" data-b="treinador" data-rr placeholder="Nome do treinador"></label>
       <label class="f">Treinador adjunto<input type="text" data-b="adjunto"></label>
@@ -876,7 +1048,7 @@ function folhaJogPlantel(id,novo){ const R=relAtual(); if(!R) return; const ed=p
     const d=s.querySelector("#jp-del"); if(d) confirma2(d,"Toca outra vez",()=>{ fecha(); editaRel(R=>{ R.plantel=R.plantel.filter(j=>j.id!==id); ["prov","alt"].forEach(k=>Object.keys(R.onzes[k].pos).forEach(c=>{ if(R.onzes[k].pos[c]===id) delete R.onzes[k].pos[c]; })); }); }); }); }
 
 function secEstr(R,box,ed){ const est=vista.estr||"com", O=R.onze, st=O[est];
-  box.innerHTML=`<header><h3>Estrutura no campo</h3><p>Arrasta as bolinhas para onde quiseres, das duas equipas. O sistema só dá o ponto de partida. Toca num jogador do adversário para pôr o número e o nome.</p></header>
+  box.innerHTML=`<header><h3>Estrutura no campo</h3><p>Arrasta as bolinhas para onde quiseres, das duas equipas. O sistema só dá o ponto de partida. Toca num jogador do adversário para pôr o número e o nome.</p></header>${bannerPend(R,"estr",ed,"A estrutura vem do jogo anterior")}
   <div class="card"><div class="row" style="justify-content:space-between"><div class="seg" id="es-m"></div><label class="row hint" style="gap:8px"><input type="checkbox" id="es-nos" ${O.nos?"checked":""} style="width:20px;height:20px" ${ed?"":"disabled"}> Mostrar o nosso 3-4-3</label></div>
     <div class="estr"><div class="pitch" id="es-p"></div><div style="display:flex;flex-direction:column;gap:10px">
       <label class="f">Sistema ${est==="com"?"com bola":"sem bola"}<select id="es-sis" ${ed?"":"disabled"}>${Object.keys(SISTEMAS).map(s=>`<option${s===st.sis?" selected":""}>${s}</option>`).join("")}</select></label>
@@ -921,7 +1093,7 @@ function novaBp(tipo,lado){ const b={id:nid("b"),tipo,lado,cor:"",asp:{},pecas:[
   else { b.cor="dir"; P("bola",68,30); if(lado==="of"){ P("adv",67,31); [[62,26],[60,34],[54,30],[46,22]].forEach(([x,y])=>P("adv",x,y)); } else { [[62,27],[61,35],[55,30],[48,24]].forEach(([x,y])=>P("adv",x,y)); P("out",67,31); } }
   return b; }
 function secBp(R,box,ed,lado){ const ls=R.bp.filter(b=>b.lado===lado), nm=lado==="of"?"ofensivas":"defensivas";
-  const item=b=>{ const ab=bpAberto===b.id, ne=R.evid.filter(e=>e.q==="bp:"+b.id).length; return `<button class="bpi" data-bp="${esc(b.id)}" aria-expanded="${ab}"><b>${esc(nomeBp(b))}</b><span>${ne?ne+(ne===1?" evidência":" evidências"):""} ${ab?"▴":"▾"}</span></button>${ab?`<div class="card" id="bp-ed"></div>`:""}`; };
+  const item=b=>{ const ab=bpAberto===b.id, ne=R.evid.filter(e=>e.q==="bp:"+b.id).length; return `<button class="bpi" data-bp="${esc(b.id)}" aria-expanded="${ab}"><b>${esc(nomeBp(b))}</b>${R.pend&&R.pend["bp:"+b.id]?`<span class="chip env" style="margin-left:6px">⚠ por confirmar</span>`:""}<span>${ne?ne+(ne===1?" evidência":" evidências"):""} ${ab?"▴":"▾"}</span></button>${ab?`<div class="card" id="bp-ed"></div>`:""}`; };
   box.innerHTML=`<header><h3>Bolas paradas ${nm}</h3><p>Cantos, livres e lançamentos laterais. Para cada um: batedores e referências, movimentos e combinações, marcação e espaços, segundas bolas e transições.</p></header>
     ${ed?`<div class="card"><h4>Acrescentar</h4><div class="row">${Object.entries(BP_TIPO).map(([t,n])=>`<button class="btn sm" data-nbp="${t}:${lado}">+ ${n}</button>`).join("")}</div></div>`:""}
     <div class="card"><div class="bpl">${ls.map(item).join("")||`<p class="hint">Nenhuma registada.</p>`}</div></div>`;
@@ -929,7 +1101,7 @@ function secBp(R,box,ed,lado){ const ls=R.bp.filter(b=>b.lado===lado), nm=lado==
   box.querySelectorAll("[data-bp]").forEach(b=>b.onclick=()=>{ bpAberto=bpAberto===b.dataset.bp?null:b.dataset.bp; render.mesma=true; render(); });
   const B=ls.find(b=>b.id===bpAberto); if(B&&$("bp-ed")) edBp(R,B,$("bp-ed"),ed); }
 let bpModo="mover", bpSeta="corrida";
-function edBp(R,B,el,ed){ el.innerHTML=`<div class="fields"><label class="f">Tipo<select data-b="bp.${B.id}.tipo" data-rr>${Object.entries(BP_TIPO).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></label>
+function edBp(R,B,el,ed){ el.innerHTML=`${bannerPend(R,"bp:"+B.id,ed,"Esta bola parada vem do jogo anterior")}<div class="fields"><label class="f">Tipo<select data-b="bp.${B.id}.tipo" data-rr>${Object.entries(BP_TIPO).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></label>
     <label class="f">Lado<select data-b="bp.${B.id}.lado" data-rr>${Object.entries(BP_LADO).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></label>
     <label class="f">Corredor<select data-b="bp.${B.id}.cor" data-rr><option value="">—</option>${Object.entries(BP_COR).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></label></div>
     ${ed?`<div class="row"><div class="seg" id="bp-m"></div><div class="seg" id="bp-s"></div></div><div class="row"><button class="btn sm" data-add="adv">+ ${esc(R.adversario||"Adversário")}</button><button class="btn sm" data-add="out">+ Outra equipa</button><button class="btn sm" data-add="bola"${B.pecas.some(p=>p.eq==="bola")?" disabled":""}>+ Bola</button></div>`:""}
@@ -997,8 +1169,8 @@ function folhaRefPlantel(){ const R=relAtual(); if(!R) return; const sis=R.siste
 function secJog(R,box,ed){ box.innerHTML=`<header><h3>Jogadores de referência</h3><p>Quem organiza, quem desequilibra, quem ameaça a profundidade e quem finaliza. Inclui o guarda-redes, sobretudo pela participação na construção e pelo controlo do espaço nas costas da defesa.</p>
     <p class="hint" style="margin-top:6px">Nas dificuldades, exemplos concretos: em vez de “o lateral defende mal”, em que situação tem dificuldade. O objetivo é encontrar situações que possamos provocar no jogo.</p></header>
     ${ed?`<div><button class="btn primary" id="jg-add">+ Jogador</button></div>`:""}
-    ${R.refs.length?R.refs.map(p=>{ const ab=jogAberto===p.id, nd=R.evid.filter(e=>e.q==="jogd:"+p.id).length; return `<div class="card pl"><button class="bpi" data-jg="${esc(p.id)}" aria-expanded="${ab}" style="border:0;padding:0;min-height:44px"><span class="plh" style="margin:0"><span class="num">${esc(p.n||"–")}</span><b>${esc(p.nome||"Sem nome")}${p.pos?" · "+esc(p.pos):""}</b></span><span>${p.papeis.map(k=>PAPEIS[k]).filter(Boolean).join(", ")}${nd?` · ${nd} ${nd===1?"dificuldade":"dificuldades"}`:""} ${ab?"▴":"▾"}</span></button>
-      ${ab?`${R.plantel.length?`<label class="f">Jogador do plantel<select data-refj="${esc(p.id)}" ${ed?"":"disabled"}>${opJog(R,p.jid||"")}</select></label>`:""}<div class="fields"><label class="f">Número<input type="text" data-b="refs.${p.id}.n" data-rr inputmode="numeric"></label><label class="f">Nome<input type="text" data-b="refs.${p.id}.nome" data-rr></label><label class="f">Posição<input type="text" data-b="refs.${p.id}.pos" data-rr></label></div>
+    ${R.refs.length?R.refs.map(p=>{ const ab=jogAberto===p.id, nd=R.evid.filter(e=>e.q==="jogd:"+p.id).length; return `<div class="card pl"><button class="bpi" data-jg="${esc(p.id)}" aria-expanded="${ab}" style="border:0;padding:0;min-height:44px"><span class="plh" style="margin:0"><span class="num">${esc(p.n||"–")}</span><b>${esc(p.nome||"Sem nome")}${p.pos?" · "+esc(p.pos):""}</b>${R.pend&&R.pend["ref:"+p.id]?`<span class="chip env">⚠ por confirmar</span>`:""}</span><span>${p.papeis.map(k=>PAPEIS[k]).filter(Boolean).join(", ")}${nd?` · ${nd} ${nd===1?"dificuldade":"dificuldades"}`:""} ${ab?"▴":"▾"}</span></button>
+      ${ab?`${R.plantel.length?`<label class="f">Jogador do plantel<select data-refj="${esc(p.id)}" ${ed?"":"disabled"}>${opJog(R,p.jid||"")}</select></label>`:""}${bannerPend(R,"ref:"+p.id,ed,"Este jogador de referência vem do jogo anterior")}<div class="fields"><label class="f">Número<input type="text" data-b="refs.${p.id}.n" data-rr inputmode="numeric"></label><label class="f">Nome<input type="text" data-b="refs.${p.id}.nome" data-rr></label><label class="f">Posição<input type="text" data-b="refs.${p.id}.pos" data-rr></label></div>
         <div><h4 style="margin-bottom:6px">Papel na equipa</h4><div class="seg" data-pap="${esc(p.id)}">${Object.entries(PAPEIS).map(([k,v])=>`<button type="button" data-k="${k}" aria-pressed="${p.papeis.includes(k)}"${ed?"":" disabled"}>${v}</button>`).join("")}</div></div>
         <label class="f">O que faz bem e como influencia o jogo${p.papeis.includes("gr")?" (construção, controlo do espaço nas costas)":""}<textarea data-b="refs.${p.id}.fortes" rows="3"></textarea></label>
         <div><h4 style="margin-bottom:6px">Dificuldades em situações concretas</h4>${listaEv(R,"jogd:"+p.id,ed).replace("+ Evidência","+ Dificuldade")}</div>
@@ -1013,7 +1185,7 @@ function secJog(R,box,ed){ box.innerHTML=`<header><h3>Jogadores de referência</
   box.querySelectorAll("[data-jgdel]").forEach(b=>confirma2(b,"Toca outra vez para apagar",()=>{ const id=b.dataset.jgdel; editaRel(R=>{ R.refs=R.refs.filter(x=>x.id!==id); R.evid.forEach(e=>{ if(e.q==="jogd:"+id) e.q=""; }); }); })); }
 
 function secSint(R,box,ed){ const rv=revs[R.id]||{}, cand=R.evid.filter(e=>e.clip&&!R.clips.some(c=>c.ev===e.id));
-  box.innerHTML=`<header><h3>Síntese</h3><p>Distingue o que é recorrente, o que apareceu pontualmente e o que ainda precisa de confirmação. Considera o resultado e o contexto de cada jogo.</p></header>
+  box.innerHTML=`<header><h3>Síntese</h3><p>Distingue o que é recorrente, o que apareceu pontualmente e o que ainda precisa de confirmação. Considera o resultado e o contexto de cada jogo.</p></header>${bannerPend(R,"sint",ed,"A síntese vem do jogo anterior")}
   <div class="card"><h4>1. Estrutura e comportamentos principais</h4><textarea data-b="sint.estrutura" rows="4"></textarea></div>
   <div class="card"><h4>2. Três ameaças que precisamos de controlar</h4><div class="three">${[0,1,2].map(i=>`<div><b>${i+1}</b><textarea data-b="sint.ameacas.${i}" rows="2"></textarea></div>`).join("")}</div></div>
   <div class="card"><h4>3. Três oportunidades que podemos explorar</h4><div class="three op">${[0,1,2].map(i=>`<div><b>${i+1}</b><textarea data-b="sint.oport.${i}" rows="2"></textarea></div>`).join("")}</div></div>
