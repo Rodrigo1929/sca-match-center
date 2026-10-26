@@ -311,6 +311,55 @@ const [dPS] = await Promise.all([pg.waitForEvent("download", { timeout: 60000 })
 if (statSync(fPS).size < 20000) erros.push(`Plano semanal: PDF estranho (${statSync(fPS).size} bytes)`);
 await pg.click(".u-modo button[data-m='ut']");
 
+// base de dados simulada: no link, os dados que chegam da base de dados vêm congelados (snapshots e data());
+// a app tem de os copiar à entrada (lerDoc), senão uma alteração a seguir pode não mudar nada sem dar erro (como na app de observação)
+{
+  const ctx = ipad ? await browser.newContext({ ...devices["iPad (gen 7) landscape"] }) : await browser.newContext({ viewport: { width: 1366, height: 900 } });
+  const pb = await ctx.newPage();
+  pb.on("pageerror", (e) => { const s = String(e); if (!/Fetch API cannot load file:/.test(s)) erros.push("bd simulada: " + s); });
+  await pb.addInitScript(() => {
+    window.__docs = {}; window.__ouve = {};
+    const ouve = (p, cb) => { (window.__ouve[p] = window.__ouve[p] || []).push(cb); return () => {}; };
+    const meta = { hasPendingWrites: false, fromCache: false };
+    const fz = (o) => { if (o && typeof o === "object") { Object.values(o).forEach(fz); Object.freeze(o); } return o; };
+    // entrega um documento (caminho com "/") ou uma coleção ({id: dados}), congelados como no link
+    window.__entrega = (p, dados) => (window.__ouve[p] || []).forEach((cb) => cb(p.includes("/")
+      ? fz({ exists: true, data: () => fz(JSON.parse(JSON.stringify(dados))), metadata: meta })
+      : fz({ docs: Object.entries(dados).map(([id, x]) => fz({ id, data: () => fz(JSON.parse(JSON.stringify(x))) })), metadata: meta })));
+    window.claude = { use: async (n) => {
+      if (n === "user") return { id: async () => "u_teste", can: async () => true };
+      if (n === "db") return { collection: (p) => ({ onSnapshot: (cb) => ouve(p, cb) }),
+        doc: (p) => ({ onSnapshot: (cb) => ouve(p, cb), set: async (b) => { window.__docs[p] = JSON.parse(JSON.stringify(b)); }, delete: async () => { delete window.__docs[p]; } }) };
+      return null; } };
+  });
+  await pb.goto(pathToFileURL(join(raiz, "dist/index.html")).href); await pb.evaluate(() => localStorage.clear()); await pb.reload(); await pb.waitForTimeout(1200);
+  await pb.evaluate(() => {
+    const E = normEx({ id: "xbd", nome: "Exercício da bd", figura: { quadro: { rot: "nada", pecas: [{ id: "p1", eq: "nos", pos: "J1" }], passos: [{ id: "a", pos: { p1: { x: 10, y: 10 } }, setas: [{ id: "s1", t: "passe", x1: 1, y1: 1, x2: 5, y2: 5 }], zonas: [] }] } } });
+    __entrega("estado/atual", { ...normEst({ plantel: [{ n: "7", nome: "Sete" }, { n: "9", nome: "Nove" }] }), atualizadoEm: "2026-10-26T10:00:00Z" });
+    __entrega("tv/config", { seg: 10, junta: true, ordem: [], sel: [], conhecidos: [], modelo: { seg: 8, ordem: [], sel: [], conhecidos: [] }, atualizadoEm: "2026-10-26T10:00:00Z" });
+    __entrega("lances", { [DEF_LANCES[0].id]: { ...clone(DEF_LANCES[0]), nome: "Lance da bd", atualizadoEm: "x" } });
+    __entrega("historico", { Jbd: { id: "Jbd", ...snapshotJogo(), resultado: { nos: "1", eles: "0" } } });
+    __entrega("modelo", { qbd: normQ({ id: "qbd", nome: "Quadro da bd", pecas: [{ id: "p1", eq: "nos", pos: "J1" }], passos: [{ id: "a", pos: { p1: { x: 10, y: 10 } }, setas: [{ id: "s1", t: "passe", x1: 1, y1: 1, x2: 5, y2: 5 }], zonas: [{ id: "z1", x: 1, y: 1, w: 5, h: 5 }] }] }) });
+    __entrega("exercicios", { xbd: E });
+    __entrega("uts", { utbd: normUT({ id: "utbd", numero: 99, presencas: { 7: "P" }, exercicios: [{ id: "l1", exId: "xbd", copia: E }] }) });
+    __entrega("calendario", { jbd: normJogoCal({ id: "jbd", data: "2026-11-01", adversario: "Praiense" }) });
+  });
+  await pb.waitForTimeout(300);
+  // nada do estado da app pode ficar congelado (nem lá dentro)
+  const cong = await pb.evaluate(() => { const acha = (o, c) => { if (!o || typeof o !== "object") return null; if (Object.isFrozen(o)) return c;
+      for (const [k, v] of Object.entries(o)) { const r = acha(v, c + "." + k); if (r) return r; } return null; };
+    const E = { est, jogo, lancesDb, notas, hist, an, anCfg, vivo, tvCfg, modelos, exercicios, uts, semanas, calendario, anual, ciclos };
+    return { cong: Object.entries(E).map(([k, v]) => acha(v, k)).filter(Boolean), tv: tvCfg && "atualizadoEm" in tvCfg, lance: lanceAtual().nome, ut: !!uts.utbd, q: !!modelos.qbd }; });
+  if (cong.cong.length || cong.tv || !cong.ut || !cong.q) erros.push("bd simulada: dados congelados da base de dados no estado da app " + JSON.stringify(cong));
+  // edições a seguir: um nome do Plantel e uma presença da UT têm de ficar gravados
+  await pb.click("#tab-p"); await pb.fill("#pm-0", "Sete Editado"); await pb.waitForTimeout(900);
+  await pb.evaluate(() => { uCur = "utbd"; marcaPres("9", "L"); });
+  await pb.waitForTimeout(200);
+  const gr = await pb.evaluate(() => ({ nome: est.plantel[0].nome, bdNome: __docs["estado/atual"]?.plantel[0].nome, pres: __docs["uts/utbd"]?.presencas }));
+  if (gr.nome !== "Sete Editado" || gr.bdNome !== "Sete Editado" || gr.pres?.["7"] !== "P" || gr.pres?.["9"] !== "L") erros.push("bd simulada: edição a seguir não ficou gravada " + JSON.stringify(gr));
+  await ctx.close();
+}
+
 await browser.close();
 if (erros.length) { console.error("FALHOU:\n" + erros.join("\n")); process.exit(1); }
 console.log(`OK${ipad ? " (WebKit · iPad)" : ""} · capturas em ${ipad ? "tests/capturas/ipad/" : "tests/capturas/"}`);

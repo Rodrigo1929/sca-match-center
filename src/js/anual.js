@@ -137,7 +137,7 @@ function folhaMeso(id){ const C=id?ciclos[id]:null; let per=C?C.periodo:"comp"; 
 /* ---------- sincronização ---------- */
 function ligaAnualDb(){ if(!db) return;
   const liga=(col,norm,get,set)=>db.collection(col).onSnapshot(q=>{ if(q.metadata?.hasPendingWrites) return; const m={};
-    q.docs.forEach(d=>{ const x=d.data(); if(x){ const c={...x}; delete c.atualizadoEm; try{ m[d.id]=norm({...c,id:d.id}); }catch(e){} } });
+    q.docs.forEach(d=>{ const x=lerDoc(d); if(x){ const c={...x}; delete c.atualizadoEm; try{ m[d.id]=norm({...c,id:d.id}); }catch(e){} } });
     mergeCol(col+"/",m,get()); if(JSON.stringify(m)!==JSON.stringify(get())){ set(m); guardaAnualLocal(); if(!$("sheet-root").innerHTML) renderUT(); } },()=>{});
   liga("anual",normDiaAnual,()=>anual,m=>{ anual=m; }); liga("ciclos",normCiclo,()=>ciclos,m=>{ ciclos=m; }); }
 (()=>{ let n=0; const t=setInterval(()=>{ n++; if(db){ clearInterval(t); try{ ligaAnualDb(); }catch(e){} } else if(n>80) clearInterval(t); },250); })();

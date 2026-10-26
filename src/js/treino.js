@@ -370,6 +370,6 @@ async function guardaPdfUT(id,botao){ const U=uts[id]; if(!U) return; if(botao) 
 
 /* ---------- sincronização ---------- */
 function ligaUTDb(){ if(!db) return; db.collection("uts").onSnapshot(q=>{ if(q.metadata?.hasPendingWrites) return; const m={};
-    q.docs.forEach(d=>{ const x=d.data(); if(x){ const c={...x}; delete c.atualizadoEm; try{ m[d.id]=normUT({...c,id:d.id}); }catch(e){} } });
+    q.docs.forEach(d=>{ const x=lerDoc(d); if(x){ const c={...x}; delete c.atualizadoEm; try{ m[d.id]=normUT({...c,id:d.id}); }catch(e){} } });
     mergeCol("uts/",m,uts); if(JSON.stringify(m)!==JSON.stringify(uts)){ uts=m; guardaUTLocal(); if(!$("sheet-root").innerHTML) renderUT(); } },()=>{}); }
 (()=>{ let n=0; const t=setInterval(()=>{ n++; if(db){ clearInterval(t); try{ ligaUTDb(); }catch(e){} } else if(n>80) clearInterval(t); },250); })();

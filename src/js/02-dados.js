@@ -1,5 +1,7 @@
 /* ---------- dados ---------- */
 function clone(o){ return JSON.parse(JSON.stringify(o)); }
+/* os dados da base de dados chegam congelados (snapshots e data()): alterá-los falha sem dar erro, por isso copiam-se sempre à entrada */
+function lerDoc(d){ const x=d.data(); return x?clone(x):null; }
 function lances(){
   const out=[]; const seen=new Set();
   ESPECIAIS.concat(DEF_LANCES).forEach(d0=>{ let d=d0;

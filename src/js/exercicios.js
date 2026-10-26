@@ -315,7 +315,7 @@ async function guardaPdfEx(id,botao){ const E=exercicios[id]; if(!E) return; if(
 
 /* ---------- sincronização ---------- */
 function ligaExDb(){ if(!db) return; db.collection("exercicios").onSnapshot(q=>{ if(q.metadata?.hasPendingWrites) return; const m={};
-    q.docs.forEach(d=>{ const x=d.data(); if(x){ const c={...x}; delete c.atualizadoEm; try{ m[d.id]=normEx({...c,id:d.id}); }catch(e){} } });
+    q.docs.forEach(d=>{ const x=lerDoc(d); if(x){ const c={...x}; delete c.atualizadoEm; try{ m[d.id]=normEx({...c,id:d.id}); }catch(e){} } });
     mergeCol("exercicios/",m,exercicios); if(JSON.stringify(m)!==JSON.stringify(exercicios)){ exercicios=m; guardaExLocal();
       if(!$("sheet-root").innerHTML&&!(xPl&&xPl.playing)) renderEx(); if(mFig) renderModeloSeguro(); } },()=>{}); }
 (()=>{ let n=0; const t=setInterval(()=>{ n++; if(db){ clearInterval(t); try{ ligaExDb(); }catch(e){} } else if(n>80) clearInterval(t); },250); })();

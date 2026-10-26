@@ -661,7 +661,7 @@ document.addEventListener("keydown",e=>{ const v=$("view-m"); if(!v||v.hidden||$
 
 /* ---------- sincronização ---------- */
 function ligaModeloDb(){ if(!db) return; db.collection("modelo").onSnapshot(q=>{ if(q.metadata?.hasPendingWrites) return; const m={};
-    q.docs.forEach(d=>{ const x=d.data(); if(x){ const c={...x}; delete c.atualizadoEm; try{ m[d.id]=normQ({...c,id:d.id}); }catch(e){} } });
+    q.docs.forEach(d=>{ const x=lerDoc(d); if(x){ const c={...x}; delete c.atualizadoEm; try{ m[d.id]=normQ({...c,id:d.id}); }catch(e){} } });
     mergeCol("modelo/",m,modelos); if(JSON.stringify(m)!==JSON.stringify(modelos)){ modelos=m; guardaModLocal(); if(!mDrag&&!(mPl&&mPl.playing)&&!(document.activeElement&&document.activeElement.id==="me-nota")) renderModelo(); } },()=>{}); }
 (()=>{ let n=0; const t=setInterval(()=>{ n++; if(db){ clearInterval(t); try{ ligaModeloDb(); }catch(e){} } else if(n>80) clearInterval(t); },250); })();
 

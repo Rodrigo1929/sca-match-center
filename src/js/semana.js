@@ -334,7 +334,7 @@ async function guardaPdfSemana(id,botao){ const S=semanas[id]; if(!S) return; if
 /* ---------- sincronização ---------- */
 function ligaSemDb(){ if(!db) return;
   const liga=(col,norm,get,set,local)=>db.collection(col).onSnapshot(q=>{ if(q.metadata?.hasPendingWrites) return; const m={};
-    q.docs.forEach(d=>{ const x=d.data(); if(x){ const c={...x}; delete c.atualizadoEm; try{ m[d.id]=norm({...c,id:d.id}); }catch(e){} } });
+    q.docs.forEach(d=>{ const x=lerDoc(d); if(x){ const c={...x}; delete c.atualizadoEm; try{ m[d.id]=norm({...c,id:d.id}); }catch(e){} } });
     mergeCol(col+"/",m,get()); if(JSON.stringify(m)!==JSON.stringify(get())){ set(m); local(); if(!$("sheet-root").innerHTML) renderUT(); } },()=>{});
   liga("semanas",normSemana,()=>semanas,m=>{ semanas=m; },guardaSemLocal);
   liga("calendario",normJogoCal,()=>calendario,m=>{ calendario=m; },guardaCalLocal); }
