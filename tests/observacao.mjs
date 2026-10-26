@@ -18,7 +18,7 @@ const confirma = (ok, msg) => { if (!ok) falhas.push(msg); };
 const ecras = ipad ? [["ipad", { ...devices["iPad (gen 7) landscape"] }]] : [["pc", { viewport: { width: 1366, height: 900 } }], ["telemovel", { viewport: { width: 390, height: 844 }, hasTouch: true }]];
 for (const [nome, opc] of ecras) {
   const pg = await (await browser.newContext(opc)).newPage();
-  pg.on("pageerror", (e) => falhas.push(`${nome}: ${e}`));
+  pg.on("pageerror", (e) => falhas.push(`${nome}: ${e}`)); pg.on("console", (m) => { if (m.type() === "error") console.log("CONSOLA", nome, m.text()); });
   await pg.goto(url); await pg.waitForTimeout(500);
 
   // relatório antigo (guião em texto, posições numeradas) guardado no aparelho: tem de abrir e passar para o formato atual
@@ -81,7 +81,7 @@ for (const [nome, opc] of ecras) {
   confirma(chk.op === "Alternam" && chk.fq === "sempre" && chk.jog === 1 && chk.q >= 11, `${nome}: checklist não gravou (${JSON.stringify(chk)})`);
 
   // setas: desenhar no quadro de uma bola parada grava a seta (antes o campo refazia-se a meio e perdia-a)
-  await pg.click('nav.secs button[data-s="bp"]'); await pg.waitForTimeout(200); await pg.click('[data-nbp="canto:of"]'); await pg.waitForTimeout(200);
+  await pg.click('nav.secs button[data-s="bpo"]'); await pg.waitForTimeout(200); await pg.click('[data-nbp="canto:of"]'); await pg.waitForTimeout(200);
   await pg.click("#bp-m button:nth-child(2)"); const pb = pg.locator("#bp-p svg"); await pb.scrollIntoViewIfNeeded(); const sb = await pb.boundingBox();
   await pg.mouse.move(sb.x + sb.width * .3, sb.y + sb.height * .6); await pg.mouse.down(); for (let i = 1; i <= 8; i++) await pg.mouse.move(sb.x + sb.width * (.3 + i * .04), sb.y + sb.height * (.6 - i * .03)); await pg.mouse.up(); await pg.waitForTimeout(200);
   const setas = await pg.evaluate(() => Object.values(rels).find((x) => x.adversario === "Lusitânia").bp[0].setas.length);
@@ -96,11 +96,35 @@ for (const [nome, opc] of ecras) {
   const vs2 = await pg.evaluate(() => ({ vs: Object.values(rels).find((x) => x.adversario === "Lusitânia").jogos[0].vs, sel: document.querySelector("[data-jvs]").value }));
   confirma(vs1 === "Praiense" && vs2.vs === "Sporting Ideal" && vs2.sel === "__outra", `${nome}: equipa do jogo observado não ficou escolhida (${JSON.stringify({ vs1, vs2 })})`);
 
+  // ficha do jogo: onze inicial (11 do plantel) e acontecimentos (golo, substituição, cartão)
+  await pg.click("[data-fjo]"); await pg.waitForTimeout(150);
+  await pg.evaluate(() => [...document.querySelectorAll("#oj-l button")].slice(0, 11).forEach((b) => b.click())); await pg.click("#oj-ok"); await pg.waitForTimeout(150);
+  for (const [t, m] of [["golo", "23"], ["sub", "60"], ["am", "35"]]) { await pg.click(`[data-fja$=":${t}"]`); await pg.fill("#ac-min", m);
+    if (t !== "golo") await pg.selectOption("#ac-j", { index: 1 }); if (t === "sub") await pg.selectOption("#ac-j2", { index: 1 }); await pg.click("#ac-ok"); await pg.waitForTimeout(150); }
+  const fj = await pg.evaluate(() => { const J = Object.values(rels).find((x) => x.adversario === "Lusitânia").jogos[0], s = J.acont.find((a) => a.t === "sub"); return { onze: J.onze.length, ac: J.acont.map((a) => a.t + a.min).join(","), sai: s && J.onze.includes(s.jog), entra: s && !J.onze.includes(s.jog2) }; });
+  confirma(fj.onze === 11 && fj.ac === "golo23,sub60,am35" && fj.sai && fj.entra, `${nome}: ficha do jogo (onze e acontecimentos) não ficou gravada (${JSON.stringify(fj)})`);
+  confirma((await pg.textContent("#st-env")).includes("Submeter relatório"), `${nome}: o botão devia dizer "Submeter relatório"`);
+
+  // momentos do jogo com os nomes novos; opções novas; posição e depois jogador
+  const gui = await pg.evaluate(() => ({ nomes: SECS.filter((x) => x.g === "Momentos do jogo").map((x) => x.t).join("|"), p31: Q_POR_ID.p_prot.op.includes("3+1"), s23: Q_POR_ID.s_pb.op.some((o) => o.includes("2/3 do campo")) }));
+  confirma(gui.nomes === "Organização ofensiva|Transição defesa-ataque|Transição ataque-defesa|Organização defensiva|Bolas paradas ofensivas|Bolas paradas defensivas" && gui.p31 && gui.s23, `${nome}: momentos do jogo ou opções novas em falta (${JSON.stringify(gui)})`);
+  await pg.click('nav.secs button[data-s="com"]'); await pg.waitForTimeout(150);
+  await pg.click('[data-q="c_apoio"] [data-jadd]'); await pg.waitForTimeout(150); await pg.click("#jp-pos button"); await pg.waitForTimeout(100);
+  await pg.screenshot({ path: join(cap, `${nome}-posicao-jogador.png`) });
+  await pg.click("#jp-jog button"); await pg.click("#jq-ok"); await pg.waitForTimeout(150);
+  const pj = await pg.evaluate(() => { const C = Object.values(rels).find((x) => x.adversario === "Lusitânia").chk.c_apoio; return { n: C.jog.length, pos: C.jp[C.jog[0]] }; });
+  confirma(pj.n === 1 && pj.pos === "GR", `${nome}: posição e depois jogador não ficou gravado (${JSON.stringify(pj)})`);
+
+  // jogadores de referência a partir do plantel
+  await pg.click('nav.secs button[data-s="jog"]'); await pg.waitForTimeout(150); await pg.click("#jg-add"); await pg.waitForTimeout(150); await pg.click("#rf-l button"); await pg.waitForTimeout(150);
+  const rf = await pg.evaluate(() => { const R = Object.values(rels).find((x) => x.adversario === "Lusitânia"), p = R.refs[0]; return p && { jid: p.jid, nome: p.nome, ok: R.plantel.some((j) => j.id === p.jid && j.nome === p.nome) }; });
+  confirma(rf && rf.ok, `${nome}: jogador de referência não veio do plantel (${JSON.stringify(rf)})`);
+
   // nota rápida (estádio) fica por arrumar; nenhuma página se pode alargar para os lados
   await pg.click("#fab"); await pg.fill("#e-t", "Lateral sobe sempre que a bola vai ao lado contrário"); await pg.click("#e-ok");
   const larg = await pg.evaluate(() => document.documentElement.scrollWidth - innerWidth);
   confirma(larg <= 1, `${nome}: a página alarga ${larg}px para os lados`);
-  for (const s of ["ficha", "estr", "rec", "per", "sem", "bp", "jog", "nos", "sint", "notas"]) { await pg.click(`nav.secs button[data-s="${s}"]`); await pg.waitForTimeout(120); }
+  for (const s of ["ficha", "estr", "rec", "per", "sem", "bpo", "bpd", "jog", "nos", "sint", "notas"]) { await pg.click(`nav.secs button[data-s="${s}"]`); await pg.waitForTimeout(120); }
   await pg.screenshot({ path: join(cap, `${nome}-notas.png`) });
 }
 // base de dados simulada: uma atualização antiga que chega enquanto uma alteração ainda espera para gravar (data, local)
@@ -129,6 +153,21 @@ for (const [nome, opc] of ecras) {
   await pg.waitForTimeout(200); await pg.selectOption("[data-jvs]", "Madalena"); await pg.waitForTimeout(300);
   const congelado = await pg.evaluate((k) => ({ ui: Object.values(rels)[0].jogos[0].vs, sel: document.querySelector("[data-jvs]").value, db: window.__docs[k].jogos[0].vs }), antigo.k);
   confirma(congelado.ui === "Madalena" && congelado.sel === "Madalena" && congelado.db === "Madalena", `bd simulada: com dados congelados da base de dados a equipa não muda (${JSON.stringify(congelado)})`);
+  // com dados congelados, as bolinhas da Estrutura e do quadro tático continuam a mexer-se
+  const arrasta = async (sel, dx, dy) => { const l = pg.locator(sel).first(); await l.evaluate((e) => e.scrollIntoView({ block: "center", inline: "center" })); const b = await l.boundingBox(), x = b.x + b.width / 2, y = b.y + b.height / 2;
+    await pg.mouse.move(x, y); await pg.mouse.down(); for (let i = 1; i <= 8; i++) await pg.mouse.move(x + dx * i / 8, y + dy * i / 8); await pg.mouse.up(); await pg.waitForTimeout(250); };
+  await pg.click('nav.secs button[data-s="com"]'); await pg.waitForTimeout(150); await pg.click('[data-q="c_pb"] [data-qq]'); await pg.waitForTimeout(150); await pg.click("#qq-11"); await pg.waitForTimeout(200);
+  const kq = await pg.evaluate(() => Object.values(rels)[0].chk.c_pb.quadro.pecas[3].id);
+  await pg.evaluate((k) => { const fz = (o) => { if (o && typeof o === "object") { Object.values(o).forEach(fz); Object.freeze(o); } return o; }; const d = fz(JSON.parse(JSON.stringify(window.__docs[k]))), id = k.split("/").pop();
+    (window.__snap["obs/u_teste/relatorios"] || []).forEach((cb) => cb({ docs: [{ id, data: () => d }], metadata: { hasPendingWrites: false, fromCache: false } })); }, antigo.k);
+  await pg.waitForTimeout(300);
+  const q0 = await pg.evaluate((k) => { const p = Object.values(rels)[0].chk.c_pb.quadro.pecas.find((x) => x.id === k); return { x: p.x, y: p.y }; }, kq);
+  await arrasta(`#qq-p [data-k="${kq}"]`, 40, 30);
+  const q1 = await pg.evaluate((k) => { const p = Object.values(rels)[0].chk.c_pb.quadro.pecas.find((x) => x.id === k); return { x: p.x, y: p.y }; }, kq);
+  await pg.click('nav.secs button[data-s="estr"]'); await pg.waitForTimeout(200);
+  await arrasta('#es-p [data-i="5"]', 40, -30);
+  const e5 = await pg.evaluate(() => Object.values(rels)[0].onze.com.pos[5]);
+  confirma((q1.x !== q0.x || q1.y !== q0.y) && e5, `bd simulada: com dados congelados as bolinhas do quadro ou da estrutura não se mexem (${JSON.stringify({ q0, q1, e5 })})`);
   const bd = await pg.evaluate((k) => { const R = Object.values(rels)[0], J = R.jogos[0], G = window.__docs[k].jogos[0]; return { data: J.data, local: J.local, gData: G.data, gLocal: G.local }; }, antigo.k);
   confirma(bd.data === "2026-10-18" && bd.local === "fora" && bd.gData === "2026-10-18" && bd.gLocal === "fora", `bd simulada: data ou local apagados por uma atualização antiga (${JSON.stringify(bd)})`);
 }

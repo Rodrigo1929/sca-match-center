@@ -7,7 +7,7 @@ Existe para dar acesso a um observador de fora do clube sem ele ver o resto da a
 - **Código:** `observacao/page.html` (um só ficheiro, um só `<script>`) + `observacao/planteis.json`
 - **Build:** `npm run build` → `dist/observacao.html` (a página, o logo, a bola e os planteis embutidos)
 - **Testes:** `npm run check` (sintaxe) e `npm run test:obs` (browser, PC e telemóvel; `-- --ipad` para WebKit)
-- **Versão publicada:** Obs. 18 (26/10/2026) — ver `CHANGELOG.md`
+- **Versão publicada:** Obs. 19 (26/10/2026) — ver `CHANGELOG.md`
 
 ## Quem usa e com que acesso
 | Quem | O que vê | O que faz |
@@ -42,17 +42,18 @@ No aparelho: `sca-obs-cache-v1` (cópia dos relatórios), `sca-obs-pend-v1` (fil
 A cache carrega-se em `carregaCache()`, **depois** de todas as constantes existirem (um erro disto fez desaparecer relatórios na Obs. 9).
 
 ### Relatório (campos principais)
-- `adversario`, `competicao`, `estado` (`rasc`/`env`), `jogos[]` (contra, data, local, resultado, vídeo, contexto)
+- `adversario`, `competicao`, `estado` (`rasc`/`env` = "Submetido"), `jogos[]` (vs, data, local, res, como, vídeo, ctx, `onze` [11 ids do plantel], `acont` [{t: golo/sub/am/verm, min, jog, jog2, eq: nos/contra}])
 - `plantel[]` (n, nome, idade, pos do zerozero, pe, nac, `slot` = código de posição, `conf`), `treinador`, `adjunto`, `trGR`, `sistema`, `capitao`, `plantelNotas`, `cores` {cam, cam2, num, gr}
 - `plXY` {sistema: {código: {x,y}}} e `plNom` {sistema: {idJogador: {x,y}}}: sítios livres no desenho do plantel (frações do campo)
 - `onzes` {prov, alt} → {sis, pos {código: idJogador}, nota, xy {código: {x,y}}, nxy {código: {x,y}}}
 - `onze` (Estrutura no campo) {com, sem → {sis, pos, nota}, jog[11], nos, nosPos {com, sem}}
-- `chk[idPergunta]` {op[], freq, jog[], nota, quadro {pecas[], setas[]}}
+- `chk[idPergunta]` {op[], freq, jog[], jp {idJogador: código de posição} (perguntas `pj`: escolhe-se a posição e depois o jogador), nota, quadro {pecas[], setas[]}}
 - `evid[]` (q, txt, jogo, min, freq rec/pont/conf, ctx, clip, sit)
 - `bp[]` (bolas paradas com desenho e 4 aspetos), `refs[]` (jogadores de referência), `sint`, `clips[]`
 
 ## Decisões do Rodrigo (não mudar sem ele)
 - **Guião em checklist** (`GUIAO`, 36 perguntas): opções para tocar, frequência (sempre / muitas vezes / às vezes), jogadores do plantel, notas opcionais, evidências; quadro tático nas 12 perguntas em que a posição conta. A Ligação ao 3-4-3 fica para o observador com opções simples; o Rodrigo completa na revisão.
+- **Ajustes do Rodrigo Fonte (26/10/2026, Obs. 19):** momentos do jogo chamam-se Organização ofensiva, Transição defesa-ataque, Transição ataque-defesa, Organização defensiva, Bolas paradas ofensivas e Bolas paradas defensivas (as bolas paradas passaram a duas secções, `bpo`/`bpd`); "Enviar para revisão" passa a "Submeter relatório"; sem botão nem referências ao zerozero; perguntas c_apoio, c_rut, r_1p e r_prof escolhem a posição e depois o jogador; p_prot ganha "3+1"; s_pb ganha "A meio do meio-campo adversário (2/3 do campo)"; jogos observados com onze inicial e acontecimentos; jogadores de referência escolhidos do plantel.
 - **Síntese:** estrutura e comportamentos; 3 ameaças; 3 oportunidades; bolas paradas e jogadores; clips com frase.
 - **Princípios:** espírito de equipa, intensidade, organização, objetividade; referência o nosso 3-4-3.
 - **Plantel:** estilo do plantel da SCA Match Center (campo branco, números 1–11, nomes por baixo). O desenho segue o **sistema habitual**; há **onze provável** e **onze alternativo**, cada um com o seu sistema. Escolher um jogador no onze provável muda a posição dele no plantel; o alternativo não mexe.

@@ -228,7 +228,7 @@ function slotDe(pos,pe,cont){ const [p1,p2]=partePos(pos), M={"Guarda Redes":"GR
 const NUM_433={"1":"GR","2":"LD","3":"DCD","4":"DCE","5":"LE","6":"MDC","8":"MCD","10":"MO","7":"ED","9":"PL","11":"EE"};
 function plantelZZ(adv){ const E=PLANTEIS.equipas&&PLANTEIS.equipas[adv]; if(!E) return null; const cont={};
   const js=E.jogadores.map(j=>{ const s=slotDe(j.pos,j.pe,cont); if(s.slot) cont[s.slot]=(cont[s.slot]||0)+1; return {id:nid("j"),n:j.n||"",nome:j.nome,idade:j.idade||"",pos:j.pos||"",pe:j.pe||"",nac:j.nac||"",slot:s.slot,conf:s.conf}; });
-  return {jogadores:js,treinador:E.treinador||"",fonte:`zerozero.pt · ${dataPt(PLANTEIS.data)}`}; }
+  return {jogadores:js,treinador:E.treinador||"",fonte:`Plantel inicial · ${dataPt(PLANTEIS.data)}`}; }
 const TODAS=["Angrense",...EQUIPAS.map(e=>e[0])].sort((a,b)=>a.localeCompare(b,"pt"));
 /* ======================= GUIÃO DE OBSERVAÇÃO (checklist) =======================
    Cada pergunta: id, t (texto), op (opções para tocar), multi (várias opções), jog (escolher jogadores do plantel: rótulo),
@@ -245,23 +245,23 @@ const GUIAO={
     {id:"c_estilo",t:"Qual é o estilo com bola?",op:["Posse e paciência","Misto","Jogo direto e segundas bolas","Vivem do contra-ataque"]},
     {id:"c_comb",t:"Que movimentos e combinações repetem para progredir?",op:["Tabelas","Sobreposição do lateral","Apoio e rutura","Mudança de corredor","Passe nas costas","1x1 do extremo"],multi:true},
     {id:"c_corr",t:"Por que corredor criam mais perigo?",op:["Esquerdo","Central","Direito"],multi:true},
-    {id:"c_apoio",t:"Quem vem buscar a bola (apoios)?",jog:"Jogadores"},
-    {id:"c_rut",t:"Quem ameaça a profundidade?",jog:"Jogadores"},
+    {id:"c_apoio",t:"Quem vem buscar a bola (apoios)?",jog:"Jogadores",pj:true},
+    {id:"c_rut",t:"Quem ameaça a profundidade?",jog:"Jogadores",pj:true},
     {id:"c_fin",t:"Como chegam à finalização?",op:["Cruzamentos","Combinações interiores","Passes nas costas","Ações individuais","Remate de fora da área"],multi:true},
     {id:"c_cruz",t:"Nos cruzamentos, quem ocupa a área e que zonas atacam?",op:["1.º poste","Zona do penálti","2.º poste","Entrada da área (2.ª bola)"],multi:true,jog:"Quem ataca a área",quadro:"meio"}],
   rec:[
     {id:"r_vel",t:"Depois de recuperar: aceleram de imediato ou asseguram a posse?",op:["Aceleram logo","Asseguram a posse","Depende da zona"]},
     {id:"r_zona",t:"Onde recuperam mais vezes a bola?",op:["Último terço","Meio-campo","Junto à própria área"],multi:true},
-    {id:"r_1p",t:"Quem recebe o primeiro passe?",jog:"Jogadores"},
-    {id:"r_prof",t:"Quem sai na profundidade?",jog:"Jogadores"},
+    {id:"r_1p",t:"Quem recebe o primeiro passe?",jog:"Jogadores",pj:true},
+    {id:"r_prof",t:"Quem sai na profundidade?",jog:"Jogadores",pj:true},
     {id:"r_perigo",t:"Que corredores são mais perigosos nesse momento?",op:["Esquerdo","Central","Direito"],multi:true,jog:"Jogadores perigosos",quadro:"inteiro",base:"com"}],
   per:[
     {id:"p_reac",t:"Reagem para recuperar ou recuam?",op:["Pressão imediata","Recuam para o bloco","Faltas táticas para travar","Depende do resultado"],multi:true},
-    {id:"p_prot",t:"Quem fica a proteger a equipa enquanto ataca?",op:["2 centrais","2 centrais e médio defensivo","3 atrás","Lateral do lado contrário fecha"],multi:true,jog:"Jogadores",quadro:"inteiro",base:"com"},
+    {id:"p_prot",t:"Quem fica a proteger a equipa enquanto ataca?",op:["2 centrais","2 centrais e médio defensivo","3 atrás","3+1","Lateral do lado contrário fecha"],multi:true,jog:"Jogadores",quadro:"inteiro",base:"com"},
     {id:"p_esp",t:"Onde aparecem espaços para explorar?",op:["Costas dos laterais","Entre linhas","Entre central e lateral","Lado contrário à bola","Costas da defesa"],multi:true,quadro:"inteiro",base:"com"}],
   sem:[
     {id:"s_est",t:"Em que estrutura defendem e a que altura colocam o bloco?",op:["Bloco alto","Bloco médio","Bloco baixo"],estr:true},
-    {id:"s_pb",t:"Como defendem o pontapé de baliza do adversário?",op:["Pressão alta homem a homem","Pressão alta à zona","Deixam sair e esperam no meio-campo","Recuam todos"],quadro:"inteiro",base:"sem"},
+    {id:"s_pb",t:"Como defendem o pontapé de baliza do adversário?",op:["Pressão alta homem a homem","Pressão alta à zona","A meio do meio-campo adversário (2/3 do campo)","Deixam sair e esperam no meio-campo","Recuam todos"],quadro:"inteiro",base:"sem"},
     {id:"s_gat",t:"Que situações fazem disparar a pressão?",op:["Passe para o lateral","Passe atrasado","Receção de costas","Má receção","Passe para o GR","Bola junto à linha"],multi:true},
     {id:"s_enc",t:"Encaminham o adversário para fora ou deixam jogar por dentro?",op:["Encaminham para fora","Fecham por dentro sem pressionar","Deixam jogar por dentro"]},
     {id:"s_press",t:"Quem sai à pressão e quem faz a cobertura?",op:["Ponta de lança sozinho","Avançados e extremos","Ponta de lança e um médio","Médios saem alto"],multi:true,jog:"Jogadores",quadro:"inteiro",base:"sem"},
@@ -285,12 +285,13 @@ const SECS=[
   {k:"ficha",t:"Ficha e jogos",g:"Relatório"},
   {k:"plantel",t:"Plantel",g:"Relatório"},
   {k:"estr",t:"Estrutura no campo",g:"Relatório"},
-  {k:"com",t:"Com bola",g:"Momentos do jogo",q:true},
-  {k:"rec",t:"Quando recuperam",g:"Momentos do jogo",q:true},
-  {k:"per",t:"Quando perdem",g:"Momentos do jogo",q:true,nota:"Interessa-nos perceber os comportamentos que repetem e as condições em que aparecem."},
-  {k:"sem",t:"Sem bola",g:"Momentos do jogo",q:true},
-  {k:"bp",t:"Bolas paradas",g:"Bolas paradas e jogadores"},
-  {k:"jog",t:"Jogadores de referência",g:"Bolas paradas e jogadores"},
+  {k:"com",t:"Organização ofensiva",g:"Momentos do jogo",q:true},
+  {k:"rec",t:"Transição defesa-ataque",g:"Momentos do jogo",q:true},
+  {k:"per",t:"Transição ataque-defesa",g:"Momentos do jogo",q:true,nota:"Interessa-nos perceber os comportamentos que repetem e as condições em que aparecem."},
+  {k:"sem",t:"Organização defensiva",g:"Momentos do jogo",q:true},
+  {k:"bpo",t:"Bolas paradas ofensivas",g:"Momentos do jogo",lado:"of"},
+  {k:"bpd",t:"Bolas paradas defensivas",g:"Momentos do jogo",lado:"def"},
+  {k:"jog",t:"Jogadores de referência",g:"Jogadores"},
   {k:"nos",t:"Ligação ao nosso 3-4-3",g:"O nosso jogo",q:true},
   {k:"sint",t:"Síntese",g:"Conclusões"},
   {k:"notas",t:"Notas por arrumar",g:"Conclusões"}];
@@ -352,7 +353,7 @@ function guardaVista(){ LSset("sca-obs-vista",vista); }
 /* sítios livres das bolinhas do plantel e dos onzes: {código: {x,y}} em frações do campo */
 function nXY(o,ok){ const r={}; ok=ok||(c=>POS_NOME[c]); Object.entries(o&&typeof o==="object"?o:{}).forEach(([c,p])=>{ if(ok(c)&&p&&isFinite(+p.x)&&isFinite(+p.y)) r[c]={x:clamp(+p.x,0,1),y:clamp(+p.y,-.05,1.3)}; }); return r; }
 function normRel(d){ const R={...d}; R.adversario=String(R.adversario||""); R.competicao=String(R.competicao||""); R.estado=["rasc","env"].includes(R.estado)?R.estado:"rasc";
-  R.jogos=Array.isArray(R.jogos)?R.jogos.filter(j=>j&&j.id):[]; R.resp=R.resp&&typeof R.resp==="object"?R.resp:{}; R.evid=Array.isArray(R.evid)?R.evid.filter(e=>e&&e.id):[];
+  R.jogos=Array.isArray(R.jogos)?R.jogos.filter(j=>j&&j.id).map(j=>({...j,onze:Array.isArray(j.onze)?j.onze.map(String).slice(0,11):[],acont:Array.isArray(j.acont)?j.acont.filter(a=>a&&a.id&&ACONT[a.t]).map(a=>({id:String(a.id),t:a.t,min:String(a.min||""),jog:String(a.jog||""),jog2:String(a.jog2||""),eq:a.eq==="contra"?"contra":"nos"})):[]})):[]; R.resp=R.resp&&typeof R.resp==="object"?R.resp:{}; R.evid=Array.isArray(R.evid)?R.evid.filter(e=>e&&e.id):[];
   const o=R.onze||{}; const st=s=>({sis:SISTEMAS[s?.sis]?s.sis:"4-4-2",pos:s?.pos&&typeof s.pos==="object"?s.pos:{},nota:String(s?.nota||"")});
   R.onze={com:st(o.com),sem:st(o.sem),jog:Array.from({length:11},(_,i)=>({pos:"",n:"",nome:"",...((o.jog||[])[i]||{})})),nos:!!o.nos,nosPos:{com:{...(o.nosPos?.com||{})},sem:{...(o.nosPos?.sem||{})}}};
   if(!o.com) R.onze.com.sis="4-4-2"; if(!o.sem) R.onze.sem.sis="4-4-2";
@@ -373,7 +374,7 @@ function normRel(d){ const R={...d}; R.adversario=String(R.adversario||""); R.co
   /* nomes largados à mão no modo "Mover livremente": {sistema: {id do jogador: {x,y}}} */
   const idsPl=new Set(R.plantel.map(j=>j.id)), pnm={}; Object.entries(R.plNom&&typeof R.plNom==="object"?R.plNom:{}).forEach(([s,o])=>{ if(LAYOUTS[s]){ const v=nXY(o,id=>idsPl.has(id)); if(Object.keys(v).length) pnm[s]=v; } }); R.plNom=pnm;
   const ch=R.chk&&typeof R.chk==="object"?R.chk:{}; R.chk={};
-  Object.entries(ch).forEach(([id,c])=>{ if(!Q_POR_ID[id]||!c) return; const qd=c.quadro||{}; R.chk[id]={op:Array.isArray(c.op)?c.op.map(String):[],freq:["sempre","muitas","as"].includes(c.freq)?c.freq:"",jog:Array.isArray(c.jog)?c.jog.map(String):[],nota:String(c.nota||""),
+  Object.entries(ch).forEach(([id,c])=>{ if(!Q_POR_ID[id]||!c) return; const qd=c.quadro||{}; R.chk[id]={op:Array.isArray(c.op)?c.op.map(String):[],freq:["sempre","muitas","as"].includes(c.freq)?c.freq:"",jog:Array.isArray(c.jog)?c.jog.map(String):[],jp:Object.fromEntries(Object.entries(c.jp&&typeof c.jp==="object"?c.jp:{}).filter(([k,v])=>(c.jog||[]).includes(k)&&POS_NOME[v])),nota:String(c.nota||""),
     quadro:{pecas:Array.isArray(qd.pecas)?qd.pecas.filter(p=>p&&p.id):[],setas:Array.isArray(qd.setas)?qd.setas.filter(x=>x&&x.id):[]}}; });
   Object.entries(R.resp||{}).forEach(([k,t])=>{ const id=Q_ANTIGO[k]; if(!id||!String(t||"").trim()) return; if(!R.chk[id]) R.chk[id]={op:[],freq:"",jog:[],nota:"",quadro:{pecas:[],setas:[]}}; if(!R.chk[id].nota.includes(String(t).trim())) R.chk[id].nota=(R.chk[id].nota?R.chk[id].nota+"\n":"")+String(t).trim(); });
   R.resp={}; R.evid.forEach(e=>{ if(Q_ANTIGO[e.q]) e.q=Q_ANTIGO[e.q]; });
@@ -501,7 +502,7 @@ function contagens(R){ const resp=TODAS_Q.filter(q=>respondida(R,q.id)).length, 
   return {resp,tot,ev:R.evid.length,soltas:R.evid.filter(e=>!e.q).length}; }
 function renderLista(){ const ls=Object.values(rels).sort((a,b)=>String(b.atualizadoEm||b.criadoEm).localeCompare(String(a.atualizadoEm||a.criadoEm)));
   const avisos=bannerAcesso(); let h=`${avisos}<div class="lhead"><div><h2>Relatórios de observação</h2><p>Um relatório por adversário do campeonato, com vários jogos observados. Vês os relatórios de todos; cada um edita os seus e a equipa técnica revê.</p></div>${!soLeitura?`<button class="btn" id="novo">+ Outro adversário</button>`:""}</div>`;
-  const cartao=R=>{ const c=contagens(R), rv=revs[R.id], est=rv&&rv.revisto?["rev","Revisto"]:R.estado==="env"?["env","Para revisão"]:["rasc","Em curso"];
+  const cartao=R=>{ const c=contagens(R), rv=revs[R.id], est=rv&&rv.revisto?["rev","Revisto"]:R.estado==="env"?["env","Submetido"]:["rasc","Em curso"];
       return `<button class="rcard" data-id="${esc(R.id)}"><div class="row" style="justify-content:space-between;width:100%"><span class="chip ${est[0]}">${est[1]}</span>${R.autor!==meId?`<span class="hint">${esc(nomes[R.autor]||"Observador")}</span>`:""}</div>
         <h3>${esc(R.adversario||"Adversário por definir")}</h3><div class="meta"><span><b>${R.jogos.length}</b> ${R.jogos.length===1?"jogo":"jogos"}</span><span><b>${c.resp}/${c.tot}</b> perguntas</span><span><b>${c.ev}</b> evidências</span>${c.soltas?`<span style="color:var(--warn)"><b>${c.soltas}</b> por arrumar</span>`:""}</div>
         <div class="meta">Atualizado ${new Date(R.atualizadoEm||R.criadoEm).toLocaleDateString("pt-PT")}</div></button>`; };
@@ -526,10 +527,10 @@ function renderLista(){ const ls=Object.values(rels).sort((a,b)=>String(b.atuali
 function bannerAcesso(){ if(soLeitura) return `<div class="banner" style="margin-bottom:12px"><span>🔒</span><span><b>Sem permissão para gravar.</b> Pede à equipa técnica acesso de <b>Editor</b> a esta página.</span></div>`;
   if(semDb) return `<div class="banner" style="margin-bottom:12px"><span>⚠</span><span><b>Sem ligação à base de dados.</b> O que registares fica só neste aparelho até a ligação voltar a funcionar.</span></div>`; return ""; }
 
-function renderRel(R){ const ed=podeEditar(R), c=contagens(R), rv=revs[R.id];
-  const cont=s=>{ if(s.q){ const qs=GUIAO[s.k]; return `${qs.filter(q=>respondida(R,q.id)).length}/${qs.length}`; } if(s.k==="bp") return R.bp.length||""; if(s.k==="jog") return R.refs.length||""; if(s.k==="ficha") return R.jogos.length||""; if(s.k==="plantel") return R.plantel.length||""; if(s.k==="notas") return c.soltas||""; return ""; };
+function renderRel(R){ const ed=podeEditar(R), c=contagens(R), rv=revs[R.id]; if(vista.sec==="bp") vista.sec="bpo";
+  const cont=s=>{ if(s.q){ const qs=GUIAO[s.k]; return `${qs.filter(q=>respondida(R,q.id)).length}/${qs.length}`; } if(s.lado) return R.bp.filter(b=>b.lado===s.lado).length||""; if(s.k==="jog") return R.refs.length||""; if(s.k==="ficha") return R.jogos.length||""; if(s.k==="plantel") return R.plantel.length||""; if(s.k==="notas") return c.soltas||""; return ""; };
   let nav="", g=""; SECS.forEach(s=>{ if(s.g!==g){ g=s.g; nav+=`<div class="grp">${esc(g)}</div>`; } nav+=`<button data-s="${s.k}" aria-current="${s.k===vista.sec}">${esc(s.t)}<span class="c"${s.k==="notas"&&c.soltas?' style="color:var(--warn)"':""}>${cont(s)}</span></button>`; });
-  const est=rv&&rv.revisto?`<span class="chip rev">Revisto</span>`:R.estado==="env"?`<span class="chip env">Para revisão</span>`:`<span class="chip rasc">Em curso</span>`;
+  const est=rv&&rv.revisto?`<span class="chip rev">Revisto</span>`:R.estado==="env"?`<span class="chip env">Submetido</span>`:`<span class="chip rasc">Em curso</span>`;
   $("main").innerHTML=`${bannerAcesso()}<div class="rhead"><button class="btn sm ghost" id="voltar" aria-label="Voltar aos relatórios">← Relatórios</button><h2>${esc(R.adversario||"Adversário por definir")}</h2>${est}<div class="sp">${souDono&&R.autor!==meId?`<span class="hint">Observador: ${esc(nomes[R.autor]||"—")}</span>`:""}</div></div>
     ${rv&&rv.texto&&vista.sec!=="sint"?`<div class="banner info" style="margin-bottom:12px"><span>💬</span><span><b>Revisão da equipa técnica:</b> ${esc(rv.texto).slice(0,240)}${rv.texto.length>240?"…":""} <a href="#" id="verrev">Ver na Síntese</a></span></div>`:""}
     <div class="rgrid"><nav class="secs" aria-label="Secções do relatório">${nav}</nav><section class="sec" id="sec"></section></div>`;
@@ -538,7 +539,7 @@ function renderRel(R){ const ed=podeEditar(R), c=contagens(R), rv=revs[R.id];
   $("main").querySelectorAll("nav.secs button").forEach(b=>b.onclick=()=>{ vista.sec=b.dataset.s; render(); const n=$("sec"); if(n&&n.getBoundingClientRect().top<0) n.scrollIntoView({block:"start"}); });
   const cur=$("main").querySelector('nav.secs button[aria-current="true"]'); if(cur&&cur.scrollIntoView&&innerWidth<1000) cur.scrollIntoView({inline:"center",block:"nearest"});
   const S=SECS.find(s=>s.k===vista.sec)||SECS[0], box=$("sec");
-  if(S.q) secPerguntas(R,S,box,ed); else ({ficha:secFicha,plantel:secPlantel,estr:secEstr,bp:secBp,jog:secJog,sint:secSint,notas:secNotas})[S.k](R,box,ed);
+  if(S.q) secPerguntas(R,S,box,ed); else S.lado?secBp(R,box,ed,S.lado):({ficha:secFicha,plantel:secPlantel,estr:secEstr,jog:secJog,sint:secSint,notas:secNotas})[S.k](R,box,ed);
   liga(box,R,ed); }
 
 /* um campo grava ao perder o foco (ao tocar noutro sítio); redesenhar a meio desse toque fazia perder o botão tocado (ex.: "← Relatórios" no Safari) */
@@ -606,12 +607,12 @@ function secPerguntas(R,S,box,ed){ const nos=S.k==="nos", qs=GUIAO[S.k], feitas=
     const ve=c.querySelector("[data-verestr]"); if(ve) ve.onclick=()=>{ vista.sec="estr"; vista.estr="sem"; render(); scrollTo(0,0); };
     if(vista.quadro===q.id&&q.quadro) quadroQ(c.querySelector(".qq"),R,q,ed); });
   ligaEv(box,R); }
-function chkDe(R,id){ if(!R.chk[id]) R.chk[id]={op:[],freq:"",jog:[],nota:"",quadro:{pecas:[],setas:[]}}; return R.chk[id]; }
+function chkDe(R,id){ if(!R.chk[id]) R.chk[id]={op:[],freq:"",jog:[],jp:{},nota:"",quadro:{pecas:[],setas:[]}}; if(!R.chk[id].jp) R.chk[id].jp={}; return R.chk[id]; }
 function cartaoQ(R,q,i,ed){ const C=R.chk[q.id]||{op:[],freq:"",jog:[],nota:"",quadro:{pecas:[],setas:[]}}, ok=respondida(R,q.id), porId=new Map(R.plantel.map(j=>[j.id,j]));
   const notaVis=!!C.nota.trim()||vista.notaAberta===q.id, temQ=C.quadro.pecas.length>0;
   return `<div class="card q${ok?" qok":""}" data-q="${q.id}"><div class="qt"><span class="qn">${ok?"✓":i+1}</span><h4>${esc(q.t)}</h4></div>
     ${q.op?`<div class="seg qop">${q.op.map(o=>`<button type="button" data-op="${esc(o)}" aria-pressed="${C.op.includes(o)}"${ed?"":" disabled"}>${esc(o)}</button>`).join("")}</div>`:""}
-    ${q.jog?`<div class="row qjog"><span class="hint">${esc(q.jog)}:</span>${C.jog.map(id=>{ const j=porId.get(id); return j?`<span class="jchip">${esc((j.n?j.n+" ":"")+j.nome)}${ed?`<button type="button" data-jx="${esc(id)}" aria-label="Tirar ${esc(j.nome)}">✕</button>`:""}</span>`:""; }).join("")}${ed?`<button type="button" class="btn sm" data-jadd>+ Jogador</button>`:""}</div>`:""}
+    ${q.jog?`<div class="row qjog"><span class="hint">${esc(q.jog)}:</span>${C.jog.map(id=>{ const j=porId.get(id); return j?`<span class="jchip">${C.jp&&C.jp[id]?esc(C.jp[id])+" · ":""}${esc((j.n?j.n+" ":"")+j.nome)}${ed?`<button type="button" data-jx="${esc(id)}" aria-label="Tirar ${esc(j.nome)}">✕</button>`:""}</span>`:""; }).join("")}${ed?`<button type="button" class="btn sm" data-jadd>+ Jogador</button>`:""}</div>`:""}
     <div class="row qrod"><div class="seg qfq">${FREQ_Q.map(([k,t])=>`<button type="button" data-fq="${k}" aria-pressed="${C.freq===k}"${ed?"":" disabled"}>${t}</button>`).join("")}</div>
       <span class="qac">${!notaVis&&ed?`<button type="button" class="btn sm ghost" data-nota>✎ Notas</button>`:""}${q.quadro?`<button type="button" class="btn sm${vista.quadro===q.id?" dark":""}" data-qq>▦ Quadro tático${temQ?" ✓":""}</button>`:""}${q.estr?`<button type="button" class="btn sm" data-verestr>Ver estrutura sem bola</button>`:""}</span></div>
     ${notaVis?`<textarea data-b="chk.${q.id}.nota" rows="2" placeholder="Notas: o que fazem e em que condição aparece"></textarea>`:""}
@@ -620,6 +621,7 @@ function cartaoQ(R,q,i,ed){ const C=R.chk[q.id]||{op:[],freq:"",jog:[],nota:"",q
 function folhaJogQ(q){ const R=relAtual(); if(!R) return; const C=R.chk[q.id]||{jog:[]}, sel=new Set(C.jog), sis=R.sistema||"4-3-3";
   if(!R.plantel.length){ toast("Primeiro carrega o plantel no separador Plantel."); return; }
   const ls=R.plantel.slice().sort((a,b)=>ordPl(R,a)-ordPl(R,b)||(parseInt(a.n)||999)-(parseInt(b.n)||999));
+  if(q.pj) return folhaJogPos(q,C,ls,sis);
   folha(`<h3>${esc(q.jog)}</h3><p class="hint" style="margin:0">${esc(q.t)}</p>
     <div class="pgrid" id="jq-l">${ls.map(j=>`<button type="button" data-k="${esc(j.id)}" aria-pressed="${sel.has(j.id)}"><b>${esc(j.n||"–")}</b><span>${esc(j.nome)}</span><small>${esc(posNoSis(j.slot,sis)||"")}</small></button>`).join("")}</div>
     <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="jq-ok">Guardar</button></div>`,(s,fecha)=>{
@@ -662,6 +664,37 @@ function quadroQ(el,R,q,ed){ const meio=q.quadro==="meio", Lm=meio?36:105, C=cor
           const ok=s.querySelector("#qp-ok"); if(ok) ok.onclick=()=>{ const n=s.querySelector("#qp-n").value.trim().toUpperCase(); fecha(); editaQ(Q=>{ Q.pecas.find(p=>p.id===a.k).n=n; }); desenha(); }; }); }}); };
   desenha(); }
 
+/* ficha do jogo observado: onze inicial da equipa observada e acontecimentos (golos, substituições, cartões) com o minuto */
+const ACONT={golo:["⚽","Golo"],sub:["⇄","Substituição"],am:["🟨","Amarelo"],verm:["🟥","Vermelho"]};
+const nomeJ=(R,id)=>{ const j=R.plantel.find(x=>x.id===id); return j?(j.n?j.n+" ":"")+j.nome:""; };
+function fichaJogoHtml(R,J,ed){ const eq=R.adversario||"Equipa observada", contra=J.vs||"Adversário", ord=J.acont.slice().sort((a,b)=>(parseInt(a.min)||0)-(parseInt(b.min)||0));
+  const txt=a=>a.t==="golo"?(a.eq==="contra"?`Golo do ${contra}`:`Golo · ${nomeJ(R,a.jog)||eq}`):a.t==="sub"?`Sai ${nomeJ(R,a.jog)||"?"} · entra ${nomeJ(R,a.jog2)||"?"}`:`${ACONT[a.t][1]} · ${nomeJ(R,a.jog)||"?"}`;
+  return `<div class="fj" style="border-top:1px dashed var(--line);padding-top:10px;display:flex;flex-direction:column;gap:8px"><h4>Ficha do jogo · ${esc(eq)}</h4>
+    <div class="row"><b>Onze inicial</b><span class="hint">${J.onze.length}/11</span>${ed?`<button type="button" class="btn sm" data-fjo="${esc(J.id)}">${J.onze.length?"Mudar o onze":"Escolher o onze"}</button>`:""}</div>
+    ${J.onze.length?`<div class="row qjog">${J.onze.map(id=>`<span class="jchip" style="padding-right:10px">${esc(nomeJ(R,id)||"?")}</span>`).join("")}</div>`:""}
+    <div class="evs">${ord.map(a=>`<div class="ev"><span class="tm">${esc(a.min?a.min+"'":"–")}</span><span class="tx">${ACONT[a.t][0]} ${esc(txt(a))}${ed?` <button type="button" class="btn sm ghost" data-fjx="${esc(J.id)}:${esc(a.id)}" style="min-height:30px;padding:2px 8px">✕</button>`:""}</span></div>`).join("")||`<p class="hint" style="margin:0">Sem golos, substituições ou cartões registados.</p>`}</div>
+    ${ed?`<div class="row">${Object.entries(ACONT).map(([k,[ic,nm]])=>`<button type="button" class="btn sm" data-fja="${esc(J.id)}:${k}">+ ${ic} ${nm}</button>`).join("")}</div>`:""}</div>`; }
+function opJog(R,sel,filtro){ const sis=R.sistema||"4-3-3"; return `<option value="">Escolher jogador</option>`+R.plantel.slice().sort((a,b)=>ordPl(R,a)-ordPl(R,b)||(parseInt(a.n)||999)-(parseInt(b.n)||999)).filter(j=>!filtro||filtro(j)).map(j=>`<option value="${esc(j.id)}"${j.id===sel?" selected":""}>${esc((posNoSis(j.slot,sis)?posNoSis(j.slot,sis)+" · ":"")+(j.n?j.n+" ":"")+j.nome)}</option>`).join(""); }
+function folhaOnzeJogo(jid){ const R=relAtual(), J=R&&R.jogos.find(j=>j.id===jid); if(!J) return; if(!R.plantel.length){ toast("Primeiro preenche o plantel."); return; }
+  const sel=new Set(J.onze), sis=R.sistema||"4-3-3", ls=R.plantel.slice().sort((a,b)=>ordPl(R,a)-ordPl(R,b)||(parseInt(a.n)||999)-(parseInt(b.n)||999));
+  folha(`<h3>Onze inicial · ${esc(R.adversario||"")}</h3><p class="hint" style="margin:0" id="oj-n"></p><div class="pgrid" id="oj-l">${ls.map(j=>`<button type="button" data-k="${esc(j.id)}" aria-pressed="${sel.has(j.id)}"><b>${esc(j.n||"–")}</b><span>${esc(j.nome)}</span><small>${esc(posNoSis(j.slot,sis)||"")}</small></button>`).join("")}</div>
+    <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="oj-ok">Guardar</button></div>`,(s_,fecha)=>{
+    const conta=()=>s_.querySelector("#oj-n").textContent=`${sel.size}/11 escolhidos`; conta();
+    s_.querySelectorAll("#oj-l button").forEach(b=>b.onclick=()=>{ const k=b.dataset.k; if(sel.has(k)) sel.delete(k); else { if(sel.size>=11){ toast("Já tens 11. Tira um primeiro."); return; } sel.add(k); } b.setAttribute("aria-pressed",String(sel.has(k))); conta(); });
+    s_.querySelector("#oj-ok").onclick=()=>{ fecha(); editaRel(R=>{ const X=R.jogos.find(j=>j.id===jid); if(X) X.onze=ls.map(j=>j.id).filter(id=>sel.has(id)); }); }; }); }
+function folhaAcont(jid,t){ const R=relAtual(), J=R&&R.jogos.find(j=>j.id===jid); if(!J||!ACONT[t]) return; const emCampo=new Set(J.onze);
+  J.acont.slice().sort((a,b)=>(parseInt(a.min)||0)-(parseInt(b.min)||0)).forEach(a=>{ if(a.t==="sub"){ emCampo.delete(a.jog); emCampo.add(a.jog2); } });
+  const temOnze=J.onze.length>0, fEm=temOnze?j=>emCampo.has(j.id):null, fFora=temOnze?j=>!emCampo.has(j.id):null;
+  folha(`<h3>${ACONT[t][0]} ${ACONT[t][1]}</h3>
+    <label class="f">Minuto<input type="text" id="ac-min" inputmode="numeric" maxlength="6" placeholder="Ex.: 23 ou 45+2"></label>
+    ${t==="golo"?`<div class="seg" id="ac-eq"><button type="button" data-k="nos" aria-pressed="true">${esc(R.adversario||"Equipa observada")}</button><button type="button" data-k="contra" aria-pressed="false">${esc(J.vs||"Adversário")}</button></div>`:""}
+    <label class="f" id="ac-jl">${t==="sub"?"Sai":t==="golo"?"Marcador (opcional)":"Jogador"}<select id="ac-j">${opJog(R,"",t==="golo"?null:fEm)}</select></label>
+    ${t==="sub"?`<label class="f">Entra<select id="ac-j2">${opJog(R,"",fFora)}</select></label>`:""}
+    <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="ac-ok">Guardar</button></div>`,(s_,fecha)=>{
+    let eq="nos"; const ws=s_.querySelector("#ac-eq"); if(ws) ws.querySelectorAll("button").forEach(b=>b.onclick=()=>{ eq=b.dataset.k; ws.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); s_.querySelector("#ac-jl").hidden=eq==="contra"; });
+    s_.querySelector("#ac-ok").onclick=()=>{ const a={id:nid("a"),t,min:s_.querySelector("#ac-min").value.trim().replace(/['’]/g,""),jog:eq==="contra"?"":s_.querySelector("#ac-j").value,jog2:t==="sub"?s_.querySelector("#ac-j2").value:"",eq};
+      if(t!=="golo"&&!a.jog){ toast("Escolhe o jogador."); return; } if(t==="sub"&&!a.jog2){ toast("Escolhe quem entra."); return; }
+      fecha(); editaRel(R=>{ const X=R.jogos.find(j=>j.id===jid); if(X) X.acont.push(a); }); }; }); }
 const vsOutra=new Set(); /* jogos em que se escolheu "Outra equipa…" e ainda não se escreveu o nome */
 function secFicha(R,box,ed){ box.innerHTML=`<header><h3>Ficha e jogos observados</h3><p>Um relatório por adversário. Junta aqui todos os jogos que viste: cada evidência fica ligada a um jogo e ao minuto do vídeo.</p></header>
   <div class="card"><div class="fields"><label class="f">Adversário<select data-b="adversario" data-rr><option value="">Escolher equipa</option>${EQUIPAS.map(([n,i])=>`<option value="${esc(n)}">${esc(n)} (${esc(i)})</option>`).join("")}${R.adversario&&!EQUIPAS.some(([n])=>n===R.adversario)?`<option value="${esc(R.adversario)}">${esc(R.adversario)}</option>`:""}</select></label><label class="f">Competição<input type="text" data-b="competicao"></label></div></div>
@@ -672,9 +705,10 @@ function secFicha(R,box,ed){ box.innerHTML=`<header><h3>Ficha e jogos observados
       <label class="f">Local<select data-b="jogos.${J.id}.local"><option value="">—</option><option value="casa">Em casa</option><option value="fora">Fora</option></select></label><label class="f">Resultado final<input type="text" data-b="jogos.${J.id}.res" data-rr placeholder="2-1"></label>
       <label class="f">Como observaste<select data-b="jogos.${J.id}.como"><option value="">—</option><option value="vivo">Ao vivo</option><option value="video">Vídeo</option><option value="ambos">Ao vivo e vídeo</option></select></label>
       <label class="f">Link do vídeo<input type="url" data-b="jogos.${J.id}.video" placeholder="https://youtube.com/…"></label></div>
-      <label class="f">Contexto do jogo (golos, expulsões, alterações, o que estava em jogo)<textarea data-b="jogos.${J.id}.ctx" rows="2"></textarea></label></div>`).join(""):`<p class="hint">Ainda sem jogos. Adiciona o primeiro jogo que observaste.</p>`}</div>
-  <div class="card"><h4>Estado do relatório</h4><p class="hint" style="margin:0">${R.estado==="env"?"Enviado para revisão. Podes continuar a acrescentar.":"Quando estiver pronto para revermos juntos, envia para revisão."}</p>
-    ${ed?`<div class="row">${R.estado==="env"?`<button class="btn" id="st-rasc">Voltar a "Em curso"</button>`:`<button class="btn dark" id="st-env">Enviar para revisão</button>`}</div>`:""}
+      <label class="f">Contexto do jogo (o que estava em jogo, condições, notas)<textarea data-b="jogos.${J.id}.ctx" rows="2"></textarea></label>
+      ${fichaJogoHtml(R,J,ed)}</div>`).join(""):`<p class="hint">Ainda sem jogos. Adiciona o primeiro jogo que observaste.</p>`}</div>
+  <div class="card"><h4>Estado do relatório</h4><p class="hint" style="margin:0">${R.estado==="env"?"Relatório submetido. Podes continuar a acrescentar.":"Quando estiver pronto, submete o relatório; a equipa técnica revê."}</p>
+    ${ed?`<div class="row">${R.estado==="env"?`<button class="btn" id="st-rasc">Voltar a "Em curso"</button>`:`<button class="btn dark" id="st-env">Submeter relatório</button>`}</div>`:""}
     ${ed?`<div style="border-top:1px solid var(--line);padding-top:10px;margin-top:4px"><button class="btn danger" id="r-del">Apagar relatório</button></div>`:""}</div>`;
   if(!ed) return;
   /* equipa do jogo: lista fixa (a lista de sugestões do browser não abre dentro do claude.ai) ou "Outra equipa…" escrita à mão */
@@ -682,9 +716,12 @@ function secFicha(R,box,ed){ box.innerHTML=`<header><h3>Ficha e jogos observados
     if(v==="__outra") vsOutra.add(id); else vsOutra.delete(id);
     editaRel(R=>{ const J=R.jogos.find(j=>j.id===id); if(J) J.vs=v==="__outra"?(TODAS.includes(J.vs)?"":J.vs):v; },true); render.mesma=true; render();
     if(v==="__outra"){ const i=$("main").querySelector(`[data-b="jogos.${id}.vs"]`); if(i) i.focus(); } });
-  $("j-add").onclick=()=>editaRel(R=>R.jogos.push({id:nid("j"),vs:"",data:"",local:"",res:"",como:"",video:"",ctx:""}));
+  box.querySelectorAll("[data-fjo]").forEach(b=>b.onclick=()=>folhaOnzeJogo(b.dataset.fjo));
+  box.querySelectorAll("[data-fja]").forEach(b=>b.onclick=()=>{ const [jid,t]=b.dataset.fja.split(":"); folhaAcont(jid,t); });
+  box.querySelectorAll("[data-fjx]").forEach(b=>confirma2(b,"Apagar?",()=>{ const [jid,aid]=b.dataset.fjx.split(":"); editaRel(R=>{ const J=R.jogos.find(j=>j.id===jid); if(J) J.acont=J.acont.filter(a=>a.id!==aid); }); }));
+  $("j-add").onclick=()=>editaRel(R=>R.jogos.push({id:nid("j"),vs:"",data:"",local:"",res:"",como:"",video:"",ctx:"",onze:[],acont:[]}));
   box.querySelectorAll("[data-jdel]").forEach(b=>confirma2(b,"Apagar?",()=>editaRel(R=>{ R.jogos=R.jogos.filter(j=>j.id!==b.dataset.jdel); R.evid.forEach(e=>{ if(e.jogo===b.dataset.jdel) e.jogo=""; }); })));
-  if($("st-env")) $("st-env").onclick=()=>{ editaRel(R=>R.estado="env"); toast("Enviado para revisão"); };
+  if($("st-env")) $("st-env").onclick=()=>{ editaRel(R=>R.estado="env"); toast("Relatório submetido"); };
   if($("st-rasc")) $("st-rasc").onclick=()=>editaRel(R=>R.estado="rasc");
   confirma2($("r-del"),"Toca outra vez para apagar o relatório",()=>{ apagaDoc(relPath(R)); delete rels[R.id]; guardaCache(); vista={tipo:"lista",id:null,sec:"ficha"}; render(); toast("Relatório apagado"); }); }
 
@@ -733,12 +770,12 @@ function plantelSvgStr(R,modo){ const {VW,fx,fy,fw,fh,bw}=PLF, kx=fw/68, ky=fh/5
   if(semPos.length){ h+=`<text x="${fx}" y="${base+26}" font-size="24" font-weight="800" font-family="${F}" fill="#C00000">SEM POSIÇÃO NO CAMPO:</text>`;
     semPos.forEach((j,i)=>h+=caixa(fx+128+(i%6)*268,base+44+Math.floor(i/6)*46,j,250,`data-pl="${esc(j.id)}"`)); }
   return h+"</svg>"; }
-function secPlantel(R,box,ed){ const temZZ=!!(PLANTEIS.equipas&&PLANTEIS.equipas[R.adversario]), modo=R.base?"plantel":(vista.plv||"plantel"), sis=R.sistema||"4-3-3", lay=layoutDe(sis);
+function secPlantel(R,box,ed){ const modo=R.base?"plantel":(vista.plv||"plantel"), sis=R.sistema||"4-3-3", lay=layoutDe(sis);
   const ordSlot=j=>{ const c=posNoSis(j.slot,sis), i=lay.findIndex(x=>x[0]===c); return i<0?99:i; };
   const lista=R.plantel.slice().sort((a,b)=>ordSlot(a)-ordSlot(b)||(parseInt(a.n)||999)-(parseInt(b.n)||999)||a.nome.localeCompare(b.nome,"pt"));
   const opSis=sel=>`${Object.keys(LAYOUTS).map(x=>`<option${x===sel?" selected":""}>${x}</option>`).join("")}`;
   const O=modo==="plantel"?null:R.onzes[modo];
-  box.innerHTML=`<header><h3>Plantel${R.adversario?" · "+esc(R.adversario):""}</h3><p>Ponto de partida do zerozero, corrigido com o que vês nos jogos. Arrasta um nome para outra posição, toca nele para o editar, ou muda tudo na lista em baixo.</p></header>
+  box.innerHTML=`<header><h3>Plantel${R.adversario?" · "+esc(R.adversario):""}</h3><p>Plantel de partida, corrigido com o que vês nos jogos. Arrasta um nome para outra posição, toca nele para o editar, ou muda tudo na lista em baixo.</p></header>
     <div class="card"><h4>Equipa técnica e equipa</h4><div class="fields">
       <label class="f">Treinador<input type="text" data-b="treinador" data-rr placeholder="Nome do treinador"></label>
       <label class="f">Treinador adjunto<input type="text" data-b="adjunto"></label>
@@ -756,12 +793,12 @@ function secPlantel(R,box,ed){ const temZZ=!!(PLANTEIS.equipas&&PLANTEIS.equipas
         ${O?`<label class="f" style="flex-direction:row;align-items:center;gap:8px">Sistema<select id="pl-osis" style="width:auto" ${ed?"":"disabled"}>${opSis(O.sis||sis)}</select></label>`:""}</div>
       ${O?`<p class="hint" style="margin:0">${modo==="prov"?"O onze que esperas ver.":"Outra forma de jogar que já lhes viste (outro sistema ou outros jogadores)."} Toca numa posição para escolher o jogador; arrasta a bolinha ou o nome para onde ele costuma jogar.</p>
         <label class="f">${modo==="prov"?"Notas do onze provável":"Quando aparece (resultado, adversário, momento do jogo)"}<textarea data-b="onzes.${modo}.nota" rows="2"></textarea></label>`
-        :`<p class="hint" style="margin:0">Arrasta a bolinha de uma posição para onde quiseres (os nomes vão com ela); arrasta um nome para ${vista.livre?"o pôr onde quiseres":"mudar o jogador de posição"}. Contorno tracejado laranja: posição por confirmar (o zerozero só indica a linha).</p>`}
+        :`<p class="hint" style="margin:0">Arrasta a bolinha de uma posição para onde quiseres (os nomes vão com ela); arrasta um nome para ${vista.livre?"o pôr onde quiseres":"mudar o jogador de posição"}. Contorno tracejado laranja: posição por confirmar.</p>`}
       ${ed?`<div class="row"><label class="row hint" style="gap:8px"><input type="checkbox" id="pl-livre" ${vista.livre?"checked":""} style="width:22px;height:22px"> Mover livremente (os nomes ficam onde os largares)</label>
         ${Object.keys(O?O.xy:R.plXY[sis]||{}).length+Object.keys(O?O.nxy:R.plNom[sis]||{}).length?`<button class="btn sm" id="pl-rxy">Repor tudo no sítio do sistema</button>`:""}</div>`:""}
       <div style="overflow-x:auto"><div id="pl-svg" style="min-width:560px"></div></div></div>`
-      :`<div class="empty"><b>Ainda sem plantel.</b><span>${temZZ?`Carrega o plantel do zerozero (${esc(dataPt(PLANTEIS.data))}) ou acrescenta os jogadores à mão.`:"Acrescenta os jogadores à mão."}</span></div>`}
-    ${ed&&modo==="plantel"?`<div class="row">${temZZ?`<button class="btn" id="pl-zz">${R.plantel.length?"Substituir pelo plantel do zerozero":"Carregar plantel do zerozero"}</button>`:""}<button class="btn primary" id="pl-add">+ Jogador</button>${!R.base&&bases[slugEq(R.adversario)]?`<button class="btn" id="pl-base">Repor o plantel base</button>`:""}${!R.base&&EQUIPAS.some(([n])=>n===R.adversario)?`<button class="btn" id="pl-pbase">Guardar como plantel base</button>`:""}</div>`:""}
+      :`<div class="empty"><b>Ainda sem plantel.</b><span>Acrescenta os jogadores à mão.</span></div>`}
+    ${ed&&modo==="plantel"?`<div class="row"><button class="btn primary" id="pl-add">+ Jogador</button>${!R.base&&bases[slugEq(R.adversario)]?`<button class="btn" id="pl-base">Repor o plantel base</button>`:""}${!R.base&&EQUIPAS.some(([n])=>n===R.adversario)?`<button class="btn" id="pl-pbase">Guardar como plantel base</button>`:""}</div>`:""}
     ${R.plantel.length&&modo==="plantel"?`<div class="card" style="padding:0;overflow-x:auto"><table class="ptab"><thead><tr><th>Nº</th><th>Nome</th><th>Posição no campo (${esc(sis)})</th><th>Pé</th><th title="Posição confirmada nos jogos">Confirmada</th><th></th></tr></thead><tbody>
       ${lista.map(j=>`<tr${j.conf?"":' class="porconf"'}><td><input type="text" data-b="plantel.${j.id}.n" data-rr inputmode="numeric" maxlength="3" aria-label="Número" style="width:62px"></td>
         <td><input type="text" data-b="plantel.${j.id}.nome" data-rr aria-label="Nome" style="min-width:150px"><small>${esc([partePos(j.pos).join(" / "),j.idade?j.idade+" anos":""].filter(Boolean).join(" · "))}</small></td>
@@ -780,8 +817,6 @@ function secPlantel(R,box,ed){ const temZZ=!!(PLANTEIS.equipas&&PLANTEIS.equipas
       Object.entries(O.pos).forEach(([c,id])=>{ const n=posNoSis(c,v)||posNoSis(posNoSis(c,velho),v); if(n&&!pos[n]) pos[n]=id; }); O.sis=v; O.pos=pos; },true); render.mesma=true; render(); };
   box.querySelectorAll("[data-pslot]").forEach(sel=>sel.addEventListener("change",()=>{ const id=sel.dataset.pslot; editaRel(R=>{ const j=R.plantel.find(x=>x.id===id); if(j){ j.slot=sel.value; j.conf=true; } },true); render.mesma=true; render(); }));
   box.querySelectorAll("[data-pdel]").forEach(b=>confirma2(b,"Tirar?",()=>{ const id=b.dataset.pdel; render.mesma=true; editaRel(R=>{ R.plantel=R.plantel.filter(x=>x.id!==id); if(R.capitao===id) R.capitao=""; ["prov","alt"].forEach(k=>Object.keys(R.onzes[k].pos).forEach(c=>{ if(R.onzes[k].pos[c]===id) delete R.onzes[k].pos[c]; })); }); }));
-  const carrega=()=>{ const P=plantelZZ(R.adversario); editaRel(R=>{ R.plantel=P.jogadores; R.plantelFonte=P.fonte; if(!R.treinador) R.treinador=P.treinador; R.capitao=""; R.onzes.prov.pos={}; R.onzes.alt.pos={}; }); toast(`Plantel carregado · ${P.jogadores.length} jogadores`); };
-  const zz=$("pl-zz"); if(zz){ if(R.plantel.length) confirma2(zz,"Toca outra vez: substitui o plantel atual",carrega); else zz.onclick=carrega; }
   /* relatório ↔ plantel base: repor a partir da base (limpa os onzes, os jogadores são outros) ou guardar este plantel como base */
   const pb=$("pl-base"); if(pb) confirma2(pb,"Toca outra vez: substitui o plantel e limpa os onzes",()=>{ const B=docBase(bases[slugEq(R.adversario)]); editaRel(R=>{ CAMPOS_BASE.forEach(k=>R[k]=clone(B[k])); R.plantelFonte=`Plantel base · ${new Date().toLocaleDateString("pt-PT")}`; R.onzes.prov.pos={}; R.onzes.alt.pos={}; R.onzes.prov.nxy={}; R.onzes.alt.nxy={}; }); toast("Plantel reposto a partir do plantel base"); });
   const pp=$("pl-pbase"); if(pp) confirma2(pp,"Toca outra vez: substitui o plantel base",()=>{ const s=slugEq(R.adversario); guardaRel(normBase(docBase(R),s),true); toast(`Plantel base do ${R.adversario} atualizado`); });
@@ -824,7 +859,7 @@ function folhaJogPlantel(id,novo){ const R=relAtual(); if(!R) return; const ed=p
   J.slot=posNoSis(J.slot,sis)||(J.slot&&!slotInfo(J.slot,sis)?"":J.slot);
   folha(`<h3>${novo?"Novo jogador":esc(J.nome||"Jogador")}</h3>
     <div class="fields"><label class="f">Número<input type="text" id="jp-n" inputmode="numeric" maxlength="3" value="${esc(J.n)}" ${ed?"":"readonly"}></label><label class="f">Nome<input type="text" id="jp-nm" value="${esc(J.nome)}" ${ed?"":"readonly"}></label></div>
-    <div class="fields"><label class="f">Posição (zerozero)<input type="text" id="jp-p" value="${esc(partePos(J.pos).join(" / ")||J.pos)}" ${ed?"":"readonly"}></label><label class="f">Pé preferido<select id="jp-pe" ${ed?"":"disabled"}>${["","Direito","Esquerdo","Ambidestro"].map(x=>`<option${x===J.pe?" selected":""}>${x}</option>`).join("")}</select></label></div>
+    <div class="fields"><label class="f">Posição<input type="text" id="jp-p" value="${esc(partePos(J.pos).join(" / ")||J.pos)}" ${ed?"":"readonly"}></label><label class="f">Pé preferido<select id="jp-pe" ${ed?"":"disabled"}>${["","Direito","Esquerdo","Ambidestro"].map(x=>`<option${x===J.pe?" selected":""}>${x}</option>`).join("")}</select></label></div>
     ${J.idade||J.nac?`<p class="hint" style="margin:0">${[J.idade?J.idade+" anos":"",J.nac].filter(Boolean).join(" · ")}</p>`:""}
     <h4>Posição no campo (${esc(sis)})</h4><div class="seg" id="jp-s"></div>
     <label class="row" style="gap:10px;font-size:14.5px;min-height:40px"><input type="checkbox" id="jp-c" style="width:20px;height:20px" ${J.conf?"checked":""} ${ed?"":"disabled"}> Posição confirmada nos jogos</label>
@@ -884,15 +919,14 @@ function novaBp(tipo,lado){ const b={id:nid("b"),tipo,lado,cor:"",asp:{},pecas:[
     else { P("adv",34,2,"GR"); [[27,19],[29,20],[31,21]].forEach(([x,y])=>P("adv",x,y)); [[30,11],[35,10],[40,12],[33,14]].forEach(([x,y])=>P("adv",x,y)); [[22,30],[33,12],[38,11]].forEach(([x,y])=>P("out",x,y)); } }
   else { b.cor="dir"; P("bola",68,30); if(lado==="of"){ P("adv",67,31); [[62,26],[60,34],[54,30],[46,22]].forEach(([x,y])=>P("adv",x,y)); } else { [[62,27],[61,35],[55,30],[48,24]].forEach(([x,y])=>P("adv",x,y)); P("out",67,31); } }
   return b; }
-function secBp(R,box,ed){ const of=R.bp.filter(b=>b.lado==="of"), df=R.bp.filter(b=>b.lado==="def");
+function secBp(R,box,ed,lado){ const ls=R.bp.filter(b=>b.lado===lado), nm=lado==="of"?"ofensivas":"defensivas";
   const item=b=>{ const ab=bpAberto===b.id, ne=R.evid.filter(e=>e.q==="bp:"+b.id).length; return `<button class="bpi" data-bp="${esc(b.id)}" aria-expanded="${ab}"><b>${esc(nomeBp(b))}</b><span>${ne?ne+(ne===1?" evidência":" evidências"):""} ${ab?"▴":"▾"}</span></button>${ab?`<div class="card" id="bp-ed"></div>`:""}`; };
-  box.innerHTML=`<header><h3>Bolas paradas</h3><p>Cantos, livres e lançamentos laterais, ofensivos e defensivos. Para cada um: batedores e referências, movimentos e combinações, marcação e espaços, segundas bolas e transições.</p></header>
-    ${ed?`<div class="card"><h4>Acrescentar</h4><div class="row">${Object.entries(BP_TIPO).map(([t,n])=>`<button class="btn sm" data-nbp="${t}:of">+ ${n} ofensivo</button><button class="btn sm" data-nbp="${t}:def">+ ${n} defensivo</button>`).join("")}</div></div>`:""}
-    <div class="card"><h4>Ofensivas</h4><div class="bpl">${of.map(item).join("")||`<p class="hint">Nenhuma registada.</p>`}</div></div>
-    <div class="card"><h4>Defensivas</h4><div class="bpl">${df.map(item).join("")||`<p class="hint">Nenhuma registada.</p>`}</div></div>`;
+  box.innerHTML=`<header><h3>Bolas paradas ${nm}</h3><p>Cantos, livres e lançamentos laterais. Para cada um: batedores e referências, movimentos e combinações, marcação e espaços, segundas bolas e transições.</p></header>
+    ${ed?`<div class="card"><h4>Acrescentar</h4><div class="row">${Object.entries(BP_TIPO).map(([t,n])=>`<button class="btn sm" data-nbp="${t}:${lado}">+ ${n}</button>`).join("")}</div></div>`:""}
+    <div class="card"><div class="bpl">${ls.map(item).join("")||`<p class="hint">Nenhuma registada.</p>`}</div></div>`;
   box.querySelectorAll("[data-nbp]").forEach(b=>b.onclick=()=>{ const [t,l]=b.dataset.nbp.split(":"), nb=novaBp(t,l); bpAberto=nb.id; editaRel(R=>R.bp.push(nb)); });
   box.querySelectorAll("[data-bp]").forEach(b=>b.onclick=()=>{ bpAberto=bpAberto===b.dataset.bp?null:b.dataset.bp; render.mesma=true; render(); });
-  const B=R.bp.find(b=>b.id===bpAberto); if(B) edBp(R,B,$("bp-ed"),ed); }
+  const B=ls.find(b=>b.id===bpAberto); if(B&&$("bp-ed")) edBp(R,B,$("bp-ed"),ed); }
 let bpModo="mover", bpSeta="corrida";
 function edBp(R,B,el,ed){ el.innerHTML=`<div class="fields"><label class="f">Tipo<select data-b="bp.${B.id}.tipo" data-rr>${Object.entries(BP_TIPO).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></label>
     <label class="f">Lado<select data-b="bp.${B.id}.lado" data-rr>${Object.entries(BP_LADO).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></label>
@@ -931,11 +965,39 @@ function folhaSetaBp(bid,sid,redesenha){ folha(`<h3>Seta</h3><div class="actions
   s.querySelector("#sb-inv").onclick=()=>{ editaRel(R=>{ const a=R.bp.find(x=>x.id===bid).setas.find(x=>x.id===sid); [a.x1,a.y1,a.x2,a.y2]=[a.x2,a.y2,a.x1,a.y1]; },true); redesenha(); }; }); }
 
 function nomeJog(p){ return [p.n,p.nome].filter(Boolean).join(" · ")||"Jogador sem nome"; }
+/* escolher primeiro a posição e só depois o jogador (perguntas com pj) */
+function folhaJogPos(q,C,ls,sis){ const sel=C.jog.map(id=>({id,pos:(C.jp||{})[id]||posNoSis((ls.find(j=>j.id===id)||{}).slot,sis)||""})); let pos=null;
+  folha(`<h3>${esc(q.jog)}</h3><p class="hint" style="margin:0">${esc(q.t)}</p><div class="row qjog" id="jp-sel"></div><div id="jp-box"></div>
+    <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="jq-ok">Guardar</button></div>`,(s,fecha)=>{
+    const desenha=()=>{ s.querySelector("#jp-sel").innerHTML=sel.length?sel.map((x,i)=>{ const j=ls.find(j=>j.id===x.id); return `<span class="jchip">${esc((x.pos?x.pos+" · ":"")+(j?(j.n?j.n+" ":"")+j.nome:"?"))}<button type="button" data-xi="${i}" aria-label="Tirar">✕</button></span>`; }).join(""):`<span class="hint">Ainda nenhum jogador escolhido.</span>`;
+      const b=s.querySelector("#jp-box");
+      if(!pos){ b.innerHTML=`<h4>1. Posição do atleta</h4><div class="pgrid" id="jp-pos">${layoutDe(sis).map(([c,n])=>`<button type="button" data-pos="${c}"><b>${n}</b><span>${esc(POS_NOME[c])}</span><small>${c}</small></button>`).join("")}</div>`;
+        b.querySelectorAll("[data-pos]").forEach(x=>x.onclick=()=>{ pos=x.dataset.pos; desenha(); }); }
+      else { const bt=j=>`<button type="button" data-j="${esc(j.id)}" aria-pressed="${sel.some(x=>x.id===j.id)}"><b>${esc(j.n||"–")}</b><span>${esc(j.nome)}</span><small>${esc(posNoSis(j.slot,sis)||"")}</small></button>`;
+        const da=ls.filter(j=>posNoSis(j.slot,sis)===pos), outros=ls.filter(j=>posNoSis(j.slot,sis)!==pos);
+        b.innerHTML=`<div class="row" style="justify-content:space-between"><h4>2. Jogador · ${esc(rotPos(pos,sis))}</h4><button type="button" class="btn sm ghost" id="jp-volta">← Outra posição</button></div>
+          <div class="pgrid" id="jp-jog">${da.map(bt).join("")||`<p class="hint">Sem jogadores desta posição no plantel.</p>`}</div>${outros.length?`<details><summary class="hint" style="cursor:pointer;margin-top:8px">Outros jogadores do plantel</summary><div class="pgrid" style="margin-top:8px">${outros.map(bt).join("")}</div></details>`:""}`;
+        b.querySelector("#jp-volta").onclick=()=>{ pos=null; desenha(); };
+        b.querySelectorAll("[data-j]").forEach(x=>x.onclick=()=>{ const id=x.dataset.j, i=sel.findIndex(y=>y.id===id); if(i>=0) sel.splice(i,1); else sel.push({id,pos}); pos=null; desenha(); }); }
+      s.querySelectorAll("[data-xi]").forEach(x=>x.onclick=()=>{ sel.splice(+x.dataset.xi,1); desenha(); }); };
+    desenha();
+    s.querySelector("#jq-ok").onclick=()=>{ fecha(); editaRel(R=>{ const c=chkDe(R,q.id); c.jog=sel.map(x=>x.id); c.jp=Object.fromEntries(sel.filter(x=>x.pos).map(x=>[x.id,x.pos])); },true); render.mesma=true; render(); }; }); }
+
+/* jogador de referência a partir do plantel (ou escrito à mão) */
+function folhaRefPlantel(){ const R=relAtual(); if(!R) return; const sis=R.sistema||"4-3-3", ja=new Set(R.refs.map(p=>p.jid).filter(Boolean));
+  const ls=R.plantel.slice().sort((a,b)=>ordPl(R,a)-ordPl(R,b)||(parseInt(a.n)||999)-(parseInt(b.n)||999));
+  const novo=j=>{ const pos=j?posNoSis(j.slot,sis)||"":""; const p={id:nid("p"),jid:j?j.id:"",n:j?j.n||"":"",nome:j?j.nome:"",pos,papeis:pos==="GR"?["gr"]:[],fortes:""}; jogAberto=p.id; editaRel(R=>R.refs.push(p)); };
+  if(!ls.length){ novo(null); return; }
+  folha(`<h3>Jogador de referência</h3><p class="hint" style="margin:0">Escolhe do plantel${R.adversario?" do "+esc(R.adversario):""}.</p>
+    <div class="pgrid" id="rf-l">${ls.map(j=>`<button type="button" data-k="${esc(j.id)}"${ja.has(j.id)?' aria-pressed="true"':""}><b>${esc(j.n||"–")}</b><span>${esc(j.nome)}</span><small>${esc(posNoSis(j.slot,sis)||"")}${ja.has(j.id)?" · já está":""}</small></button>`).join("")}</div>
+    <div class="actions"><button class="btn l" id="rf-mao">Outro (escrever à mão)</button><button class="btn" data-close>Cancelar</button></div>`,(s_,fecha)=>{
+    s_.querySelectorAll("#rf-l button").forEach(b=>b.onclick=()=>{ fecha(); novo(ls.find(j=>j.id===b.dataset.k)); });
+    s_.querySelector("#rf-mao").onclick=()=>{ fecha(); novo(null); }; }); }
 function secJog(R,box,ed){ box.innerHTML=`<header><h3>Jogadores de referência</h3><p>Quem organiza, quem desequilibra, quem ameaça a profundidade e quem finaliza. Inclui o guarda-redes, sobretudo pela participação na construção e pelo controlo do espaço nas costas da defesa.</p>
     <p class="hint" style="margin-top:6px">Nas dificuldades, exemplos concretos: em vez de “o lateral defende mal”, em que situação tem dificuldade. O objetivo é encontrar situações que possamos provocar no jogo.</p></header>
     ${ed?`<div><button class="btn primary" id="jg-add">+ Jogador</button></div>`:""}
     ${R.refs.length?R.refs.map(p=>{ const ab=jogAberto===p.id, nd=R.evid.filter(e=>e.q==="jogd:"+p.id).length; return `<div class="card pl"><button class="bpi" data-jg="${esc(p.id)}" aria-expanded="${ab}" style="border:0;padding:0;min-height:44px"><span class="plh" style="margin:0"><span class="num">${esc(p.n||"–")}</span><b>${esc(p.nome||"Sem nome")}${p.pos?" · "+esc(p.pos):""}</b></span><span>${p.papeis.map(k=>PAPEIS[k]).filter(Boolean).join(", ")}${nd?` · ${nd} ${nd===1?"dificuldade":"dificuldades"}`:""} ${ab?"▴":"▾"}</span></button>
-      ${ab?`<div class="fields"><label class="f">Número<input type="text" data-b="refs.${p.id}.n" data-rr inputmode="numeric"></label><label class="f">Nome<input type="text" data-b="refs.${p.id}.nome" data-rr></label><label class="f">Posição<input type="text" data-b="refs.${p.id}.pos" data-rr></label></div>
+      ${ab?`${R.plantel.length?`<label class="f">Jogador do plantel<select data-refj="${esc(p.id)}" ${ed?"":"disabled"}>${opJog(R,p.jid||"")}</select></label>`:""}<div class="fields"><label class="f">Número<input type="text" data-b="refs.${p.id}.n" data-rr inputmode="numeric"></label><label class="f">Nome<input type="text" data-b="refs.${p.id}.nome" data-rr></label><label class="f">Posição<input type="text" data-b="refs.${p.id}.pos" data-rr></label></div>
         <div><h4 style="margin-bottom:6px">Papel na equipa</h4><div class="seg" data-pap="${esc(p.id)}">${Object.entries(PAPEIS).map(([k,v])=>`<button type="button" data-k="${k}" aria-pressed="${p.papeis.includes(k)}"${ed?"":" disabled"}>${v}</button>`).join("")}</div></div>
         <label class="f">O que faz bem e como influencia o jogo${p.papeis.includes("gr")?" (construção, controlo do espaço nas costas)":""}<textarea data-b="refs.${p.id}.fortes" rows="3"></textarea></label>
         <div><h4 style="margin-bottom:6px">Dificuldades em situações concretas</h4>${listaEv(R,"jogd:"+p.id,ed).replace("+ Evidência","+ Dificuldade")}</div>
@@ -943,7 +1005,9 @@ function secJog(R,box,ed){ box.innerHTML=`<header><h3>Jogadores de referência</
   box.querySelectorAll("[data-jg]").forEach(b=>b.onclick=()=>{ jogAberto=jogAberto===b.dataset.jg?null:b.dataset.jg; render.mesma=true; render(); });
   ligaEv(box,R);
   if(!ed) return;
-  $("jg-add").onclick=()=>{ const p={id:nid("p"),n:"",nome:"",pos:"",papeis:[],fortes:""}; jogAberto=p.id; editaRel(R=>R.refs.push(p)); };
+  $("jg-add").onclick=()=>folhaRefPlantel();
+  box.querySelectorAll("[data-refj]").forEach(sel=>sel.onchange=()=>{ const id=sel.dataset.refj, j=R.plantel.find(x=>x.id===sel.value); if(!j) return; const sis=R.sistema||"4-3-3";
+    editaRel(R=>{ const p=R.refs.find(x=>x.id===id); if(!p) return; p.jid=j.id; p.n=j.n||""; p.nome=j.nome; p.pos=posNoSis(j.slot,sis)||""; if(p.pos==="GR"&&!p.papeis.includes("gr")) p.papeis.push("gr"); }); });
   box.querySelectorAll("[data-pap]").forEach(w=>w.querySelectorAll("button").forEach(b=>b.onclick=()=>{ const id=w.dataset.pap, k=b.dataset.k; editaRel(R=>{ const p=R.refs.find(x=>x.id===id); p.papeis=p.papeis.includes(k)?p.papeis.filter(x=>x!==k):[...p.papeis,k]; },true); b.setAttribute("aria-pressed",b.getAttribute("aria-pressed")!=="true"); }));
   box.querySelectorAll("[data-jgdel]").forEach(b=>confirma2(b,"Toca outra vez para apagar",()=>{ const id=b.dataset.jgdel; editaRel(R=>{ R.refs=R.refs.filter(x=>x.id!==id); R.evid.forEach(e=>{ if(e.q==="jogd:"+id) e.q=""; }); }); })); }
 
@@ -959,7 +1023,7 @@ function secSint(R,box,ed){ const rv=revs[R.id]||{}, cand=R.evid.filter(e=>e.cli
     ${ed?`<div class="row"><button class="btn sm" id="c-add">+ Clip</button></div>`:""}
     ${ed&&cand.length?`<div><h4 style="margin:6px 0">Evidências marcadas como 🎬</h4><div class="evs">${cand.map(e=>`<div class="ev" style="grid-template-columns:auto minmax(0,1fr) auto"><span class="tm">${esc(e.min||"—")}</span><span class="tx">${esc(e.txt)}</span><button class="btn sm" data-cev="${esc(e.id)}">Usar</button></div>`).join("")}</div></div>`:""}</div>
   <div class="card rev"><h4>Revisão da equipa técnica</h4>${souDono?`<textarea id="rv-t" rows="4" placeholder="Comentários para o observador: nível de detalhe, o que acrescentar, como apresentar.">${esc(rv.texto||"")}</textarea><label class="row" style="gap:10px;min-height:40px"><input type="checkbox" id="rv-ok" style="width:20px;height:20px" ${rv.revisto?"checked":""}> Relatório revisto</label>`
-      :rv.texto?`<p style="margin:0;white-space:pre-wrap">${esc(rv.texto)}</p>${rv.revisto?`<span class="chip rev" style="align-self:flex-start">Revisto</span>`:""}`:`<p class="hint" style="margin:0">Ainda sem comentários. Quando enviares para revisão, a equipa técnica deixa aqui as notas.</p>`}</div>`;
+      :rv.texto?`<p style="margin:0;white-space:pre-wrap">${esc(rv.texto)}</p>${rv.revisto?`<span class="chip rev" style="align-self:flex-start">Revisto</span>`:""}`:`<p class="hint" style="margin:0">Ainda sem comentários. Quando submeteres o relatório, a equipa técnica deixa aqui as notas.</p>`}</div>`;
   if(souDono&&!soLeitura){ let t=null; const grava=()=>{ const v={texto:$("rv-t").value,revisto:$("rv-ok").checked,em:new Date().toISOString()}; revs[R.id]=v; guardaCache(); gravaDoc(revPath(R),v); };
     $("rv-t").oninput=()=>{ clearTimeout(t); t=setTimeout(grava,700); }; $("rv-ok").onchange=()=>{ grava(); toast($("rv-ok").checked?"Marcado como revisto":"Revisão reaberta"); }; }
   if(!ed) return;
