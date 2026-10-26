@@ -37,7 +37,7 @@ for (const [nome, opc] of ecras) {
   const base = await pg.evaluate(() => ({ n: bases.lusitania && bases.lusitania.plantel.length, tr: bases.lusitania && bases.lusitania.treinador, rels: Object.values(rels).filter((x) => x.adversario === "Lusitânia").length, cache: !!(JSON.parse(localStorage.getItem("sca-obs-base-v1") || "{}").lusitania) }));
   confirma(base.n > 15 && base.tr === "Treinador Base" && base.rels === 0 && base.cache, `${nome}: plantel base não ficou guardado ou criou relatório (${JSON.stringify(base)})`);
   await pg.screenshot({ path: join(cap, `${nome}-plantel-base.png`), fullPage: true });
-  await pg.click("#voltar"); await pg.waitForTimeout(150);
+  await pg.click("#voltar2"); await pg.waitForTimeout(150); // botão fixo em baixo
   await pg.click('[data-novo="Lusitânia"]'); await pg.click('nav.secs button[data-s="plantel"]'); await pg.waitForTimeout(300);
   await pg.screenshot({ path: join(cap, `${nome}-plantel.png`), fullPage: true });
   const lus = await pg.evaluate(() => { const R = Object.values(rels).find((x) => x.adversario === "Lusitânia"); return { n: R.plantel.length, cor: R.cores.cam, tr: R.treinador, fonte: R.plantelFonte }; });
@@ -86,6 +86,15 @@ for (const [nome, opc] of ecras) {
   await pg.mouse.move(sb.x + sb.width * .3, sb.y + sb.height * .6); await pg.mouse.down(); for (let i = 1; i <= 8; i++) await pg.mouse.move(sb.x + sb.width * (.3 + i * .04), sb.y + sb.height * (.6 - i * .03)); await pg.mouse.up(); await pg.waitForTimeout(200);
   const setas = await pg.evaluate(() => Object.values(rels).find((x) => x.adversario === "Lusitânia").bp[0].setas.length);
   confirma(setas === 1, `${nome}: a seta desenhada na bola parada não ficou gravada (${setas})`);
+
+  // jogos observados: a equipa escolhe-se numa lista (a lista de sugestões do browser não abria no claude.ai) ou escreve-se em "Outra equipa…"
+  await pg.click('nav.secs button[data-s="ficha"]'); await pg.waitForTimeout(150); await pg.click("#j-add"); await pg.waitForTimeout(150);
+  await pg.selectOption("[data-jvs]", "Praiense"); await pg.waitForTimeout(150);
+  const vs1 = await pg.evaluate(() => Object.values(rels).find((x) => x.adversario === "Lusitânia").jogos[0].vs);
+  await pg.selectOption("[data-jvs]", "__outra"); await pg.waitForTimeout(150);
+  await pg.fill('[data-b$=".vs"]', "Sporting Ideal"); await pg.locator('[data-b$=".vs"]').blur(); await pg.waitForTimeout(150);
+  const vs2 = await pg.evaluate(() => ({ vs: Object.values(rels).find((x) => x.adversario === "Lusitânia").jogos[0].vs, sel: document.querySelector("[data-jvs]").value }));
+  confirma(vs1 === "Praiense" && vs2.vs === "Sporting Ideal" && vs2.sel === "__outra", `${nome}: equipa do jogo observado não ficou escolhida (${JSON.stringify({ vs1, vs2 })})`);
 
   // nota rápida (estádio) fica por arrumar; nenhuma página se pode alargar para os lados
   await pg.click("#fab"); await pg.fill("#e-t", "Lateral sobe sempre que a bola vai ao lado contrário"); await pg.click("#e-ok");

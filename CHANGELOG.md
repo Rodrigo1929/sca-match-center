@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| Obs. 15 | Observação: no plantel base, botão fixo «⌂ Voltar à página inicial» em baixo; nos jogos observados, «Contra» passa a lista das equipas (a lista de sugestões não abria no claude.ai), com «Outra equipa…» para escrever o nome |
 | Obs. 14 | Observação: o observador vê todos os relatórios (edita só os seus) e edita os planteis base; na app o dono aparece como «equipa técnica» (o observador também se chama Rodrigo); tocar num botão logo depois de escrever num campo já não se perde no Safari. Regras da base de dados: `obs` lê interact, `base` lê e escreve interact |
 | Obs. 13 | Observação: «Planteis base» na página inicial — o Rodrigo mexe no plantel de cada equipa sem começar um relatório (jogadores, equipa técnica, sistema, cores e desenho); os observadores leem-no e os relatórios novos partem dele; no relatório, «Repor o plantel base» e, para o Rodrigo, «Guardar como plantel base». Nova regra da base de dados `base` (lê interact, escreve só o dono) |
 | Obs. 12 | Observação: setas desenhadas nas bolas paradas e no quadro tático ficam gravadas (o campo já não se refaz a meio do traço); um arrasto já não é interrompido pelo que chega da base de dados; no Plantel e nos onzes as bolinhas vão para onde se largam e levam os nomes; novo «Mover livremente» para os nomes também ficarem onde se largam; «Repor tudo no sítio do sistema» |
