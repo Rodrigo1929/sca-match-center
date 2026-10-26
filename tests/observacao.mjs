@@ -47,6 +47,23 @@ for (const [nome, opc] of ecras) {
   const onze = await pg.evaluate(() => { const R = Object.values(rels).find((x) => x.adversario === "Lusitânia"); const id = R.onzes.prov.pos.ALD; return { sis: R.onzes.prov.sis, slot: (R.plantel.find((j) => j.id === id) || {}).slot }; });
   confirma(onze.sis === "3-5-2" && onze.slot === "ALD", `${nome}: onze provável não atualizou o plantel (${JSON.stringify(onze)})`);
 
+  // bolinhas livres: no onze e no plantel por posição a bolinha vai para onde se larga (e leva os nomes)
+  const arr = async (sel, dx, dy) => { const l = pg.locator(sel).first(); await l.evaluate((e) => e.scrollIntoView({ block: "center", inline: "center" })); const b = await l.boundingBox(), x = b.x + b.width / 2, y = b.y + b.height / 2;
+    await pg.mouse.move(x, y); await pg.mouse.down(); for (let i = 1; i <= 8; i++) await pg.mouse.move(x + dx * i / 8, y + dy * i / 8); await pg.mouse.up(); await pg.waitForTimeout(250); };
+  await arr('#pl-svg [data-pc="ALD"]', -40, 50);
+  await pg.click('#pl-m button[data-k="plantel"]'); await pg.waitForTimeout(200);
+  await arr('#pl-svg [data-pc="GR"]', 50, 30);
+  const livres = await pg.evaluate(() => { const R = Object.values(rels).find((x) => x.adversario === "Lusitânia"); return { onze: R.onzes.prov.xy.ALD, gr: (R.plXY["3-5-2"] || {}).GR, folha: !!document.querySelector(".sheet") }; });
+  confirma(livres.onze && livres.gr && !livres.folha && livres.gr.x > 0.5, `${nome}: bolinhas do onze ou do plantel não ficaram onde foram largadas (${JSON.stringify(livres)})`);
+  // "Mover livremente": um nome largado fica onde foi posto e não muda de posição no plantel
+  await pg.check("#pl-livre"); await pg.waitForTimeout(200);
+  const jl = await pg.evaluate(() => { const R = Object.values(rels).find((x) => x.adversario === "Lusitânia"), j = R.plantel.find((j) => j.slot === "GR"); return { id: j.id, slot: j.slot }; });
+  await arr(`#pl-svg [data-pl="${jl.id}"]`, 70, 90);
+  const nl = await pg.evaluate((id) => { const R = Object.values(rels).find((x) => x.adversario === "Lusitânia"); return { q: (R.plNom["3-5-2"] || {})[id], slot: R.plantel.find((j) => j.id === id).slot, folha: !!document.querySelector(".sheet") }; }, jl.id);
+  confirma(nl.q && nl.slot === "GR" && !nl.folha, `${nome}: no modo livre o nome devia ficar onde foi largado e manter a posição (${JSON.stringify(nl)})`);
+  await pg.screenshot({ path: join(cap, `${nome}-plantel-livre.png`), fullPage: true });
+  await pg.uncheck("#pl-livre"); await pg.waitForTimeout(150);
+
   // checklist: opção, frequência, jogadores, quadro tático com os 11
   await pg.click('nav.secs button[data-s="com"]'); await pg.waitForTimeout(200);
   await pg.click('[data-q="c_pb"] [data-op="Alternam"]'); await pg.click('[data-q="c_pb"] [data-fq="sempre"]');
@@ -55,6 +72,13 @@ for (const [nome, opc] of ecras) {
   await pg.screenshot({ path: join(cap, `${nome}-checklist.png`), fullPage: true });
   const chk = await pg.evaluate(() => { const R = Object.values(rels).find((x) => x.adversario === "Lusitânia"); const c = R.chk; return { op: c.c_pb.op.join(), fq: c.c_pb.freq, jog: c.c_dentro.jog.length, q: c.c_pb.quadro.pecas.length }; });
   confirma(chk.op === "Alternam" && chk.fq === "sempre" && chk.jog === 1 && chk.q >= 11, `${nome}: checklist não gravou (${JSON.stringify(chk)})`);
+
+  // setas: desenhar no quadro de uma bola parada grava a seta (antes o campo refazia-se a meio e perdia-a)
+  await pg.click('nav.secs button[data-s="bp"]'); await pg.waitForTimeout(200); await pg.click('[data-nbp="canto:of"]'); await pg.waitForTimeout(200);
+  await pg.click("#bp-m button:nth-child(2)"); const pb = pg.locator("#bp-p svg"); await pb.scrollIntoViewIfNeeded(); const sb = await pb.boundingBox();
+  await pg.mouse.move(sb.x + sb.width * .3, sb.y + sb.height * .6); await pg.mouse.down(); for (let i = 1; i <= 8; i++) await pg.mouse.move(sb.x + sb.width * (.3 + i * .04), sb.y + sb.height * (.6 - i * .03)); await pg.mouse.up(); await pg.waitForTimeout(200);
+  const setas = await pg.evaluate(() => Object.values(rels).find((x) => x.adversario === "Lusitânia").bp[0].setas.length);
+  confirma(setas === 1, `${nome}: a seta desenhada na bola parada não ficou gravada (${setas})`);
 
   // nota rápida (estádio) fica por arrumar; nenhuma página se pode alargar para os lados
   await pg.click("#fab"); await pg.fill("#e-t", "Lateral sobe sempre que a bola vai ao lado contrário"); await pg.click("#e-ok");

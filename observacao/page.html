@@ -345,6 +345,8 @@ const CACHE="sca-obs-cache-v1", PEND="sca-obs-pend-v1";
 function guardaCache(){ LSset(CACHE,{rels,revs}); }
 function guardaVista(){ LSset("sca-obs-vista",vista); }
 
+/* sítios livres das bolinhas do plantel e dos onzes: {código: {x,y}} em frações do campo */
+function nXY(o,ok){ const r={}; ok=ok||(c=>POS_NOME[c]); Object.entries(o&&typeof o==="object"?o:{}).forEach(([c,p])=>{ if(ok(c)&&p&&isFinite(+p.x)&&isFinite(+p.y)) r[c]={x:clamp(+p.x,0,1),y:clamp(+p.y,-.05,1.3)}; }); return r; }
 function normRel(d){ const R={...d}; R.adversario=String(R.adversario||""); R.competicao=String(R.competicao||""); R.estado=["rasc","env"].includes(R.estado)?R.estado:"rasc";
   R.jogos=Array.isArray(R.jogos)?R.jogos.filter(j=>j&&j.id):[]; R.resp=R.resp&&typeof R.resp==="object"?R.resp:{}; R.evid=Array.isArray(R.evid)?R.evid.filter(e=>e&&e.id):[];
   const o=R.onze||{}; const st=s=>({sis:SISTEMAS[s?.sis]?s.sis:"4-4-2",pos:s?.pos&&typeof s.pos==="object"?s.pos:{},nota:String(s?.nota||"")});
@@ -360,8 +362,12 @@ function normRel(d){ const R={...d}; R.adversario=String(R.adversario||""); R.co
   const semCam=!hx(c0.cam); /* relatório ainda sem camisola: recebe as cores conhecidas do clube */
   R.cores={cam:hx(c0.cam)||hx(cd.cam),cam2:hx(c0.cam2)||(semCam?hx(cd.cam2):""),num:hx(c0.num),gr:hx(c0.gr)}; if(R.sistema&&!LAYOUTS[R.sistema]) R.sistema="";
   const on=R.onzes||{}, nOnze=o=>{ const sis=LAYOUTS[o?.sis]?o.sis:"", lay=layoutDe(sis||R.sistema), ids=new Set(R.plantel.map(j=>j.id)), pos={};
-    Object.entries(o?.pos||{}).forEach(([c,id])=>{ if(lay.some(x=>x[0]===c)&&ids.has(id)) pos[c]=id; }); return {sis,pos,nota:String(o?.nota||"")}; };
+    Object.entries(o?.pos||{}).forEach(([c,id])=>{ if(lay.some(x=>x[0]===c)&&ids.has(id)) pos[c]=id; }); return {sis,pos,nota:String(o?.nota||""),xy:nXY(o?.xy),nxy:nXY(o?.nxy)}; };
   R.onzes={prov:nOnze(on.prov),alt:nOnze(on.alt)};
+  /* bolinhas mudadas de sítio no desenho do plantel, por sistema: {sistema: {código: {x,y}}} (frações do campo) */
+  const pxy={}; Object.entries(R.plXY&&typeof R.plXY==="object"?R.plXY:{}).forEach(([s,o])=>{ if(LAYOUTS[s]){ const v=nXY(o); if(Object.keys(v).length) pxy[s]=v; } }); R.plXY=pxy;
+  /* nomes largados à mão no modo "Mover livremente": {sistema: {id do jogador: {x,y}}} */
+  const idsPl=new Set(R.plantel.map(j=>j.id)), pnm={}; Object.entries(R.plNom&&typeof R.plNom==="object"?R.plNom:{}).forEach(([s,o])=>{ if(LAYOUTS[s]){ const v=nXY(o,id=>idsPl.has(id)); if(Object.keys(v).length) pnm[s]=v; } }); R.plNom=pnm;
   const ch=R.chk&&typeof R.chk==="object"?R.chk:{}; R.chk={};
   Object.entries(ch).forEach(([id,c])=>{ if(!Q_POR_ID[id]||!c) return; const qd=c.quadro||{}; R.chk[id]={op:Array.isArray(c.op)?c.op.map(String):[],freq:["sempre","muitas","as"].includes(c.freq)?c.freq:"",jog:Array.isArray(c.jog)?c.jog.map(String):[],nota:String(c.nota||""),
     quadro:{pecas:Array.isArray(qd.pecas)?qd.pecas.filter(p=>p&&p.id):[],setas:Array.isArray(qd.setas)?qd.setas.filter(x=>x&&x.id):[]}}; });
@@ -423,15 +429,20 @@ function peca(x,y,txt,cor,fg,extra,borda){ const r=19, fs=txt.length<=2?17:txt.l
 function bolaSvg(x,y,extra){ return `<g ${extra||""}><image href="{{BOLA}}" x="${x*K-10}" y="${y*K-10}" width="20" height="20" pointer-events="none"/><circle cx="${x*K}" cy="${y*K}" r="34" fill="transparent"/></g>`; }
 const posAdv=(sis,i)=>{ const b=(SISTEMAS[sis]||SISTEMAS["4-4-2"])[i]||["",52,34]; return {x:b[2],y:105-b[1],pos:b[0]}; };
 const posNos=i=>{ const b=SISTEMAS["3-4-3"][i]; return {x:68-b[2],y:b[1],pos:b[0]}; };
+/* durante um arrasto, o que chega da base de dados espera: redesenhar a meio soltava a bolinha */
+let aArrastar=false;
+function fimArrasto(){ aArrastar=false; if(precisaRender) setTimeout(()=>{ if(!aArrastar&&!aEscrever()&&precisaRender){ precisaRender=false; render.mesma=true; render(); } },0); }
 function arrasta(svg,{onDown,onMove,onUp}){ let ativo=null;
-  svg.addEventListener("pointerdown",e=>{ const r=onDown(e,svgPt(svg,e)); if(r){ ativo=r; e.preventDefault(); try{ svg.setPointerCapture(e.pointerId); }catch(x){} } });
+  svg.addEventListener("pointerdown",e=>{ const r=onDown(e,svgPt(svg,e)); if(r){ ativo=r; aArrastar=true; e.preventDefault(); try{ svg.setPointerCapture(e.pointerId); }catch(x){} } });
   svg.addEventListener("pointermove",e=>{ if(!ativo) return; e.preventDefault(); onMove(ativo,svgPt(svg,e)); });
-  const fim=e=>{ if(!ativo) return; const a=ativo; ativo=null; onUp(a,svgPt(svg,e)); }; svg.addEventListener("pointerup",fim); svg.addEventListener("pointercancel",fim); }
+  const fim=e=>{ if(!ativo) return; const a=ativo; ativo=null; aArrastar=false; onUp(a,svgPt(svg,e)); fimArrasto(); }; svg.addEventListener("pointerup",fim); svg.addEventListener("pointercancel",fim); }
+/* seta a ser desenhada: só a linha provisória muda, o campo fica (refazê-lo a cada movimento perdia o arrasto) */
+function setaTmp(svg,html){ const v=svg.querySelector("[data-tmp]"); if(v) v.remove(); svg.insertAdjacentHTML("beforeend",html); }
 
 /* ======================= render ======================= */
 let precisaRender=false;
 function aEscrever(){ const a=document.activeElement; return a&&$("main").contains(a)&&/INPUT|TEXTAREA|SELECT/.test(a.tagName); }
-document.addEventListener("focusout",()=>setTimeout(()=>{ if(precisaRender&&!aEscrever()){ precisaRender=false; render(); } },60));
+document.addEventListener("focusout",()=>setTimeout(()=>{ if(precisaRender&&!aEscrever()&&!aArrastar){ precisaRender=false; render(); } },60));
 /* um erro a desenhar nunca deixa a página em branco: mostra o aviso e o caminho de volta */
 function render(){ try{ render0(); }catch(e){ console.error(e); $("fab").hidden=true;
   $("main").innerHTML=`<div class="banner"><span>⚠</span><span><b>Não foi possível mostrar esta página.</b> Os dados estão guardados. <button class="btn sm" id="err-v">Voltar aos relatórios</button></span></div>`;
@@ -586,7 +597,7 @@ function quadroQ(el,R,q,ed){ const meio=q.quadro==="meio", Lm=meio?36:105, C=cor
         if(qqModo==="seta"){ const k=g&&g.dataset.k&&Q.pecas.find(p=>p.id===g.dataset.k); const o=k?{x:k.x,y:k.y}:m; return {seta:true,x1:o.x,y1:o.y,x2:o.x,y2:o.y}; }
         if(g&&g.dataset.s) return {sid:g.dataset.s};
         if(g&&g.dataset.k){ const p=Q.pecas.find(p=>p.id===g.dataset.k); return {k:p.id,dx:p.x-m.x,dy:p.y-m.y,ox:p.x,oy:p.y,mov:false,g}; } return null; },
-      onMove:(a,m)=>{ if(a.seta){ a.x2=m.x; a.y2=m.y; desenha({t:qqSeta,...a}); return; } if(!a.k) return; const x=clamp(m.x+a.dx,-2,70), y=clamp(m.y+a.dy,-2,Lm+2); if(Math.hypot(x-a.ox,y-a.oy)>.5) a.mov=true; a.x=x; a.y=y; a.g.setAttribute("transform",`translate(${(x-a.ox)*K},${(y-a.oy)*K})`); },
+      onMove:(a,m)=>{ if(a.seta){ a.x2=m.x; a.y2=m.y; setaTmp(svg,seta({t:qqSeta,...a},`data-tmp="1"`)); return; } if(!a.k) return; const x=clamp(m.x+a.dx,-2,70), y=clamp(m.y+a.dy,-2,Lm+2); if(Math.hypot(x-a.ox,y-a.oy)>.5) a.mov=true; a.x=x; a.y=y; a.g.setAttribute("transform",`translate(${(x-a.ox)*K},${(y-a.oy)*K})`); },
       onUp:a=>{ if(a.seta){ if(Math.hypot(a.x2-a.x1,a.y2-a.y1)>1.5) editaQ(Q=>Q.setas.push({id:nid("s"),t:qqSeta,x1:a.x1,y1:a.y1,x2:a.x2,y2:a.y2})); desenha(); return; }
         if(a.sid){ folha(`<h3>Seta</h3><div class="actions"><button class="btn danger l" id="qs-del">Apagar seta</button><button class="btn primary" data-close>Fechar</button></div>`,(s,fecha)=>{ s.querySelector("#qs-del").onclick=()=>{ fecha(); editaQ(Q=>{ Q.setas=Q.setas.filter(x=>x.id!==a.sid); }); desenha(); }; }); return; }
         if(a.mov){ editaQ(Q=>{ const p=Q.pecas.find(p=>p.id===a.k); p.x=Math.round(a.x*10)/10; p.y=Math.round(a.y*10)/10; }); desenha(); return; }
@@ -618,33 +629,41 @@ function secFicha(R,box,ed){ box.innerHTML=`<header><h3>Ficha e jogos observados
 
 /* ---------- plantel do adversário ---------- */
 const PLF={VW:1680,fx:40,fy:80,fw:1600,fh:1120,bw:236};
-function posicoesPx(lay,cont){ const {fx,fy,fw,fh,bw}=PLF, P={}, ord=lay.slice().sort((a,b)=>a[3]-b[3]); let fundo=fy+fh;
-  ord.forEach(([c,,px,py])=>{ const x=fx+px*fw; let y=fy+py*fh;
-    ord.forEach(([c2])=>{ const q=P[c2]; if(q&&Math.abs(q.x-x)<bw+8){ const fim=q.y+34+Math.max(1,cont[c2]||0)*44; if(fim+40>y) y=fim+40; } });
+function posicoesPx(lay,cont,xy){ const {fx,fy,fw,fh,bw}=PLF, P={}, ord=lay.slice().sort((a,b)=>a[3]-b[3]); let fundo=fy+fh; xy=xy||{};
+  /* bolinhas que o observador pôs à mão ficam onde as pôs; as outras seguem o sistema sem se sobreporem */
+  ord.forEach(([c])=>{ const q=xy[c]; if(!q) return; P[c]={x:fx+q.x*fw,y:fy+q.y*fh,livre:true}; fundo=Math.max(fundo,P[c].y+34+Math.max(1,cont[c]||0)*44+16); });
+  ord.forEach(([c,,px,py])=>{ if(P[c]) return; const x=fx+px*fw; let y=fy+py*fh;
+    ord.forEach(([c2])=>{ const q=P[c2]; if(q&&!q.livre&&Math.abs(q.x-x)<bw+8){ const fim=q.y+34+Math.max(1,cont[c2]||0)*44; if(fim+40>y) y=fim+40; } });
     P[c]={x,y}; fundo=Math.max(fundo,y+34+Math.max(1,cont[c]||0)*44+16); });
   return {P,fh:Math.max(fh,fundo-fy)}; }
 /* desenho: modo "plantel" (todos os jogadores por posição) ou um onze (um nome por posição) */
 function plantelSvgStr(R,modo){ const {VW,fx,fy,fw,fh,bw}=PLF, kx=fw/68, ky=fh/52.5, cx=fx+fw/2, L='fill="none" stroke="#111" stroke-width="5"', F="Roboto Condensed,Arial Narrow,Arial,sans-serif";
   const O=modo==="plantel"?null:R.onzes[modo], sis=O?(O.sis||R.sistema||"4-3-3"):(R.sistema||"4-3-3"), lay=layoutDe(sis), porId=new Map(R.plantel.map(j=>[j.id,j]));
   const grupos={}; lay.forEach(s=>grupos[s[0]]=[]); const semPos=[];
+  /* nomes largados à mão (modo "Mover livremente") saem da pilha da posição e ficam onde foram postos */
+  const nl=O?O.nxy:(R.plNom[sis]||{}), soltos=[];
   if(O) lay.forEach(([c])=>{ const j=porId.get(O.pos[c]); if(j) grupos[c].push(j); });
-  else R.plantel.forEach(j=>{ const c=posNoSis(j.slot,sis); if(c) grupos[c].push(j); else semPos.push(j); });
+  else R.plantel.forEach(j=>{ if(nl[j.id]){ soltos.push(j); return; } const c=posNoSis(j.slot,sis); if(c) grupos[c].push(j); else semPos.push(j); });
   const ord=(a,b)=>(a.conf===b.conf?0:a.conf?-1:1)||(parseInt(a.n)||999)-(parseInt(b.n)||999);
-  const cont={}; lay.forEach(([c])=>cont[c]=O?1:grupos[c].length); const {P:PX,fh:fh2}=posicoesPx(lay,cont);
-  const linhas=semPos.length?Math.ceil(semPos.length/6):0, base=fy+fh2+30, VH=base+(linhas?44+linhas*46:0);
+  const cont={}; lay.forEach(([c])=>cont[c]=O?1:grupos[c].length); const {P:PX,fh:fh2}=posicoesPx(lay,cont,O?O.xy:R.plXY[sis]);
+  const linhas=semPos.length?Math.ceil(semPos.length/6):0, base=fy+fh2+30, VH=Math.max(base+(linhas?44+linhas*46:0),...Object.values(nl).map(q=>fy+q.y*fh+60));
   let h=`<svg viewBox="0 0 ${VW} ${VH}" role="img" aria-label="${O?(modo==="prov"?"Onze provável":"Onze alternativo"):"Plantel"} de ${esc(R.adversario)} em ${sis}"><rect x="0" y="0" width="${VW}" height="${VH}" fill="#fff"/>`;
   const nf=Math.round(fh2/(fh/10)); for(let i=0;i<nf;i++) h+=`<rect x="${fx}" y="${fy+i*fh2/nf}" width="${fw}" height="${fh2/nf}" fill="${i%2?"#F1F1F1":"#FAFAFA"}"/>`;
   h+=`<rect x="${cx-3.66*kx}" y="${fy-2.2*ky}" width="${7.32*kx}" height="${2.2*ky}" fill="#D9D9D9" stroke="#111" stroke-width="4"/><rect x="${fx}" y="${fy}" width="${fw}" height="${fh2}" fill="none" stroke="#111" stroke-width="7"/>`;
   h+=`<rect x="${cx-20.16*kx}" y="${fy}" width="${40.32*kx}" height="${16.5*ky}" ${L}/><rect x="${cx-9.16*kx}" y="${fy}" width="${18.32*kx}" height="${5.5*ky}" ${L}/>`;
   h+=`<path d="M ${cx-7.31*kx} ${fy+16.5*ky} A ${9.15*kx} ${9.15*ky} 0 0 0 ${cx+7.31*kx} ${fy+16.5*ky}" ${L}/><path d="M ${cx-9.15*kx} ${fy+fh2} A ${9.15*kx} ${9.15*ky} 0 0 1 ${cx+9.15*kx} ${fy+fh2}" ${L}/>`;
   const caixa=(x,y,j,w,attr)=>{ const t=(j.nome||"?")+(R.capitao===j.id?" (C)":""), lab=(j.n?j.n+"  ":"")+t, fs=23, lim=w-16, cw=lab.length*fs*.5, conf=O?true:j.conf;
-    return `<g ${attr} style="cursor:grab;touch-action:none"><rect x="${x-w/2}" y="${y}" width="${w}" height="38" rx="5" fill="#fff" stroke="${conf?"#4A4A4A":"#C98A1B"}" stroke-width="3"${conf?"":' stroke-dasharray="9 6"'}/>`+
+    return `<g ${attr} data-bx="${Math.round(x)}" data-by="${Math.round(y)}" style="cursor:grab;touch-action:none"><rect x="${x-w/2}" y="${y}" width="${w}" height="38" rx="5" fill="#fff" stroke="${conf?"#4A4A4A":"#C98A1B"}" stroke-width="3"${conf?"":' stroke-dasharray="9 6"'}/>`+
       `<text x="${x}" y="${y+27}" text-anchor="middle" font-size="${fs}" font-weight="700" font-family="${F}" fill="#1B1A17"${cw>lim?` textLength="${lim}" lengthAdjust="spacingAndGlyphs"`:""}>${j.n?`<tspan fill="#8A857B" font-weight="400">${esc(j.n)}  </tspan>`:""}${esc(t)}</text></g>`; };
+  /* cada posição num grupo (data-grp): a bolinha (data-pc) arrasta-se para onde se quiser e leva os nomes */
   lay.forEach(([c,num])=>{ const {x,y}=PX[c], gr=c==="GR";
     const CE=corEq(R), b2=!gr&&!/^#0{6}$/i.test(CE.cam2);
-    h+=`${b2?`<circle cx="${x}" cy="${y}" r="31" fill="#1B1A17"/>`:""}<circle cx="${x}" cy="${y}" r="27" fill="${gr?CE.gr:CE.cam}" stroke="${b2?CE.cam2:"#1B1A17"}" stroke-width="${b2?6:3}"/><text x="${x}" y="${y+9}" text-anchor="middle" font-size="26" font-weight="700" font-family="${F}" fill="${gr?CE.grNum:CE.num}">${num}</text>`;
-    if(O){ const j=grupos[c][0]; h+=j?caixa(x,y+34,j,bw,`data-os="${c}"`):`<g data-os="${c}" style="cursor:pointer"><rect x="${x-bw/2}" y="${y+34}" width="${bw}" height="38" rx="5" fill="#fff" stroke="#B9B4AA" stroke-width="3" stroke-dasharray="9 6"/><text x="${x}" y="${y+61}" text-anchor="middle" font-size="21" font-family="${F}" fill="#8A857B">Escolher</text></g>`; }
-    else grupos[c].sort(ord).forEach((j,i)=>h+=caixa(x,y+34+i*44,j,bw,`data-pl="${esc(j.id)}"`)); });
+    h+=`<g data-grp="${c}"><g data-pc="${c}" data-cx="${Math.round(x)}" data-cy="${Math.round(y)}" style="cursor:grab;touch-action:none">${b2?`<circle cx="${x}" cy="${y}" r="31" fill="#1B1A17"/>`:""}<circle cx="${x}" cy="${y}" r="27" fill="${gr?CE.gr:CE.cam}" stroke="${b2?CE.cam2:"#1B1A17"}" stroke-width="${b2?6:3}"/><text x="${x}" y="${y+9}" text-anchor="middle" font-size="26" font-weight="700" font-family="${F}" fill="${gr?CE.grNum:CE.num}" pointer-events="none">${num}</text><circle cx="${x}" cy="${y}" r="40" fill="transparent"/></g>`;
+    const nomeOnze=(bx,by)=>{ const j=grupos[c][0]; return j?caixa(bx,by,j,bw,`data-os="${c}"`):`<g data-os="${c}" data-bx="${Math.round(bx)}" data-by="${Math.round(by)}" style="cursor:pointer;touch-action:none"><rect x="${bx-bw/2}" y="${by}" width="${bw}" height="38" rx="5" fill="#fff" stroke="#B9B4AA" stroke-width="3" stroke-dasharray="9 6"/><text x="${bx}" y="${by+27}" text-anchor="middle" font-size="21" font-family="${F}" fill="#8A857B">Escolher</text></g>`; };
+    if(O){ const q=nl[c]; if(q) soltos.push(()=>nomeOnze(fx+q.x*fw,fy+q.y*fh)); else h+=nomeOnze(x,y+34); }
+    else grupos[c].sort(ord).forEach((j,i)=>h+=caixa(x,y+34+i*44,j,bw,`data-pl="${esc(j.id)}"`)); h+=`</g>`; });
+  /* nomes soltos por cima, fora dos grupos (não andam com a bolinha) */
+  soltos.forEach(s=>{ if(typeof s==="function"){ h+=s(); return; } const q=nl[s.id]; h+=caixa(fx+q.x*fw,fy+q.y*fh,s,bw,`data-pl="${esc(s.id)}"`); });
   const gr=O?"":R.plantel.filter(j=>posNoSis(j.slot,sis)==="GR").length;
   const resumo=O?`${modo==="prov"?"ONZE PROVÁVEL":"ONZE ALTERNATIVO"}  //  ${sis}${R.treinador?"  //  Treinador: "+R.treinador:""}`
     :`GR: ${gr}  //  Campo: ${R.plantel.length-gr-semPos.length}${semPos.length?"  //  Sem posição: "+semPos.length:""}  //  ${sis}${R.treinador?"  //  Treinador: "+R.treinador:""}`;
@@ -674,9 +693,11 @@ function secPlantel(R,box,ed){ const temZZ=!!(PLANTEIS.equipas&&PLANTEIS.equipas
         <label class="f">Guarda-redes<span class="row"><input type="color" data-b="cores.gr" data-def="#FFFF00" data-rr aria-label="Cor do guarda-redes"><span class="sw" data-sw="gr">${["#FFFF00","#000000","#7FFF00","#F28C00","#7F7F7F","#00B5E2"].map(c=>`<button type="button" data-c="${c}" style="background:${c}" aria-label="${c}"></button>`).join("")}</span></span></label></div></div>
     ${R.plantel.length?`<div class="card"><div class="row" style="justify-content:space-between"><div class="seg" id="pl-m"></div>
         ${O?`<label class="f" style="flex-direction:row;align-items:center;gap:8px">Sistema<select id="pl-osis" style="width:auto" ${ed?"":"disabled"}>${opSis(O.sis||sis)}</select></label>`:""}</div>
-      ${O?`<p class="hint" style="margin:0">${modo==="prov"?"O onze que esperas ver. Toca numa posição para escolher o jogador.":"Outra forma de jogar que já lhes viste (outro sistema ou outros jogadores). Toca numa posição para escolher o jogador."}</p>
+      ${O?`<p class="hint" style="margin:0">${modo==="prov"?"O onze que esperas ver.":"Outra forma de jogar que já lhes viste (outro sistema ou outros jogadores)."} Toca numa posição para escolher o jogador; arrasta a bolinha ou o nome para onde ele costuma jogar.</p>
         <label class="f">${modo==="prov"?"Notas do onze provável":"Quando aparece (resultado, adversário, momento do jogo)"}<textarea data-b="onzes.${modo}.nota" rows="2"></textarea></label>`
-        :`<p class="hint" style="margin:0">Contorno tracejado laranja: posição por confirmar (o zerozero só indica a linha). Fica confirmada quando a mudas ou marcas “Confirmada”.</p>`}
+        :`<p class="hint" style="margin:0">Arrasta a bolinha de uma posição para onde quiseres (os nomes vão com ela); arrasta um nome para ${vista.livre?"o pôr onde quiseres":"mudar o jogador de posição"}. Contorno tracejado laranja: posição por confirmar (o zerozero só indica a linha).</p>`}
+      ${ed?`<div class="row"><label class="row hint" style="gap:8px"><input type="checkbox" id="pl-livre" ${vista.livre?"checked":""} style="width:22px;height:22px"> Mover livremente (os nomes ficam onde os largares)</label>
+        ${Object.keys(O?O.xy:R.plXY[sis]||{}).length+Object.keys(O?O.nxy:R.plNom[sis]||{}).length?`<button class="btn sm" id="pl-rxy">Repor tudo no sítio do sistema</button>`:""}</div>`:""}
       <div style="overflow-x:auto"><div id="pl-svg" style="min-width:560px"></div></div></div>`
       :`<div class="empty"><b>Ainda sem plantel.</b><span>${temZZ?`Carrega o plantel do zerozero (${esc(dataPt(PLANTEIS.data))}) ou acrescenta os jogadores à mão.`:"Acrescenta os jogadores à mão."}</span></div>`}
     ${ed&&modo==="plantel"?`<div class="row">${temZZ?`<button class="btn" id="pl-zz">${R.plantel.length?"Substituir pelo plantel do zerozero":"Carregar plantel do zerozero"}</button>`:""}<button class="btn primary" id="pl-add">+ Jogador</button></div>`:""}
@@ -687,6 +708,8 @@ function secPlantel(R,box,ed){ const temZZ=!!(PLANTEIS.equipas&&PLANTEIS.equipas
         <td><select data-b="plantel.${j.id}.pe" aria-label="Pé preferido"><option value="">—</option><option>Direito</option><option>Esquerdo</option><option>Ambidestro</option></select></td>
         <td style="text-align:center"><input type="checkbox" data-b="plantel.${j.id}.conf" data-rr aria-label="Posição confirmada" style="width:22px;height:22px"></td>
         <td>${ed?`<button class="btn sm ghost" data-pdel="${esc(j.id)}" aria-label="Tirar ${esc(j.nome)} do plantel">✕</button>`:""}</td></tr>`).join("")}</tbody></table></div>`:""}`;
+  const rxy=$("pl-rxy"); if(rxy) confirma2(rxy,"Toca outra vez para repor",()=>{ editaRel(R=>{ if(O){ R.onzes[modo].xy={}; R.onzes[modo].nxy={}; } else { delete R.plXY[sis]; delete R.plNom[sis]; } },true); render.mesma=true; render(); });
+  const lv=$("pl-livre"); if(lv) lv.onchange=()=>{ vista.livre=lv.checked; guardaVista(); render.mesma=true; render(); };
   if(R.plantel.length){ seg($("pl-m"),[["plantel","Plantel por posição"],["prov","Onze provável"],["alt","Onze alternativo"]],modo,v=>{ vista.plv=v; render.mesma=true; render(); });
     $("pl-svg").innerHTML=plantelSvgStr(R,modo); ligaPlantelSvg($("pl-svg").querySelector("svg"),ed,modo); }
   if(!ed) return;
@@ -703,15 +726,26 @@ function secPlantel(R,box,ed){ const temZZ=!!(PLANTEIS.equipas&&PLANTEIS.equipas
 function ligaPlantelSvg(svg,ed,modo){ const {fx,fy,fw,fh}=PLF; let A=null; const R0=relAtual();
   const O=modo==="plantel"?null:R0.onzes[modo], sis=O?(O.sis||R0.sistema||"4-3-3"):(R0.sistema||"4-3-3"), lay=layoutDe(sis);
   const pt=e=>{ const p=svg.createSVGPoint(); p.x=e.clientX; p.y=e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); };
-  if(O){ svg.querySelectorAll("[data-os]").forEach(g=>g.addEventListener("click",()=>folhaOnzePos(modo,g.dataset.os))); return; }
-  svg.addEventListener("pointerdown",e=>{ const g=e.target.closest("[data-pl]"); if(!g) return; const p=pt(e); A={g,id:g.dataset.pl,x0:p.x,y0:p.y,mov:false}; if(ed){ e.preventDefault(); try{ svg.setPointerCapture(e.pointerId); }catch(x){} } });
+  /* bolinha (data-pc), ou nome no onze (data-os): leva a posição para onde se largar; nome no plantel (data-pl): muda o jogador de posição */
+  /* "Mover livremente": os nomes também ficam onde se largam; um nome já solto anda sempre sozinho */
+  const livre=!!vista.livre;
+  svg.addEventListener("pointerdown",e=>{ const os=O&&e.target.closest("[data-os]"), osSolto=os&&O.nxy[os.dataset.os], gp=e.target.closest("[data-pc]")||(os&&!livre&&!osSolto?os:null), g=gp?null:(os||e.target.closest("[data-pl]")); if(!gp&&!g) return; const p=pt(e);
+    if(gp){ const c=gp.dataset.pc||gp.dataset.os, b=svg.querySelector(`[data-pc="${c}"]`); A={pos:c,g:svg.querySelector(`[data-grp="${c}"]`),cx:+b.dataset.cx,cy:+b.dataset.cy,x0:p.x,y0:p.y,mov:false}; }
+    else A={g,id:g.dataset.pl,os:g.dataset.os,bx:+g.dataset.bx,by:+g.dataset.by,solto:livre||!!osSolto,x0:p.x,y0:p.y,mov:false};
+    if(ed){ aArrastar=true; e.preventDefault(); try{ svg.setPointerCapture(e.pointerId); }catch(x){} } });
   svg.addEventListener("pointermove",e=>{ if(!A||!ed) return; const p=pt(e), dx=p.x-A.x0, dy=p.y-A.y0; if(Math.hypot(dx,dy)>12) A.mov=true; if(A.mov){ A.g.setAttribute("transform",`translate(${dx},${dy})`); A.g.style.opacity=".85"; A.px=p.x; A.py=p.y; } });
-  const fim=()=>{ if(!A) return; const a=A; A=null; if(!a.mov||!ed){ folhaJogPlantel(a.id); return; }
-    const cont={}; lay.forEach(([c])=>cont[c]=R0.plantel.filter(j=>posNoSis(j.slot,sis)===c).length); const {P:PX,fh:fh2}=posicoesPx(lay,cont);
+  const fim=()=>{ if(!A) return; const a=A; A=null; aArrastar=false;
+    if(a.pos){ if(!a.mov||!ed){ if(a.g) a.g.removeAttribute("transform"); if(O) folhaOnzePos(modo,a.pos); else if(ed) toast("Arrasta a bolinha para onde o jogador costuma jogar; os nomes vão com ela."); fimArrasto(); return; }
+      const nx=Math.round(clamp((a.cx+a.px-a.x0-fx)/fw,0,1)*1000)/1000, ny=Math.round(clamp((a.cy+a.py-a.y0-fy)/fh,-.03,1.3)*1000)/1000;
+      editaRel(R=>{ if(O) R.onzes[modo].xy[a.pos]={x:nx,y:ny}; else (R.plXY[sis]=R.plXY[sis]||{})[a.pos]={x:nx,y:ny}; },true); render.mesma=true; render(); fimArrasto(); return; }
+    if(!a.mov||!ed){ if(a.g) a.g.removeAttribute("transform"); fimArrasto(); if(a.os) folhaOnzePos(modo,a.os); else folhaJogPlantel(a.id); return; }
+    if(a.solto){ const nx=Math.round(clamp((a.bx+a.px-a.x0-fx)/fw,0,1)*1000)/1000, ny=Math.round(clamp((a.by+a.py-a.y0-fy)/fh,-.05,1.3)*1000)/1000;
+      editaRel(R=>{ if(O) R.onzes[modo].nxy[a.os]={x:nx,y:ny}; else (R.plNom[sis]=R.plNom[sis]||{})[a.id]={x:nx,y:ny}; },true); render.mesma=true; render(); fimArrasto(); return; }
+    const cont={}; lay.forEach(([c])=>cont[c]=R0.plantel.filter(j=>posNoSis(j.slot,sis)===c).length); const {P:PX,fh:fh2}=posicoesPx(lay,cont,R0.plXY[sis]); fimArrasto();
     let melhor=null, dm=1e9; lay.forEach(([c])=>{ const d=Math.hypot(PX[c].x-a.px,PX[c].y-(a.py-60)); if(d<dm){ dm=d; melhor=c; } });
     const slot=a.py>fy+fh2+10&&dm>260?"":melhor;
-    editaRel(R=>{ const j=R.plantel.find(x=>x.id===a.id); if(j){ j.slot=slot; j.conf=true; } },true); render.mesma=true; render(); toast(slot?`Posição ${rotPos(slot,sis)}`:"Sem posição"); };
-  svg.addEventListener("pointerup",fim); svg.addEventListener("pointercancel",()=>{ if(A){ A.g.removeAttribute("transform"); A=null; } }); }
+    editaRel(R=>{ const j=R.plantel.find(x=>x.id===a.id); if(j){ j.slot=slot; j.conf=true; } if(R.plNom[sis]) delete R.plNom[sis][a.id]; },true); render.mesma=true; render(); toast(slot?`Posição ${rotPos(slot,sis)}`:"Sem posição"); };
+  svg.addEventListener("pointerup",fim); svg.addEventListener("pointercancel",()=>{ if(A){ A.g.removeAttribute("transform"); A.g.style.opacity=""; A=null; } fimArrasto(); }); }
 function folhaOnzePos(modo,code){ const R=relAtual(); if(!R) return; const ed=podeEditar(R), O=R.onzes[modo], sis=O.sis||R.sistema||"4-3-3", atual=O.pos[code]||"";
   const usados=new Set(Object.entries(O.pos).filter(([c])=>c!==code).map(([,id])=>id));
   const prio=j=>posNoSis(j.slot,sis)===code?0:j.slot?1:2;
@@ -818,7 +852,7 @@ function edBp(R,B,el,ed){ el.innerHTML=`<div class="fields"><label class="f">Tip
         if(bpModo==="seta"){ const k=g&&g.dataset.k&&X.pecas.find(p=>p.id===g.dataset.k); const o=k?{x:k.x,y:k.y}:m; return {seta:true,x1:o.x,y1:o.y,x2:o.x,y2:o.y}; }
         if(g&&g.dataset.s) return {sid:g.dataset.s};
         if(g&&g.dataset.k){ const p=X.pecas.find(p=>p.id===g.dataset.k); return {k:p.id,dx:p.x-m.x,dy:p.y-m.y,ox:p.x,oy:p.y,mov:false,g}; } return null; },
-      onMove:(a,m)=>{ if(a.seta){ a.x2=m.x; a.y2=m.y; desenha({t:bpSeta,...a}); return; } if(!a.k) return; const x=clamp(m.x+a.dx,-2,70), y=clamp(m.y+a.dy,-2,37); if(Math.hypot(x-a.ox,y-a.oy)>.5) a.mov=true; a.x=x; a.y=y; a.g.setAttribute("transform",`translate(${(x-a.ox)*K},${(y-a.oy)*K})`); },
+      onMove:(a,m)=>{ if(a.seta){ a.x2=m.x; a.y2=m.y; setaTmp(svg,seta({t:bpSeta,...a},`data-tmp="1"`)); return; } if(!a.k) return; const x=clamp(m.x+a.dx,-2,70), y=clamp(m.y+a.dy,-2,37); if(Math.hypot(x-a.ox,y-a.oy)>.5) a.mov=true; a.x=x; a.y=y; a.g.setAttribute("transform",`translate(${(x-a.ox)*K},${(y-a.oy)*K})`); },
       onUp:a=>{ if(a.seta){ if(Math.hypot(a.x2-a.x1,a.y2-a.y1)>1.5) editaRel(R=>R.bp.find(x=>x.id===B.id).setas.push({id:nid("s"),t:bpSeta,x1:a.x1,y1:a.y1,x2:a.x2,y2:a.y2}),true); desenha(); return; }
         if(a.sid){ folhaSetaBp(B.id,a.sid,desenha); return; }
         if(a.mov) { editaRel(R=>{ const p=R.bp.find(x=>x.id===B.id).pecas.find(p=>p.id===a.k); p.x=Math.round(a.x*10)/10; p.y=Math.round(a.y*10)/10; },true); desenha(); } else folhaPecaBp(B.id,a.k); }}); };
@@ -899,10 +933,10 @@ render(); estado();
       q.docs.forEach(d=>{ const x=d.data(); if(!x) return; vistos.add(d.id); const p=`obs/${uid}/relatorios/${d.id}`; if(pend[p]||tSave[d.id]&&rels[d.id]&&aEscrever()) return;
         const R=normRel({...x,id:d.id,autor:uid}); if(JSON.stringify(R)!==JSON.stringify(rels[d.id])){ rels[d.id]=R; mud=true; } });
       Object.values(rels).forEach(R=>{ if(R.autor===uid&&!vistos.has(R.id)&&!pend[relPath(R)]&&!q.metadata?.fromCache){ delete rels[R.id]; mud=true; } });
-      if(mud){ guardaCache(); if(aEscrever()) precisaRender=true; else render(); } estado(); },e=>{ if(e?.code==="revoked") setStatus("local","Acesso retirado"); });
+      if(mud){ guardaCache(); if(aEscrever()||aArrastar) precisaRender=true; else render(); } estado(); },e=>{ if(e?.code==="revoked") setStatus("local","Acesso retirado"); });
     db.collection(`obs/${uid}/revisoes`).onSnapshot(q=>{ if(q.metadata?.hasPendingWrites) return; let mud=false;
       q.docs.forEach(d=>{ const x=d.data(); if(!x||pend[`obs/${uid}/revisoes/${d.id}`]) return; const v={texto:String(x.texto||""),revisto:!!x.revisto,em:x.em||""}; if(JSON.stringify(v)!==JSON.stringify(revs[d.id])){ revs[d.id]=v; mud=true; } });
-      if(mud){ guardaCache(); if(aEscrever()) precisaRender=true; else render(); } },()=>{}); };
+      if(mud){ guardaCache(); if(aEscrever()||aArrastar) precisaRender=true; else render(); } },()=>{}); };
   ouveAutor(meId);
   if(souDono) db.collection("obs").onSnapshot(q=>{ q.docs.forEach(d=>ouveAutor(d.id)); carregaNomes(q.docs.map(d=>d.id)); },()=>{});
   render();

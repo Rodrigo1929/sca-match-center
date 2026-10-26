@@ -7,7 +7,7 @@ Existe para dar acesso a um observador de fora do clube sem ele ver o resto da a
 - **Código:** `observacao/page.html` (um só ficheiro, um só `<script>`) + `observacao/planteis.json`
 - **Build:** `npm run build` → `dist/observacao.html` (a página, o logo, a bola e os planteis embutidos)
 - **Testes:** `npm run check` (sintaxe) e `npm run test:obs` (browser, PC e telemóvel; `-- --ipad` para WebKit)
-- **Versão publicada:** Obs. 11 (26/10/2026) — ver `CHANGELOG.md`
+- **Versão publicada:** Obs. 12 (26/10/2026) — ver `CHANGELOG.md`
 
 ## Quem usa e com que acesso
 | Quem | O que vê | O que faz |
@@ -41,7 +41,8 @@ A cache carrega-se em `carregaCache()`, **depois** de todas as constantes existi
 ### Relatório (campos principais)
 - `adversario`, `competicao`, `estado` (`rasc`/`env`), `jogos[]` (contra, data, local, resultado, vídeo, contexto)
 - `plantel[]` (n, nome, idade, pos do zerozero, pe, nac, `slot` = código de posição, `conf`), `treinador`, `adjunto`, `trGR`, `sistema`, `capitao`, `plantelNotas`, `cores` {cam, cam2, num, gr}
-- `onzes` {prov, alt} → {sis, pos {código: idJogador}, nota}
+- `plXY` {sistema: {código: {x,y}}} e `plNom` {sistema: {idJogador: {x,y}}}: sítios livres no desenho do plantel (frações do campo)
+- `onzes` {prov, alt} → {sis, pos {código: idJogador}, nota, xy {código: {x,y}}, nxy {código: {x,y}}}
 - `onze` (Estrutura no campo) {com, sem → {sis, pos, nota}, jog[11], nos, nosPos {com, sem}}
 - `chk[idPergunta]` {op[], freq, jog[], nota, quadro {pecas[], setas[]}}
 - `evid[]` (q, txt, jogo, min, freq rec/pont/conf, ctx, clip, sit)
@@ -55,10 +56,13 @@ A cache carrega-se em `carregaCache()`, **depois** de todas as constantes existi
 - **Sistemas:** 4-3-3, 4-4-2, 4-4-2 losango, 4-2-3-1, 4-1-4-1, 3-5-2, 3-4-3, 5-3-2, 5-4-1.
 - **Campos e bolinhas** iguais aos da SCA Match Center. SCA a vermelho, GR amarelo; o adversário **com as cores do equipamento dele**, nunca o vermelho da SCA por defeito.
 - **Estrutura no campo:** as bolinhas das duas equipas ficam onde o observador as põe; o sistema só dá o ponto de partida.
+- **Plantel e onzes com bolinhas livres** (Rodrigo, 26/10/2026): a bolinha de cada posição arrasta-se para onde se quiser e leva os nomes (`plXY[sistema]` no plantel, `onzes.prov/alt.xy`). Com **Mover livremente** ligado, os nomes também ficam onde se largam (`plNom[sistema][idJogador]`, `onzes.*.nxy`); desligado, arrastar um nome no plantel muda o jogador de posição. "Repor tudo no sítio do sistema" apaga os sítios livres da vista.
 
 ## Pendentes
 - [x] **Cores dos clubes** (Rodrigo, 26/10/2026), em `CORES_EQ` (camisola / contorno): Barreiro vermelho/branco, Lusitânia verde/branco, Madalena grená/azul, Praiense vermelho, Rabo de Peixe azul/azul, Santo António azul/branco, São Roque amarelo/azul, União Micaelense tudo preto, Vale Formoso preto/branco. Relatórios sem camisola recebem as do clube; a cor escolhida pelo observador mantém-se. Guarda-redes por confirmar (amarelo por defeito; no São Roque coincide com a camisola).
 - [x] **Teste no iPad / Safari:** `npm run test:obs -- --ipad` passa (26/10/2026; precisou de `<meta charset>` na página, sem ele o WebKit lia os acentos mal no ficheiro local). Falta ver num iPad a sério arrastar nomes no Plantel e bolinhas nos quadros com o dedo (o teste não arrasta).
+- [x] **Setas e arrasto** (26/10/2026): desenhar uma seta já não refaz o campo a meio (antes a seta perdia-se); o que chega da base de dados durante um arrasto espera pelo fim (`aArrastar`).
+- [ ] **Plantel sem relatório** (pedido do Rodrigo, 26/10/2026): mexer no plantel de uma equipa sem começar o relatório. Falta decidir se é um plantel por observador ou um plantel base do Rodrigo que os observadores leem (este muda as regras da base de dados).
 - [ ] **Convidar o observador** (Editor, por email) e fazer a primeira análise juntos; a partir daí ajustar o nível de detalhe do guião.
 - [ ] **Posições a confirmar:** ~54 jogadores ficaram com posição provável (tracejado laranja) porque o zerozero só dá a linha; 3 sem posição (Gonçalo Rodrigo/Barreiro, Afonso/Rabo de Peixe, Gustavo Silveira/Lusitânia).
 - [ ] **zerozero:** em 25/10/2026 a rede do Rodrigo ficou bloqueada depois de ~230 páginas lidas seguidas. Para atualizar planteis: poucas páginas, com pausas. Época 2027/28: o formato do campeonato muda; rever `EQUIPAS`, `EPOCA` e `planteis.json`.
