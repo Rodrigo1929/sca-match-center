@@ -103,6 +103,29 @@ for (const [nome, opc] of ecras) {
   for (const s of ["ficha", "estr", "rec", "per", "sem", "bp", "jog", "nos", "sint", "notas"]) { await pg.click(`nav.secs button[data-s="${s}"]`); await pg.waitForTimeout(120); }
   await pg.screenshot({ path: join(cap, `${nome}-notas.png`) });
 }
+// base de dados simulada: uma atualização antiga que chega enquanto uma alteração ainda espera para gravar (data, local)
+// não a pode apagar (antes a data e o local ficavam em branco no link)
+{
+  const pg = await (await browser.newContext(ecras[0][1])).newPage();
+  pg.on("pageerror", (e) => falhas.push(`bd simulada: ${e}`));
+  await pg.addInitScript(() => {
+    window.__snap = {}; window.__docs = {};
+    window.claude = { use: async (n) => {
+      if (n === "user") return { id: async () => "u_teste", isOwner: async () => true, can: async () => true, profiles: async () => ({}) };
+      if (n === "db") return { collection: (p) => ({ onSnapshot: (cb) => { (window.__snap[p] = window.__snap[p] || []).push(cb); return () => {}; } }),
+        doc: (p) => ({ set: async (b) => { window.__docs[p] = JSON.parse(JSON.stringify(b)); }, delete: async () => { delete window.__docs[p]; } }) };
+      return null; } };
+  });
+  await pg.goto(url); await pg.evaluate(() => localStorage.clear()); await pg.reload(); await pg.waitForTimeout(500);
+  await pg.click('[data-novo="Lusitânia"]'); await pg.waitForTimeout(200);
+  await pg.click("#j-add"); await pg.waitForTimeout(200); await pg.selectOption("[data-jvs]", "Praiense"); await pg.waitForTimeout(200);
+  const antigo = await pg.evaluate(() => { const k = Object.keys(window.__docs).find((p) => p.startsWith("obs/u_teste/relatorios/")); return { k, d: window.__docs[k] }; });
+  await pg.fill('[data-b$=".data"]', "2026-10-18"); await pg.selectOption('[data-b$=".local"]', "fora"); await pg.waitForTimeout(100); await pg.evaluate(() => document.activeElement && document.activeElement.blur()); // no iPad o campo perde o foco ao fechar o seletor
+  await pg.evaluate((a) => { const id = a.k.split("/").pop(); (window.__snap["obs/u_teste/relatorios"] || []).forEach((cb) => cb({ docs: [{ id, data: () => a.d }], metadata: { hasPendingWrites: false, fromCache: false } })); }, antigo);
+  await pg.waitForTimeout(1000);
+  const bd = await pg.evaluate((k) => { const R = Object.values(rels)[0], J = R.jogos[0], G = window.__docs[k].jogos[0]; return { data: J.data, local: J.local, gData: G.data, gLocal: G.local }; }, antigo.k);
+  confirma(bd.data === "2026-10-18" && bd.local === "fora" && bd.gData === "2026-10-18" && bd.gLocal === "fora", `bd simulada: data ou local apagados por uma atualização antiga (${JSON.stringify(bd)})`);
+}
 await browser.close();
 if (falhas.length) { console.error("FALHOU:\n" + falhas.join("\n")); process.exit(1); }
 console.log(`OK · app de observação${ipad ? " (iPad)" : " (PC e telemóvel)"} · capturas em tests/capturas/observacao/`);

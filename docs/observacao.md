@@ -7,7 +7,7 @@ Existe para dar acesso a um observador de fora do clube sem ele ver o resto da a
 - **Código:** `observacao/page.html` (um só ficheiro, um só `<script>`) + `observacao/planteis.json`
 - **Build:** `npm run build` → `dist/observacao.html` (a página, o logo, a bola e os planteis embutidos)
 - **Testes:** `npm run check` (sintaxe) e `npm run test:obs` (browser, PC e telemóvel; `-- --ipad` para WebKit)
-- **Versão publicada:** Obs. 15 (26/10/2026) — ver `CHANGELOG.md`
+- **Versão publicada:** Obs. 16 (26/10/2026) — ver `CHANGELOG.md`
 
 ## Quem usa e com que acesso
 | Quem | O que vê | O que faz |
@@ -64,6 +64,7 @@ A cache carrega-se em `carregaCache()`, **depois** de todas as constantes existi
 ## Pendentes
 - [x] **Cores dos clubes** (Rodrigo, 26/10/2026), em `CORES_EQ` (camisola / contorno): Barreiro vermelho/branco, Lusitânia verde/branco, Madalena grená/azul, Praiense vermelho, Rabo de Peixe azul/azul, Santo António azul/branco, São Roque amarelo/azul, União Micaelense tudo preto, Vale Formoso preto/branco. Relatórios sem camisola recebem as do clube; a cor escolhida pelo observador mantém-se. Guarda-redes por confirmar (amarelo por defeito; no São Roque coincide com a camisola).
 - [x] **Teste no iPad / Safari:** `npm run test:obs -- --ipad` passa (26/10/2026; precisou de `<meta charset>` na página, sem ele o WebKit lia os acentos mal no ficheiro local). Falta ver num iPad a sério arrastar nomes no Plantel e bolinhas nos quadros com o dedo (o teste não arrasta).
+- [x] **Data e local apagados** (26/10/2026): uma atualização da base de dados que chegava enquanto um campo esperava para gravar (0,7 s) substituía-o e a alteração perdia-se. Agora, com alteração por gravar (`tSave`) ou por confirmar (`pend`), o que chega não substitui o relatório. Teste com base de dados simulada em `tests/observacao.mjs`.
 - [x] **Setas e arrasto** (26/10/2026): desenhar uma seta já não refaz o campo a meio (antes a seta perdia-se); o que chega da base de dados durante um arrasto espera pelo fim (`aArrastar`).
 - [x] **Plantel sem relatório** (Rodrigo Fonte, 26/10/2026): "Planteis base" na página inicial, um por equipa; os relatórios novos partem dele (regra `base`). Na Obs. 14 o observador passa a ver todos os relatórios e a editar os planteis base.
 - [ ] **Convidar o observador** (Editor, por email) e fazer a primeira análise juntos; a partir daí ajustar o nível de detalhe do guião.
