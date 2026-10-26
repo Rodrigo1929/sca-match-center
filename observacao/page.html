@@ -343,6 +343,8 @@ let vista={tipo:"lista",id:null,sec:"ficha"}, bpAberto=null, jogAberto=null;
 const CACHE="sca-obs-cache-v1", PEND="sca-obs-pend-v1";
 /* a cache do aparelho carrega-se no arranque, depois de todas as constantes existirem */
 function guardaCache(){ LSset(CACHE,{rels,revs}); }
+let bases={}; const BASES="sca-obs-base-v1";
+function guardaCacheBase(){ LSset(BASES,bases); }
 function guardaVista(){ LSset("sca-obs-vista",vista); }
 
 /* sítios livres das bolinhas do plantel e dos onzes: {código: {x,y}} em frações do campo */
@@ -374,9 +376,18 @@ function normRel(d){ const R={...d}; R.adversario=String(R.adversario||""); R.co
   Object.entries(R.resp||{}).forEach(([k,t])=>{ const id=Q_ANTIGO[k]; if(!id||!String(t||"").trim()) return; if(!R.chk[id]) R.chk[id]={op:[],freq:"",jog:[],nota:"",quadro:{pecas:[],setas:[]}}; if(!R.chk[id].nota.includes(String(t).trim())) R.chk[id].nota=(R.chk[id].nota?R.chk[id].nota+"\n":"")+String(t).trim(); });
   R.resp={}; R.evid.forEach(e=>{ if(Q_ANTIGO[e.q]) e.q=Q_ANTIGO[e.q]; });
   R.clips=Array.isArray(R.clips)?R.clips.filter(c=>c&&c.id):[]; return R; }
-function novoRel(adv){ const P=plantelZZ(adv); return normRel({id:nid("r"),autor:meId||"local",adversario:adv||"",competicao:COMP+" "+EPOCA,criadoEm:new Date().toISOString(),...(P?{plantel:P.jogadores,plantelFonte:P.fonte,treinador:P.treinador}:{})}); }
-function relAtual(){ return vista.id&&rels[vista.id]?rels[vista.id]:null; }
-function podeEditar(R){ return !soLeitura&&R&&(R.autor===meId||souDono||semDb); }
+/* plantel base de cada equipa (base/<equipa>): só o Rodrigo escreve, os observadores leem; os relatórios novos partem dele.
+   No ecrã é um "relatório" só com o Plantel (base:true), para usar o mesmo editor */
+const CAMPOS_BASE=["plantel","plantelFonte","treinador","adjunto","trGR","sistema","capitao","plantelNotas","cores","plXY","plNom"];
+const slugEq=n=>String(n||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+function normBase(d,slug){ return normRel({...d,id:"base:"+slug,base:true,autor:"base",adversario:String(d.equipa||(EQUIPAS.find(([n])=>slugEq(n)===slug)||[slug])[0])}); }
+function baseNova(equipa){ const P=plantelZZ(equipa); return normBase({equipa,...(P?{plantel:P.jogadores,plantelFonte:P.fonte,treinador:P.treinador}:{})},slugEq(equipa)); }
+function docBase(R){ const b={equipa:R.adversario}; CAMPOS_BASE.forEach(k=>b[k]=clone(R[k])); return b; }
+function novoRel(adv){ const B=bases[slugEq(adv)], P=B?null:plantelZZ(adv);
+  const daBase=B?{...docBase(B),plantelFonte:`Plantel base do Rodrigo · ${new Date(B.atualizadoEm||Date.now()).toLocaleDateString("pt-PT")}`}:P?{plantel:P.jogadores,plantelFonte:P.fonte,treinador:P.treinador}:{};
+  delete daBase.equipa; return normRel({id:nid("r"),autor:meId||"local",adversario:adv||"",competicao:COMP+" "+EPOCA,criadoEm:new Date().toISOString(),...daBase}); }
+function relAtual(){ if(vista.tipo==="base") return bases[vista.id]||null; return vista.id&&rels[vista.id]?rels[vista.id]:null; }
+function podeEditar(R){ return !soLeitura&&R&&(R.base?(souDono||semDb):(R.autor===meId||souDono||semDb)); }
 
 /* ======================= gravação com fila (funciona sem rede) ======================= */
 let pend=LS(PEND)||{}, pendSeq=0; const filas={};
@@ -397,7 +408,9 @@ document.addEventListener("visibilitychange",()=>{ if(!document.hidden&&db) reen
 
 const relPath=R=>`obs/${R.autor}/relatorios/${R.id}`, revPath=R=>`obs/${R.autor}/revisoes/${R.id}`;
 const tSave={};
-function guardaRel(R,ja){ R.atualizadoEm=new Date().toISOString(); rels[R.id]=R; guardaCache(); clearTimeout(tSave[R.id]);
+function guardaRel(R,ja){ R.atualizadoEm=new Date().toISOString(); clearTimeout(tSave[R.id]);
+  if(R.base){ const s=R.id.slice(5); bases[s]=R; guardaCacheBase(); const f=()=>gravaDoc(`base/${s}`,docBase(bases[s])); if(ja) f(); else tSave[R.id]=setTimeout(f,700); return; }
+  rels[R.id]=R; guardaCache();
   const f=()=>{ const b=clone(rels[R.id]); delete b.atualizadoEm; gravaDoc(relPath(R),b); }; if(ja) f(); else tSave[R.id]=setTimeout(f,700); }
 function editaRel(fn,semRender){ const R=relAtual(); if(!R||!podeEditar(R)) return; fn(R); guardaRel(R,true); if(!semRender) render(); }
 
@@ -447,9 +460,17 @@ document.addEventListener("focusout",()=>setTimeout(()=>{ if(precisaRender&&!aEs
 function render(){ try{ render0(); }catch(e){ console.error(e); $("fab").hidden=true;
   $("main").innerHTML=`<div class="banner"><span>⚠</span><span><b>Não foi possível mostrar esta página.</b> Os dados estão guardados. <button class="btn sm" id="err-v">Voltar aos relatórios</button></span></div>`;
   $("err-v").onclick=()=>{ vista={tipo:"lista",id:null,sec:"ficha"}; guardaVista(); try{ render0(); }catch(x){ console.error(x); } }; } }
-function render0(){ const R=relAtual(); if(vista.tipo==="rel"&&!R){ vista={tipo:"lista",id:null,sec:"ficha"}; }
+function render0(){ if(vista.tipo==="base"&&!bases[vista.id]){ const eq=EQUIPAS.find(([n])=>slugEq(n)===vista.id); if(eq) bases[vista.id]=baseNova(eq[0]); }
+  const R=relAtual(); if((vista.tipo==="rel"||vista.tipo==="base")&&!R){ vista={tipo:"lista",id:null,sec:"ficha"}; }
   $("fab").hidden=vista.tipo!=="rel"||!podeEditar(relAtual()); guardaVista();
-  const sy=scrollY; vista.tipo==="rel"?renderRel(relAtual()):renderLista(); if(render.mesma) scrollTo(0,sy); render.mesma=false; }
+  const sy=scrollY; vista.tipo==="rel"?renderRel(relAtual()):vista.tipo==="base"?renderBase(relAtual()):renderLista(); if(render.mesma) scrollTo(0,sy); render.mesma=false; }
+/* plantel base de uma equipa: só a secção Plantel, sem relatório */
+function renderBase(R){ const ed=podeEditar(R);
+  $("main").innerHTML=`${bannerAcesso()}<div class="rhead"><button class="btn sm ghost" id="voltar" aria-label="Voltar aos relatórios">← Relatórios</button><h2>${esc(R.adversario)}</h2><span class="chip rasc">Plantel base</span></div>
+    <p class="hint" style="margin:-4px 0 12px;max-width:72ch">${ed?"O plantel de partida dos relatórios novos desta equipa. Os observadores leem-no; só tu o mudas. Os relatórios já começados não mudam.":"Plantel base do Rodrigo (só leitura). Os relatórios novos desta equipa começam com ele."}</p>
+    <section class="sec" id="sec"></section>`;
+  $("voltar").onclick=()=>{ vista={tipo:"lista",id:null,sec:"ficha"}; render(); scrollTo(0,0); };
+  secPlantel(R,$("sec"),ed); liga($("sec"),R,ed); }
 
 function contagens(R){ const resp=TODAS_Q.filter(q=>respondida(R,q.id)).length, tot=TODAS_Q.length;
   return {resp,tot,ev:R.evid.length,soltas:R.evid.filter(e=>!e.q).length}; }
@@ -465,12 +486,16 @@ function renderLista(){ const ls=Object.values(rels).sort((a,b)=>String(b.atuali
     if(rs.length) rs.forEach(R=>h+=cartao(R));
     else h+=`<div class="rcard" style="box-shadow:none;background:var(--surface-2);border-style:dashed"><span class="hint">${esc(ilha)}</span><h3>${esc(n)}</h3><div class="meta">Ainda sem relatório</div>${!soLeitura?`<button class="btn sm" data-novo="${esc(n)}" style="align-self:flex-start">+ Começar observação</button>`:""}</div>`; });
   h+=`</div>`;
+  /* planteis base: mexer no plantel de cada equipa sem começar um relatório */
+  h+=`<div class="row" style="justify-content:space-between;margin:0 0 10px"><h3 style="font-size:19px">Planteis base</h3><span class="hint">${souDono||semDb?"Mexe no plantel de cada equipa sem começar um relatório; os relatórios novos partem dele.":"Planteis do Rodrigo (só leitura); os relatórios novos partem deles."}</span></div>
+    <div class="row" style="margin-bottom:22px">${EQUIPAS.map(([n])=>{ const B=bases[slugEq(n)]; return `<button class="btn" data-base="${slugEq(n)}">${esc(n)}${B&&B.atualizadoEm?`<span class="hint" style="font-weight:400"> · ${B.plantel.length}</span>`:""}</button>`; }).join("")}</div>`;
   const outros=ls.filter(R=>!EQUIPAS.some(([n])=>n===R.adversario));
   if(outros.length){ h+=`<h3 style="font-size:19px;margin:0 0 10px">Outros adversários</h3><div class="cards">`; outros.forEach(R=>h+=cartao(R)); h+=`</div>`; }
   if(false) h+=`<div class="empty"><b>Ainda não há relatórios.</b><span>Cria um relatório por adversário. Dentro dele tens o guião de perguntas, o campo para a estrutura, as bolas paradas, os jogadores de referência e a síntese final. No estádio, usa o botão <b>+ Nota</b> para registar depressa e arrumar depois.</span>${!soLeitura?`<button class="btn primary" id="novo2">+ Criar o primeiro relatório</button>`:""}</div>`;
   $("main").innerHTML=h;
   const cria=adv=>{ const R=novoRel(adv); guardaRel(R,true); if(db&&meId) gravaDoc(`obs/${meId}`,{ativo:true}); vista={tipo:"rel",id:R.id,sec:"ficha"}; render(); scrollTo(0,0); };
   [$("novo"),$("novo2")].forEach(b=>b&&(b.onclick=()=>cria(""))); $("main").querySelectorAll("[data-novo]").forEach(b=>b.onclick=()=>cria(b.dataset.novo));
+  $("main").querySelectorAll("[data-base]").forEach(b=>b.onclick=()=>{ vista={tipo:"base",id:b.dataset.base,sec:"plantel"}; render(); scrollTo(0,0); });
   $("main").querySelectorAll("button.rcard").forEach(b=>b.onclick=()=>{ vista={tipo:"rel",id:b.dataset.id,sec:"ficha"}; bpAberto=null; jogAberto=null; render(); scrollTo(0,0); });
   carregaNomes(ls.map(r=>r.autor)); }
 function bannerAcesso(){ if(soLeitura) return `<div class="banner" style="margin-bottom:12px"><span>🔒</span><span><b>Sem permissão para gravar.</b> Pede ao Rodrigo acesso de <b>Editor</b> a esta página.</span></div>`;
@@ -672,7 +697,7 @@ function plantelSvgStr(R,modo){ const {VW,fx,fy,fw,fh,bw}=PLF, kx=fw/68, ky=fh/5
   if(semPos.length){ h+=`<text x="${fx}" y="${base+26}" font-size="24" font-weight="800" font-family="${F}" fill="#C00000">SEM POSIÇÃO NO CAMPO:</text>`;
     semPos.forEach((j,i)=>h+=caixa(fx+128+(i%6)*268,base+44+Math.floor(i/6)*46,j,250,`data-pl="${esc(j.id)}"`)); }
   return h+"</svg>"; }
-function secPlantel(R,box,ed){ const temZZ=!!(PLANTEIS.equipas&&PLANTEIS.equipas[R.adversario]), modo=vista.plv||"plantel", sis=R.sistema||"4-3-3", lay=layoutDe(sis);
+function secPlantel(R,box,ed){ const temZZ=!!(PLANTEIS.equipas&&PLANTEIS.equipas[R.adversario]), modo=R.base?"plantel":(vista.plv||"plantel"), sis=R.sistema||"4-3-3", lay=layoutDe(sis);
   const ordSlot=j=>{ const c=posNoSis(j.slot,sis), i=lay.findIndex(x=>x[0]===c); return i<0?99:i; };
   const lista=R.plantel.slice().sort((a,b)=>ordSlot(a)-ordSlot(b)||(parseInt(a.n)||999)-(parseInt(b.n)||999)||a.nome.localeCompare(b.nome,"pt"));
   const opSis=sel=>`${Object.keys(LAYOUTS).map(x=>`<option${x===sel?" selected":""}>${x}</option>`).join("")}`;
@@ -700,7 +725,7 @@ function secPlantel(R,box,ed){ const temZZ=!!(PLANTEIS.equipas&&PLANTEIS.equipas
         ${Object.keys(O?O.xy:R.plXY[sis]||{}).length+Object.keys(O?O.nxy:R.plNom[sis]||{}).length?`<button class="btn sm" id="pl-rxy">Repor tudo no sítio do sistema</button>`:""}</div>`:""}
       <div style="overflow-x:auto"><div id="pl-svg" style="min-width:560px"></div></div></div>`
       :`<div class="empty"><b>Ainda sem plantel.</b><span>${temZZ?`Carrega o plantel do zerozero (${esc(dataPt(PLANTEIS.data))}) ou acrescenta os jogadores à mão.`:"Acrescenta os jogadores à mão."}</span></div>`}
-    ${ed&&modo==="plantel"?`<div class="row">${temZZ?`<button class="btn" id="pl-zz">${R.plantel.length?"Substituir pelo plantel do zerozero":"Carregar plantel do zerozero"}</button>`:""}<button class="btn primary" id="pl-add">+ Jogador</button></div>`:""}
+    ${ed&&modo==="plantel"?`<div class="row">${temZZ?`<button class="btn" id="pl-zz">${R.plantel.length?"Substituir pelo plantel do zerozero":"Carregar plantel do zerozero"}</button>`:""}<button class="btn primary" id="pl-add">+ Jogador</button>${!R.base&&bases[slugEq(R.adversario)]?`<button class="btn" id="pl-base">Repor o plantel base</button>`:""}${!R.base&&souDono&&EQUIPAS.some(([n])=>n===R.adversario)?`<button class="btn" id="pl-pbase">Guardar como plantel base</button>`:""}</div>`:""}
     ${R.plantel.length&&modo==="plantel"?`<div class="card" style="padding:0;overflow-x:auto"><table class="ptab"><thead><tr><th>Nº</th><th>Nome</th><th>Posição no campo (${esc(sis)})</th><th>Pé</th><th title="Posição confirmada nos jogos">Confirmada</th><th></th></tr></thead><tbody>
       ${lista.map(j=>`<tr${j.conf?"":' class="porconf"'}><td><input type="text" data-b="plantel.${j.id}.n" data-rr inputmode="numeric" maxlength="3" aria-label="Número" style="width:62px"></td>
         <td><input type="text" data-b="plantel.${j.id}.nome" data-rr aria-label="Nome" style="min-width:150px"><small>${esc([partePos(j.pos).join(" / "),j.idade?j.idade+" anos":""].filter(Boolean).join(" · "))}</small></td>
@@ -710,7 +735,7 @@ function secPlantel(R,box,ed){ const temZZ=!!(PLANTEIS.equipas&&PLANTEIS.equipas
         <td>${ed?`<button class="btn sm ghost" data-pdel="${esc(j.id)}" aria-label="Tirar ${esc(j.nome)} do plantel">✕</button>`:""}</td></tr>`).join("")}</tbody></table></div>`:""}`;
   const rxy=$("pl-rxy"); if(rxy) confirma2(rxy,"Toca outra vez para repor",()=>{ editaRel(R=>{ if(O){ R.onzes[modo].xy={}; R.onzes[modo].nxy={}; } else { delete R.plXY[sis]; delete R.plNom[sis]; } },true); render.mesma=true; render(); });
   const lv=$("pl-livre"); if(lv) lv.onchange=()=>{ vista.livre=lv.checked; guardaVista(); render.mesma=true; render(); };
-  if(R.plantel.length){ seg($("pl-m"),[["plantel","Plantel por posição"],["prov","Onze provável"],["alt","Onze alternativo"]],modo,v=>{ vista.plv=v; render.mesma=true; render(); });
+  if(R.plantel.length){ if(!R.base) seg($("pl-m"),[["plantel","Plantel por posição"],["prov","Onze provável"],["alt","Onze alternativo"]],modo,v=>{ vista.plv=v; render.mesma=true; render(); });
     $("pl-svg").innerHTML=plantelSvgStr(R,modo); ligaPlantelSvg($("pl-svg").querySelector("svg"),ed,modo); }
   if(!ed) return;
   box.querySelectorAll("[data-sw] button").forEach(b=>b.onclick=e=>{ e.preventDefault(); const k=b.parentElement.dataset.sw; editaRel(R=>{ R.cores[k]=b.dataset.c; },true); render.mesma=true; render(); });
@@ -721,6 +746,9 @@ function secPlantel(R,box,ed){ const temZZ=!!(PLANTEIS.equipas&&PLANTEIS.equipas
   box.querySelectorAll("[data-pdel]").forEach(b=>confirma2(b,"Tirar?",()=>{ const id=b.dataset.pdel; render.mesma=true; editaRel(R=>{ R.plantel=R.plantel.filter(x=>x.id!==id); if(R.capitao===id) R.capitao=""; ["prov","alt"].forEach(k=>Object.keys(R.onzes[k].pos).forEach(c=>{ if(R.onzes[k].pos[c]===id) delete R.onzes[k].pos[c]; })); }); }));
   const carrega=()=>{ const P=plantelZZ(R.adversario); editaRel(R=>{ R.plantel=P.jogadores; R.plantelFonte=P.fonte; if(!R.treinador) R.treinador=P.treinador; R.capitao=""; R.onzes.prov.pos={}; R.onzes.alt.pos={}; }); toast(`Plantel carregado · ${P.jogadores.length} jogadores`); };
   const zz=$("pl-zz"); if(zz){ if(R.plantel.length) confirma2(zz,"Toca outra vez: substitui o plantel atual",carrega); else zz.onclick=carrega; }
+  /* relatório ↔ plantel base: repor a partir da base (limpa os onzes, os jogadores são outros) ou, para o Rodrigo, guardar este plantel como base */
+  const pb=$("pl-base"); if(pb) confirma2(pb,"Toca outra vez: substitui o plantel e limpa os onzes",()=>{ const B=docBase(bases[slugEq(R.adversario)]); editaRel(R=>{ CAMPOS_BASE.forEach(k=>R[k]=clone(B[k])); R.plantelFonte=`Plantel base do Rodrigo · ${new Date().toLocaleDateString("pt-PT")}`; R.onzes.prov.pos={}; R.onzes.alt.pos={}; R.onzes.prov.nxy={}; R.onzes.alt.nxy={}; }); toast("Plantel reposto a partir do plantel base"); });
+  const pp=$("pl-pbase"); if(pp) confirma2(pp,"Toca outra vez: substitui o plantel base",()=>{ const s=slugEq(R.adversario); guardaRel(normBase(docBase(R),s),true); toast(`Plantel base do ${R.adversario} atualizado`); });
   if($("pl-add")) $("pl-add").onclick=()=>{ const j={id:nid("j"),n:"",nome:"",idade:"",pos:"",pe:"",nac:"",slot:"",conf:true}; editaRel(R=>R.plantel.push(j),true); folhaJogPlantel(j.id,true); }; }
 /* plantel: arrastar um nome para outra posição, tocar abre o jogador. Onze: tocar numa posição escolhe o jogador */
 function ligaPlantelSvg(svg,ed,modo){ const {fx,fy,fw,fh}=PLF; let A=null; const R0=relAtual();
@@ -915,7 +943,9 @@ async function carregaNomes(ids){ if(!usr||!souDono) return; const falta=[...new
   try{ const ps=await usr.profiles(falta); let mud=false; falta.forEach(i=>{ const n=(ps[i]&&ps[i].name)||""; if(nomes[i]!==n){ nomes[i]=n; mud=true; } }); if(mud&&!aEscrever()) render(); }catch(e){} }
 
 /* ======================= arranque ======================= */
-function carregaCache(){ const c=LS(CACHE); if(c){ revs=c.revs||{}; Object.entries(c.rels||{}).forEach(([id,R])=>{ try{ rels[id]=normRel({...R,id}); }catch(e){} }); } const v=LS("sca-obs-vista"); if(v&&v.tipo) vista=v; }
+function carregaCache(){ const c=LS(CACHE); if(c){ revs=c.revs||{}; Object.entries(c.rels||{}).forEach(([id,R])=>{ try{ rels[id]=normRel({...R,id}); }catch(e){} }); }
+  Object.entries(LS(BASES)||{}).forEach(([s,B])=>{ try{ bases[s]=normBase({...B,equipa:B.equipa||B.adversario},s); }catch(e){} });
+  const v=LS("sca-obs-vista"); if(v&&v.tipo) vista=v; }
 carregaCache();
 $("dl-eq").innerHTML=TODAS.map(n=>`<option value="${esc(n)}"></option>`).join("");
 render(); estado();
@@ -938,6 +968,11 @@ render(); estado();
       q.docs.forEach(d=>{ const x=d.data(); if(!x||pend[`obs/${uid}/revisoes/${d.id}`]) return; const v={texto:String(x.texto||""),revisto:!!x.revisto,em:x.em||""}; if(JSON.stringify(v)!==JSON.stringify(revs[d.id])){ revs[d.id]=v; mud=true; } });
       if(mud){ guardaCache(); if(aEscrever()||aArrastar) precisaRender=true; else render(); } },()=>{}); };
   ouveAutor(meId);
+  /* planteis base: toda a gente lê, só o dono escreve */
+  db.collection("base").onSnapshot(q=>{ if(q.metadata?.hasPendingWrites) return; let mud=false;
+    q.docs.forEach(d=>{ const x=d.data(); if(!x||pend[`base/${d.id}`]||tSave["base:"+d.id]&&vista.tipo==="base"&&aEscrever()) return; const B=normBase(x,d.id);
+      if(JSON.stringify(B)!==JSON.stringify(bases[d.id])){ bases[d.id]=B; mud=true; } });
+    if(mud){ guardaCacheBase(); if(aEscrever()||aArrastar) precisaRender=true; else render(); } },()=>{});
   if(souDono) db.collection("obs").onSnapshot(q=>{ q.docs.forEach(d=>ouveAutor(d.id)); carregaNomes(q.docs.map(d=>d.id)); },()=>{});
   render();
 })();

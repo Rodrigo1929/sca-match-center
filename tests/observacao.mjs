@@ -31,10 +31,17 @@ for (const [nome, opc] of ecras) {
 
   // novo relatório a partir da lista do campeonato: plantel do zerozero e cores conhecidas
   await pg.evaluate(() => { vista = { tipo: "lista", id: null, sec: "ficha" }; render(); });
+  // plantel base: mexer no plantel sem começar o relatório; o relatório novo parte dele
+  await pg.click('[data-base="lusitania"]'); await pg.waitForSelector("#pl-svg svg");
+  await pg.fill('#sec [data-b="treinador"]', "Treinador Base"); await pg.waitForTimeout(150);
+  const base = await pg.evaluate(() => ({ n: bases.lusitania && bases.lusitania.plantel.length, tr: bases.lusitania && bases.lusitania.treinador, rels: Object.values(rels).filter((x) => x.adversario === "Lusitânia").length, cache: !!(JSON.parse(localStorage.getItem("sca-obs-base-v1") || "{}").lusitania) }));
+  confirma(base.n > 15 && base.tr === "Treinador Base" && base.rels === 0 && base.cache, `${nome}: plantel base não ficou guardado ou criou relatório (${JSON.stringify(base)})`);
+  await pg.screenshot({ path: join(cap, `${nome}-plantel-base.png`), fullPage: true });
+  await pg.click("#voltar"); await pg.waitForTimeout(150);
   await pg.click('[data-novo="Lusitânia"]'); await pg.click('nav.secs button[data-s="plantel"]'); await pg.waitForTimeout(300);
   await pg.screenshot({ path: join(cap, `${nome}-plantel.png`), fullPage: true });
-  const lus = await pg.evaluate(() => { const R = Object.values(rels).find((x) => x.adversario === "Lusitânia"); return { n: R.plantel.length, cor: R.cores.cam }; });
-  confirma(lus.n > 15 && lus.cor === "#118C3E", `${nome}: plantel ou cores do Lusitânia em falta (${JSON.stringify(lus)})`);
+  const lus = await pg.evaluate(() => { const R = Object.values(rels).find((x) => x.adversario === "Lusitânia"); return { n: R.plantel.length, cor: R.cores.cam, tr: R.treinador, fonte: R.plantelFonte }; });
+  confirma(lus.n > 15 && lus.cor === "#118C3E" && lus.tr === "Treinador Base" && /^Plantel base/.test(lus.fonte), `${nome}: plantel ou cores do Lusitânia em falta (${JSON.stringify(lus)})`);
   // todos os adversários têm cores; relatório já gravado sem camisola recebe as do clube, cor escolhida pelo observador fica
   const cores = await pg.evaluate(() => ({ falta: EQUIPAS.map(([n]) => n).filter((n) => !CORES_EQ[n]), mad: normRel({ adversario: "Madalena", cores: { cam: "", cam2: "" } }).cores, esc: normRel({ adversario: "Madalena", cores: { cam: "#FFFFFF", cam2: "" } }).cores }));
   confirma(!cores.falta.length && cores.mad.cam === "#7B1E30" && cores.mad.cam2 === "#0055A4" && cores.esc.cam === "#FFFFFF" && cores.esc.cam2 === "", `${nome}: cores dos clubes erradas (${JSON.stringify(cores)})`);
