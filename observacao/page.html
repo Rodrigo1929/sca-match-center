@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>SCA Observação</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -356,7 +357,8 @@ function normRel(d){ const R={...d}; R.adversario=String(R.adversario||""); R.co
   R.plantel.forEach(j=>{ if(NUM_433[j.slot]) j.slot=NUM_433[j.slot]; else if(j.slot&&!POS_NOME[j.slot]) j.slot=""; });
   ["treinador","adjunto","trGR","sistema","capitao","plantelNotas"].forEach(k=>R[k]=String(R[k]||""));
   const hx=v=>/^#[0-9a-f]{6}$/i.test(v||"")?v:""; const c0=R.cores||{}, cd=CORES_EQ[R.adversario]||{};
-  R.cores={cam:hx(c0.cam)||(c0.cam===undefined?hx(cd.cam):""),cam2:hx(c0.cam2)||(c0.cam2===undefined?hx(cd.cam2):""),num:hx(c0.num),gr:hx(c0.gr)}; if(R.sistema&&!LAYOUTS[R.sistema]) R.sistema="";
+  const semCam=!hx(c0.cam); /* relatório ainda sem camisola: recebe as cores conhecidas do clube */
+  R.cores={cam:hx(c0.cam)||hx(cd.cam),cam2:hx(c0.cam2)||(semCam?hx(cd.cam2):""),num:hx(c0.num),gr:hx(c0.gr)}; if(R.sistema&&!LAYOUTS[R.sistema]) R.sistema="";
   const on=R.onzes||{}, nOnze=o=>{ const sis=LAYOUTS[o?.sis]?o.sis:"", lay=layoutDe(sis||R.sistema), ids=new Set(R.plantel.map(j=>j.id)), pos={};
     Object.entries(o?.pos||{}).forEach(([c,id])=>{ if(lay.some(x=>x[0]===c)&&ids.has(id)) pos[c]=id; }); return {sis,pos,nota:String(o?.nota||"")}; };
   R.onzes={prov:nOnze(on.prov),alt:nOnze(on.alt)};
@@ -409,8 +411,9 @@ function campoSvg(meio){ const L=68*K, C=(meio?36:105)*K, s='stroke="#111" strok
   return h; }
 function svgPt(svg,e){ const p=svg.createSVGPoint(); p.x=e.clientX; p.y=e.clientY; const q=p.matrixTransform(svg.getScreenCTM().inverse()); return {x:q.x/K,y:q.y/K}; }
 const COR={sca:"#C00000",gr:"#FFFF00",out:"#7F7F7F"};
-/* cores conhecidas dos adversários (Wikipédia PT); as outras ficam por escolher no relatório */
-const CORES_EQ={"Lusitânia":{cam:"#118C3E",cam2:"#FFFFFF"},"Praiense":{cam:"#C8102E",cam2:"#1B1A17"}};
+/* cores do equipamento dos adversários, confirmadas pelo Rodrigo (26/10/2026); o observador muda-as no relatório */
+const CORES_EQ={"Barreiro":{cam:"#C8102E",cam2:"#FFFFFF"},"Lusitânia":{cam:"#118C3E",cam2:"#FFFFFF"},"Madalena":{cam:"#7B1E30",cam2:"#0055A4"},"Praiense":{cam:"#C8102E",cam2:"#1B1A17"},
+  "Rabo de Peixe":{cam:"#0055A4",cam2:"#0055A4"},"Santo António":{cam:"#0055A4",cam2:"#FFFFFF"},"São Roque":{cam:"#FFD100",cam2:"#0055A4"},"União Micaelense":{cam:"#000000",cam2:"#000000"},"Vale Formoso":{cam:"#000000",cam2:"#FFFFFF"}};
 const SEM_COR="#8C8C8C";
 function contraste(h){ const m=String(h||"").match(/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i); if(!m) return "#fff"; const [r,g,b]=m.slice(1).map(x=>parseInt(x,16)/255); return .2126*r+.7152*g+.0722*b>.6?"#000":"#fff"; }
 function corEq(R){ const c=R.cores||{}, cam=c.cam||SEM_COR, gr=c.gr||"#FFFF00"; return {cam,cam2:c.cam2||"#000000",num:c.num||contraste(cam),gr,grNum:contraste(gr),definida:!!c.cam}; }

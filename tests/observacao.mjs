@@ -35,6 +35,9 @@ for (const [nome, opc] of ecras) {
   await pg.screenshot({ path: join(cap, `${nome}-plantel.png`), fullPage: true });
   const lus = await pg.evaluate(() => { const R = Object.values(rels).find((x) => x.adversario === "Lusitânia"); return { n: R.plantel.length, cor: R.cores.cam }; });
   confirma(lus.n > 15 && lus.cor === "#118C3E", `${nome}: plantel ou cores do Lusitânia em falta (${JSON.stringify(lus)})`);
+  // todos os adversários têm cores; relatório já gravado sem camisola recebe as do clube, cor escolhida pelo observador fica
+  const cores = await pg.evaluate(() => ({ falta: EQUIPAS.map(([n]) => n).filter((n) => !CORES_EQ[n]), mad: normRel({ adversario: "Madalena", cores: { cam: "", cam2: "" } }).cores, esc: normRel({ adversario: "Madalena", cores: { cam: "#FFFFFF", cam2: "" } }).cores }));
+  confirma(!cores.falta.length && cores.mad.cam === "#7B1E30" && cores.mad.cam2 === "#0055A4" && cores.esc.cam === "#FFFFFF" && cores.esc.cam2 === "", `${nome}: cores dos clubes erradas (${JSON.stringify(cores)})`);
 
   // sistema habitual muda o desenho; onze provável muda a posição no plantel
   await pg.selectOption("#pl-sis", "3-5-2"); await pg.waitForTimeout(200);

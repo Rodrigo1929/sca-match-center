@@ -7,7 +7,7 @@ Existe para dar acesso a um observador de fora do clube sem ele ver o resto da a
 - **Código:** `observacao/page.html` (um só ficheiro, um só `<script>`) + `observacao/planteis.json`
 - **Build:** `npm run build` → `dist/observacao.html` (a página, o logo, a bola e os planteis embutidos)
 - **Testes:** `npm run check` (sintaxe) e `npm run test:obs` (browser, PC e telemóvel; `-- --ipad` para WebKit)
-- **Versão publicada:** Obs. 10 (25/10/2026) — ver `CHANGELOG.md`
+- **Versão publicada:** Obs. 11 (26/10/2026) — ver `CHANGELOG.md`
 
 ## Quem usa e com que acesso
 | Quem | O que vê | O que faz |
@@ -57,8 +57,8 @@ A cache carrega-se em `carregaCache()`, **depois** de todas as constantes existi
 - **Estrutura no campo:** as bolinhas das duas equipas ficam onde o observador as põe; o sistema só dá o ponto de partida.
 
 ## Pendentes
-- [ ] **Cores dos clubes:** só Lusitânia (verde e branco) e Praiense (vermelho) estão confirmadas. Faltam Barreiro, Madalena, Rabo de Peixe, Santo António, São Roque, União Micaelense e Vale Formoso — pedir ao Rodrigo e pôr em `CORES_EQ`. Não inventar.
-- [ ] **Teste no iPad / Safari:** `npm run test:obs -- --ipad` ainda não correu (o WebKit não estava instalado). Ver sobretudo arrastar nomes no Plantel e bolinhas nos quadros com o dedo.
+- [x] **Cores dos clubes** (Rodrigo, 26/10/2026), em `CORES_EQ` (camisola / contorno): Barreiro vermelho/branco, Lusitânia verde/branco, Madalena grená/azul, Praiense vermelho, Rabo de Peixe azul/azul, Santo António azul/branco, São Roque amarelo/azul, União Micaelense tudo preto, Vale Formoso preto/branco. Relatórios sem camisola recebem as do clube; a cor escolhida pelo observador mantém-se. Guarda-redes por confirmar (amarelo por defeito; no São Roque coincide com a camisola).
+- [x] **Teste no iPad / Safari:** `npm run test:obs -- --ipad` passa (26/10/2026; precisou de `<meta charset>` na página, sem ele o WebKit lia os acentos mal no ficheiro local). Falta ver num iPad a sério arrastar nomes no Plantel e bolinhas nos quadros com o dedo (o teste não arrasta).
 - [ ] **Convidar o observador** (Editor, por email) e fazer a primeira análise juntos; a partir daí ajustar o nível de detalhe do guião.
 - [ ] **Posições a confirmar:** ~54 jogadores ficaram com posição provável (tracejado laranja) porque o zerozero só dá a linha; 3 sem posição (Gonçalo Rodrigo/Barreiro, Afonso/Rabo de Peixe, Gustavo Silveira/Lusitânia).
 - [ ] **zerozero:** em 25/10/2026 a rede do Rodrigo ficou bloqueada depois de ~230 páginas lidas seguidas. Para atualizar planteis: poucas páginas, com pausas. Época 2027/28: o formato do campeonato muda; rever `EQUIPAS`, `EPOCA` e `planteis.json`.
