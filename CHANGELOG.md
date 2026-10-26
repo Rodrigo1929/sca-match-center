@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| Obs. 20 | Observação: nos quadros das bolas paradas as bolinhas ficam mais pequenas (cerca de 2/3), com o número legível e zona de toque confortável; os outros quadros não mudam |
 | 81 | Base de dados: tudo o que chega da base de dados do link (estado, jogo, Ao vivo, análise, histórico, lances, Modelo de Jogo, exercícios, UT, plano semanal, calendário, planeamento anual, TV) passa a ser copiado à entrada — os dados vêm congelados e alterá-los a seguir podia falhar sem dar erro (como aconteceu na app de observação). Teste novo com base de dados simulada que congela os dados |
 | Obs. 19 | Observação: «Submeter relatório» (estado «Submetido»); momentos do jogo com os nomes Organização ofensiva, Transição defesa-ataque, Transição ataque-defesa, Organização defensiva, Bolas paradas ofensivas e defensivas (secções separadas); sem botão nem referências ao zerozero; nas perguntas de apoios, profundidade e primeiro passe escolhe-se a posição e depois o jogador; novas opções «3+1» e «A meio do meio-campo adversário (2/3 do campo)»; ficha de cada jogo observado com onze inicial, golos, substituições e cartões; jogadores de referência escolhidos do plantel; bolinhas da estrutura e dos quadros testadas com dados da base de dados |
 | Obs. 18 | Observação: a equipa, a data, o local e os outros campos voltam a mudar e a gravar — os dados que chegam da base de dados do claude.ai vêm congelados e as alterações eram ignoradas em silêncio (gravava-se sempre o jogo vazio); agora são copiados ao chegar |

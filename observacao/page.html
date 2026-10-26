@@ -460,9 +460,10 @@ const CORES_EQ={"Barreiro":{cam:"#C8102E",cam2:"#FFFFFF"},"Lusitânia":{cam:"#11
 const SEM_COR="#8C8C8C";
 function contraste(h){ const m=String(h||"").match(/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i); if(!m) return "#fff"; const [r,g,b]=m.slice(1).map(x=>parseInt(x,16)/255); return .2126*r+.7152*g+.0722*b>.6?"#000":"#fff"; }
 function corEq(R){ const c=R.cores||{}, cam=c.cam||SEM_COR, gr=c.gr||"#FFFF00"; return {cam,cam2:c.cam2||"#000000",num:c.num||contraste(cam),gr,grNum:contraste(gr),definida:!!c.cam}; }
-function peca(x,y,txt,cor,fg,extra,borda){ const r=19, fs=txt.length<=2?17:txt.length===3?13.5:11, b=borda&&!/^#0{3,6}$/i.test(borda);
-  return `<g ${extra||""}>${b?`<circle cx="${x*K}" cy="${y*K}" r="${r+1.8}" fill="#000"/>`:""}<circle cx="${x*K}" cy="${y*K}" r="${r}" fill="${cor}" stroke="${b?borda:"#000"}" stroke-width="${b?3.2:1.4}"/>`+
-    `<text x="${x*K}" y="${y*K+fs*.35}" text-anchor="middle" font-size="${fs}" font-weight="700" font-family="Roboto Condensed,Arial Narrow,Arial,sans-serif" fill="${fg}" pointer-events="none">${esc(txt)}</text><circle cx="${x*K}" cy="${y*K}" r="38" fill="transparent"/></g>`; }
+/* t = tamanho (1 = normal; nas bolas paradas as bolinhas são mais pequenas); a zona de toque nunca fica abaixo de ~26 */
+function peca(x,y,txt,cor,fg,extra,borda,t=1){ const r=19*t, fs=(txt.length<=2?17:txt.length===3?13.5:11)*Math.max(t,.8), b=borda&&!/^#0{3,6}$/i.test(borda);
+  return `<g ${extra||""}>${b?`<circle cx="${x*K}" cy="${y*K}" r="${r+1.8*t}" fill="#000"/>`:""}<circle cx="${x*K}" cy="${y*K}" r="${r}" fill="${cor}" stroke="${b?borda:"#000"}" stroke-width="${(b?3.2:1.4)*t}"/>`+
+    `<text x="${x*K}" y="${y*K+fs*.35}" text-anchor="middle" font-size="${fs}" font-weight="700" font-family="Roboto Condensed,Arial Narrow,Arial,sans-serif" fill="${fg}" pointer-events="none">${esc(txt)}</text><circle cx="${x*K}" cy="${y*K}" r="${Math.max(26,38*t)}" fill="transparent"/></g>`; }
 function bolaSvg(x,y,extra){ return `<g ${extra||""}><image href="{{BOLA}}" x="${x*K-10}" y="${y*K-10}" width="20" height="20" pointer-events="none"/><circle cx="${x*K}" cy="${y*K}" r="34" fill="transparent"/></g>`; }
 const posAdv=(sis,i)=>{ const b=(SISTEMAS[sis]||SISTEMAS["4-4-2"])[i]||["",52,34]; return {x:b[2],y:105-b[1],pos:b[0]}; };
 const posNos=i=>{ const b=SISTEMAS["3-4-3"][i]; return {x:68-b[2],y:b[1],pos:b[0]}; };
@@ -944,7 +945,7 @@ function edBp(R,B,el,ed){ el.innerHTML=`<div class="fields"><label class="f">Tip
   const desenha=(tmp)=>{ const X=relAtual().bp.find(x=>x.id===B.id); if(!X) return; let h=`<svg viewBox="-40 -40 760 440" role="img" aria-label="${esc(nomeBp(X))}"><defs>${["#000","#000"].map((c,i)=>`<marker id="ah${i}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="${c}"/></marker>`).join("")}</defs>${campoSvg(true)}`;
     const seta=(s,attr)=>{ const b=s.t==="bola"; return `<g ${attr||""}><line x1="${s.x1*K}" y1="${s.y1*K}" x2="${s.x2*K}" y2="${s.y2*K}" stroke="#000" stroke-width="4" ${b?'stroke-dasharray="12 8"':""} marker-end="url(#ah${b?1:0})"/><line x1="${s.x1*K}" y1="${s.y1*K}" x2="${s.x2*K}" y2="${s.y2*K}" stroke="transparent" stroke-width="30"/></g>`; };
     X.setas.forEach(s=>h+=seta(s,`data-s="${s.id}"`)); if(tmp) h+=seta(tmp);
-    [...X.pecas.filter(p=>p.eq==="out"),...X.pecas.filter(p=>p.eq==="adv"),...X.pecas.filter(p=>p.eq==="bola")].forEach(p=>{ h+=p.eq==="bola"?bolaSvg(p.x,p.y,`data-k="${p.id}"`):(()=>{ const C=corEq(relAtual()), gr=p.eq==="adv"&&p.n==="GR"; return peca(p.x,p.y,p.n||"",p.eq!=="adv"?COR.out:gr?C.gr:C.cam,p.eq!=="adv"?"#fff":gr?C.grNum:C.num,`data-k="${p.id}"`,p.eq==="adv"&&!gr?C.cam2:null); })(); });
+    [...X.pecas.filter(p=>p.eq==="out"),...X.pecas.filter(p=>p.eq==="adv"),...X.pecas.filter(p=>p.eq==="bola")].forEach(p=>{ h+=p.eq==="bola"?bolaSvg(p.x,p.y,`data-k="${p.id}"`):(()=>{ const C=corEq(relAtual()), gr=p.eq==="adv"&&p.n==="GR"; return peca(p.x,p.y,p.n||"",p.eq!=="adv"?COR.out:gr?C.gr:C.cam,p.eq!=="adv"?"#fff":gr?C.grNum:C.num,`data-k="${p.id}"`,p.eq==="adv"&&!gr?C.cam2:null,.65); })(); });
     $("bp-p").innerHTML=h+"</svg>"; const svg=$("bp-p").querySelector("svg");
     arrasta(svg,{onDown:(e,m)=>{ if(!ed){ return null; } const g=e.target.closest("[data-k],[data-s]");
         if(bpModo==="seta"){ const k=g&&g.dataset.k&&X.pecas.find(p=>p.id===g.dataset.k); const o=k?{x:k.x,y:k.y}:m; return {seta:true,x1:o.x,y1:o.y,x2:o.x,y2:o.y}; }
