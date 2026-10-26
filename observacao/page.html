@@ -177,7 +177,7 @@ textarea{resize:vertical;min-height:70px;line-height:1.45}
 
 <header class="top"><div class="in">
   <div class="brand"><img src="{{LOGO}}" alt=""><div><h1><span>SCA</span> Observação</h1><small>Observação de adversários</small></div></div>
-  <div class="status" id="status" aria-live="polite"><i></i><span>A ligar…</span></div>
+  <div class="status" id="status" aria-live="polite" role="button" tabindex="0" style="cursor:pointer"><i></i><span>A ligar…</span></div>
 </div></header>
 <main class="wrap" id="main"></main>
 <button class="btn primary fab" id="fab" hidden>+ Nota</button>
@@ -393,12 +393,31 @@ function podeEditar(R){ return !soLeitura&&R&&(R.base||R.autor===meId||souDono||
 let pend=LS(PEND)||{}, pendSeq=0; const filas={};
 const salvaPend=()=>LSset(PEND,pend);
 function setStatus(k,t){ const s=$("status"); s.className="status "+k; s.querySelector("span").textContent=t; }
+/* errosGrav[caminho] = último erro ao gravar esse documento (aparece ao tocar no estado). Um "revoked" quer dizer que esta página
+   perdeu o acesso à base de dados (acontece quando se publica uma versão nova com ela aberta): só recarregar resolve */
+const errosGrav={}; let revogado=false;
 function estado(falhou){ if(semDb){ setStatus("local","Guardado só neste aparelho"); return; } if(soLeitura){ setStatus("local","Só leitura"); return; } const n=Object.keys(pend).length;
-  if(!n){ setStatus("ok","Guardado"); return; } const off=falhou||navigator.onLine===false; setStatus(off?"local":"busy",(off?"Sem rede · ":"A enviar · ")+n+(n===1?" alteração por enviar":" alterações por enviar")); }
+  if(revogado){ setStatus("local","Recarrega a página para gravar"); return; }
+  if(!n){ setStatus("ok","Guardado"); return; } const off=falhou||navigator.onLine===false||Object.keys(errosGrav).some(p=>pend[p]);
+  setStatus(off?"local":"busy",(off?"Não gravou · ":"A enviar · ")+n+(n===1?" alteração por enviar":" alterações por enviar")+(off?" · tocar para ver":"")); }
+/* uma gravação que não responde não pode prender as seguintes desse documento */
+const comPrazo=(p,ms)=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r({code:"timeout",message:`sem resposta em ${ms/1000} s`}),ms))]);
+const tentativas={};
 function envia(path){ const P=pend[path]; if(!P||!db||soLeitura) return; const st=P.s;
-  filas[path]=(filas[path]||Promise.resolve()).catch(()=>{}).then(()=>{ const c=pend[path]; if(!c||c.s!==st) return; return c.del?db.doc(path).delete():db.doc(path).set({...c.b,atualizadoEm:new Date().toISOString()}); })
-    .then(()=>{ if(pend[path]&&pend[path].s===st){ delete pend[path]; salvaPend(); } estado(false); })
-    .catch(e=>{ if(e?.code==="invalid_argument"){ soLeitura=true; delete pend[path]; salvaPend(); estado(); render(); return; } estado(true); }); }
+  filas[path]=(filas[path]||Promise.resolve()).catch(()=>{}).then(()=>{ const c=pend[path]; if(!c||c.s!==st) return; return comPrazo(c.del?db.doc(path).delete():db.doc(path).set({...c.b,atualizadoEm:new Date().toISOString()}),20000); })
+    .then(()=>{ delete errosGrav[path]; tentativas[path]=0; if(pend[path]&&pend[path].s===st){ delete pend[path]; salvaPend(); } estado(false); })
+    .catch(e=>{ const code=e?.code||"erro"; errosGrav[path]={code,msg:String(e?.message||e||""),em:new Date().toLocaleTimeString("pt-PT")}; console.error("Observação: não gravou",path,code,e?.message);
+      if(code==="invalid_argument"&&/acess|access|permiss|not found|no such/i.test(String(e?.message||""))){ soLeitura=true; delete pend[path]; salvaPend(); estado(); render(); return; }
+      if(code==="revoked"||code==="not_granted"||code==="capability_disabled"||code==="capability_removed"){ revogado=true; estado(); return; }
+      /* passageiro: volta a tentar sozinho, cada vez mais devagar (3 s, 8 s, 20 s…) */
+      if(code!=="invalid_argument"&&code!=="quota_exceeded"){ const k=tentativas[path]=(tentativas[path]||0)+1; setTimeout(()=>envia(path),Math.min(60000,[3000,8000,20000][k-1]||40000)); }
+      estado(true); }); }
+function folhaEstado(){ const ps=Object.keys(pend); if(!ps.length&&!revogado) return;
+  folha(`<h3>Gravação</h3>${revogado?`<p class="sub" style="margin:0"><b>Esta página perdeu a ligação à base de dados</b> (normalmente porque saiu uma versão nova da app). Recarrega a página: o que está por enviar fica guardado neste aparelho e é enviado a seguir.</p>`:""}
+    ${ps.map(p=>{ const e=errosGrav[p]; return `<div class="ev" style="grid-template-columns:minmax(0,1fr)"><span class="tx"><b>${esc(p.split("/").slice(-2).join("/"))}</b>${e?`<br>Erro: <b>${esc(e.code)}</b>${e.msg?" · "+esc(e.msg):""} (${esc(e.em)})`:"<br>A enviar…"}</span></div>`; }).join("")}
+    <div class="actions"><button class="btn" data-close>Fechar</button><button class="btn" id="eg-re">Tentar outra vez</button><button class="btn primary" id="eg-rl">Recarregar a página</button></div>`,(s_,fecha)=>{
+    s_.querySelector("#eg-re").onclick=()=>{ fecha(); Object.keys(tentativas).forEach(k=>tentativas[k]=0); reenvia(); estado(false); toast("A tentar gravar outra vez"); };
+    s_.querySelector("#eg-rl").onclick=()=>location.reload(); }); }
 function gravaDoc(path,body){ if(semDb||!db) return; pend[path]={s:(++pendSeq)+"-"+Date.now(),b:body}; salvaPend(); estado(false); envia(path); }
 function apagaDoc(path){ if(semDb||!db) return; pend[path]={s:(++pendSeq)+"-"+Date.now(),del:true}; salvaPend(); estado(false); envia(path); }
 const reenvia=()=>Object.keys(pend).forEach(envia);
@@ -951,6 +970,7 @@ function secNotas(R,box,ed){ const ns=R.evid.filter(e=>!e.q);
     ${ns.length?`<div class="card">${listaEv(R,"",ed).replace(/<button class="btn sm addev"[^>]*>[^<]*<\/button>/,"")}</div>`:`<div class="empty"><b>Tudo arrumado.</b><span>No estádio, usa o botão <b>+ Nota</b> para registar depressa. As notas aparecem aqui.</span></div>`}`;
   ligaEv(box,R); }
 
+$("status").onclick=folhaEstado;
 $("fab").onclick=()=>{ const S=SECS.find(s=>s.k===vista.sec); folhaEv(null,S&&S.q?"":"",true); };
 
 /* ======================= nomes dos observadores ======================= */
@@ -977,7 +997,7 @@ render(); estado();
       q.docs.forEach(d=>{ const x=d.data(); if(!x) return; vistos.add(d.id); const p=`obs/${uid}/relatorios/${d.id}`; if(pend[p]||tSave[d.id]) return;
         const R=normRel({...x,id:d.id,autor:uid}); if(JSON.stringify(R)!==JSON.stringify(rels[d.id])){ rels[d.id]=R; mud=true; } });
       Object.values(rels).forEach(R=>{ if(R.autor===uid&&!vistos.has(R.id)&&!pend[relPath(R)]&&!q.metadata?.fromCache){ delete rels[R.id]; mud=true; } });
-      if(mud){ guardaCache(); if(aEscrever()||aArrastar) precisaRender=true; else render(); } estado(); },e=>{ if(e?.code==="revoked") setStatus("local","Acesso retirado"); });
+      if(mud){ guardaCache(); if(aEscrever()||aArrastar) precisaRender=true; else render(); } estado(); },e=>{ if(["revoked","unavailable","capability_disabled","capability_removed"].includes(e?.code)){ revogado=true; estado(); } });
     db.collection(`obs/${uid}/revisoes`).onSnapshot(q=>{ if(q.metadata?.hasPendingWrites) return; let mud=false;
       q.docs.forEach(d=>{ const x=d.data(); if(!x||pend[`obs/${uid}/revisoes/${d.id}`]) return; const v={texto:String(x.texto||""),revisto:!!x.revisto,em:x.em||""}; if(JSON.stringify(v)!==JSON.stringify(revs[d.id])){ revs[d.id]=v; mud=true; } });
       if(mud){ guardaCache(); if(aEscrever()||aArrastar) precisaRender=true; else render(); } },()=>{}); };

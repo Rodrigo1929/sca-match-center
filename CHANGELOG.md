@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| Obs. 17 | Observação: gravações que falham ficam à vista — o estado diz «Não gravou · tocar para ver» e mostra o erro, com «Tentar outra vez» e «Recarregar a página»; falhas passageiras voltam a tentar sozinhas; uma gravação sem resposta já não prende as seguintes; se a página perder o acesso à base de dados (p. ex. depois de uma versão nova), pede para recarregar |
 | Obs. 16 | Observação: a data, o local e outros campos dos jogos observados já não ficam em branco — uma atualização da base de dados que chegava enquanto o campo esperava para gravar substituía-o; agora o que ainda não foi gravado ou confirmado não é substituído |
 | Obs. 15 | Observação: no plantel base, botão fixo «⌂ Voltar à página inicial» em baixo; nos jogos observados, «Contra» passa a lista das equipas (a lista de sugestões não abria no claude.ai), com «Outra equipa…» para escrever o nome |
 | Obs. 14 | Observação: o observador vê todos os relatórios (edita só os seus) e edita os planteis base; na app o dono aparece como «equipa técnica» (o observador também se chama Rodrigo); tocar num botão logo depois de escrever num campo já não se perde no Safari. Regras da base de dados: `obs` lê interact, `base` lê e escreve interact |

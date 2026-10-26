@@ -126,6 +126,32 @@ for (const [nome, opc] of ecras) {
   const bd = await pg.evaluate((k) => { const R = Object.values(rels)[0], J = R.jogos[0], G = window.__docs[k].jogos[0]; return { data: J.data, local: J.local, gData: G.data, gLocal: G.local }; }, antigo.k);
   confirma(bd.data === "2026-10-18" && bd.local === "fora" && bd.gData === "2026-10-18" && bd.gLocal === "fora", `bd simulada: data ou local apagados por uma atualização antiga (${JSON.stringify(bd)})`);
 }
+// gravação que falha: uma falha passageira volta a tentar sozinha; acesso perdido ("revoked") pede para recarregar
+for (const modo of ["passageira", "revoked"]) {
+  const pg = await (await browser.newContext(ecras[0][1])).newPage();
+  pg.on("pageerror", (e) => falhas.push(`bd ${modo}: ${e}`));
+  await pg.addInitScript((modo) => {
+    window.__docs = {}; let falhou = false;
+    window.claude = { use: async (n) => {
+      if (n === "user") return { id: async () => "u_teste", isOwner: async () => true, can: async () => true, profiles: async () => ({}) };
+      if (n === "db") return { collection: () => ({ onSnapshot: () => () => {} }),
+        doc: (p) => ({ set: async (b) => { if (window.__falhar && (modo === "revoked" || !falhou)) { falhou = true; throw { code: modo === "revoked" ? "revoked" : "unavailable", message: "simulado" }; } window.__docs[p] = JSON.parse(JSON.stringify(b)); }, delete: async () => {} }) };
+      return null; } };
+  }, modo);
+  await pg.goto(url); await pg.evaluate(() => localStorage.clear()); await pg.reload(); await pg.waitForTimeout(500);
+  await pg.click('[data-novo="Lusitânia"]'); await pg.waitForTimeout(200); await pg.click("#j-add"); await pg.waitForTimeout(200);
+  await pg.evaluate(() => { window.__falhar = true; }); await pg.selectOption("[data-jvs]", "Praiense"); await pg.waitForTimeout(400);
+  const st1 = await pg.textContent("#status");
+  if (modo === "passageira") {
+    await pg.waitForTimeout(3800);
+    const r = await pg.evaluate(() => { const k = Object.keys(window.__docs).find((p) => p.includes("/relatorios/")); return { vs: window.__docs[k].jogos[0].vs, st: document.getElementById("status").textContent, pend: Object.keys(pend).length }; });
+    confirma(/Não gravou/.test(st1) && r.vs === "Praiense" && r.pend === 0 && /Guardado/.test(r.st), `bd falha passageira: não voltou a tentar sozinho (${JSON.stringify({ st1, ...r })})`);
+  } else {
+    await pg.click("#status"); await pg.waitForTimeout(200);
+    const t = await pg.evaluate(() => document.querySelector(".sheet")?.textContent || "");
+    confirma(/Recarrega a página/.test(st1) && /perdeu a ligação/.test(t), `bd revoked: devia pedir para recarregar (${JSON.stringify({ st1, t: t.slice(0, 80) })})`);
+  }
+}
 await browser.close();
 if (falhas.length) { console.error("FALHOU:\n" + falhas.join("\n")); process.exit(1); }
 console.log(`OK · app de observação${ipad ? " (iPad)" : " (PC e telemóvel)"} · capturas em tests/capturas/observacao/`);
