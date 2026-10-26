@@ -103,6 +103,12 @@ for (const [nome, opc] of ecras) {
     if (t !== "golo") await pg.selectOption("#ac-j", { index: 1 }); if (t === "sub") await pg.selectOption("#ac-j2", { index: 1 }); await pg.click("#ac-ok"); await pg.waitForTimeout(150); }
   const fj = await pg.evaluate(() => { const J = Object.values(rels).find((x) => x.adversario === "Lusitânia").jogos[0], s = J.acont.find((a) => a.t === "sub"); return { onze: J.onze.length, ac: J.acont.map((a) => a.t + a.min).join(","), sai: s && J.onze.includes(s.jog), entra: s && !J.onze.includes(s.jog2) }; });
   confirma(fj.onze === 11 && fj.ac === "golo23,sub60,am35" && fj.sai && fj.entra, `${nome}: ficha do jogo (onze e acontecimentos) não ficou gravada (${JSON.stringify(fj)})`);
+  // editar um acontecimento: tocar no golo abre-o preenchido; muda o minuto e o marcador sem criar outro
+  const gid = await pg.evaluate(() => Object.values(rels).find((x) => x.adversario === "Lusitânia").jogos[0].acont.find((a) => a.t === "golo").id);
+  await pg.click(`[data-fje$=":${gid}"]`); await pg.waitForSelector("#ac-min");
+  const pre = await pg.inputValue("#ac-min"); await pg.fill("#ac-min", "25"); await pg.selectOption("#ac-j", { index: 2 }); await pg.click("#ac-ok"); await pg.waitForTimeout(150);
+  const ed = await pg.evaluate((gid) => { const J = Object.values(rels).find((x) => x.adversario === "Lusitânia").jogos[0], g = J.acont.find((a) => a.id === gid); return { n: J.acont.length, min: g.min, jog: !!g.jog }; }, gid);
+  confirma(pre === "23" && ed.n === 3 && ed.min === "25" && ed.jog, `${nome}: editar o golo da ficha do jogo não funcionou (${JSON.stringify({ pre, ed })})`);
   confirma((await pg.textContent("#st-env")).includes("Submeter relatório"), `${nome}: o botão devia dizer "Submeter relatório"`);
 
   // momentos do jogo com os nomes novos; opções novas; posição e depois jogador
@@ -138,6 +144,10 @@ for (const [nome, opc] of ecras) {
   await pg.evaluate(() => [...document.querySelectorAll("#oj-l button")].slice(0, 11).forEach((b) => b.click())); await pg.click("#oj-ok"); await pg.waitForTimeout(200);
   const es = await pg.evaluate(() => { const R = relAtual(), grs = R.plantel.filter((j) => R.jogos[0].onze.includes(j.id) && j.slot === "GR").map((j) => j.nome); return { nomes: R.onze.jog.filter((j) => j.nome).length, gr: grs.includes(R.onze.jog[0].nome), sis: R.onze.com.sis, estr: !!R.pend.estr }; });
   confirma(es.nomes === 11 && es.gr && es.sis === "3-5-2" && !es.estr, `${nome}: o onze da ficha devia preencher a estrutura (${JSON.stringify(es)})`);
+  await pg.click('nav.secs button[data-s="estr"]'); await pg.waitForTimeout(150);
+  const lab = await pg.evaluate(() => { const R = relAtual(), n = nomeCurto(R.onze.jog[5].nome); return { n, tem: !!n && [...document.querySelectorAll("#es-p text")].some((t) => t.textContent === n), sem: R.onze.sem.sis }; });
+  confirma(lab.tem && lab.sem === "3-5-2", `${nome}: a estrutura devia mostrar os nomes dos titulares, com e sem bola (${JSON.stringify(lab)})`);
+  await pg.screenshot({ path: join(cap, `${nome}-estrutura-nomes.png`), fullPage: true });
   await pg.click("#voltar"); await pg.waitForTimeout(150);
   confirma((await pg.locator('[data-hist="Lusitânia"]').count()) === 1, `${nome}: com 2 jogos a equipa devia ter o botão Histórico`);
   await pg.screenshot({ path: join(cap, `${nome}-lista-jogos.png`), fullPage: true });

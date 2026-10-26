@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| Obs. 22 | Observação: a Estrutura no campo (com e sem bola) usa os titulares da ficha do jogo, com o nome por baixo de cada bolinha, e preenche-se sozinha quando ainda não tem nomes; botão «↺ Pôr o onze da ficha do jogo»; golos, substituições e cartões da ficha do jogo editam-se tocando neles; menu «Ficha do jogo» |
 | Obs. 21 | Observação: um relatório por jogo observado; «+ Novo jogo» vem preenchido com o último jogo da equipa (respostas, plantel e estrutura, bolas paradas, referências, síntese) e cada ponto copiado fica a laranja até confirmar ou mudar; o onze da ficha do jogo preenche a Estrutura no campo; histórico da equipa (cada pergunta jogo a jogo, o que mudou a laranja); PDF de cada jogo; PowerPoint para os jogadores com os pontos escolhidos e um diapositivo em branco por evidência para o clip. Nova capacidade downloads |
 | Obs. 20 | Observação: nos quadros das bolas paradas as bolinhas ficam mais pequenas (cerca de 2/3), com o número legível e zona de toque confortável; os outros quadros não mudam |
 | 81 | Base de dados: tudo o que chega da base de dados do link (estado, jogo, Ao vivo, análise, histórico, lances, Modelo de Jogo, exercícios, UT, plano semanal, calendário, planeamento anual, TV) passa a ser copiado à entrada — os dados vêm congelados e alterá-los a seguir podia falhar sem dar erro (como aconteceu na app de observação). Teste novo com base de dados simulada que congela os dados |

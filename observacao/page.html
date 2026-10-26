@@ -287,7 +287,7 @@ const Q_ANTIGO={com1:"c_pb",com2:"c_est",com3:"c_1l",com4:"c_comb",com5:"c_rut",
   sem1:"s_est",sem2:"s_gat",sem3:"s_enc",sem4:"s_press",sem5:"s_ref",sem6:"s_mud",sem7:"s_cruz",nos1:"n_livre",nos2:"n_alas",nos3:"n_int",nos4:"n_enc",nos5:"n_rec"};
 const TODAS_Q=Object.values(GUIAO).flat(), Q_POR_ID=Object.fromEntries(TODAS_Q.map(q=>[q.id,q]));
 const SECS=[
-  {k:"ficha",t:"Ficha e jogos",g:"Relatório"},
+  {k:"ficha",t:"Ficha do jogo",g:"Relatório"},
   {k:"plantel",t:"Plantel",g:"Relatório"},
   {k:"estr",t:"Estrutura no campo",g:"Relatório"},
   {k:"com",t:"Organização ofensiva",g:"Momentos do jogo",q:true},
@@ -425,7 +425,7 @@ function onzeParaEstrutura(R){ const J=R.jogos[0]; if(!J||!J.onze.length) return
   const res=Array(11).fill(null), g=js.findIndex(x=>x.gr); if(g>=0) res[0]=js.splice(g,1)[0];
   const livres=slots.map((x,i)=>({i,x:x[2]/68,y:x[1]/68})).filter(x=>!res[x.i]);
   while(js.length&&livres.length){ let b=null; js.forEach((p,a)=>livres.forEach((l,k)=>{ const d=Math.hypot(p.x-l.x,p.y-l.y)+(l.i===0&&!p.gr?9:0); if(!b||d<b.d) b={d,a,k}; })); res[livres[b.k].i]=js.splice(b.a,1)[0]; livres.splice(b.k,1); }
-  if(R.onze.com.sis!==sis){ R.onze.com={...R.onze.com,sis,pos:{}}; }
+  ["com","sem"].forEach(e=>{ if(R.onze[e].sis!==sis) R.onze[e]={...R.onze[e],sis,pos:{}}; });
   R.onze.jog=res.map((x,i)=>x?{n:x.j.n||"",pos:slots[i][0],nome:x.j.nome}:{n:"",pos:slots[i][0],nome:""}); tiraPend(R,"estr"); }
 /* relatórios antigos com vários jogos: um relatório por jogo */
 function separaJogos(R){ const [J0,...resto]=R.jogos; resto.forEach(J=>{ const N=clone(R); N.id=nid("r"); N.jogos=[J]; N.evid=R.evid.filter(e=>e.jogo===J.id); N.criadoEm=new Date().toISOString(); N.pend={}; guardaRel(normRel(N),true); });
@@ -519,7 +519,7 @@ function svgQuadro(R,Q,meio,t){ const CC=corEq(R), H=meio?480:1170; let h=`<svg 
   return h+"</svg>"; }
 function svgEstrutura(R,est){ const O=R.onze, st=O[est], C=corEq(R); let h=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 -40 760 1170" width="760" height="1170"><rect x="-40" y="-40" width="760" height="1170" fill="#fff"/>${campoSvg(false)}`;
   if(O.nos) for(let i=0;i<11;i++){ const b=posNos(i), x=O.nosPos[est][i]||b; h+=peca(x.x,x.y,b.pos,b.pos==="GR"?COR.gr:COR.sca,b.pos==="GR"?"#000":"#fff",""); }
-  for(let i=0;i<11;i++){ const b=posAdv(st.sis,i), x=st.pos[i]||b, J=O.jog[i], gr=i===0; h+=peca(x.x,x.y,J.n||J.pos||b.pos,gr?C.gr:C.cam,gr?C.grNum:C.num,"",gr?null:C.cam2); }
+  for(let i=0;i<11;i++){ const b=posAdv(st.sis,i), x=st.pos[i]||b, J=O.jog[i], gr=i===0; h+=peca(x.x,x.y,J.n||J.pos||b.pos,gr?C.gr:C.cam,gr?C.grNum:C.num,"",gr?null:C.cam2,1,nomeCurto(J.nome)); }
   return h+"</svg>"; }
 /* jpg=true para o PDF (muito mais leve); PNG para o PowerPoint */
 function svgPng(svg,jpg){ return new Promise((ok,erro)=>{ const im=new Image(); im.onload=()=>{ const c=document.createElement("canvas"); c.width=im.naturalWidth||760; c.height=im.naturalHeight||1170; const x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); x.drawImage(im,0,0); ok({url:jpg?c.toDataURL("image/jpeg",.82):c.toDataURL("image/png"),w:c.width,h:c.height}); }; im.onerror=()=>erro(new Error("desenho")); im.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg); }); }
@@ -624,10 +624,12 @@ const CORES_EQ={"Barreiro":{cam:"#C8102E",cam2:"#FFFFFF"},"Lusitânia":{cam:"#11
 const SEM_COR="#8C8C8C";
 function contraste(h){ const m=String(h||"").match(/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i); if(!m) return "#fff"; const [r,g,b]=m.slice(1).map(x=>parseInt(x,16)/255); return .2126*r+.7152*g+.0722*b>.6?"#000":"#fff"; }
 function corEq(R){ const c=R.cores||{}, cam=c.cam||SEM_COR, gr=c.gr||"#FFFF00"; return {cam,cam2:c.cam2||"#000000",num:c.num||contraste(cam),gr,grNum:contraste(gr),definida:!!c.cam}; }
+/* nome curto por baixo da bolinha: primeiro e último nome */
+const nomeCurto=n=>{ const p=String(n||"").trim().split(/\s+/).filter(Boolean); return (p.length>1?p[0]+" "+p[p.length-1]:p[0]||"").slice(0,18); };
 /* t = tamanho (1 = normal; nas bolas paradas as bolinhas são mais pequenas); a zona de toque nunca fica abaixo de ~26 */
-function peca(x,y,txt,cor,fg,extra,borda,t=1){ const r=19*t, fs=(txt.length<=2?17:txt.length===3?13.5:11)*Math.max(t,.8), b=borda&&!/^#0{3,6}$/i.test(borda);
+function peca(x,y,txt,cor,fg,extra,borda,t=1,leg){ const r=19*t, fs=(txt.length<=2?17:txt.length===3?13.5:11)*Math.max(t,.8), b=borda&&!/^#0{3,6}$/i.test(borda);
   return `<g ${extra||""}>${b?`<circle cx="${x*K}" cy="${y*K}" r="${r+1.8*t}" fill="#000"/>`:""}<circle cx="${x*K}" cy="${y*K}" r="${r}" fill="${cor}" stroke="${b?borda:"#000"}" stroke-width="${(b?3.2:1.4)*t}"/>`+
-    `<text x="${x*K}" y="${y*K+fs*.35}" text-anchor="middle" font-size="${fs}" font-weight="700" font-family="Roboto Condensed,Arial Narrow,Arial,sans-serif" fill="${fg}" pointer-events="none">${esc(txt)}</text><circle cx="${x*K}" cy="${y*K}" r="${Math.max(26,38*t)}" fill="transparent"/></g>`; }
+    `<text x="${x*K}" y="${y*K+fs*.35}" text-anchor="middle" font-size="${fs}" font-weight="700" font-family="Roboto Condensed,Arial Narrow,Arial,sans-serif" fill="${fg}" pointer-events="none">${esc(txt)}</text>${leg?`<text x="${x*K}" y="${y*K+r+17}" text-anchor="middle" font-size="15" font-weight="700" font-family="Roboto Condensed,Arial Narrow,Arial,sans-serif" fill="#1B1A17" stroke="#fff" stroke-width="4" paint-order="stroke" pointer-events="none">${esc(leg)}</text>`:""}<circle cx="${x*K}" cy="${y*K}" r="${Math.max(26,38*t)}" fill="transparent"/></g>`; }
 function bolaSvg(x,y,extra){ return `<g ${extra||""}><image href="{{BOLA}}" x="${x*K-10}" y="${y*K-10}" width="20" height="20" pointer-events="none"/><circle cx="${x*K}" cy="${y*K}" r="34" fill="transparent"/></g>`; }
 const posAdv=(sis,i)=>{ const b=(SISTEMAS[sis]||SISTEMAS["4-4-2"])[i]||["",52,34]; return {x:b[2],y:105-b[1],pos:b[0]}; };
 const posNos=i=>{ const b=SISTEMAS["3-4-3"][i]; return {x:68-b[2],y:b[1],pos:b[0]}; };
@@ -841,10 +843,10 @@ const ACONT={golo:["⚽","Golo"],sub:["⇄","Substituição"],am:["🟨","Amarel
 const nomeJ=(R,id)=>{ const j=R.plantel.find(x=>x.id===id); return j?(j.n?j.n+" ":"")+j.nome:""; };
 function fichaJogoHtml(R,J,ed){ const eq=R.adversario||"Equipa observada", contra=J.vs||"Adversário", ord=J.acont.slice().sort((a,b)=>(parseInt(a.min)||0)-(parseInt(b.min)||0));
   const txt=a=>a.t==="golo"?(a.eq==="contra"?`Golo do ${contra}`:`Golo · ${nomeJ(R,a.jog)||eq}`):a.t==="sub"?`Sai ${nomeJ(R,a.jog)||"?"} · entra ${nomeJ(R,a.jog2)||"?"}`:`${ACONT[a.t][1]} · ${nomeJ(R,a.jog)||"?"}`;
-  return `<div class="fj" style="border-top:1px dashed var(--line);padding-top:10px;display:flex;flex-direction:column;gap:8px"><h4>Ficha do jogo · ${esc(eq)}</h4>
+  return `<div class="fj" style="border-top:1px dashed var(--line);padding-top:10px;display:flex;flex-direction:column;gap:8px"><h4>Ficha do jogo · ${esc(eq)}</h4>${ed&&J.acont.length?`<p class="hint" style="margin:0">Toca num golo, substituição ou cartão para o corrigir.</p>`:""}
     <div class="row"><b>Onze inicial</b><span class="hint">${J.onze.length}/11</span>${ed?`<button type="button" class="btn sm" data-fjo="${esc(J.id)}">${J.onze.length?"Mudar o onze":"Escolher o onze"}</button>`:""}</div>
     ${J.onze.length?`<div class="row qjog">${J.onze.map(id=>`<span class="jchip" style="padding-right:10px">${esc(nomeJ(R,id)||"?")}</span>`).join("")}</div>`:""}
-    <div class="evs">${ord.map(a=>`<div class="ev"><span class="tm">${esc(a.min?a.min+"'":"–")}</span><span class="tx">${ACONT[a.t][0]} ${esc(txt(a))}${ed?` <button type="button" class="btn sm ghost" data-fjx="${esc(J.id)}:${esc(a.id)}" style="min-height:30px;padding:2px 8px">✕</button>`:""}</span></div>`).join("")||`<p class="hint" style="margin:0">Sem golos, substituições ou cartões registados.</p>`}</div>
+    <div class="evs">${ord.map(a=>`<div class="ev"${ed?` data-fje="${esc(J.id)}:${esc(a.id)}" role="button" tabindex="0" style="cursor:pointer" title="Tocar para editar"`:""}><span class="tm">${esc(a.min?a.min+"'":"–")}</span><span class="tx">${ACONT[a.t][0]} ${esc(txt(a))}${ed?` <button type="button" class="btn sm ghost" data-fjx="${esc(J.id)}:${esc(a.id)}" style="min-height:30px;padding:2px 8px">✕</button>`:""}</span></div>`).join("")||`<p class="hint" style="margin:0">Sem golos, substituições ou cartões registados.</p>`}</div>
     ${ed?`<div class="row">${Object.entries(ACONT).map(([k,[ic,nm]])=>`<button type="button" class="btn sm" data-fja="${esc(J.id)}:${k}">+ ${ic} ${nm}</button>`).join("")}</div>`:""}</div>`; }
 function opJog(R,sel,filtro){ const sis=R.sistema||"4-3-3"; return `<option value="">Escolher jogador</option>`+R.plantel.slice().sort((a,b)=>ordPl(R,a)-ordPl(R,b)||(parseInt(a.n)||999)-(parseInt(b.n)||999)).filter(j=>!filtro||filtro(j)).map(j=>`<option value="${esc(j.id)}"${j.id===sel?" selected":""}>${esc((posNoSis(j.slot,sis)?posNoSis(j.slot,sis)+" · ":"")+(j.n?j.n+" ":"")+j.nome)}</option>`).join(""); }
 function folhaOnzeJogo(jid){ const R=relAtual(), J=R&&R.jogos.find(j=>j.id===jid); if(!J) return; if(!R.plantel.length){ toast("Primeiro preenche o plantel."); return; }
@@ -854,19 +856,22 @@ function folhaOnzeJogo(jid){ const R=relAtual(), J=R&&R.jogos.find(j=>j.id===jid
     const conta=()=>s_.querySelector("#oj-n").textContent=`${sel.size}/11 escolhidos`; conta();
     s_.querySelectorAll("#oj-l button").forEach(b=>b.onclick=()=>{ const k=b.dataset.k; if(sel.has(k)) sel.delete(k); else { if(sel.size>=11){ toast("Já tens 11. Tira um primeiro."); return; } sel.add(k); } b.setAttribute("aria-pressed",String(sel.has(k))); conta(); });
     s_.querySelector("#oj-ok").onclick=()=>{ fecha(); editaRel(R=>{ const X=R.jogos.find(j=>j.id===jid); if(X) X.onze=ls.map(j=>j.id).filter(id=>sel.has(id)); if(X===R.jogos[0]) onzeParaEstrutura(R); }); toast("Onze guardado e passado para a Estrutura no campo"); }; }); }
-function folhaAcont(jid,t){ const R=relAtual(), J=R&&R.jogos.find(j=>j.id===jid); if(!J||!ACONT[t]) return; const emCampo=new Set(J.onze);
-  J.acont.slice().sort((a,b)=>(parseInt(a.min)||0)-(parseInt(b.min)||0)).forEach(a=>{ if(a.t==="sub"){ emCampo.delete(a.jog); emCampo.add(a.jog2); } });
-  const temOnze=J.onze.length>0, fEm=temOnze?j=>emCampo.has(j.id):null, fFora=temOnze?j=>!emCampo.has(j.id):null;
-  folha(`<h3>${ACONT[t][0]} ${ACONT[t][1]}</h3>
-    <label class="f">Minuto<input type="text" id="ac-min" inputmode="numeric" maxlength="6" placeholder="Ex.: 23 ou 45+2"></label>
-    ${t==="golo"?`<div class="seg" id="ac-eq"><button type="button" data-k="nos" aria-pressed="true">${esc(R.adversario||"Equipa observada")}</button><button type="button" data-k="contra" aria-pressed="false">${esc(J.vs||"Adversário")}</button></div>`:""}
-    <label class="f" id="ac-jl">${t==="sub"?"Sai":t==="golo"?"Marcador (opcional)":"Jogador"}<select id="ac-j">${opJog(R,"",t==="golo"?null:fEm)}</select></label>
-    ${t==="sub"?`<label class="f">Entra<select id="ac-j2">${opJog(R,"",fFora)}</select></label>`:""}
-    <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="ac-ok">Guardar</button></div>`,(s_,fecha)=>{
-    let eq="nos"; const ws=s_.querySelector("#ac-eq"); if(ws) ws.querySelectorAll("button").forEach(b=>b.onclick=()=>{ eq=b.dataset.k; ws.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); s_.querySelector("#ac-jl").hidden=eq==="contra"; });
-    s_.querySelector("#ac-ok").onclick=()=>{ const a={id:nid("a"),t,min:s_.querySelector("#ac-min").value.trim().replace(/['’]/g,""),jog:eq==="contra"?"":s_.querySelector("#ac-j").value,jog2:t==="sub"?s_.querySelector("#ac-j2").value:"",eq};
+/* acontecimento novo (t) ou editar um existente (aid): minuto, equipa do golo e jogadores; ao editar também se pode apagar */
+function folhaAcont(jid,t,aid){ const R=relAtual(), J=R&&R.jogos.find(j=>j.id===jid); if(!J) return; const A=aid?J.acont.find(a=>a.id===aid):null; if(aid&&!A) return; if(A) t=A.t; if(!ACONT[t]) return;
+  /* quem está em campo antes deste acontecimento (sem contar o próprio, ao editar) */
+  const emCampo=new Set(J.onze); J.acont.filter(a=>a.id!==aid).slice().sort((a,b)=>(parseInt(a.min)||0)-(parseInt(b.min)||0)).forEach(a=>{ if(a.t==="sub"){ emCampo.delete(a.jog); emCampo.add(a.jog2); } });
+  const temOnze=J.onze.length>0, fEm=temOnze?j=>emCampo.has(j.id)||(A&&j.id===A.jog):null, fFora=temOnze?j=>!emCampo.has(j.id)||(A&&j.id===A.jog2):null, eq0=A?A.eq:"nos";
+  folha(`<h3>${ACONT[t][0]} ${A?"Editar · ":""}${ACONT[t][1]}</h3>
+    <label class="f">Minuto<input type="text" id="ac-min" inputmode="numeric" maxlength="6" placeholder="Ex.: 23 ou 45+2" value="${esc(A?A.min:"")}"></label>
+    ${t==="golo"?`<div class="seg" id="ac-eq"><button type="button" data-k="nos" aria-pressed="${eq0==="nos"}">${esc(R.adversario||"Equipa observada")}</button><button type="button" data-k="contra" aria-pressed="${eq0==="contra"}">${esc(J.vs||"Adversário")}</button></div>`:""}
+    <label class="f" id="ac-jl"${eq0==="contra"?" hidden":""}>${t==="sub"?"Sai":t==="golo"?"Marcador (opcional)":"Jogador"}<select id="ac-j">${opJog(R,A?A.jog:"",t==="golo"?null:fEm)}</select></label>
+    ${t==="sub"?`<label class="f">Entra<select id="ac-j2">${opJog(R,A?A.jog2:"",fFora)}</select></label>`:""}
+    <div class="actions">${A?`<button class="btn danger l" id="ac-del">Apagar</button>`:""}<button class="btn" data-close>Cancelar</button><button class="btn primary" id="ac-ok">Guardar</button></div>`,(s_,fecha)=>{
+    let eq=eq0; const ws=s_.querySelector("#ac-eq"); if(ws) ws.querySelectorAll("button").forEach(b=>b.onclick=()=>{ eq=b.dataset.k; ws.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); s_.querySelector("#ac-jl").hidden=eq==="contra"; });
+    const del=s_.querySelector("#ac-del"); if(del) confirma2(del,"Toca outra vez para apagar",()=>{ fecha(); editaRel(R=>{ const X=R.jogos.find(j=>j.id===jid); if(X) X.acont=X.acont.filter(a=>a.id!==aid); }); });
+    s_.querySelector("#ac-ok").onclick=()=>{ const a={id:A?A.id:nid("a"),t,min:s_.querySelector("#ac-min").value.trim().replace(/['’]/g,""),jog:eq==="contra"?"":s_.querySelector("#ac-j").value,jog2:t==="sub"?s_.querySelector("#ac-j2").value:"",eq};
       if(t!=="golo"&&!a.jog){ toast("Escolhe o jogador."); return; } if(t==="sub"&&!a.jog2){ toast("Escolhe quem entra."); return; }
-      fecha(); editaRel(R=>{ const X=R.jogos.find(j=>j.id===jid); if(X) X.acont.push(a); }); }; }); }
+      fecha(); editaRel(R=>{ const X=R.jogos.find(j=>j.id===jid); if(!X) return; const k=X.acont.findIndex(x=>x.id===a.id); if(k>=0) X.acont[k]=a; else X.acont.push(a); }); }; }); }
 const vsOutra=new Set(); /* jogos em que se escolheu "Outra equipa…" e ainda não se escreveu o nome */
 function secFicha(R,box,ed){ box.innerHTML=`<header><h3>Ficha do jogo</h3><p>Um relatório por jogo. Para outro jogo desta equipa, volta à página inicial e toca em «+ Novo jogo»: vem preenchido com o último jogo, para confirmares ou mudares.</p></header>
   <div class="card"><div class="fields"><label class="f">Adversário<select data-b="adversario" data-rr><option value="">Escolher equipa</option>${EQUIPAS.map(([n,i])=>`<option value="${esc(n)}">${esc(n)} (${esc(i)})</option>`).join("")}${R.adversario&&!EQUIPAS.some(([n])=>n===R.adversario)?`<option value="${esc(R.adversario)}">${esc(R.adversario)}</option>`:""}</select></label><label class="f">Competição<input type="text" data-b="competicao"></label></div></div>
@@ -890,7 +895,8 @@ function secFicha(R,box,ed){ box.innerHTML=`<header><h3>Ficha do jogo</h3><p>Um 
     if(v==="__outra"){ const i=$("main").querySelector(`[data-b="jogos.${id}.vs"]`); if(i) i.focus(); } });
   box.querySelectorAll("[data-fjo]").forEach(b=>b.onclick=()=>folhaOnzeJogo(b.dataset.fjo));
   box.querySelectorAll("[data-fja]").forEach(b=>b.onclick=()=>{ const [jid,t]=b.dataset.fja.split(":"); folhaAcont(jid,t); });
-  box.querySelectorAll("[data-fjx]").forEach(b=>confirma2(b,"Apagar?",()=>{ const [jid,aid]=b.dataset.fjx.split(":"); editaRel(R=>{ const J=R.jogos.find(j=>j.id===jid); if(J) J.acont=J.acont.filter(a=>a.id!==aid); }); }));
+  box.querySelectorAll("[data-fje]").forEach(r=>r.onclick=()=>{ const [jid,aid]=r.dataset.fje.split(":"); folhaAcont(jid,null,aid); });
+  box.querySelectorAll("[data-fjx]").forEach(b=>{ b.addEventListener("click",e=>e.stopPropagation()); confirma2(b,"Apagar?",()=>{ const [jid,aid]=b.dataset.fjx.split(":"); editaRel(R=>{ const J=R.jogos.find(j=>j.id===jid); if(J) J.acont=J.acont.filter(a=>a.id!==aid); }); }); });
   if($("j-sep")) confirma2($("j-sep"),"Toca outra vez para separar",()=>separaJogos(relAtual()));
   if($("j-add")) $("j-add").onclick=()=>editaRel(R=>R.jogos.push({id:nid("j"),vs:"",data:"",local:"",res:"",como:"",video:"",ctx:"",onze:[],acont:[]}));
   box.querySelectorAll("[data-jdel]").forEach(b=>confirma2(b,"Apagar?",()=>editaRel(R=>{ R.jogos=R.jogos.filter(j=>j.id!==b.dataset.jdel); R.evid.forEach(e=>{ if(e.jogo===b.dataset.jdel) e.jogo=""; }); })));
@@ -1055,12 +1061,12 @@ function secEstr(R,box,ed){ const est=vista.estr||"com", O=R.onze, st=O[est];
       <div class="leg"><span><i style="background:${corEq(R).cam}"></i>${esc(R.adversario||"Adversário")} (ataca para cima)</span>${O.nos?`<span><i style="background:${COR.sca}"></i>SC Angrense 3-4-3</span>`:""}</div>
       ${corEq(R).definida?"":`<p class="hint" style="margin:0">As cores do ${esc(R.adversario||"adversário")} escolhem-se no separador <b>Plantel</b>.</p>`}
       <label class="f">${est==="com"?"Notas da estrutura com bola (largura, quem baixa, quem fixa)":"Notas da estrutura sem bola (altura do bloco, distâncias, referências)"}<textarea data-b="onze.${est}.nota" rows="4"></textarea></label>
-      ${ed?`<button class="btn sm" id="es-rp">Repor posições do sistema (as duas equipas)</button>`:""}</div></div></div>`;
+      ${ed&&R.jogos[0]&&R.jogos[0].onze.length?`<button class="btn sm" id="es-onze">↺ Pôr o onze da ficha do jogo</button>`:""}${ed?`<button class="btn sm" id="es-rp">Repor posições do sistema (as duas equipas)</button>`:""}</div></div></div>`;
   seg($("es-m"),[["com","Com bola"],["sem","Sem bola"]],est,v=>{ vista.estr=v; render.mesma=true; render(); });
   const desenha=()=>{ const Rr=relAtual(), O=Rr.onze, st=O[est]; let h=`<svg viewBox="-40 -40 760 1130" role="img" aria-label="Estrutura ${est==="com"?"com":"sem"} bola">${campoSvg(false)}`;
     const C=corEq(Rr), np=O.nosPos[est];
     if(O.nos) for(let i=0;i<11;i++){ const b=posNos(i), p=np[i]||b; h+=peca(p.x,p.y,b.pos,b.pos==="GR"?COR.gr:COR.sca,b.pos==="GR"?"#000":"#fff",`data-n="${i}" style="cursor:${ed?"grab":"default"}"`); }
-    for(let i=0;i<11;i++){ const b=posAdv(st.sis,i), p=st.pos[i]||b, J=O.jog[i], gr=i===0; h+=peca(p.x,p.y,J.n||J.pos||b.pos,gr?C.gr:C.cam,gr?C.grNum:C.num,`data-i="${i}" style="cursor:${ed?"grab":"pointer"}"`,gr?null:C.cam2); }
+    for(let i=0;i<11;i++){ const b=posAdv(st.sis,i), p=st.pos[i]||b, J=O.jog[i], gr=i===0; h+=peca(p.x,p.y,J.n||J.pos||b.pos,gr?C.gr:C.cam,gr?C.grNum:C.num,`data-i="${i}" style="cursor:${ed?"grab":"pointer"}"`,gr?null:C.cam2,1,nomeCurto(J.nome)); }
     $("es-p").innerHTML=h+"</svg>"; const svg=$("es-p").querySelector("svg");
     arrasta(svg,{onDown:(e,m)=>{ const g=e.target.closest("[data-i],[data-n]"); if(!g) return null;
         if(g.dataset.n!=null){ if(!ed) return null; const i=+g.dataset.n, p=np[i]||posNos(i); return {nos:true,i,dx:p.x-m.x,dy:p.y-m.y,ox:p.x,oy:p.y,mov:false,g}; }
@@ -1071,6 +1077,8 @@ function secEstr(R,box,ed){ const est=vista.estr||"com", O=R.onze, st=O[est];
         if(a.mov&&ed){ editaRel(R=>{ R.onze[est].pos[a.i]=p; },true); desenha(); } else folhaPecaOnze(a.i,est); }}); };
   desenha();
   if(!ed) return;
+  if(R.jogos[0]&&R.jogos[0].onze.length&&!R.onze.jog.some(j=>j.nome)){ editaRel(R=>onzeParaEstrutura(R),true); desenha(); }
+  if($("es-onze")) confirma2($("es-onze"),"Toca outra vez: troca os jogadores da estrutura",()=>{ editaRel(R=>onzeParaEstrutura(R),true); render.mesma=true; render(); toast("Onze da ficha do jogo na estrutura"); });
   $("es-nos").onchange=e=>{ editaRel(R=>R.onze.nos=e.target.checked); };
   $("es-sis").onchange=e=>editaRel(R=>{ const s=e.target.value; R.onze[est]={...R.onze[est],sis:s,pos:{}}; R.onze.jog.forEach((J,i)=>{ if(!J.pos||est==="com") J.pos=posAdv(s,i).pos; }); });
   $("es-rp").onclick=()=>editaRel(R=>{ R.onze[est].pos={}; R.onze.nosPos[est]={}; }); }
