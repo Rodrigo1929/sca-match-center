@@ -338,7 +338,7 @@ function seg(box,opts,val,onCh){ box.innerHTML=opts.map(([k,t])=>`<button type="
 
 /* ======================= estado ======================= */
 let db=null, usr=null, meId=null, souDono=false, soLeitura=false, semDb=false;
-let rels={}, revs={}, nomes={};      // rels: id -> relatório ; revs: id -> revisão do Rodrigo
+let rels={}, revs={}, nomes={};      // rels: id -> relatório ; revs: id -> revisão da equipa técnica
 let vista={tipo:"lista",id:null,sec:"ficha"}, bpAberto=null, jogAberto=null;
 const CACHE="sca-obs-cache-v1", PEND="sca-obs-pend-v1";
 /* a cache do aparelho carrega-se no arranque, depois de todas as constantes existirem */
@@ -376,7 +376,7 @@ function normRel(d){ const R={...d}; R.adversario=String(R.adversario||""); R.co
   Object.entries(R.resp||{}).forEach(([k,t])=>{ const id=Q_ANTIGO[k]; if(!id||!String(t||"").trim()) return; if(!R.chk[id]) R.chk[id]={op:[],freq:"",jog:[],nota:"",quadro:{pecas:[],setas:[]}}; if(!R.chk[id].nota.includes(String(t).trim())) R.chk[id].nota=(R.chk[id].nota?R.chk[id].nota+"\n":"")+String(t).trim(); });
   R.resp={}; R.evid.forEach(e=>{ if(Q_ANTIGO[e.q]) e.q=Q_ANTIGO[e.q]; });
   R.clips=Array.isArray(R.clips)?R.clips.filter(c=>c&&c.id):[]; return R; }
-/* plantel base de cada equipa (base/<equipa>): só o Rodrigo escreve, os observadores leem; os relatórios novos partem dele.
+/* plantel base de cada equipa (base/<equipa>): quem observa lê e escreve (só no nível Editor); os relatórios novos partem dele.
    No ecrã é um "relatório" só com o Plantel (base:true), para usar o mesmo editor */
 const CAMPOS_BASE=["plantel","plantelFonte","treinador","adjunto","trGR","sistema","capitao","plantelNotas","cores","plXY","plNom"];
 const slugEq=n=>String(n||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
@@ -384,10 +384,10 @@ function normBase(d,slug){ return normRel({...d,id:"base:"+slug,base:true,autor:
 function baseNova(equipa){ const P=plantelZZ(equipa); return normBase({equipa,...(P?{plantel:P.jogadores,plantelFonte:P.fonte,treinador:P.treinador}:{})},slugEq(equipa)); }
 function docBase(R){ const b={equipa:R.adversario}; CAMPOS_BASE.forEach(k=>b[k]=clone(R[k])); return b; }
 function novoRel(adv){ const B=bases[slugEq(adv)], P=B?null:plantelZZ(adv);
-  const daBase=B?{...docBase(B),plantelFonte:`Plantel base do Rodrigo · ${new Date(B.atualizadoEm||Date.now()).toLocaleDateString("pt-PT")}`}:P?{plantel:P.jogadores,plantelFonte:P.fonte,treinador:P.treinador}:{};
+  const daBase=B?{...docBase(B),plantelFonte:`Plantel base · ${new Date(B.atualizadoEm||Date.now()).toLocaleDateString("pt-PT")}`}:P?{plantel:P.jogadores,plantelFonte:P.fonte,treinador:P.treinador}:{};
   delete daBase.equipa; return normRel({id:nid("r"),autor:meId||"local",adversario:adv||"",competicao:COMP+" "+EPOCA,criadoEm:new Date().toISOString(),...daBase}); }
 function relAtual(){ if(vista.tipo==="base") return bases[vista.id]||null; return vista.id&&rels[vista.id]?rels[vista.id]:null; }
-function podeEditar(R){ return !soLeitura&&R&&(R.base?(souDono||semDb):(R.autor===meId||souDono||semDb)); }
+function podeEditar(R){ return !soLeitura&&R&&(R.base||R.autor===meId||souDono||semDb); }
 
 /* ======================= gravação com fila (funciona sem rede) ======================= */
 let pend=LS(PEND)||{}, pendSeq=0; const filas={};
@@ -430,7 +430,7 @@ function campoSvg(meio){ const L=68*K, C=(meio?36:105)*K, s='stroke="#111" strok
   return h; }
 function svgPt(svg,e){ const p=svg.createSVGPoint(); p.x=e.clientX; p.y=e.clientY; const q=p.matrixTransform(svg.getScreenCTM().inverse()); return {x:q.x/K,y:q.y/K}; }
 const COR={sca:"#C00000",gr:"#FFFF00",out:"#7F7F7F"};
-/* cores do equipamento dos adversários, confirmadas pelo Rodrigo (26/10/2026); o observador muda-as no relatório */
+/* cores do equipamento dos adversários, confirmadas pelo Rodrigo Fonte (26/10/2026); o observador muda-as no relatório */
 const CORES_EQ={"Barreiro":{cam:"#C8102E",cam2:"#FFFFFF"},"Lusitânia":{cam:"#118C3E",cam2:"#FFFFFF"},"Madalena":{cam:"#7B1E30",cam2:"#0055A4"},"Praiense":{cam:"#C8102E",cam2:"#1B1A17"},
   "Rabo de Peixe":{cam:"#0055A4",cam2:"#0055A4"},"Santo António":{cam:"#0055A4",cam2:"#FFFFFF"},"São Roque":{cam:"#FFD100",cam2:"#0055A4"},"União Micaelense":{cam:"#000000",cam2:"#000000"},"Vale Formoso":{cam:"#000000",cam2:"#FFFFFF"}};
 const SEM_COR="#8C8C8C";
@@ -467,7 +467,7 @@ function render0(){ if(vista.tipo==="base"&&!bases[vista.id]){ const eq=EQUIPAS.
 /* plantel base de uma equipa: só a secção Plantel, sem relatório */
 function renderBase(R){ const ed=podeEditar(R);
   $("main").innerHTML=`${bannerAcesso()}<div class="rhead"><button class="btn sm ghost" id="voltar" aria-label="Voltar aos relatórios">← Relatórios</button><h2>${esc(R.adversario)}</h2><span class="chip rasc">Plantel base</span></div>
-    <p class="hint" style="margin:-4px 0 12px;max-width:72ch">${ed?"O plantel de partida dos relatórios novos desta equipa. Os observadores leem-no; só tu o mudas. Os relatórios já começados não mudam.":"Plantel base do Rodrigo (só leitura). Os relatórios novos desta equipa começam com ele."}</p>
+    <p class="hint" style="margin:-4px 0 12px;max-width:72ch">${ed?"O plantel de partida dos relatórios novos desta equipa. Quem observa pode mudá-lo; os relatórios já começados não mudam.":"Plantel base (só leitura). Os relatórios novos desta equipa começam com ele."}</p>
     <section class="sec" id="sec"></section>`;
   $("voltar").onclick=()=>{ vista={tipo:"lista",id:null,sec:"ficha"}; render(); scrollTo(0,0); };
   secPlantel(R,$("sec"),ed); liga($("sec"),R,ed); }
@@ -475,9 +475,9 @@ function renderBase(R){ const ed=podeEditar(R);
 function contagens(R){ const resp=TODAS_Q.filter(q=>respondida(R,q.id)).length, tot=TODAS_Q.length;
   return {resp,tot,ev:R.evid.length,soltas:R.evid.filter(e=>!e.q).length}; }
 function renderLista(){ const ls=Object.values(rels).sort((a,b)=>String(b.atualizadoEm||b.criadoEm).localeCompare(String(a.atualizadoEm||a.criadoEm)));
-  const avisos=bannerAcesso(); let h=`${avisos}<div class="lhead"><div><h2>${souDono?"Relatórios de observação":"Os meus relatórios"}</h2><p>${souDono?"Todos os relatórios dos observadores. Cada observador só vê os relatórios que criou.":"Um relatório por adversário do campeonato. Podes juntar vários jogos observados no mesmo relatório."}</p></div>${!soLeitura?`<button class="btn" id="novo">+ Outro adversário</button>`:""}</div>`;
+  const avisos=bannerAcesso(); let h=`${avisos}<div class="lhead"><div><h2>Relatórios de observação</h2><p>Um relatório por adversário do campeonato, com vários jogos observados. Vês os relatórios de todos; cada um edita os seus e a equipa técnica revê.</p></div>${!soLeitura?`<button class="btn" id="novo">+ Outro adversário</button>`:""}</div>`;
   const cartao=R=>{ const c=contagens(R), rv=revs[R.id], est=rv&&rv.revisto?["rev","Revisto"]:R.estado==="env"?["env","Para revisão"]:["rasc","Em curso"];
-      return `<button class="rcard" data-id="${esc(R.id)}"><div class="row" style="justify-content:space-between;width:100%"><span class="chip ${est[0]}">${est[1]}</span>${souDono&&R.autor!==meId?`<span class="hint">${esc(nomes[R.autor]||"Observador")}</span>`:""}</div>
+      return `<button class="rcard" data-id="${esc(R.id)}"><div class="row" style="justify-content:space-between;width:100%"><span class="chip ${est[0]}">${est[1]}</span>${R.autor!==meId?`<span class="hint">${esc(nomes[R.autor]||"Observador")}</span>`:""}</div>
         <h3>${esc(R.adversario||"Adversário por definir")}</h3><div class="meta"><span><b>${R.jogos.length}</b> ${R.jogos.length===1?"jogo":"jogos"}</span><span><b>${c.resp}/${c.tot}</b> perguntas</span><span><b>${c.ev}</b> evidências</span>${c.soltas?`<span style="color:var(--warn)"><b>${c.soltas}</b> por arrumar</span>`:""}</div>
         <div class="meta">Atualizado ${new Date(R.atualizadoEm||R.criadoEm).toLocaleDateString("pt-PT")}</div></button>`; };
   const feitas=EQUIPAS.filter(([n])=>ls.some(R=>R.adversario===n)).length;
@@ -487,7 +487,7 @@ function renderLista(){ const ls=Object.values(rels).sort((a,b)=>String(b.atuali
     else h+=`<div class="rcard" style="box-shadow:none;background:var(--surface-2);border-style:dashed"><span class="hint">${esc(ilha)}</span><h3>${esc(n)}</h3><div class="meta">Ainda sem relatório</div>${!soLeitura?`<button class="btn sm" data-novo="${esc(n)}" style="align-self:flex-start">+ Começar observação</button>`:""}</div>`; });
   h+=`</div>`;
   /* planteis base: mexer no plantel de cada equipa sem começar um relatório */
-  h+=`<div class="row" style="justify-content:space-between;margin:0 0 10px"><h3 style="font-size:19px">Planteis base</h3><span class="hint">${souDono||semDb?"Mexe no plantel de cada equipa sem começar um relatório; os relatórios novos partem dele.":"Planteis do Rodrigo (só leitura); os relatórios novos partem deles."}</span></div>
+  h+=`<div class="row" style="justify-content:space-between;margin:0 0 10px"><h3 style="font-size:19px">Planteis base</h3><span class="hint">${soLeitura?"Planteis de partida dos relatórios novos (só leitura).":"Mexe no plantel de cada equipa sem começar um relatório; os relatórios novos partem dele."}</span></div>
     <div class="row" style="margin-bottom:22px">${EQUIPAS.map(([n])=>{ const B=bases[slugEq(n)]; return `<button class="btn" data-base="${slugEq(n)}">${esc(n)}${B&&B.atualizadoEm?`<span class="hint" style="font-weight:400"> · ${B.plantel.length}</span>`:""}</button>`; }).join("")}</div>`;
   const outros=ls.filter(R=>!EQUIPAS.some(([n])=>n===R.adversario));
   if(outros.length){ h+=`<h3 style="font-size:19px;margin:0 0 10px">Outros adversários</h3><div class="cards">`; outros.forEach(R=>h+=cartao(R)); h+=`</div>`; }
@@ -498,7 +498,7 @@ function renderLista(){ const ls=Object.values(rels).sort((a,b)=>String(b.atuali
   $("main").querySelectorAll("[data-base]").forEach(b=>b.onclick=()=>{ vista={tipo:"base",id:b.dataset.base,sec:"plantel"}; render(); scrollTo(0,0); });
   $("main").querySelectorAll("button.rcard").forEach(b=>b.onclick=()=>{ vista={tipo:"rel",id:b.dataset.id,sec:"ficha"}; bpAberto=null; jogAberto=null; render(); scrollTo(0,0); });
   carregaNomes(ls.map(r=>r.autor)); }
-function bannerAcesso(){ if(soLeitura) return `<div class="banner" style="margin-bottom:12px"><span>🔒</span><span><b>Sem permissão para gravar.</b> Pede ao Rodrigo acesso de <b>Editor</b> a esta página.</span></div>`;
+function bannerAcesso(){ if(soLeitura) return `<div class="banner" style="margin-bottom:12px"><span>🔒</span><span><b>Sem permissão para gravar.</b> Pede à equipa técnica acesso de <b>Editor</b> a esta página.</span></div>`;
   if(semDb) return `<div class="banner" style="margin-bottom:12px"><span>⚠</span><span><b>Sem ligação à base de dados.</b> O que registares fica só neste aparelho até a ligação voltar a funcionar.</span></div>`; return ""; }
 
 function renderRel(R){ const ed=podeEditar(R), c=contagens(R), rv=revs[R.id];
@@ -506,7 +506,7 @@ function renderRel(R){ const ed=podeEditar(R), c=contagens(R), rv=revs[R.id];
   let nav="", g=""; SECS.forEach(s=>{ if(s.g!==g){ g=s.g; nav+=`<div class="grp">${esc(g)}</div>`; } nav+=`<button data-s="${s.k}" aria-current="${s.k===vista.sec}">${esc(s.t)}<span class="c"${s.k==="notas"&&c.soltas?' style="color:var(--warn)"':""}>${cont(s)}</span></button>`; });
   const est=rv&&rv.revisto?`<span class="chip rev">Revisto</span>`:R.estado==="env"?`<span class="chip env">Para revisão</span>`:`<span class="chip rasc">Em curso</span>`;
   $("main").innerHTML=`${bannerAcesso()}<div class="rhead"><button class="btn sm ghost" id="voltar" aria-label="Voltar aos relatórios">← Relatórios</button><h2>${esc(R.adversario||"Adversário por definir")}</h2>${est}<div class="sp">${souDono&&R.autor!==meId?`<span class="hint">Observador: ${esc(nomes[R.autor]||"—")}</span>`:""}</div></div>
-    ${rv&&rv.texto&&vista.sec!=="sint"?`<div class="banner info" style="margin-bottom:12px"><span>💬</span><span><b>Revisão do Rodrigo:</b> ${esc(rv.texto).slice(0,240)}${rv.texto.length>240?"…":""} <a href="#" id="verrev">Ver na Síntese</a></span></div>`:""}
+    ${rv&&rv.texto&&vista.sec!=="sint"?`<div class="banner info" style="margin-bottom:12px"><span>💬</span><span><b>Revisão da equipa técnica:</b> ${esc(rv.texto).slice(0,240)}${rv.texto.length>240?"…":""} <a href="#" id="verrev">Ver na Síntese</a></span></div>`:""}
     <div class="rgrid"><nav class="secs" aria-label="Secções do relatório">${nav}</nav><section class="sec" id="sec"></section></div>`;
   $("voltar").onclick=()=>{ vista={tipo:"lista",id:null,sec:"ficha"}; render(); scrollTo(0,0); };
   if($("verrev")) $("verrev").onclick=e=>{ e.preventDefault(); vista.sec="sint"; render(); };
@@ -516,13 +516,17 @@ function renderRel(R){ const ed=podeEditar(R), c=contagens(R), rv=revs[R.id];
   if(S.q) secPerguntas(R,S,box,ed); else ({ficha:secFicha,plantel:secPlantel,estr:secEstr,bp:secBp,jog:secJog,sint:secSint,notas:secNotas})[S.k](R,box,ed);
   liga(box,R,ed); }
 
+/* um campo grava ao perder o foco (ao tocar noutro sítio); redesenhar a meio desse toque fazia perder o botão tocado (ex.: "← Relatórios" no Safari) */
+let dedoEmBaixo=false;
+document.addEventListener("pointerdown",()=>dedoEmBaixo=true,true); ["pointerup","pointercancel"].forEach(t=>document.addEventListener(t,()=>setTimeout(()=>dedoEmBaixo=false,0),true));
+function depoisDoToque(fn){ if(dedoEmBaixo) document.addEventListener("pointerup",()=>setTimeout(fn,0),{once:true}); else setTimeout(fn,0); }
 /* ligação genérica dos campos de texto: data-b="caminho.no.relatorio" (listas por id) */
 function getP(o,p){ return p.split(".").reduce((a,k)=>a==null?a:Array.isArray(a)&&!/^\d+$/.test(k)?a.find(x=>x.id===k):a[k],o); }
 function setP(o,p,v){ const ks=p.split("."), last=ks.pop(); const t=ks.reduce((a,k)=>{ let n=Array.isArray(a)&&!/^\d+$/.test(k)?a.find(x=>x.id===k):a[k]; if(n==null){ n={}; a[k]=n; } return n; },o); t[last]=v; }
 function liga(box,R,ed){ box.querySelectorAll("[data-b]").forEach(el=>{ const v=getP(R,el.dataset.b); if(el.type==="checkbox") el.checked=!!v; else el.value=v==null||v===""?(el.dataset.def||""):v; if(!ed){ el.readOnly=true; if(el.tagName==="SELECT") el.disabled=true; return; }
     const on=()=>{ const Rr=relAtual(); if(!Rr) return; let v=el.type==="checkbox"?el.checked:el.value; if(el.dataset.min!=null) v=minNorm(v); setP(Rr,el.dataset.b,v); guardaRel(Rr); };
     el.addEventListener(el.tagName==="SELECT"||el.type==="checkbox"?"change":"input",on); if(el.dataset.min!=null) el.addEventListener("change",()=>{ el.value=minNorm(el.value); on(); });
-    if(el.dataset.rr!=null) el.addEventListener("change",()=>setTimeout(()=>{ const a=document.activeElement, k=a&&a.dataset&&a.dataset.b; render.mesma=true; render(); if(k){ const n=$("main").querySelector(`[data-b="${CSS.escape(k)}"]`); if(n) n.focus(); } },0)); });
+    if(el.dataset.rr!=null) el.addEventListener("change",()=>depoisDoToque(()=>{ const a=document.activeElement, k=a&&a.dataset&&a.dataset.b; render.mesma=true; render(); if(k){ const n=$("main").querySelector(`[data-b="${CSS.escape(k)}"]`); if(n) n.focus(); } })); });
   box.querySelectorAll("textarea").forEach(t=>{ const a=()=>{ t.style.height="auto"; t.style.height=Math.max(70,t.scrollHeight+2)+"px"; }; a(); t.addEventListener("input",a); }); }
 
 /* ---------- evidências ---------- */
@@ -564,7 +568,7 @@ function folhaEv(id,q0,rapida){ const R=relAtual(); if(!R) return; const ed=pode
 /* ---------- perguntas em checklist ---------- */
 const respondida=(R,id)=>{ const c=R.chk[id]; return !!c&&(c.op.length>0||c.jog.length>0||!!c.nota.trim()||c.quadro.pecas.length>0); };
 function secPerguntas(R,S,box,ed){ const nos=S.k==="nos", qs=GUIAO[S.k], feitas=qs.filter(q=>respondida(R,q.id)).length;
-  box.innerHTML=`<header><h3>${esc(S.t)} <span class="hint" style="font-family:var(--f-body);font-size:15px;font-weight:600">${feitas}/${qs.length}</span></h3>${nos?`<p>Ligar a observação ao nosso jogo, tendo como referência o nosso 3-4-3. Responde ao que viste; o Rodrigo completa na revisão.</p><div class="prin" style="margin-top:8px">${PRINC.map(p=>`<span>${esc(p)}</span>`).join("")}</div>`:""}${S.nota?`<p>${esc(S.nota)}</p>`:""}
+  box.innerHTML=`<header><h3>${esc(S.t)} <span class="hint" style="font-family:var(--f-body);font-size:15px;font-weight:600">${feitas}/${qs.length}</span></h3>${nos?`<p>Ligar a observação ao nosso jogo, tendo como referência o nosso 3-4-3. Responde ao que viste; a equipa técnica completa na revisão.</p><div class="prin" style="margin-top:8px">${PRINC.map(p=>`<span>${esc(p)}</span>`).join("")}</div>`:""}${S.nota?`<p>${esc(S.nota)}</p>`:""}
     <p class="hint" style="margin-top:6px">Toca nas opções que se aplicam e na frequência. As notas, os jogadores e o quadro são opcionais. Perguntas de partida: se as imagens mostrarem outra coisa, escreve-o nas notas.</p></header>
     ${qs.map((q,i)=>cartaoQ(R,q,i,ed)).join("")}`;
   qs.forEach(q=>{ const c=box.querySelector(`[data-q="${q.id}"]`); if(!c) return;
@@ -725,7 +729,7 @@ function secPlantel(R,box,ed){ const temZZ=!!(PLANTEIS.equipas&&PLANTEIS.equipas
         ${Object.keys(O?O.xy:R.plXY[sis]||{}).length+Object.keys(O?O.nxy:R.plNom[sis]||{}).length?`<button class="btn sm" id="pl-rxy">Repor tudo no sítio do sistema</button>`:""}</div>`:""}
       <div style="overflow-x:auto"><div id="pl-svg" style="min-width:560px"></div></div></div>`
       :`<div class="empty"><b>Ainda sem plantel.</b><span>${temZZ?`Carrega o plantel do zerozero (${esc(dataPt(PLANTEIS.data))}) ou acrescenta os jogadores à mão.`:"Acrescenta os jogadores à mão."}</span></div>`}
-    ${ed&&modo==="plantel"?`<div class="row">${temZZ?`<button class="btn" id="pl-zz">${R.plantel.length?"Substituir pelo plantel do zerozero":"Carregar plantel do zerozero"}</button>`:""}<button class="btn primary" id="pl-add">+ Jogador</button>${!R.base&&bases[slugEq(R.adversario)]?`<button class="btn" id="pl-base">Repor o plantel base</button>`:""}${!R.base&&souDono&&EQUIPAS.some(([n])=>n===R.adversario)?`<button class="btn" id="pl-pbase">Guardar como plantel base</button>`:""}</div>`:""}
+    ${ed&&modo==="plantel"?`<div class="row">${temZZ?`<button class="btn" id="pl-zz">${R.plantel.length?"Substituir pelo plantel do zerozero":"Carregar plantel do zerozero"}</button>`:""}<button class="btn primary" id="pl-add">+ Jogador</button>${!R.base&&bases[slugEq(R.adversario)]?`<button class="btn" id="pl-base">Repor o plantel base</button>`:""}${!R.base&&EQUIPAS.some(([n])=>n===R.adversario)?`<button class="btn" id="pl-pbase">Guardar como plantel base</button>`:""}</div>`:""}
     ${R.plantel.length&&modo==="plantel"?`<div class="card" style="padding:0;overflow-x:auto"><table class="ptab"><thead><tr><th>Nº</th><th>Nome</th><th>Posição no campo (${esc(sis)})</th><th>Pé</th><th title="Posição confirmada nos jogos">Confirmada</th><th></th></tr></thead><tbody>
       ${lista.map(j=>`<tr${j.conf?"":' class="porconf"'}><td><input type="text" data-b="plantel.${j.id}.n" data-rr inputmode="numeric" maxlength="3" aria-label="Número" style="width:62px"></td>
         <td><input type="text" data-b="plantel.${j.id}.nome" data-rr aria-label="Nome" style="min-width:150px"><small>${esc([partePos(j.pos).join(" / "),j.idade?j.idade+" anos":""].filter(Boolean).join(" · "))}</small></td>
@@ -746,8 +750,8 @@ function secPlantel(R,box,ed){ const temZZ=!!(PLANTEIS.equipas&&PLANTEIS.equipas
   box.querySelectorAll("[data-pdel]").forEach(b=>confirma2(b,"Tirar?",()=>{ const id=b.dataset.pdel; render.mesma=true; editaRel(R=>{ R.plantel=R.plantel.filter(x=>x.id!==id); if(R.capitao===id) R.capitao=""; ["prov","alt"].forEach(k=>Object.keys(R.onzes[k].pos).forEach(c=>{ if(R.onzes[k].pos[c]===id) delete R.onzes[k].pos[c]; })); }); }));
   const carrega=()=>{ const P=plantelZZ(R.adversario); editaRel(R=>{ R.plantel=P.jogadores; R.plantelFonte=P.fonte; if(!R.treinador) R.treinador=P.treinador; R.capitao=""; R.onzes.prov.pos={}; R.onzes.alt.pos={}; }); toast(`Plantel carregado · ${P.jogadores.length} jogadores`); };
   const zz=$("pl-zz"); if(zz){ if(R.plantel.length) confirma2(zz,"Toca outra vez: substitui o plantel atual",carrega); else zz.onclick=carrega; }
-  /* relatório ↔ plantel base: repor a partir da base (limpa os onzes, os jogadores são outros) ou, para o Rodrigo, guardar este plantel como base */
-  const pb=$("pl-base"); if(pb) confirma2(pb,"Toca outra vez: substitui o plantel e limpa os onzes",()=>{ const B=docBase(bases[slugEq(R.adversario)]); editaRel(R=>{ CAMPOS_BASE.forEach(k=>R[k]=clone(B[k])); R.plantelFonte=`Plantel base do Rodrigo · ${new Date().toLocaleDateString("pt-PT")}`; R.onzes.prov.pos={}; R.onzes.alt.pos={}; R.onzes.prov.nxy={}; R.onzes.alt.nxy={}; }); toast("Plantel reposto a partir do plantel base"); });
+  /* relatório ↔ plantel base: repor a partir da base (limpa os onzes, os jogadores são outros) ou guardar este plantel como base */
+  const pb=$("pl-base"); if(pb) confirma2(pb,"Toca outra vez: substitui o plantel e limpa os onzes",()=>{ const B=docBase(bases[slugEq(R.adversario)]); editaRel(R=>{ CAMPOS_BASE.forEach(k=>R[k]=clone(B[k])); R.plantelFonte=`Plantel base · ${new Date().toLocaleDateString("pt-PT")}`; R.onzes.prov.pos={}; R.onzes.alt.pos={}; R.onzes.prov.nxy={}; R.onzes.alt.nxy={}; }); toast("Plantel reposto a partir do plantel base"); });
   const pp=$("pl-pbase"); if(pp) confirma2(pp,"Toca outra vez: substitui o plantel base",()=>{ const s=slugEq(R.adversario); guardaRel(normBase(docBase(R),s),true); toast(`Plantel base do ${R.adversario} atualizado`); });
   if($("pl-add")) $("pl-add").onclick=()=>{ const j={id:nid("j"),n:"",nome:"",idade:"",pos:"",pe:"",nac:"",slot:"",conf:true}; editaRel(R=>R.plantel.push(j),true); folhaJogPlantel(j.id,true); }; }
 /* plantel: arrastar um nome para outra posição, tocar abre o jogador. Onze: tocar numa posição escolhe o jogador */
@@ -922,8 +926,8 @@ function secSint(R,box,ed){ const rv=revs[R.id]||{}, cand=R.evid.filter(e=>e.cli
       <label class="f" style="grid-column:1/-1">O que devemos observar<input type="text" data-b="clips.${c.id}.frase"></label><div class="row" style="grid-column:1/-1;justify-content:space-between">${lk?`<a href="${esc(lk)}" target="_blank" rel="noopener" class="btn sm">▶ Abrir no vídeo</a>`:"<span></span>"}${ed?`<button class="btn sm ghost" data-cdel="${esc(c.id)}">Apagar</button>`:""}</div></div>`; }).join("")}
     ${ed?`<div class="row"><button class="btn sm" id="c-add">+ Clip</button></div>`:""}
     ${ed&&cand.length?`<div><h4 style="margin:6px 0">Evidências marcadas como 🎬</h4><div class="evs">${cand.map(e=>`<div class="ev" style="grid-template-columns:auto minmax(0,1fr) auto"><span class="tm">${esc(e.min||"—")}</span><span class="tx">${esc(e.txt)}</span><button class="btn sm" data-cev="${esc(e.id)}">Usar</button></div>`).join("")}</div></div>`:""}</div>
-  <div class="card rev"><h4>Revisão do Rodrigo</h4>${souDono?`<textarea id="rv-t" rows="4" placeholder="Comentários para o observador: nível de detalhe, o que acrescentar, como apresentar.">${esc(rv.texto||"")}</textarea><label class="row" style="gap:10px;min-height:40px"><input type="checkbox" id="rv-ok" style="width:20px;height:20px" ${rv.revisto?"checked":""}> Relatório revisto</label>`
-      :rv.texto?`<p style="margin:0;white-space:pre-wrap">${esc(rv.texto)}</p>${rv.revisto?`<span class="chip rev" style="align-self:flex-start">Revisto</span>`:""}`:`<p class="hint" style="margin:0">Ainda sem comentários. Quando enviares para revisão, o Rodrigo deixa aqui as notas.</p>`}</div>`;
+  <div class="card rev"><h4>Revisão da equipa técnica</h4>${souDono?`<textarea id="rv-t" rows="4" placeholder="Comentários para o observador: nível de detalhe, o que acrescentar, como apresentar.">${esc(rv.texto||"")}</textarea><label class="row" style="gap:10px;min-height:40px"><input type="checkbox" id="rv-ok" style="width:20px;height:20px" ${rv.revisto?"checked":""}> Relatório revisto</label>`
+      :rv.texto?`<p style="margin:0;white-space:pre-wrap">${esc(rv.texto)}</p>${rv.revisto?`<span class="chip rev" style="align-self:flex-start">Revisto</span>`:""}`:`<p class="hint" style="margin:0">Ainda sem comentários. Quando enviares para revisão, a equipa técnica deixa aqui as notas.</p>`}</div>`;
   if(souDono&&!soLeitura){ let t=null; const grava=()=>{ const v={texto:$("rv-t").value,revisto:$("rv-ok").checked,em:new Date().toISOString()}; revs[R.id]=v; guardaCache(); gravaDoc(revPath(R),v); };
     $("rv-t").oninput=()=>{ clearTimeout(t); t=setTimeout(grava,700); }; $("rv-ok").onchange=()=>{ grava(); toast($("rv-ok").checked?"Marcado como revisto":"Revisão reaberta"); }; }
   if(!ed) return;
@@ -939,7 +943,7 @@ function secNotas(R,box,ed){ const ns=R.evid.filter(e=>!e.q);
 $("fab").onclick=()=>{ const S=SECS.find(s=>s.k===vista.sec); folhaEv(null,S&&S.q?"":"",true); };
 
 /* ======================= nomes dos observadores ======================= */
-async function carregaNomes(ids){ if(!usr||!souDono) return; const falta=[...new Set(ids)].filter(i=>i&&i!=="local"&&!(i in nomes)); if(!falta.length) return;
+async function carregaNomes(ids){ if(!usr) return; const falta=[...new Set(ids)].filter(i=>i&&i!=="local"&&!(i in nomes)); if(!falta.length) return;
   try{ const ps=await usr.profiles(falta); let mud=false; falta.forEach(i=>{ const n=(ps[i]&&ps[i].name)||""; if(nomes[i]!==n){ nomes[i]=n; mud=true; } }); if(mud&&!aEscrever()) render(); }catch(e){} }
 
 /* ======================= arranque ======================= */
@@ -973,7 +977,8 @@ render(); estado();
     q.docs.forEach(d=>{ const x=d.data(); if(!x||pend[`base/${d.id}`]||tSave["base:"+d.id]&&vista.tipo==="base"&&aEscrever()) return; const B=normBase(x,d.id);
       if(JSON.stringify(B)!==JSON.stringify(bases[d.id])){ bases[d.id]=B; mud=true; } });
     if(mud){ guardaCacheBase(); if(aEscrever()||aArrastar) precisaRender=true; else render(); } },()=>{});
-  if(souDono) db.collection("obs").onSnapshot(q=>{ q.docs.forEach(d=>ouveAutor(d.id)); carregaNomes(q.docs.map(d=>d.id)); },()=>{});
+  /* toda a equipa de observação vê os relatórios de todos (cada um só escreve nos seus) */
+  db.collection("obs").onSnapshot(q=>{ q.docs.forEach(d=>ouveAutor(d.id)); carregaNomes(q.docs.map(d=>d.id)); },()=>{});
   render();
 })();
 </script>
