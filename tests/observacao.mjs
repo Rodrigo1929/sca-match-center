@@ -123,6 +123,12 @@ for (const [nome, opc] of ecras) {
   await pg.fill('[data-b$=".data"]', "2026-10-18"); await pg.selectOption('[data-b$=".local"]', "fora"); await pg.waitForTimeout(100); await pg.evaluate(() => document.activeElement && document.activeElement.blur()); // no iPad o campo perde o foco ao fechar o seletor
   await pg.evaluate((a) => { const id = a.k.split("/").pop(); (window.__snap["obs/u_teste/relatorios"] || []).forEach((cb) => cb({ docs: [{ id, data: () => a.d }], metadata: { hasPendingWrites: false, fromCache: false } })); }, antigo);
   await pg.waitForTimeout(1000);
+  // os dados que chegam da base de dados vêm congelados (como no link): a página tem de conseguir alterá-los depois
+  await pg.evaluate((k) => { const fz = (o) => { if (o && typeof o === "object") { Object.values(o).forEach(fz); Object.freeze(o); } return o; }; const d = fz(JSON.parse(JSON.stringify(window.__docs[k]))), id = k.split("/").pop();
+    (window.__snap["obs/u_teste/relatorios"] || []).forEach((cb) => cb({ docs: [{ id, data: () => d }], metadata: { hasPendingWrites: false, fromCache: false } })); }, antigo.k);
+  await pg.waitForTimeout(200); await pg.selectOption("[data-jvs]", "Madalena"); await pg.waitForTimeout(300);
+  const congelado = await pg.evaluate((k) => ({ ui: Object.values(rels)[0].jogos[0].vs, sel: document.querySelector("[data-jvs]").value, db: window.__docs[k].jogos[0].vs }), antigo.k);
+  confirma(congelado.ui === "Madalena" && congelado.sel === "Madalena" && congelado.db === "Madalena", `bd simulada: com dados congelados da base de dados a equipa não muda (${JSON.stringify(congelado)})`);
   const bd = await pg.evaluate((k) => { const R = Object.values(rels)[0], J = R.jogos[0], G = window.__docs[k].jogos[0]; return { data: J.data, local: J.local, gData: G.data, gLocal: G.local }; }, antigo.k);
   confirma(bd.data === "2026-10-18" && bd.local === "fora" && bd.gData === "2026-10-18" && bd.gLocal === "fora", `bd simulada: data ou local apagados por uma atualização antiga (${JSON.stringify(bd)})`);
 }

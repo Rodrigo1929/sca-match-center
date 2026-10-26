@@ -318,6 +318,8 @@ const SISTEMAS={
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const clone=o=>JSON.parse(JSON.stringify(o));
+/* os dados que chegam da base de dados vêm congelados: alterar uma cópia congelada falhava em silêncio (a equipa, a data e o local não mudavam) */
+const lerDoc=d=>{ const x=d&&d.data&&d.data(); return x?clone(x):null; };
 const nid=p=>(p||"x")+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const LS=k=>{ try{ return JSON.parse(localStorage.getItem(k)||"null"); }catch(e){ return null; } };
@@ -994,17 +996,17 @@ render(); estado();
   const subs={};
   const ouveAutor=uid=>{ if(subs[uid]) return; subs[uid]=true;
     db.collection(`obs/${uid}/relatorios`).onSnapshot(q=>{ if(q.metadata?.hasPendingWrites) return; let mud=false; const vistos=new Set();
-      q.docs.forEach(d=>{ const x=d.data(); if(!x) return; vistos.add(d.id); const p=`obs/${uid}/relatorios/${d.id}`; if(pend[p]||tSave[d.id]) return;
+      q.docs.forEach(d=>{ const x=lerDoc(d); if(!x) return; vistos.add(d.id); const p=`obs/${uid}/relatorios/${d.id}`; if(pend[p]||tSave[d.id]) return;
         const R=normRel({...x,id:d.id,autor:uid}); if(JSON.stringify(R)!==JSON.stringify(rels[d.id])){ rels[d.id]=R; mud=true; } });
       Object.values(rels).forEach(R=>{ if(R.autor===uid&&!vistos.has(R.id)&&!pend[relPath(R)]&&!q.metadata?.fromCache){ delete rels[R.id]; mud=true; } });
       if(mud){ guardaCache(); if(aEscrever()||aArrastar) precisaRender=true; else render(); } estado(); },e=>{ if(["revoked","unavailable","capability_disabled","capability_removed"].includes(e?.code)){ revogado=true; estado(); } });
     db.collection(`obs/${uid}/revisoes`).onSnapshot(q=>{ if(q.metadata?.hasPendingWrites) return; let mud=false;
-      q.docs.forEach(d=>{ const x=d.data(); if(!x||pend[`obs/${uid}/revisoes/${d.id}`]) return; const v={texto:String(x.texto||""),revisto:!!x.revisto,em:x.em||""}; if(JSON.stringify(v)!==JSON.stringify(revs[d.id])){ revs[d.id]=v; mud=true; } });
+      q.docs.forEach(d=>{ const x=lerDoc(d); if(!x||pend[`obs/${uid}/revisoes/${d.id}`]) return; const v={texto:String(x.texto||""),revisto:!!x.revisto,em:x.em||""}; if(JSON.stringify(v)!==JSON.stringify(revs[d.id])){ revs[d.id]=v; mud=true; } });
       if(mud){ guardaCache(); if(aEscrever()||aArrastar) precisaRender=true; else render(); } },()=>{}); };
   ouveAutor(meId);
   /* planteis base: toda a gente lê, só o dono escreve */
   db.collection("base").onSnapshot(q=>{ if(q.metadata?.hasPendingWrites) return; let mud=false;
-    q.docs.forEach(d=>{ const x=d.data(); if(!x||pend[`base/${d.id}`]||tSave["base:"+d.id]) return; const B=normBase(x,d.id);
+    q.docs.forEach(d=>{ const x=lerDoc(d); if(!x||pend[`base/${d.id}`]||tSave["base:"+d.id]) return; const B=normBase(x,d.id);
       if(JSON.stringify(B)!==JSON.stringify(bases[d.id])){ bases[d.id]=B; mud=true; } });
     if(mud){ guardaCacheBase(); if(aEscrever()||aArrastar) precisaRender=true; else render(); } },()=>{});
   /* toda a equipa de observação vê os relatórios de todos (cada um só escreve nos seus) */
