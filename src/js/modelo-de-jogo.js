@@ -22,9 +22,54 @@ const MV={W:1600,H:900,ox:30,oy:118,k:10.2,px:1132};
 const VISTAS=[["inteiro","Campo inteiro"],["meio","Meio campo ofensivo"],["meiodef","Meio campo defensivo"],["duplaarea","Dupla área (ofensiva)"],["livre","Espaço livre (medidas)"]];
 /* texto nas bolinhas: número do jogador, posição ou nada (só bolinhas) */
 const ROT_M={num:"número",pos:"posição",nada:"sem texto"};
-const PECAS_EQ=["nos","adv","neutro","bola","cone","minib","baliza"];
+const PECAS_EQ=["nos","adv","neutro","bola","cone","minib","baliza","mat"];
 const COLETES=[["vermelho","Vermelho","#C00000","#FFFFFF"],["azul","Azul","#0070C0","#FFFFFF"],["amarelo","Amarelo","#FFD60A","#000000"],["verde","Verde","#1E7A46","#FFFFFF"],["laranja","Laranja","#F79646","#000000"],["branco","Branco","#FFFFFF","#000000"],["preto","Preto","#1B1A17","#FFFFFF"]];
 const BALIZAS={minib:[3,1.2],baliza:[7.32,2]};
+/* material de treino (peça "mat" com tipo), do slide do clube LAYOUT - EDITOR_TREINO: [nome, grupo, cor por defeito ("" = cor fixa), roda] */
+const MAT_GR=[["sin","Sinalizadores"],["coord","Estacas e coordenação"],["man","Manequins e redes"],["gin","Ginásio e outros"],["marca","Marcas"]];
+const MAT={chapeu:["Chapéu chinês","sin","laranja",0],prato:["Prato","sin","amarelo",0],marca:["Marca plana","sin","vermelho",0],coneAlto:["Cone alto","sin","laranja",0],transito:["Cone de trânsito","sin","",0],
+  estaca:["Estaca","coord","amarelo",0],estacaB:["Estaca com base","coord","vermelho",0],barreira:["Barreira","coord","amarelo",1],escada:["Escada curta","coord","amarelo",1],escadaL:["Escada longa","coord","amarelo",1],arco:["Arco","coord","azul",0],
+  manequim:["Manequim","man","amarelo",0],barreiraM:["Barreira de manequins","man","vermelho",1],rede:["Rede","man","",1],
+  fitball:["Fitball","gin","azul",0],bosu:["Bosu","gin","azul",0],halteres:["Halteres","gin","",0],caixa:["Caixa / step","gin","vermelho",0],tenis:["Bola de ténis","gin","",0],bolas:["Grupo de bolas","gin","",0],garrafas:["Garrafas","gin","",0],
+  certo:["Certo","marca","",0],errado:["Errado","marca","",0],numero:["Número","marca","",0],treinador:["Treinador","marca","",0]};
+/* desenho de uma peça de material: as de pé (cones, estacas, manequim…) ficam direitas no ecrã; as compridas (barreira, escada, rede) seguem o campo e rodam */
+function desenhaMat(o,pc,p,V,Z){ const M=MAT[pc.tipo]; if(!M) return; const [cx,cy]=V.P(p.x,p.y), cor=(COLETES.find(x=>x[0]===(pc.cor||M[2]))||COLETES[4])[2], K="#1B1A17", ol=Z(.1);
+  const pl=(pts,fill,extra)=>o.push({t:"poly",pts,fill,stroke:K,sw:ol,...extra}), ln=(a,b,stroke,sw,extra)=>o.push({t:"line",x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke,sw,cap:"round",...extra});
+  const cupula=(rx,ry,by,n=12)=>{ const q=[]; for(let i=0;i<=n;i++){ const a=Math.PI+i*Math.PI/n; q.push([cx+rx*Math.cos(a),by+ry*Math.sin(a)]); } return q; };
+  const a=(pc.ang||0)*Math.PI/180, ux=Math.cos(a), uy=Math.sin(a), f=V.z/V.s, L=(d,e)=>V.P(p.x+(ux*d-uy*e)*f,p.y+(uy*d+ux*e)*f);
+  switch(pc.tipo){
+    case "chapeu": { const h=Z(.8); pl([[cx-h,cy+h*.45],[cx+h,cy+h*.45],[cx+h*.35,cy-h*.45],[cx-h*.35,cy-h*.45]],cor); break; }
+    case "prato": { const h=Z(.85); pl(cupula(h,h*.55,cy+h*.28),cor); break; }
+    case "marca": o.push({t:"circ",cx,cy,r:Z(.75),fill:cor,stroke:K,sw:ol}); o.push({t:"circ",cx,cy,r:Z(.18),fill:"#FFFFFF"}); break;
+    case "coneAlto": { const h=Z(.9); o.push({t:"rect",x:cx-h*.85,y:cy+h*.55,w:h*1.7,h:h*.32,fill:cor,stroke:K,sw:ol}); pl([[cx,cy-h*1.5],[cx-h*.55,cy+h*.6],[cx+h*.55,cy+h*.6]],cor); break; }
+    case "transito": { const h=Z(.9), T=(y,w)=>[cx-w,y]; o.push({t:"rect",x:cx-h*.85,y:cy+h*.55,w:h*1.7,h:h*.32,fill:"#F26B1D",stroke:K,sw:ol}); pl([[cx,cy-h*1.5],[cx-h*.55,cy+h*.6],[cx+h*.55,cy+h*.6]],"#F26B1D");
+      [[-.75,-.45],[.05,.35]].forEach(([y0,y1])=>{ const w0=h*.55*(y0+1.5)/2.1, w1=h*.55*(y1+1.5)/2.1; o.push({t:"poly",pts:[T(cy+h*y0,w0),[cx+w0,cy+h*y0],[cx+w1,cy+h*y1],T(cy+h*y1,w1)],fill:"#FFFFFF"}); }); break; }
+    case "estaca": o.push({t:"rect",x:cx-Z(.14),y:cy-Z(1.5),w:Z(.28),h:Z(2.1),rx:Z(.1),fill:cor,stroke:K,sw:ol}); break;
+    case "estacaB": o.push({t:"rect",x:cx-Z(.14),y:cy-Z(1.5),w:Z(.28),h:Z(1.9),fill:cor,stroke:K,sw:ol}); o.push({t:"rect",x:cx-Z(.6),y:cy+Z(.3),w:Z(1.2),h:Z(.32),rx:Z(.15),fill:cor,stroke:K,sw:ol}); break;
+    case "arco": o.push({t:"circ",cx,cy,r:Z(1.3),fill:"none",stroke:K,sw:Z(.42)}); o.push({t:"circ",cx,cy,r:Z(1.3),fill:"none",stroke:cor,sw:Z(.26)}); break;
+    case "manequim": { const h=Z(1); o.push({t:"rect",x:cx-h*.75,y:cy+h*.85,w:h*1.5,h:h*.25,fill:K}); o.push({t:"rect",x:cx-h*.5,y:cy-h*1.05,w:h,h:h*1.95,rx:h*.3,fill:cor,stroke:K,sw:ol}); o.push({t:"circ",cx,cy:cy-h*1.4,r:h*.36,fill:cor,stroke:K,sw:ol}); break; }
+    case "fitball": o.push({t:"circ",cx,cy,r:Z(1.15),fill:cor,stroke:K,sw:ol}); o.push({t:"circ",cx:cx-Z(.4),cy:cy-Z(.4),r:Z(.3),fill:"#FFFFFF",op:.45}); break;
+    case "bosu": { const h=Z(1.1); o.push({t:"rect",x:cx-h*1.1,y:cy+h*.25,w:h*2.2,h:h*.22,rx:h*.1,fill:K}); pl(cupula(h,h*.75,cy+h*.25),cor); break; }
+    case "halteres": { const h=Z(.9); ln([cx-h,cy],[cx+h,cy],"#555555",h*.18); [-1,1].forEach(s=>{ o.push({t:"rect",x:cx+s*h*.55-h*.16,y:cy-h*.45,w:h*.32,h:h*.9,rx:h*.06,fill:K}); o.push({t:"rect",x:cx+s*h*.82-h*.1,y:cy-h*.32,w:h*.2,h:h*.64,rx:h*.05,fill:K}); }); break; }
+    case "caixa": { const h=Z(1); o.push({t:"rect",x:cx-h*.8,y:cy-h*.45,w:h*1.6,h:h*1.15,fill:"none",stroke:cor,sw:h*.2}); ln([cx-h*.8,cy+h*.12],[cx+h*.8,cy+h*.12],cor,h*.16); o.push({t:"rect",x:cx-h*.9,y:cy-h*.75,w:h*1.8,h:h*.32,rx:h*.06,fill:"#3A3A3A"}); break; }
+    case "tenis": o.push({t:"circ",cx,cy,r:Z(.6),fill:"#D7E84B",stroke:K,sw:ol}); o.push({t:"arc",cx:cx-Z(.75),cy,r:Z(.55),a0:-.9,a1:.9,stroke:"#FFFFFF",sw:Z(.1)}); o.push({t:"arc",cx:cx+Z(.75),cy,r:Z(.55),a0:Math.PI-.9,a1:Math.PI+.9,stroke:"#FFFFFF",sw:Z(.1)}); break;
+    case "bolas": [[-.6,-.55],[.6,-.55],[-.6,.55],[.6,.55]].forEach(([dx,dy])=>{ o.push({t:"circ",cx:cx+Z(dx),cy:cy+Z(dy),r:Z(.5),fill:"#FFFFFF",stroke:K,sw:Z(.12)}); o.push({t:"circ",cx:cx+Z(dx),cy:cy+Z(dy),r:Z(.17),fill:K}); }); break;
+    case "garrafas": { const h=Z(1); o.push({t:"rect",x:cx-h,y:cy-h*.7,w:h*2,h:h*1.4,rx:h*.15,fill:"#FFD60A",stroke:K,sw:ol}); [-1,0,1].forEach(i=>[-1,1].forEach(j=>o.push({t:"circ",cx:cx+i*h*.6,cy:cy+j*h*.33,r:h*.24,fill:"#1F6FD1",stroke:"#FFFFFF",sw:h*.06}))); break; }
+    case "certo": { const q=[[cx-Z(.85),cy],[cx-Z(.25),cy+Z(.65)],[cx+Z(.95),cy-Z(.75)]]; [["#FFFFFF",Z(.8)],["#2CA02C",Z(.5)]].forEach(([c,w])=>{ ln(q[0],q[1],c,w); ln(q[1],q[2],c,w); }); break; }
+    case "errado": { const d=Z(.75); [["#FFFFFF",Z(.8)],["#E00000",Z(.5)]].forEach(([c,w])=>{ ln([cx-d,cy-d],[cx+d,cy+d],c,w); ln([cx-d,cy+d],[cx+d,cy-d],c,w); }); break; }
+    case "numero": { const t=String(pc.n||"1"), fs=Z(t.length>2?1:1.35); o.push({t:"rect",x:cx-Z(.8),y:cy-Z(1),w:Z(1.6),h:Z(2),rx:Z(.25),fill:"#FFD966",stroke:K,sw:ol}); o.push({t:"text",x:cx,y:cy+fs*.36,txt:t,fs,fill:K,w:700,anchor:"middle"}); break; }
+    case "treinador": { const r=Z(1.1); o.push({t:"circ",cx,cy,r,fill:"#FFFFFF",stroke:K,sw:Z(.16)}); pl(cupula(r*1.02,r*1.02,cy-r*.1),K); o.push({t:"rect",x:cx-r*1.25,y:cy-r*.2,w:r*1.6,h:r*.22,rx:r*.1,fill:K});
+      [-.35,.35].forEach(d=>o.push({t:"circ",cx:cx+r*d,cy:cy+r*.3,r:r*.1,fill:K})); break; }
+    case "barreira": { [[K,Z(.5)],[cor,Z(.32)]].forEach(([c,w])=>{ ln(L(-1.3,0),L(1.3,0),c,w); [-1.3,1.3].forEach(d=>ln(L(d,-.5),L(d,.5),c,w*.75)); }); break; }
+    case "escada": case "escadaL": { const n=pc.tipo==="escada"?4:8, l=n*.75; [-.7,.7].forEach(e=>ln(L(-l,e),L(l,e),K,Z(.3))); for(let i=0;i<=n;i++){ const d=-l+i*2*l/n; ln(L(d,-.7),L(d,.7),cor,Z(.24)); } [-.7,.7].forEach(e=>ln(L(-l,e),L(l,e),cor,Z(.18))); break; }
+    case "barreiraM": { ln(L(-2.1,0),L(2.1,0),K,Z(.35)); [-1.65,-.55,.55,1.65].forEach(d=>{ const [x,y]=L(d,0); o.push({t:"circ",cx:x,cy:y,r:Z(.55),fill:cor,stroke:K,sw:ol}); }); break; }
+    case "rede": { ln(L(-3,0),L(3,0),"#6E6E6E",Z(.55)); ln(L(-3,0),L(3,0),"#FFFFFF",Z(.2),{dash:[Z(.25),Z(.25)],cap:"butt"}); [-3,3].forEach(d=>{ const [x,y]=L(d,0); o.push({t:"circ",cx:x,cy:y,r:Z(.32),fill:K}); }); break; } } }
+/* ícone de uma peça de material para os botões (mesmo desenho, caixa à medida) */
+function iconeMat(tipo,cor){ const o=[], sc=1.6, V={P:(x,y)=>[(x-50)*MK(sc),(y-30)*MK(sc)],z:sc,s:sc}, Z=m=>MK(m)*sc; desenhaMat(o,{tipo,cor,n:"1",ang:0},{x:50,y:30},V,Z);
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9; const ad=(x,y,r=0)=>{ x0=Math.min(x0,x-r); y0=Math.min(y0,y-r); x1=Math.max(x1,x+r); y1=Math.max(y1,y+r); };
+  o.forEach(p=>{ if(p.t==="rect") { ad(p.x,p.y); ad(p.x+p.w,p.y+p.h); } else if(p.t==="circ"||p.t==="arc") ad(p.cx,p.cy,p.r); else if(p.t==="line"){ ad(p.x1,p.y1,p.sw/2); ad(p.x2,p.y2,p.sw/2); } else if(p.t==="poly") p.pts.forEach(q=>ad(q[0],q[1])); });
+  const pd=4, w=Math.max(x1-x0,y1-y0)+2*pd, cx=(x0+x1)/2, cy=(y0+y1)/2;
+  return `<svg viewBox="${mA(cx-w/2)} ${mA(cy-w/2)} ${mA(w)} ${mA(w)}" width="40" height="40" aria-hidden="true">${primsSvg(o)}</svg>`; }
 /* campo do onze no separador Jogo (unidades do slide) → metros */
 const ONZE_CAMPO=[2740,11380,81400,63780];
 function onzeM(o){ const [x0,y0,x1,y1]=ONZE_CAMPO; return {x:Math.round(mClamp((o.x-x0)/(x1-x0)*105,-2,107)*10)/10,y:Math.round(mClamp((o.y-y0)/(y1-y0)*68,-2,70)*10)/10}; }
@@ -45,8 +90,8 @@ function normQ(d){ const Q={...d}; Q.nome=String(Q.nome||"Sem nome"); if(!MOMENT
   if(!momDe(Q.mom)[3].some(s=>s[0]===Q.sub)) Q.sub=momDe(Q.mom)[3][0][0];
   Q.vel=+Q.vel||1.2; Q.pausa=+Q.pausa||1.2; Q.rot=ROT_M[Q.rot]?Q.rot:"pos"; Q.nomes=!!Q.nomes; Q.auto=Q.auto!==false; Q.ordem=+Q.ordem||0;
   Q.vista=VISTAS.some(v=>v[0]===Q.vista)?Q.vista:"inteiro"; Q.vw=mClamp(Math.round(+Q.vw||20),4,100); Q.vh=mClamp(Math.round(+Q.vh||20),4,68);
-  Q.pecas=Array.isArray(Q.pecas)?Q.pecas.filter(p=>p&&p.id&&PECAS_EQ.includes(p.eq)).map(p=>{ const c={...p}; if(c.slot) c.slot=String(c.slot); else delete c.slot;
-    if(!COLETES.some(x=>x[0]===c.cor)) delete c.cor; if(c.ang!=null) c.ang=((Math.round(+c.ang/90)*90)%360+360)%360; return c; }):[];
+  Q.pecas=Array.isArray(Q.pecas)?Q.pecas.filter(p=>p&&p.id&&PECAS_EQ.includes(p.eq)&&(p.eq!=="mat"||MAT[p.tipo])).map(p=>{ const c={...p}; if(c.slot) c.slot=String(c.slot); else delete c.slot;
+    if(!COLETES.some(x=>x[0]===c.cor)) delete c.cor; if(c.ang!=null) c.ang=((Math.round(+c.ang/45)*45)%360+360)%360; return c; }):[];
   Q.trocas=Array.isArray(Q.trocas)?Q.trocas.filter(t=>t&&t.sai&&t.entra).map(t=>({id:String(t.id||mId("t")),sai:String(t.sai),entra:String(t.entra)})):[];
   Q.passos=Array.isArray(Q.passos)&&Q.passos.length?Q.passos.map(P=>({id:P.id||mId("p"),nota:String(P.nota||""),pos:{...(P.pos||{})},setas:Array.isArray(P.setas)?P.setas:[],zonas:Array.isArray(P.zonas)?P.zonas:[]})):[{id:mId("p"),nota:"",pos:{},setas:[],zonas:[]}];
   Q.passos.forEach((P,i)=>Q.pecas.forEach(pc=>{ if(!P.pos[pc.id]) P.pos[pc.id]=i?{...Q.passos[i-1].pos[pc.id]}:{x:52.5,y:34}; }));
@@ -164,11 +209,15 @@ function primsDinamicas(Q,t,ed){ const o=[], n=Q.passos.length; t=mClamp(t,0,n-1
     const c=(s,d)=>V.P(p.x+vx*s*W/2-ux*d*D,p.y+vy*s*W/2-uy*d*D), fl=c(1,0), fr=c(-1,0), bl=c(1,1), br=c(-1,1), lw=Z(pc.eq==="baliza"?.3:.22);
     o.push({t:"poly",pts:[fl,bl,br,fr],fill:"#E9E7E2"});
     for(let i=1;i<4;i++){ const s=1-i/2; o.push({t:"line",x1:c(s,0)[0],y1:c(s,0)[1],x2:c(s,1)[0],y2:c(s,1)[1],stroke:"#A8A49A",sw:lw*.5}); }
-    [[fl,bl],[bl,br],[br,fr]].forEach(([p1,p2])=>o.push({t:"line",x1:p1[0],y1:p1[1],x2:p2[0],y2:p2[1],stroke:"#1B1A17",sw:lw,cap:"round"}));
-    [fl,fr].forEach(q=>o.push({t:"circ",cx:q[0],cy:q[1],r:lw*1.1,fill:"#C00000"}));
+    const cg=(COLETES.find(x=>x[0]===pc.cor)||[])[2]; /* mini-baliza de cor: aro da cor escolhida */
+    [[fl,bl],[bl,br],[br,fr]].forEach(([p1,p2])=>o.push({t:"line",x1:p1[0],y1:p1[1],x2:p2[0],y2:p2[1],stroke:cg||"#1B1A17",sw:lw*(cg?1.3:1),cap:"round"}));
+    [fl,fr].forEach(q=>o.push({t:"circ",cx:q[0],cy:q[1],r:lw*1.1,fill:cg||"#C00000",stroke:cg?"#1B1A17":null,sw:lw*.3}));
     const [cx,cy]=V.P(p.x,p.y); toque(cx,cy,Z(1.2),pc.id); });
   Q.pecas.filter(p=>p.eq==="cone").forEach(pc=>{ const p=pos[pc.id], [cx,cy]=V.P(p.x,p.y), c=(COLETES.find(x=>x[0]===pc.cor)||COLETES[4])[2], h=Z(.85);
     o.push({t:"poly",pts:[[cx,cy-h],[cx-h*.85,cy+h*.6],[cx+h*.85,cy+h*.6]],fill:c,stroke:"#1B1A17",sw:Z(.1)}); toque(cx,cy,h,pc.id); });
+  /* material de treino por baixo dos jogadores; as marcas (certo, errado, número, treinador) vão por cima */
+  const marcaM=pc=>MAT[pc.tipo]&&MAT[pc.tipo][1]==="marca", pintaMat=pc=>{ const p=pos[pc.id]; desenhaMat(o,pc,p,V,Z); const [cx,cy]=V.P(p.x,p.y); toque(cx,cy,Z(MAT[pc.tipo][3]?1.6:1.2),pc.id); };
+  Q.pecas.filter(p=>p.eq==="mat"&&!marcaM(p)).forEach(pintaMat);
   /* setas automáticas (movimento até ao passo seguinte); medidas do Onze Titular das bolas paradas (bolinha ~2,3 m, número ~2,2 m) */
   const r=2.3, rb=1.25, joga=pc=>pc.eq==="nos"||pc.eq==="adv"||pc.eq==="neutro"||pc.eq==="bola";
   if(Q.auto&&opA>0&&k+1<n){ const C=Q.passos[k+1]; Q.pecas.forEach(pc=>{ if(!joga(pc)) return; const a=A.pos[pc.id], b=C.pos[pc.id]; if(!a||!b||Math.hypot(b.x-a.x,b.y-a.y)<1.4) return;
@@ -191,6 +240,7 @@ function primsDinamicas(Q,t,ed){ const o=[], n=Q.passos.length; t=mClamp(t,0,n-1
     if(lab) o.push({t:"text",x:cx,y:cy+fs*.35,txt:lab,fs,fill:S.txt,w:700,anchor:"middle"});
     const lg=pc.eq==="nos"?legendaPeca(Q,pc,v):""; if(lg){ const nfs=Z(1.3), nw=textW(lg,nfs,700)+Z(1.1); o.push({t:"rect",x:cx-nw/2,y:cy+Z(r+.3),w:nw,h:nfs*1.35,rx:Z(.5),fill:"rgba(27,26,23,.85)"}); o.push({t:"text",x:cx,y:cy+Z(r+.3)+nfs*1.02,txt:lg,fs:nfs,fill:"#fff",w:700,anchor:"middle"}); }
     toque(cx,cy,Z(r),pc.id); });
+  Q.pecas.filter(p=>p.eq==="mat"&&marcaM(p)).forEach(pintaMat);
   o.push({t:"goff"});
   const pv=passoVisivel(Q,t), P=Q.passos[pv];
   /* figura de exercício: sem painel; com vários passos, só "Passo x/n" na linha da legenda */
@@ -363,11 +413,15 @@ function folhaSubM(pid){ const Q=qAtual(), pc=Q&&Q.pecas.find(p=>p.id===pid); if
     s.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{ sc=b.dataset.s; s.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); }); }); }
 function confirma2(btn,txt,acao){ let arm=false, tt=null; const orig=btn.textContent; btn.onclick=()=>{ if(!arm){ arm=true; btn.textContent=txt; btn.style.background="#C00000"; btn.style.color="#fff"; tt=setTimeout(()=>{ arm=false; btn.textContent=orig; btn.style.background=""; btn.style.color=""; },3000); return; } clearTimeout(tt); acao(); }; }
 const NOME_EQ={nos:"Jogador SCA",adv:"Adversário",neutro:"Joker",bola:"Bola",cone:"Cone",minib:"Mini-baliza",baliza:"Baliza"};
+const nomePeca=pc=>pc.eq==="mat"?(MAT[pc.tipo]||["Material"])[0]:NOME_EQ[pc.eq];
 function folhaPecaM(pid){ const Q=qAtual(), pc=Q&&Q.pecas.find(p=>p.id===pid); if(!pc) return;
-  const jog=["nos","adv","neutro"].includes(pc.eq), bal=!!BALIZAS[pc.eq], corAt=pc.cor||(pc.eq==="cone"?"laranja":"");
-  folha(`<h3>${NOME_EQ[pc.eq]}</h3>${pc.eq==="bola"?`<p class="sub" style="margin:0">Arrasta a bola no quadro para a mudar de sítio em cada passo.</p>`:""}
+  const jog=["nos","adv","neutro"].includes(pc.eq), bal=!!BALIZAS[pc.eq], M=pc.eq==="mat"?MAT[pc.tipo]:null, roda=M&&M[3];
+  const temCor=jog||pc.eq==="cone"||pc.eq==="minib"||(M&&M[2]), corAt=pc.cor||(pc.eq==="cone"?"laranja":M?M[2]:"");
+  folha(`<h3>${esc(nomePeca(pc))}</h3>${pc.eq==="bola"?`<p class="sub" style="margin:0">Arrasta a bola no quadro para a mudar de sítio em cada passo.</p>`:""}
     ${bal?`<p class="sub" style="margin:0">Arrasta para mudar de sítio. Roda 90° de cada vez para virar a abertura.</p><div class="actions" style="justify-content:flex-start"><button class="btn" id="mp-rod">↻ Rodar 90°</button></div>`:""}
-    ${jog||pc.eq==="cone"?`<h4>${pc.eq==="cone"?"Cor do cone":"Colete"}</h4><div class="seg" id="mp-c">${jog?`<button data-c="">Cor da equipa</button>`:""}${COLETES.map(([k,n,c])=>`<button data-c="${k}"><i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${c};border:1px solid #0005;vertical-align:-1px;margin-right:5px"></i>${n}</button>`).join("")}</div>`:""}
+    ${roda?`<p class="sub" style="margin:0">Arrasta para mudar de sítio. Roda 45° de cada vez.</p><div class="actions" style="justify-content:flex-start"><button class="btn" id="mp-rod">↻ Rodar 45°</button></div>`:""}
+    ${pc.tipo==="numero"?`<label class="f">Número ou letra da etiqueta<input type="text" id="mp-et" maxlength="3" value="${esc(pc.n||"1")}"></label>`:""}
+    ${temCor?`<h4>${jog?"Colete":"Cor"}</h4><div class="seg" id="mp-c">${jog?`<button data-c="">Cor da equipa</button>`:pc.eq==="minib"?`<button data-c="">Normal</button>`:""}${COLETES.map(([k,n,c])=>`<button data-c="${k}"><i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${c};border:1px solid #0005;vertical-align:-1px;margin-right:5px"></i>${n}</button>`).join("")}</div>`:""}
     ${!jog?"":`
     <div class="fields"><label class="f">Posição ou letra (texto da bolinha)<input type="text" id="mp-p" maxlength="4" value="${esc(pc.pos||"")}"></label>
     ${pc.eq==="nos"?`<label class="f">Lugar no onze (o número segue o separador Jogo)<select id="mp-s"><option value="">— Sem ligação ao onze —</option>${jogo.onze.map(o=>`<option value="${esc(o.slot)}"${o.slot===pc.slot?" selected":""}>${esc(rot(o.n))}${o.pos?" · "+esc(o.pos):""}</option>`).join("")}</select></label>
@@ -377,7 +431,8 @@ function folhaPecaM(pid){ const Q=qAtual(), pc=Q&&Q.pecas.find(p=>p.id===pid); i
     /* cor e rodar aplicam-se logo, como nas zonas */
     let cor=corAt; const pintaC=()=>s.querySelectorAll("#mp-c button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.c===cor)));
     s.querySelectorAll("#mp-c button").forEach(b=>b.onclick=()=>{ cor=b.dataset.c; pintaC(); editaQ(Q=>{ const p=Q.pecas.find(p=>p.id===pid); if(!p) return; if(cor) p.cor=cor; else delete p.cor; }); }); pintaC();
-    const rd=s.querySelector("#mp-rod"); if(rd) rd.onclick=()=>editaQ(Q=>{ const p=Q.pecas.find(p=>p.id===pid); if(p) p.ang=((p.ang==null?180:p.ang)+90)%360; });
+    const rd=s.querySelector("#mp-rod"); if(rd) rd.onclick=()=>editaQ(Q=>{ const p=Q.pecas.find(p=>p.id===pid); if(p) p.ang=roda?((p.ang||0)+45)%360:((p.ang==null?180:p.ang)+90)%360; });
+    const et=s.querySelector("#mp-et"); if(et) et.onchange=()=>editaQ(Q=>{ const p=Q.pecas.find(p=>p.id===pid); if(p) p.n=et.value.trim()||"1"; });
     const ss=s.querySelector("#mp-s"), nl=s.querySelector("#mp-nl"); if(ss){ const mostra=()=>nl.hidden=!!ss.value; ss.onchange=mostra; mostra(); }
     const ok=s.querySelector("#mp-ok"); if(ok) ok.onclick=()=>{ const pos=s.querySelector("#mp-p").value.trim().toUpperCase(), n=s.querySelector("#mp-n").value.trim(), sl=ss?ss.value:""; fecha();
       editaQ(Q=>{ const p=Q.pecas.find(p=>p.id===pid); if(!p) return; p.pos=pos;
@@ -403,11 +458,17 @@ function folhaZonaM(zid){ const Q=qAtual(), k=passoAtual(), Z=Q.passos[k].zonas.
 /* peças do passo k fora da vista escolhida (ao mudar de campo inteiro para meio campo, por exemplo) */
 function forasDaVista(Q,k){ const R=regiaoVista(Q), P=Q.passos[k]; if(!P) return []; return Q.pecas.filter(pc=>{ const p=P.pos[pc.id]; return p&&(p.x<R.x0||p.x>R.x0+R.w||p.y<R.y0||p.y>R.y0+R.h); }).map(pc=>pc.id); }
 /* peça nova a meio da vista; várias bolas são permitidas (exercícios) */
-function addPeca(eq){ const Q=qAtual(); if(!Q) return; const R=regiaoVista(Q), id=mId({adv:"a",bola:"b",cone:"c",minib:"g",baliza:"g",neutro:"j"}[eq]||"n"), nN=Q.pecas.filter(p=>p.eq===eq).length;
-  const x=R.x0+R.w*({nos:.32,adv:.68,neutro:.5,bola:.5,cone:.2,minib:.85,baliza:.9}[eq]??.5), y=R.y0+R.h*(.5+((nN%5)-2)*.08);
-  editaQ(Q=>{ const pc={id,eq,pos:eq==="adv"?String(nN+1):eq==="nos"?"J"+(nN+1):eq==="neutro"?"J":"",n:""}; if(BALIZAS[eq]) pc.ang=180; if(eq==="cone") pc.cor="laranja";
-    Q.pecas.push(pc); Q.passos.forEach(P=>P.pos[id]={x:Math.round(x*10)/10,y:Math.round(y*10)/10}); });
-  mSel=id; renderModelo(); toast(`${NOME_EQ[eq]} adicionad${["bola","baliza","minib"].includes(eq)?"a":"o"} · arrasta para o sítio; toca para ${["nos","adv","neutro"].includes(eq)?"mudar o colete ou a posição":"mais opções"}`); }
+function addPeca(eq,tipo){ const Q=qAtual(); if(!Q) return; const R=regiaoVista(Q), id=mId({adv:"a",bola:"b",cone:"c",minib:"g",baliza:"g",neutro:"j",mat:"k"}[eq]||"n"), nN=Q.pecas.filter(p=>p.eq===eq).length;
+  const x=R.x0+R.w*({nos:.32,adv:.68,neutro:.5,bola:.5,cone:.2,minib:.85,baliza:.9,mat:.4}[eq]??.5), y=R.y0+R.h*(.5+((nN%5)-2)*.08);
+  const pc={id,eq,pos:eq==="adv"?String(nN+1):eq==="nos"?"J"+(nN+1):eq==="neutro"?"J":"",n:""}; if(BALIZAS[eq]) pc.ang=180; if(eq==="cone") pc.cor="laranja";
+  if(eq==="mat"){ const M=MAT[tipo]; if(!M) return; pc.tipo=tipo; if(M[2]) pc.cor=M[2]; if(M[3]) pc.ang=0; if(tipo==="numero") pc.n=String(Q.pecas.filter(p=>p.tipo==="numero").length+1); }
+  editaQ(Q=>{ Q.pecas.push(pc); Q.passos.forEach(P=>P.pos[id]={x:Math.round(x*10)/10,y:Math.round(y*10)/10}); });
+  mSel=id; renderModelo(); toast(eq==="mat"?`${nomePeca(pc)} · arrasta para o sítio; toca para ${[MAT[tipo][2]&&"mudar a cor",MAT[tipo][3]&&"rodar",tipo==="numero"&&"mudar o número","apagar"].filter(Boolean).join(", ").replace(/, (?=[^,]*$)/," ou ")}`:`${NOME_EQ[eq]} adicionad${["bola","baliza","minib"].includes(eq)?"a":"o"} · arrasta para o sítio; toca para ${["nos","adv","neutro"].includes(eq)?"mudar o colete ou a posição":"mais opções"}`); }
+/* escolha do material de treino, por grupos, com o desenho de cada peça */
+function folhaMaterial(){ folha(`<h3>Material de treino</h3><p class="sub" style="margin:0">Toca numa peça para a pôr no campo. Depois podes arrastá-la e, tocando nela, mudar a cor ou rodar.</p>
+    ${MAT_GR.map(([g,nm])=>`<h4>${nm}</h4><div class="pgrid mat-g">${Object.entries(MAT).filter(([,M])=>M[1]===g).map(([k,M])=>`<button type="button" data-mat="${k}">${iconeMat(k)}<span>${M[0]}</span></button>`).join("")}</div>`).join("")}
+    <div class="actions"><button class="btn" data-close>Fechar</button></div>`,(s,fecha)=>{
+    s.querySelectorAll("[data-mat]").forEach(b=>b.onclick=()=>{ fecha(); addPeca("mat",b.dataset.mat); }); }); }
 function trocaSistema(eq,sis){ const k=passoAtual(); editaQ(Q=>{
   if(eq==="adv"){ const ant=Q.pecas.filter(p=>p.eq==="adv").map(p=>p.id); Q.pecas=Q.pecas.filter(p=>p.eq!=="adv"); Q.passos.forEach(P=>ant.forEach(id=>delete P.pos[id])); Q.sisAdv=sis||"";
     if(sis){ const nv=pecasSistema(sis,"adv"); const bola=Q.pecas.filter(p=>p.eq==="bola"); Q.pecas=[...Q.pecas.filter(p=>p.eq!=="bola"),...nv.map(p=>p.pc),...bola]; Q.passos.forEach(P=>nv.forEach(p=>P.pos[p.pc.id]={x:p.x,y:p.y})); } }
@@ -507,8 +568,8 @@ function renderModeloPainel(Q){ const pn=$("m-panel"), k=passoAtual(), M=momDe(Q
       ${Q.vista==="livre"?`<div class="fields"><label class="f">Largura (m)<input type="number" inputmode="numeric" id="me-vw" min="4" max="100" value="${Q.vw}"></label><label class="f">Comprimento (m)<input type="number" inputmode="numeric" id="me-vh" min="4" max="68" value="${Q.vh}"></label></div>`:""}
       <h3>Peças</h3>
       <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-eq="nos">+ Jogador SCA</button><button class="btn sm" data-eq="adv">+ Adversário</button><button class="btn sm" data-eq="neutro">+ Joker</button><button class="btn sm" data-eq="bola">+ Bola</button>
-        <button class="btn sm" data-eq="cone">+ Cone</button><button class="btn sm" data-eq="minib">+ Mini-baliza</button><button class="btn sm" data-eq="baliza">+ Baliza</button></div>
-      <p class="sub" style="margin:0">Toca numa peça para mudar o colete, a cor do cone ou rodar a baliza.</p>
+        <button class="btn sm" data-eq="cone">+ Cone</button><button class="btn sm" data-eq="minib">+ Mini-baliza</button><button class="btn sm" data-eq="baliza">+ Baliza</button><button class="btn sm" id="me-mat">+ Material…</button></div>
+      <p class="sub" style="margin:0">Toca numa peça para mudar o colete ou a cor, rodar ou apagar. Em <b>+ Material…</b> há sinalizadores, estacas, escadas, manequins, ginásio e marcas.</p>
       <div class="fields"><label class="f">Sistema SCA (passo atual)<select id="me-sis">${Q.sis?"":`<option value="" selected>—</option>`}${SIS_NOS.map(([k,n])=>`<option value="${k}"${k===Q.sis?" selected":""}>${n}</option>`).join("")}</select></label>
       <label class="f">Equipa adversária<select id="me-adv"><option value="">Sem adversário</option>${Object.keys(SISTEMAS).map(s=>`<option${adv&&s===Q.sisAdv?" selected":""}>${s}</option>`).join("")}</select></label></div>
       <button class="btn sm" id="me-onze">↺ Pôr o onze do jogo neste passo</button>
@@ -526,7 +587,7 @@ function renderModeloPainel(Q){ const pn=$("m-panel"), k=passoAtual(), M=momDe(Q
     </div>`;
   pn.querySelectorAll("#me-vis button").forEach(b=>{ b.setAttribute("aria-pressed",String(b.dataset.k===Q.vista)); b.onclick=()=>{ if(b.dataset.k!==Q.vista) editaQ(Q=>{ Q.vista=b.dataset.k; }); }; });
   [["#me-vw","vw",100],["#me-vh","vh",68]].forEach(([i,c,mx])=>{ const el=pn.querySelector(i); if(el) el.onchange=()=>{ const v=mClamp(Math.round(+el.value||20),4,mx); editaQ(Q=>{ Q[c]=v; }); }; });
-  pn.querySelectorAll("[data-eq]").forEach(b=>b.onclick=()=>addPeca(b.dataset.eq));
+  pn.querySelectorAll("[data-eq]").forEach(b=>b.onclick=()=>addPeca(b.dataset.eq)); pn.querySelector("#me-mat").onclick=folhaMaterial;
   if(pn.querySelector("#me-dentro")) pn.querySelector("#me-dentro").onclick=()=>{ const R=regiaoVista(Q), ids=forasDaVista(Q,k);
     editaQ(Q=>ids.forEach(id=>{ const p=Q.passos[k].pos[id]; p.x=Math.round(mClamp(p.x,R.x0+2,R.x0+R.w-2)*10)/10; p.y=Math.round(mClamp(p.y,R.y0+2,R.y0+R.h-2)*10)/10; })); toast(`${ids.length} peças trazidas para dentro · Ctrl+Z para desfazer`); };
   const nota=pn.querySelector("#me-nota"); if(nota) nota.oninput=()=>{ clearTimeout(mNotaT); const v=nota.value; mNotaT=setTimeout(()=>{ editaQ(Q=>{ Q.passos[k].nota=v; },true); mPl.setQ(qAtual()); mPl.set(k); },500); };

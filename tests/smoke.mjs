@@ -108,6 +108,17 @@ await pg.waitForTimeout(150);
 const f1 = await pg.evaluate(() => { const Q = qAtual(); return { rot: Q.rot, fig: Q.fig, bolas: Q.pecas.filter((p) => p.eq === "bola").length, txt: [...document.querySelectorAll("#m-stage > svg .mdin text")].length }; });
 if (f1.rot !== "nada" || !f1.fig || f1.bolas !== 2 || f1.txt !== 0) erros.push("Figura: devia começar só com bolinhas, sem texto, e aceitar várias bolas " + JSON.stringify(f1));
 await pg.screenshot({ path: join(cap, "exercicio-editor-figura.png") });
+// material de treino: menu por grupos, escada longa e etiqueta com número; rodar 45° e mudar a cor; todos os tipos desenham-se
+await pg.click("#me-mat"); await pg.waitForSelector(".sheet [data-mat='escadaL']");
+await pg.screenshot({ path: join(cap, "exercicio-material-menu.png") });
+await pg.click(".sheet [data-mat='escadaL']"); await pg.waitForTimeout(150);
+await pg.click("#me-mat"); await pg.click(".sheet [data-mat='numero']"); await pg.waitForTimeout(150);
+await pg.evaluate(() => folhaPecaM(qAtual().pecas.find((p) => p.tipo === "escadaL").id)); await pg.click("#mp-rod"); await pg.click("#mp-c [data-c='azul']"); await pg.click(".sheet [data-close]"); await pg.waitForTimeout(150);
+const mat = await pg.evaluate(() => { const Q = qAtual(), e = Q.pecas.find((p) => p.tipo === "escadaL"), n = Q.pecas.find((p) => p.tipo === "numero");
+  const vazios = Object.keys(MAT).filter((t) => { const o = []; desenhaMat(o, { tipo: t, n: "1" }, { x: 50, y: 30 }, vistaQ(Q), (m) => MK(m)); return !o.length || !iconeMat(t).includes("<"); });
+  return { ang: e && e.ang, cor: e && e.cor, n: n && n.n, vazios }; });
+if (mat.ang !== 45 || mat.cor !== "azul" || mat.n !== "1" || mat.vazios.length) erros.push("Material de treino: peça mal gravada ou sem desenho " + JSON.stringify(mat));
+await pg.screenshot({ path: join(cap, "exercicio-material.png") });
 // espaço livre 20×20 e meio campo rodado (baliza em cima); arrastar no campo rodado leva a peça para onde se larga
 await pg.click("#me-vis [data-k='livre']"); await pg.waitForSelector("#me-vw"); await pg.fill("#me-vw", "20"); await pg.press("#me-vw", "Enter"); await pg.waitForTimeout(150);
 await pg.screenshot({ path: join(cap, "exercicio-espaco-livre.png") });
@@ -124,7 +135,7 @@ if (Math.abs(a1.x - (a0.x + 60)) > 6 || Math.abs(a1.y - (a0.y - 40)) > 6) erros.
 await pg.screenshot({ path: join(cap, "exercicio-meio-campo.png") });
 await pg.click("#mf-volta"); await pg.waitForSelector("#x-stage > svg");
 const fg = await pg.evaluate(() => ({ pecas: Object.values(exercicios)[0].figura?.quadro?.pecas?.length, vista: Object.values(exercicios)[0].figura?.quadro?.vista, modelos: listaModelos().length, x: !document.getElementById("view-x").hidden, fig: mFig }));
-if (fg.pecas !== 9 || fg.vista !== "meio" || fg.modelos !== 1 || !fg.x || fg.fig) erros.push("Exercícios: figura mal gravada ou fora do sítio " + JSON.stringify(fg));
+if (fg.pecas !== 11 || fg.vista !== "meio" || fg.modelos !== 1 || !fg.x || fg.fig) erros.push("Exercícios: figura mal gravada ou fora do sítio " + JSON.stringify(fg));
 await pg.screenshot({ path: join(cap, "exercicio-figura.png") });
 // duplicar, apagar com o botão direito e desfazer
 await pg.click("#x-dup"); await pg.waitForTimeout(150);
