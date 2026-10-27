@@ -16,5 +16,6 @@
   "js/14-ficha-de-jogo-modelo-do-clube.js",
   "js/15-copia-de-seguranca.js",
   "js/16-tv-apresentacao-automatica-e-video.js",
+  "js/adversario.js",
   "js/17-arranque.js"
 ]

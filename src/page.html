@@ -14,6 +14,7 @@
     <div class="tabs" role="tablist">
       <button role="tab" id="tab-q" aria-selected="true">Quadro</button>
       <button role="tab" id="tab-j" aria-selected="false">Jogo</button>
+      <button role="tab" id="tab-d" aria-selected="false">Adversário</button>
       <button role="tab" id="tab-p" aria-selected="false">Plantel</button>
       <button role="tab" id="tab-m" aria-selected="false">Modelo de Jogo</button>
       <button role="tab" id="tab-x" aria-selected="false">Exercícios</button>
@@ -97,6 +98,25 @@
           <div class="body" id="fj-body"></div></div>
         <div class="card"><header><h2>Suplentes <span class="count" id="j-nsup">0</span></h2><p class="sub">Toca para convocar. São estes que aparecem primeiro nas substituições.</p></header>
           <div class="body"><div class="chips" id="j-sup"></div></div></div>
+        <div class="card"><header><h2>Substituições do adversário <span class="count" id="j-nsa">0</span></h2><p class="sub">Sai e entra com o minuto. Atualizam o quadro Encaixe; não mexem nos quadros de bolas paradas nem no Onze.</p></header>
+          <div class="body"><ul class="sa-lista" id="j-sa"></ul><button class="btn" id="j-sa-add" style="align-self:flex-start">+ Substituição do adversário</button></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-d" hidden>
+    <div class="jogo">
+      <div class="board">
+        <div class="boardbar"><span class="tag DEF">ADV</span><h2 id="d-tit">Adversário do jogo</h2><span class="sub" style="margin:0 0 0 auto">Arrasta as peças · toca para escolher o jogador</span></div>
+        <div class="stage editing" id="dstage"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+        <div class="card"><header><h2>Adversário</h2><p class="sub">Equipa, sistema e cores do equipamento deste jogo. Aparece no quadro Encaixe.</p></header>
+          <div class="body" id="d-form"></div></div>
+        <div class="card" id="d-plcard" hidden><header><h2><span id="d-pltit">Plantel</span> <span class="count" id="d-npl">0</span></h2><p class="sub">Fica guardado para todos os jogos contra esta equipa.</p></header>
+          <div class="body"><div class="dp-lista" id="d-pl"></div><button class="btn" id="d-pladd" style="align-self:flex-start">+ Jogador</button></div></div>
+        <div class="card"><header><h2>Suplentes do adversário <span class="count" id="d-nsup">0</span></h2><p class="sub">Toca para marcar quem está no banco.</p></header>
+          <div class="body"><div class="chips" id="d-sup"></div></div></div>
       </div>
     </div>
   </section>

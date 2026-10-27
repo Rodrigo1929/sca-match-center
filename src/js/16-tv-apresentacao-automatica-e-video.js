@@ -1,5 +1,5 @@
 /* ---------- TV: apresentação automática e vídeo ---------- */
-function pickerQuadros(box,pre){ const grupos=[["JOGO","Jogo (Onze, Intervalo, Estatística, Notas)"],["DEF","Defensivos"],["OF","Ofensivos"],["REF","Referência"]];
+function pickerQuadros(box,pre){ const grupos=[["JOGO","Jogo (Onze, Encaixe, Intervalo, Estatística, Notas)"],["DEF","Defensivos"],["OF","Ofensivos"],["REF","Referência"]];
   grupos.forEach(([t,n])=>{ const ls=lances().filter(l=>l.tipo===t); if(!ls.length) return;
     const g=document.createElement("div"); g.style.cssText="border:1px solid var(--line);border-radius:10px;background:var(--surface-2)";
     g.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px"><input type="checkbox" class="pdf-gr" style="width:20px;height:20px"><b style="flex:1;font-family:var(--f-display);font-size:15px"></b><button class="btn sm ghost pdf-ab">Escolher ▾</button></div><div class="pdf-ls" hidden style="display:flex;flex-direction:column;gap:2px;padding:0 10px 8px 40px"></div>`;
@@ -188,8 +188,8 @@ document.addEventListener("visibilitychange",()=>{ if(!document.hidden&&db&&nPen
 function mergeCol(prefixo,m,local){ Object.entries(pendentes).forEach(([p,v])=>{ if(!p.startsWith(prefixo)) return; const id=p.slice(prefixo.length); if(v.del) delete m[id]; else if(local[id]) m[id]=local[id]; }); return m; }
 function guardaEst(n,soft){ est=normEst(n); guardaLocal(); soft?(renderNav(),renderBoard(),renderRows(),renderForm()):render(); gravaDoc("estado/atual",est); }
 function guardaJogo(n,soft){ const antes=jogo; jogo=normJogo(n); guardaLocal(); if(!soft){ renderJogo(); } render();
-  gravaCol("eventos",antes.eventos,jogo.eventos); gravaCol("subs",antes.subs,jogo.subs);
-  const base=j=>JSON.stringify(semCol(semCol(j,"eventos"),"subs")); if(base(antes)!==base(jogo)||!jogoMigrado){ jogoMigrado=true; gravaDoc("jogo/atual",semCol(semCol(jogo,"eventos"),"subs")); } }
+  gravaCol("eventos",antes.eventos,jogo.eventos); gravaCol("subs",antes.subs,jogo.subs); gravaCol("subsAdv",antes.subsAdv||[],jogo.subsAdv);
+  const sem=j=>semCol(semCol(semCol(j,"eventos"),"subs"),"subsAdv"), base=j=>JSON.stringify(sem(j)); if(base(antes)!==base(jogo)||!jogoMigrado){ jogoMigrado=true; gravaDoc("jogo/atual",sem(jogo)); } renderSubsAdv(); }
 const EIXO={s03:["x",34252],s04:["x",34252],s05:["x",34252],"b-meio":["x",34252],s07:["x",45720],s08:["x",33293],s09:["x",33293],s10:["x",33293],s11:["x",33293],s12:["x",33293],s13:["x",33293],s14:["x",33293],s15:["y",38462]};
 function eixoDe(L){ if(EIXO[L.fundo]) return EIXO[L.fundo]; const f=FUNDOS[L.fundo]?.campo; return f?["y",Math.round((f[1]+f[3])/2)]:["x",W/2]; }
 function espelha(L){ const C=clone(L), [ax,c]=eixoDe(L), m=v=>Math.round(2*c-v);
@@ -215,7 +215,7 @@ function folhaDup(){ const L=lanceAtual();
     <div class="actions"><button class="btn" data-close>Cancelar</button></div>`,(s,fecha)=>{
     s.querySelector("#dp-i").onclick=()=>{ fecha(); duplicaLance(false); }; s.querySelector("#dp-e").onclick=()=>{ fecha(); duplicaLance(true); }; }); }
 function duplicaLance(esp){ const L=lanceAtual();
-  if(L.dinamico){ toast(L.dinamico==="onze"?"O Onze Titular é sempre o do jogo — duplica antes as Indicações ou cria um lance novo.":"As Notas do Jogo não se duplicam."); return; }
+  if(L.dinamico){ toast(L.dinamico==="onze"?"O Onze Titular é sempre o do jogo — duplica antes as Indicações ou cria um lance novo.":L.dinamico==="encaixe"?"O Encaixe é sempre o do jogo e não se duplica.":"As Notas do Jogo não se duplicam."); return; }
   const id="L"+Date.now().toString(36), nomes=new Set(lances().map(l=>l.nome));
   const b0=esp?trocaLado(L.nome):L.nome+" (cópia)"; let nm=b0, k=2; while(nomes.has(nm)) nm=`${b0} ${k++}`;
   const N={...(esp?espelha(L):clone(L)),id,nome:nm,ordem:(L.ordem||0)+0.5}; delete N.original; delete N.apagado;
@@ -234,6 +234,8 @@ function pushUndo(it){ if(aDesfazer) return; undoQ.push(it); if(undoQ.length>60)
 function atualizaUndo(){ const b=$("btn-undo"); if(b) b.disabled=!undoQ.length; const pb=document.getElementById("pundo"); if(pb) pb.disabled=!undoQ.length; }
 function desfazQuadro(){ const it=undoQ.pop(); if(!it){ toast("Nada para desfazer."); return; } aDesfazer=true;
   try{ if(it.tipo==="onze") guardaJogo({...jogo,onze:it.antes});
+    else if(it.tipo==="encaixe") guardaJogo({...jogo,encaixe:it.antes},true);
+    else if(it.tipo==="advonze") guardaAdvJogo({...advJ(),onze:it.antes});
     else if(it.antes) guardaLance(it.antes);
     else { delete lancesDb[it.id]; apagaDoc("lances/"+it.id); guardaLocal(); render(); } }
   finally{ aDesfazer=false; } atualizaUndo(); if(presentOpen) renderPresent(); toast("Alteração desfeita"); }

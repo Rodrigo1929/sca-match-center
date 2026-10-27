@@ -19,6 +19,7 @@ src/js/exercicios.js     separador Exercícios, repositório para as UT (3.º <s
 src/js/treino.js         separador Treino, Unidades de Treino e PDF da UT (4.º <script>)
 src/js/semana.js         Plano semanal e calendário de jogos (no separador Treino; junta-se ao 4.º <script>)
 src/js/anual.js          Planeamento anual: dias, microciclos e mesociclos (no separador Treino; junta-se ao 4.º <script>)
+src/js/adversario.js     separador Adversário, substituições do adversário (no Jogo) e quadro Encaixe (1.º <script>, antes do arranque)
 src/data/lances-base.json lances de bolas paradas de origem (DEF_LANCES)
 assets/                  imagens dos campos, logo e letras (embutidos no build como data URI)
 tools/build.mjs          monta dist/index.html (um único ficheiro)
@@ -80,6 +81,7 @@ Ver `docs/regras.md`. As principais:
 - Um golo conta também como remate e como remate à baliza.
 - Cantos: o +1 do Ao vivo é a fonte única e cria a ficha do canto (com tipo).
 - Substituições do Ao vivo não mexem nos quadros de bolas paradas.
+- Adversário (desde a v84): plantel por equipa em `adversarios/<id>`, reutilizado entre jogos; onze, sistema, cores e suplentes por jogo (`jogo.adv`); substituições do adversário no separador Jogo, gravadas uma a uma (`subsAdv/<id>`), com minuto escrito à mão. Atualizam só o quadro Encaixe; não mexem nos quadros de bolas paradas nem no Onze (o Onze é só a nossa equipa). Arquivar guarda-as; o jogo seguinte começa limpo. Fase 2 (por fazer): importar da SCA Observação (`origem`, `versaoImportada`).
 - Um jogador não aparece duas vezes num lance, exceto como alternativa.
 - Com análise de vídeo, a estatística do vídeo substitui a do Ao vivo.
 

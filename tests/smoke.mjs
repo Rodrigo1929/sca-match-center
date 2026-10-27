@@ -18,7 +18,7 @@ const erros = []; pg.on("pageerror", (e) => { const s = String(e); if (!/Fetch A
 await pg.goto(pathToFileURL(join(raiz, "dist/index.html")).href);
 await pg.waitForTimeout(800);
 
-for (const t of ["q", "j", "p", "m", "x", "v", "a", "h"]) {
+for (const t of ["q", "j", "d", "p", "m", "x", "v", "a", "h"]) {
   await pg.click("#tab-" + t); await pg.waitForTimeout(250);
   await pg.screenshot({ path: join(cap, `separador-${t}.png`) });
 }
@@ -325,6 +325,30 @@ const [dPS] = await Promise.all([pg.waitForEvent("download", { timeout: 60000 })
 if (statSync(fPS).size < 20000) erros.push(`Plano semanal: PDF estranho (${statSync(fPS).size} bytes)`);
 await pg.click(".u-modo button[data-m='ut']");
 
+// Adversário: equipa e plantel, onze do jogo, substituição no Jogo → o Encaixe muda; o Onze e as bolas paradas não; arquivar guarda; o jogo seguinte começa limpo
+await pg.evaluate(() => guardaJogo({ ...jogo, adversario: "Equipa Teste" }, true));
+await pg.click("#tab-d"); await pg.waitForTimeout(150); await pg.click("#d-cria"); await pg.waitForTimeout(150);
+await pg.evaluate(() => { const T = eqAdv(); guardaEquipa({ ...T, plantel: Array.from({ length: 14 }, (_, i) => ({ id: "a" + (i + 1), n: String(i + 1), nome: "Adv " + (i + 1), pos: "" })) }); });
+await pg.selectOption("#d-sis", "4-3-3"); await pg.waitForTimeout(150);
+await pg.evaluate(() => { const N = clone(advJ()); N.onze.forEach((o, i) => { if (i) o.n = String(i + 1); }); N.suplentes = ["12", "13", "14"]; guardaAdvJogo(N); });
+await pg.click("#dstage g.bola >> nth=0"); await pg.click("#ao-g button[data-n='1']"); await pg.click("#ao-ok"); await pg.waitForTimeout(150);
+await pg.screenshot({ path: join(cap, "adversario.png") });
+const BP = (await pg.evaluate(() => lances().find((l) => l.tipo !== "JOGO").id));
+const antesAdv = await pg.evaluate((bp) => ({ linhas: JSON.stringify(est.linhas), onze: JSON.stringify(jogo.onze), svgOnze: desenha(lances().find((l) => l.id === "onze"), { clean: true }).outerHTML, svgBP: desenha(lances().find((l) => l.id === bp), { clean: true, semAnim: true }).outerHTML, gr: advJ().onze[0].n }), BP);
+await pg.click("#tab-j"); await pg.click("#j-sa-add"); await pg.fill("#sa-min", "63"); await pg.click("#sa-g1 button[data-n='9']"); await pg.click("#sa-g2 button[data-n='14']"); await pg.click("#sa-ok"); await pg.waitForTimeout(150);
+const depoisAdv = await pg.evaluate((bp) => { const svg = desenhaEncaixe({ clean: true }), lab = [...svg.querySelectorAll("g.bola")].map((g) => g.getAttribute("aria-label"));
+  return { n: (jogo.subsAdv || []).length, em: advEmCampo().on.map((o) => o.n), tem14: lab.includes("Equipa Teste 14"), tem9: lab.includes("Equipa Teste 9"), nos: lab.filter((l) => l.startsWith("SC Angrense")).length, lista: $("j-sa").textContent,
+    linhas: JSON.stringify(est.linhas), onze: JSON.stringify(jogo.onze), svgOnze: desenha(lances().find((l) => l.id === "onze"), { clean: true }).outerHTML, svgBP: desenha(lances().find((l) => l.id === bp), { clean: true, semAnim: true }).outerHTML,
+    pdf: lances().filter((l) => l.tipo === "JOGO").map((l) => l.id), tv: !!desenhaItemTV(itensTV(lances(), false).find((x) => x.ids[0] === "encaixe")) }; }, BP);
+if (antesAdv.gr !== "1" || depoisAdv.n !== 1 || !depoisAdv.em.includes("14") || depoisAdv.em.includes("9") || !depoisAdv.tem14 || depoisAdv.tem9 || depoisAdv.nos !== 11 || !depoisAdv.lista.includes("63'")) erros.push("Adversário: a substituição devia atualizar o Encaixe " + JSON.stringify({ ...depoisAdv, svgOnze: 0, svgBP: 0, linhas: 0, onze: 0 }));
+if (depoisAdv.linhas !== antesAdv.linhas || depoisAdv.onze !== antesAdv.onze || depoisAdv.svgOnze !== antesAdv.svgOnze || depoisAdv.svgBP !== antesAdv.svgBP) erros.push("Adversário: a substituição do adversário mexeu no Onze ou nas bolas paradas");
+if (depoisAdv.pdf[1] !== "encaixe" || !depoisAdv.tv) erros.push("Adversário: o Encaixe devia estar nos quadros do jogo (PDF e TV) a seguir ao Onze " + JSON.stringify(depoisAdv.pdf));
+await pg.click("#tab-q"); await pg.evaluate(() => { curId = "encaixe"; render(); }); await pg.waitForTimeout(150); await pg.screenshot({ path: join(cap, "encaixe.png") });
+await pg.click("#tab-h"); await pg.click("#h-arq"); await pg.click("#ar-ok"); await pg.waitForTimeout(200);
+const arqAdv = await pg.evaluate(() => { const J = Object.values(hist).find((h) => h.adversario === "Equipa Teste"); return { onze: J && J.adv.onze.filter((o) => o.n).length, subs: J && J.adv.subs.length, nomeSub: J && J.adv.subs[0]?.nomeEntra, novoOnze: advJ().onze.length, novoSubs: (jogo.subsAdv || []).length, equipa: advJ().equipa, plantel: Object.values(advs).find((t) => t.nome === "Equipa Teste")?.plantel.length }; });
+if (arqAdv.onze !== 11 || arqAdv.subs !== 1 || arqAdv.nomeSub !== "Adv 14" || arqAdv.novoOnze !== 0 || arqAdv.novoSubs !== 0 || arqAdv.equipa !== "" || arqAdv.plantel !== 14) erros.push("Adversário: arquivar devia guardar o onze e as substituições e começar o jogo seguinte limpo " + JSON.stringify(arqAdv));
+await pg.evaluate(() => { Object.keys(hist).forEach((k) => { if (hist[k].adversario === "Equipa Teste") delete hist[k]; }); });
+
 // base de dados simulada: no link, os dados que chegam da base de dados vêm congelados (snapshots e data());
 // a app tem de os copiar à entrada (lerDoc), senão uma alteração a seguir pode não mudar nada sem dar erro (como na app de observação)
 {
@@ -357,18 +381,25 @@ await pg.click(".u-modo button[data-m='ut']");
     __entrega("exercicios", { xbd: E });
     __entrega("uts", { utbd: normUT({ id: "utbd", numero: 99, presencas: { 7: "P" }, exercicios: [{ id: "l1", exId: "xbd", copia: E }] }) });
     __entrega("calendario", { jbd: normJogoCal({ id: "jbd", data: "2026-11-01", adversario: "Praiense" }) });
+    __entrega("adversarios", { eqbd: normAdvEquipa({ nome: "Equipa da bd", plantel: [{ id: "a", n: "9", nome: "Nove" }] }, "eqbd") });
+    __entrega("subsAdv", { sbd: { id: "sbd", sai: "9", entra: "10", min: "20", c: 1 } });
   });
   await pb.waitForTimeout(300);
   // nada do estado da app pode ficar congelado (nem lá dentro)
   const cong = await pb.evaluate(() => { const acha = (o, c) => { if (!o || typeof o !== "object") return null; if (Object.isFrozen(o)) return c;
       for (const [k, v] of Object.entries(o)) { const r = acha(v, c + "." + k); if (r) return r; } return null; };
-    const E = { est, jogo, lancesDb, notas, hist, an, anCfg, vivo, tvCfg, modelos, exercicios, uts, semanas, calendario, anual, ciclos };
-    return { cong: Object.entries(E).map(([k, v]) => acha(v, k)).filter(Boolean), tv: tvCfg && "atualizadoEm" in tvCfg, lance: lanceAtual().nome, ut: !!uts.utbd, q: !!modelos.qbd }; });
-  if (cong.cong.length || cong.tv || !cong.ut || !cong.q) erros.push("bd simulada: dados congelados da base de dados no estado da app " + JSON.stringify(cong));
+    const E = { est, jogo, lancesDb, notas, hist, an, anCfg, vivo, tvCfg, modelos, exercicios, uts, semanas, calendario, anual, ciclos, advs };
+    return { cong: Object.entries(E).map(([k, v]) => acha(v, k)).filter(Boolean), tv: tvCfg && "atualizadoEm" in tvCfg, lance: lanceAtual().nome, ut: !!uts.utbd, q: !!modelos.qbd, adv: !!advs.eqbd, sa: (jogo.subsAdv || []).length }; });
+  if (cong.cong.length || cong.tv || !cong.ut || !cong.q || !cong.adv || cong.sa !== 1) erros.push("bd simulada: dados congelados da base de dados no estado da app " + JSON.stringify(cong));
   // edições a seguir: um nome do Plantel e uma presença da UT têm de ficar gravados
   await pb.click("#tab-p"); await pb.fill("#pm-0", "Sete Editado"); await pb.waitForTimeout(900);
   await pb.evaluate(() => { uCur = "utbd"; marcaPres("9", "L"); });
   await pb.waitForTimeout(200);
+  // substituições do adversário: um documento cada (subsAdv/<id>), fora do jogo/atual; plantel em adversarios/<id>
+  await pb.evaluate(() => { guardaJogo({ ...jogo, adv: { ...advJ(), equipa: "eqbd" }, subsAdv: [...jogo.subsAdv, { id: "sax", sai: "10", entra: "11", min: "70", c: 2 }] }, true); guardaEquipa({ ...advs.eqbd, plantel: [...advs.eqbd.plantel, { id: "b", n: "11", nome: "Onze", pos: "PL" }] }, true); });
+  await pb.waitForTimeout(400);
+  const gsa2 = await pb.evaluate(() => { return { doc: __docs["subsAdv/sax"]?.entra, noJogo: "subsAdv" in (__docs["jogo/atual"] || {}), eq: __docs["jogo/atual"]?.adv?.equipa, pl: __docs["adversarios/eqbd"]?.plantel.length }; });
+  if (gsa2.doc !== "11" || gsa2.noJogo || gsa2.eq !== "eqbd" || gsa2.pl !== 2) erros.push("bd simulada: substituições do adversário ou plantel do adversário mal gravados " + JSON.stringify(gsa2));
   const gr = await pb.evaluate(() => ({ nome: est.plantel[0].nome, bdNome: __docs["estado/atual"]?.plantel[0].nome, pres: __docs["uts/utbd"]?.presencas }));
   if (gr.nome !== "Sete Editado" || gr.bdNome !== "Sete Editado" || gr.pres?.["7"] !== "P" || gr.pres?.["9"] !== "L") erros.push("bd simulada: edição a seguir não ficou gravada " + JSON.stringify(gr));
   await ctx.close();

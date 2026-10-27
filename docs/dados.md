@@ -5,7 +5,7 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
 | Caminho | Tipo | Conteúdo |
 |---|---|---|
 | `estado/atual` | documento | Plantel (nº, nome, posição para o campo do plantel das UT escalão `esc` para os jovens da formação: Sub19/Sub17/Sub15, sem `esc` = sénior; e `alc` com as alcunhas separadas por vírgulas, para ler grupos escritos em texto), linhas de troca do banco, fase, equipa técnica |
-| `jogo/atual` | documento | Jogo em curso (adversário, data, competição, onze, suplentes, relógio, vídeo) — sem eventos nem subs |
+| `jogo/atual` | documento | Jogo em curso (adversário, data, competição, onze, suplentes, relógio, vídeo; `adv` = onze, sistema, cores e suplentes do adversário; `encaixe` = sítios das bolinhas no quadro Encaixe) — sem eventos, subs nem subsAdv |
 | `jogo/vivo` | documento | Contadores do Ao vivo por parte, posse |
 | `jogo/notas` | documento | Notas do jogo |
 | `analise/atual` | documento | Estado do Pós-jogo (posse, sentido de ataque) — sem registos |
@@ -13,6 +13,8 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
 | `tv/config` | documento | Escolha, ordem e tempo da TV das bolas paradas (`sel`, `ordem`, `seg`, `junta`) e, em `modelo`, os da TV do Modelo de Jogo (`sel`, `ordem`, `seg`, `conhecidos`) |
 | `eventos/{id}` | coleção | Golos, cartões, cantos… do jogo atual |
 | `subs/{id}` | coleção | Substituições do jogo atual |
+| `subsAdv/{id}` | coleção | Substituições do adversário no jogo atual (não mexem nos quadros de bolas paradas) |
+| `adversarios/{id}` | coleção | Plantel de cada equipa adversária (id = nome sem acentos, ex.: `sc-barreiro`), para todos os jogos contra ela (ver abaixo) |
 | `regs/{id}` | coleção | Ações registadas no Pós-jogo |
 | `historico/{id}` | coleção | Jogos arquivados |
 | `lances/{id}` | coleção | Lances de bolas paradas editados (os de origem estão em `src/data/lances-base.json`) |
@@ -90,3 +92,15 @@ ciclos: { id, tipo: "micro"|"meso", n, inicio, fim, periodo: "prep"|"comp"|"tran
         // micro: id "micro-<segunda>", semana de segunda a domingo; o nº é o nº do plano semanal
 ```
 A semana nova do plano semanal usa o anual: UT nº → treino (de manhã na véspera de jogo de dia, senão à noite), folga ou interrupção → folga, outro → atividade com o texto. A UT nova vai buscar o nº ao anual e o Match Day ao calendário.
+
+## Adversário (`adversarios/{id}` e `jogo/atual.adv`)
+```
+adversarios/{id}: { id, nome, plantel: [{ id, n, nome, pos }],     // pos = sigla (DC, MC, PL…)
+  sistema (habitual), cores: { cam, cam2, num, gr },
+  onzeProv, onzeAlt: { sis, pos: { [código]: idJogador } } | null,   // como na SCA Observação (Fase 2)
+  origem: "manual"|"observacao", versaoImportada, importadoEm? }    // Fase 2: importar da Observação sem implementar ainda
+jogo.adv: { equipa (id em adversarios), sistema, cores, onze: [{ slot, n, pos, x, y }] (11), suplentes: [nº] }
+jogo.subsAdv: [{ id, sai, entra, min, c }]                          // gravadas uma a uma em subsAdv/{id}
+jogo.encaixe: { nos: { [slot]: {x,y} }, adv: { [slot]: {x,y} } }    // só o quadro Encaixe; o Onze não muda
+```
+O adversário ataca para a esquerda (guarda-redes do lado direito), no mesmo campo do Onze. O Encaixe mostra o nosso onze e o do adversário com as substituições das duas equipas aplicadas (bolinha verde = entrou); entra no PDF e na TV. Ao arquivar, o jogo do histórico guarda `adv` (com nomes e `subs`) e `encaixe`; o jogo seguinte começa sem onze nem substituições do adversário (os planteis ficam).

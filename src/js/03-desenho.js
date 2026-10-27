@@ -18,6 +18,7 @@ function titulo(svg,L){
 }
 function desenha(L,opts={}){
   if(L.dinamico==="onze") return desenhaOnze({clean:opts.clean,arrastar:opts.arrastar,quadro:true});
+  if(L.dinamico==="encaixe") return desenhaEncaixe({clean:opts.clean,arrastar:opts.arrastar});
   if(L.dinamico==="notas") return desenhaNotasJogo(opts);
   if(L.dinamico==="estat") return desenhaEstat(opts);
   const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":`Esquema ${L.nome}`});

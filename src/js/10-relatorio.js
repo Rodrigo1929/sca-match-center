@@ -137,7 +137,9 @@ function snapshotJogo(){
     ficha:{prova:jogo.prova,jornada:jogo.jornada,local:jogo.local,casa:jogo.casa,hora:jogo.hora,escalao:jogo.escalao,resInt:jogo.resInt,staff:{...(est.staff||{})},staffNomes:Object.fromEntries(["cap1","cap2","cap3"].map(k=>[k,est.staff?.[k]?nome(est.staff[k]):""]))},
     vivo:clone(vivo), estat:estatJogo(),
     comp:jogo.comp, eventos:(jogo.eventos||[]).map(e=>({...e,nome:e.n?nome(e.n):""})), minutos:minutosJogados().map(x=>({...x,nome:nome(x.n)})), subsReais:subsReais().lista.map(l=>({sai:l.sai,entra:l.entra,min:l.min||"",int:!!l.int})),
-    analise:{regs:an.regs.map(r_=>({...r_,acao:acaoDe(r_.ac).nome,nome:r_.j?nome(r_.j):""})),posse:{"1":acumAgora(1),"2":acumAgora(2)}} }; }
+    analise:{regs:an.regs.map(r_=>({...r_,acao:acaoDe(r_.ac).nome,nome:r_.j?nome(r_.j):""})),posse:{"1":acumAgora(1),"2":acumAgora(2)}},
+    adv:(()=>{ const A=advJ(), T=eqAdv(); return {equipa:A.equipa,nomeEquipa:T?T.nome:"",sistema:A.sistema,cores:{...A.cores},onze:A.onze.map(o=>({...o,nome:nomeAdv(o.n)})),suplentes:A.suplentes.map(n=>({n,nome:nomeAdv(n)})),
+      subs:(jogo.subsAdv||[]).map(x=>({...x,nomeSai:nomeAdv(x.sai),nomeEntra:nomeAdv(x.entra)}))}; })(), encaixe:normEncaixe(jogo.encaixe) }; }
 $("h-bk").onclick=exportaCopia;
 $("h-rp").onclick=()=>$("h-file").click();
 $("h-file").onchange=async e=>{ const f=e.target.files[0]; e.target.value=""; if(!f) return; try{ repoeCopia(JSON.parse(await f.text())); }catch(err){ toast("Não consegui ler o ficheiro."); } };
@@ -145,7 +147,7 @@ $("h-arq").onclick=()=>{
   folha(`<h3>Arquivar jogo vs <span class="big"></span></h3>
     <div class="fields"><label class="f">Golos SC Angrense<input type="text" id="ar-n" inputmode="numeric"></label><label class="f">Golos adversário<input type="text" id="ar-e" inputmode="numeric"></label></div>
     <label class="f">Observações<textarea id="ar-o" rows="4" style="border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit;background:var(--surface);color:var(--ink);width:100%"></textarea></label>
-    <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="ar-nv" checked style="accent-color:var(--red);width:20px;height:20px"> Começar jogo novo: limpar trocas do jogo, notas, relógio, vídeo, adversário e suplentes (o onze base e os lances ficam)</label>
+    <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="ar-nv" checked style="accent-color:var(--red);width:20px;height:20px"> Começar jogo novo: limpar trocas do jogo, notas, relógio, vídeo, adversário (onze e substituições) e suplentes (o onze base, os lances e os planteis dos adversários ficam)</label>
     <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="ar-ok">Arquivar</button></div>`,(s,fecha)=>{
     s.querySelector(".big").textContent=jogo.adversario||"(sem adversário)";
     if((jogo.eventos||[]).length){ s.querySelector("#ar-n").value=placar().nos; s.querySelector("#ar-e").value=placar().eles; }
@@ -157,7 +159,7 @@ $("h-arq").onclick=()=>{
         guardaEst({...est,linhas:est.linhas.filter(l=>l.pre),fase:"pre"});
         guardaNotas({itens:[]});
         guardaAn({regs:[],ataque:an.ataque}); guardaVivo(null); vLog=[];
-        guardaJogo({...jogo,adversario:"",data:"",suplentes:[],relogio:{base:0,correr:false},video:null,eventos:[],subs:[],jornada:"",local:"",hora:"",resInt:""});
+        guardaJogo({...jogo,adversario:"",data:"",suplentes:[],relogio:{base:0,correr:false},video:null,eventos:[],subs:[],jornada:"",local:"",hora:"",resInt:"",adv:null,subsAdv:[],encaixe:null});
       }
       fecha(); renderHist(); toast("Jogo arquivado no histórico"); };
   });
@@ -171,6 +173,8 @@ function folhaJogoArq(J){
     <h4>Onze</h4>${lst(J.onze,o=>`<li><b>${esc(o.n)}</b> ${esc(o.pos||"")} ${esc(o.nome||"")}</li>`)}
     <h4>Suplentes</h4>${lst(J.suplentes,o=>`<li><b>${esc(o.n)}</b> ${esc(o.nome||"")}</li>`)}
     <h4>Trocas</h4>${lst(J.trocas,t=>`<li>${t.min?`<b>${esc(t.min)}</b> · `:""}${esc(t.sai)} ${esc(t.nomeSai||"")} → <b>${esc(t.entra)}</b> ${esc(t.nomeEntra||"")} <span class="sub">(${esc(t.onde)})</span></li>`)}
+    <h4>Adversário${J.adv&&J.adv.sistema?" · "+esc(J.adv.sistema):""}</h4>${lst(J.adv&&J.adv.onze.filter(o=>o.n),o=>`<li><b>${esc(o.n)}</b> ${esc(o.pos||"")} ${esc(o.nome||"")}</li>`)}
+    <h4>Substituições do adversário</h4>${lst(J.adv&&J.adv.subs,x=>`<li><b>${esc(x.min||"–")}'</b> · sai ${esc(x.sai)} ${esc(x.nomeSai||"")} → entra <b>${esc(x.entra)}</b> ${esc(x.nomeEntra||"")}</li>`)}
     <h4>Notas</h4>${lst((J.notas||[]).slice().sort((a,b)=>seg(a.t)-seg(b.t)),n=>{ const lv=J.video?linkVideo(n,J.video):null; return `<li><b style="color:var(--red)">${esc(n.t||"–")}</b> ${esc(n.txt)} ${lv?`<a href="${lv}" target="_blank" rel="noopener">▶ vídeo</a>`:""}</li>`; })}
     <div class="actions"><button class="btn danger l" id="aj-del">Apagar do histórico</button><button class="btn" id="aj-an">📊 Ver análise pós-jogo</button><button class="btn" id="aj-pdf">⬇ Relatório PDF</button><button class="btn" id="aj-fic">⬇ Ficha de jogo</button><button class="btn" data-close>Fechar</button><button class="btn primary" id="aj-ok">Guardar</button></div>`,(s,fecha)=>{
     s.querySelector("#aj-n").value=J.resultado?.nos??""; s.querySelector("#aj-e").value=J.resultado?.eles??""; s.querySelector("#aj-o").value=J.obs||"";
@@ -198,4 +202,4 @@ let tTimer=null;
 function toast(msg,undo){ const r=$("toast-root"); r.innerHTML=`<div class="toast" role="status"><span></span>${undo?'<button>Desfazer</button>':''}</div>`;
   r.querySelector("span").textContent=msg; if(undo) r.querySelector("button").onclick=()=>{ r.innerHTML=""; undo(); };
   clearTimeout(tTimer); tTimer=setTimeout(()=>{r.innerHTML="";},undo?6000:2800); }
-function render(){ if(dragging) return; renderBanco(); renderVivo(); renderNav(); renderBoard(); renderRows(); renderForm(); renderPlantel(); if(!$("view-j").hidden) renderJogo(); else $("jogo-tit").textContent=jogo.adversario?`vs ${jogo.adversario}`:"Preparação · Jogo · Análise"; if(presentOpen) renderPresent(); if(typeof renderModeloSeguro==="function") renderModeloSeguro(); }
+function render(){ if(dragging) return; renderBanco(); renderVivo(); renderNav(); renderBoard(); renderRows(); renderForm(); renderPlantel(); renderAdv(); if(!$("view-j").hidden) renderJogo(); else $("jogo-tit").textContent=jogo.adversario?`vs ${jogo.adversario}`:"Preparação · Jogo · Análise"; if(presentOpen) renderPresent(); if(typeof renderModeloSeguro==="function") renderModeloSeguro(); }

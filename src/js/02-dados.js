@@ -12,6 +12,7 @@ function lances(){
   Object.values(lancesDb).forEach(o=>{ if(!seen.has(o.id)&&!o.apagado&&o.bolas) out.push(o); });
   const ord={JOGO:-1,DEF:0,OF:1,REF:2};
   let OL=((est&&est.ordem)||[]).slice(); if(OL.length&&!OL.includes("estat")){ const k=OL.indexOf("intervalo"); OL.splice(k>=0?k+1:OL.length,0,"estat"); }
+  if(OL.length&&!OL.includes("encaixe")){ const k=OL.indexOf("onze"); OL.splice(k+1,0,"encaixe"); }
   const io=id=>{ const i=OL.indexOf(id); return i<0?1e6:i; };
   return out.sort((a,b)=>(ord[a.tipo]??1)-(ord[b.tipo]??1)||io(a.id)-io(b.id)||(a.ordem||0)-(b.ordem||0));
 }

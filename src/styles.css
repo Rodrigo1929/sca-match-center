@@ -44,7 +44,7 @@ header.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-block
 .btn[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 .btn.sm{min-height:34px;padding:5px 10px;font-size:14px}
 .tabs{display:flex;gap:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:3px}
-.tabs button{border:0;background:transparent;border-radius:8px;padding:7px 14px;min-height:36px;font-weight:600;color:var(--muted)}
+.tabs button{border:0;background:transparent;border-radius:8px;padding:7px 11px;min-height:36px;font-weight:600;color:var(--muted)}
 .tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
 .count{font-family:var(--f-display);background:var(--red);color:var(--red-ink);border-radius:999px;padding:0 7px;font-size:12px;margin-left:4px}
 
@@ -474,3 +474,16 @@ ol.utx li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;al
 .mmenu button:hover,.mmenu button:focus-visible{background:var(--surface-2)}
 .mmenu button.perigo{color:var(--red)}
 @media (max-width:1279px){#m-nav .m-nada{display:none}#m-nav .m-nm small{display:none}}
+
+/* Adversário: plantel, cores e substituições */
+.dp-lista{display:flex;flex-direction:column;gap:6px}
+.dp-row{display:grid;grid-template-columns:64px minmax(0,1fr) 74px 44px;gap:6px;align-items:center}
+.dp-row .btn{min-height:42px}
+.d-cores{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.d-cores label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);font-weight:600}
+.d-cores input[type=color]{width:100%;height:42px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:3px}
+.sa-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.sa-lista li{display:flex;gap:10px;align-items:center;border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:6px 8px 6px 12px;min-height:46px;cursor:pointer;font-size:14px}
+.sa-lista li.sub{border:0;background:none;padding:0;min-height:0;cursor:default}
+.sa-lista li .t{font-family:var(--f-display);color:var(--red);min-width:40px}
+.sa-lista li .tx{flex:1;min-width:0}

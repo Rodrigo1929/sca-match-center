@@ -46,7 +46,7 @@ function renderBoard(){
   $("btn-nomes").setAttribute("aria-pressed",String(nomesOn)); $("btn-nomes").textContent=nomesOn?"✓ Nomes":"Nomes";
   $("editbar").hidden=!editing;
   $("e-reset").hidden=!(L.original&&lancesDb[L.id]);
-  const din=L.dinamico==="onze"||L.dinamico==="notas";
+  const din=L.dinamico==="onze"||L.dinamico==="notas"||L.dinamico==="encaixe";
   ["e-addp","e-addl","e-props","e-del","e-notas","e-seta","e-txt","e-adv"].forEach(id=>$(id).hidden=din);
   if(!editing) modoSeta=false;
   $("e-seta").setAttribute("aria-pressed",String(modoSeta)); $("e-seta").textContent=modoSeta?"✓ A desenhar setas":"+ Seta";
@@ -54,6 +54,7 @@ function renderBoard(){
   $("e-notas").textContent=L.notas?"Indicações":"+ Indicações";
   const st=$("stage"); st.classList.toggle("editing",editing); st.innerHTML=""; st.appendChild(desenha(L));
   if(L.dinamico==="notas"){ $("hint").innerHTML=`<span><b>+ Nota</b> (no topo) regista um momento com o minuto do relógio. <b>Toca</b> numa nota para a editar ou apagar.</span>`; $("btn-edit").hidden=true; $("editbar").hidden=true; editing=false; return; }
+  if(L.dinamico==="encaixe"){ $("hint").innerHTML=`<span><b>Arrasta</b> as bolinhas das duas equipas; <b>toca</b> numa para ver o nome. As substituições das duas equipas atualizam este quadro (bolinha verde = entrou). O Onze não muda.</span>`; $("btn-edit").hidden=true; $("editbar").hidden=true; editing=false; return; }
   $("btn-edit").hidden=false;
   $("hint").innerHTML=din?`<span><b>Arrasta</b> as peças ou <b>toca</b> numa para mudar o titular ou a posição. É o mesmo quadro do separador Jogo.</span>`
     :!editing?`<span><b>Arrasta</b> as bolas e as legendas para as mover. <b>Toca</b> numa legenda para a editar e numa bola para ${est.fase==="pre"?"definir quem faz essa tarefa":"substituir"}.</span><span class="legend-chip"><i></i>trocado durante o jogo</span>`:editing?`<span><b>Arrasta</b> para mover. <b>Toca</b> numa bolinha para mudar o estilo ou a posição do onze; numa legenda para escrever a tarefa.</span>`

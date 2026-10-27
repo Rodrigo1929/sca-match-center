@@ -15,5 +15,6 @@ function normJogo(d){ const on=Array.isArray(d?.onze)&&d.onze.length?d.onze:ONZE
     subs:Array.isArray(d?.subs)?d.subs.filter(l=>l&&l.sai&&l.entra).map((l,i)=>({id:String(l.id||Math.random().toString(36).slice(2,9)),sai:String(l.sai),entra:String(l.entra),min:String(l.min||""),...(l.int?{int:true}:{}),c:+l.c||i})).sort((a,b)=>a.c-b.c):[],
     prova:String(d?.prova||""),jornada:String(d?.jornada||""),local:String(d?.local||""),casa:d?.casa==="fora"?"fora":"casa",hora:String(d?.hora||""),escalao:String(d?.escalao||"Seniores"),resInt:String(d?.resInt||""),
     eventos:Array.isArray(d?.eventos)?d.eventos.filter(e=>e&&EVT[e.tipo]).map((e,i)=>({id:String(e.id||Math.random().toString(36).slice(2,9)),tipo:String(e.tipo),c:+e.c||i,min:String(e.min||""),...(e.n?{n:String(e.n)}:{}),...(e.obs?{obs:String(e.obs)}:{}),
-      ...(Array.isArray(e.gt)&&e.gt.length?{gt:e.gt.map(String)}:{}),...(e.as?{as:String(e.as)}:{}),...(e.ast?{ast:String(e.ast)}:{}),...(e.na?{na:String(e.na)}:{}),...(e.zona?{zona:String(e.zona)}:{}),...(e.res?{res:String(e.res)}:{}),...(e.bpl?{bpl:String(e.bpl)}:{})})):[]}; }
-function guardaLocal(){ try{ localStorage.setItem(LS_KEY,JSON.stringify({est,jogo,lancesDb,notas,hist,an,anCfg,vivo})); }catch(e){} }
+      ...(Array.isArray(e.gt)&&e.gt.length?{gt:e.gt.map(String)}:{}),...(e.as?{as:String(e.as)}:{}),...(e.ast?{ast:String(e.ast)}:{}),...(e.na?{na:String(e.na)}:{}),...(e.zona?{zona:String(e.zona)}:{}),...(e.res?{res:String(e.res)}:{}),...(e.bpl?{bpl:String(e.bpl)}:{})})):[],
+    adv:normAdvJogo(d?.adv),subsAdv:normSubsAdv(d?.subsAdv),encaixe:normEncaixe(d?.encaixe)}; }
+function guardaLocal(){ try{ localStorage.setItem(LS_KEY,JSON.stringify({est,jogo,lancesDb,notas,hist,an,anCfg,vivo,advs})); }catch(e){} }
