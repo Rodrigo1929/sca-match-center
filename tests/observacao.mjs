@@ -177,7 +177,7 @@ for (const [nome, opc] of ecras) {
     window.claude = { use: async (n) => {
       if (n === "user") return { id: async () => "u_teste", isOwner: async () => true, can: async () => true, profiles: async () => ({}) };
       if (n === "db") return { collection: (p) => ({ onSnapshot: (cb) => { (window.__snap[p] = window.__snap[p] || []).push(cb); return () => {}; } }),
-        doc: (p) => ({ set: async (b) => { window.__docs[p] = JSON.parse(JSON.stringify(b)); }, delete: async () => { delete window.__docs[p]; } }) };
+        doc: (p) => ({ set: async (b) => { window.__docs[p] = JSON.parse(JSON.stringify(b)); }, update: async (b) => { const m = (a, x) => { const o = a && typeof a === "object" && !Array.isArray(a) ? { ...a } : {}; Object.entries(x).forEach(([k, v]) => o[k] = v && typeof v === "object" && !Array.isArray(v) ? m(o[k], v) : v); return o; }; if (!window.__docs[p]) throw { code: "invalid_argument", message: "no such document" }; window.__docs[p] = JSON.parse(JSON.stringify(m(window.__docs[p], b))); }, delete: async () => { delete window.__docs[p]; } }) };
       return null; } };
   });
   await pg.goto(url); await pg.evaluate(() => localStorage.clear()); await pg.reload(); await pg.waitForTimeout(500);
@@ -211,6 +211,66 @@ for (const [nome, opc] of ecras) {
   const bd = await pg.evaluate((k) => { const R = Object.values(rels)[0], J = R.jogos[0], G = window.__docs[k].jogos[0]; return { data: J.data, local: J.local, gData: G.data, gLocal: G.local }; }, antigo.k);
   confirma(bd.data === "2026-10-18" && bd.local === "fora" && bd.gData === "2026-10-18" && bd.gLocal === "fora", `bd simulada: data ou local apagados por uma atualização antiga (${JSON.stringify(bd)})`);
 }
+// edição partilhada: dono (Rodrigo Fonte) e observador (Rodrigo Simão) na mesma base de dados simulada, com dados congelados como no link
+{
+  const srv = new Map(), pags = [];
+  const junta = (a, x) => { const o = a && typeof a === "object" && !Array.isArray(a) ? { ...a } : {}; Object.entries(x).forEach(([k, v]) => o[k] = v && typeof v === "object" && !Array.isArray(v) ? junta(o[k], v) : v); return o; };
+  const docsDe = (col) => [...srv].filter(([p]) => p.slice(0, p.lastIndexOf("/")) === col).map(([p, d]) => ({ id: p.slice(p.lastIndexOf("/") + 1), d }));
+  const difunde = async (col) => { for (const pg of pags) await pg.evaluate(([c, ds]) => window.__entrega && window.__entrega(c, ds), [col, docsDe(col)]).catch(() => {}); };
+  const abre = async (uid, dono) => { const pg = await (await browser.newContext(ecras[0][1])).newPage(); pags.push(pg);
+    pg.on("pageerror", (e) => falhas.push(`partilha ${uid}: ${e}`));
+    await pg.exposeFunction("__srv", async (op, path, body) => { if (op === "ler") return docsDe(path);
+      if (op === "set") srv.set(path, JSON.parse(JSON.stringify(body))); else if (op === "update") { if (!srv.has(path)) throw new Error("no such document"); srv.set(path, junta(srv.get(path), JSON.parse(JSON.stringify(body)))); } else if (op === "delete") srv.delete(path);
+      setTimeout(() => difunde(path.slice(0, path.lastIndexOf("/"))), 40); return true; });
+    await pg.addInitScript(([uid, dono]) => { const fz = (o) => { if (o && typeof o === "object") { Object.values(o).forEach(fz); Object.freeze(o); } return o; }, meta = { hasPendingWrites: false, fromCache: false };
+      const q = (ds) => ({ docs: ds.map((x) => ({ id: x.id, data: () => fz(JSON.parse(JSON.stringify(x.d))) })), metadata: meta });
+      window.__subs = {}; window.__entrega = (col, ds) => (window.__subs[col] || []).forEach((cb) => cb(q(ds)));
+      const NOMES = { u_dono: "Rodrigo Fonte", u_obs: "Rodrigo Simão" };
+      window.claude = { use: async (n) => {
+        if (n === "user") return { id: async () => uid, isOwner: async () => dono, can: async () => true, name: async () => NOMES[uid], profiles: async (ids) => Object.fromEntries(ids.map((i) => [i, { name: NOMES[i] || "" }])) };
+        if (n === "db") return { collection: (p) => ({ onSnapshot: (cb) => { (window.__subs[p] = window.__subs[p] || []).push(cb); window.__srv("ler", p).then((ds) => cb(q(ds))); return () => {}; } }),
+          doc: (p) => ({ set: (b) => window.__srv("set", p, b), update: (b) => window.__srv("update", p, b), delete: () => window.__srv("delete", p) }) };
+        return null; } }; }, [uid, dono]);
+    await pg.goto(url); await pg.evaluate(() => localStorage.clear()); await pg.reload(); await pg.waitForTimeout(700); return pg; };
+  const A = await abre("u_dono", true), B = await abre("u_obs", false);
+  await A.click('[data-novo="Lusitânia"]'); await A.waitForTimeout(600);
+  const rid = await A.evaluate(() => vista.id), path = `obs/u_dono/relatorios/${rid}`;
+  // o observador edita o relatório do dono (P1 da organização ofensiva)
+  await B.evaluate((rid) => { vista = { tipo: "rel", id: rid, sec: "com" }; render(); }, rid); await B.waitForTimeout(200);
+  await B.click('[data-q="c_pb"] [data-op="Alternam"]'); await B.waitForTimeout(600);
+  // ao mesmo tempo: o dono escreve na síntese e o observador na data do jogo
+  await A.evaluate((rid) => { vista = { tipo: "rel", id: rid, sec: "sint" }; render(); }, rid); await B.evaluate(() => { vista.sec = "ficha"; render(); }); await A.waitForTimeout(200);
+  await Promise.all([A.fill('[data-b="sint.estrutura"]', "Bloco médio compacto"), B.fill('[data-b$=".data"]', "2026-10-18")]);
+  await A.locator('[data-b="sint.estrutura"]').blur(); await B.locator('[data-b$=".data"]').blur(); await A.waitForTimeout(1800);
+  const d = srv.get(path) || {}, nos = async (pg) => pg.evaluate((rid) => { const R = rels[rid]; return R && { op: R.chk.c_pb && R.chk.c_pb.op.join(), est: R.sint.estrutura, data: R.jogos[0].data }; }, rid);
+  const sa = await nos(A), sb = await nos(B), sd = { op: d.chk && d.chk.c_pb && d.chk.c_pb.op.join(), est: d.sint && d.sint.estrutura, data: d.jogos && d.jogos[0].data };
+  const tudo = (x) => x && x.op === "Alternam" && x.est === "Bloco médio compacto" && x.data === "2026-10-18";
+  confirma(tudo(sa) && tudo(sb) && tudo(sd), `partilha: edições do observador e simultâneas perderam-se (${JSON.stringify({ sa, sb, sd })})`);
+  // histórico: o dono vê a alteração do observador com nome, campo, antes e depois
+  const lg = await A.evaluate((rid) => Object.values(logs).filter((l) => l.relId === rid && l.por === "u_obs" && l.chave === "chk.c_pb.op").map((l) => ({ id: l.id, campo: `${l.sec} › ${l.campo}`, antes: l.antes, depois: l.depois, nome: nomeDe(l.por, l.nome) })), rid);
+  confirma(lg.length === 1 && lg[0].campo === "Organização ofensiva › P1 › Opções" && !(lg[0].antes || []).length && lg[0].depois.join() === "Alternam" && lg[0].nome === "Rodrigo Simão", `partilha: histórico da alteração do observador errado (${JSON.stringify(lg)})`);
+  // agrupamento: duas mudanças à frequência em menos de 10 min = 1 registo; 11 min depois = registo novo
+  await B.evaluate(() => { vista.sec = "com"; render(); }); await B.waitForTimeout(150);
+  await B.click('[data-q="c_pb"] [data-fq="sempre"]'); await B.waitForTimeout(300); await B.click('[data-q="c_pb"] [data-fq="muitas"]'); await B.waitForTimeout(300);
+  const g1 = await B.evaluate((rid) => Object.values(logs).filter((l) => l.relId === rid && l.chave === "chk.c_pb.freq").map((l) => [l.antes, l.depois]), rid);
+  await B.evaluate(() => { window.__desloca = 11 * 60 * 1000; }); await B.click('[data-q="c_pb"] [data-fq="as"]'); await B.waitForTimeout(300);
+  const g2 = await B.evaluate((rid) => Object.values(logs).filter((l) => l.relId === rid && l.chave === "chk.c_pb.freq").length, rid);
+  confirma(g1.length === 1 && !g1[0][0] && g1[0][1] === "muitas" && g2 === 2, `partilha: agrupamento dos 10 minutos errado (${JSON.stringify({ g1, g2 })})`);
+  // observador: sem "Repor" e sem editar os planteis base
+  await B.evaluate((rid) => { vista = { tipo: "rel", id: rid, sec: "hlog" }; render(); }, rid); await B.waitForTimeout(200);
+  const rB = await B.locator("[data-repor]").count();
+  await B.evaluate(() => { vista = { tipo: "base", id: "lusitania", sec: "plantel" }; render(); }); await B.waitForTimeout(200);
+  const baseB = await B.evaluate(() => ({ add: !!document.getElementById("pl-add"), ed: podeEditar(relAtual()) }));
+  confirma(rB === 0 && !baseB.add && !baseB.ed, `partilha: o observador não devia ter Repor nem editar planteis base (${JSON.stringify({ rB, baseB })})`);
+  // dono repõe a opção da P1: volta ao "antes" e fica registado como reposição
+  await A.evaluate((rid) => { vista = { tipo: "rel", id: rid, sec: "hlog" }; render(); }, rid); await A.waitForTimeout(300);
+  await A.screenshot({ path: join(cap, "partilha-historico.png"), fullPage: true });
+  await A.click(`[data-repor="${lg[0].id}"]`); await A.click(`[data-repor="${lg[0].id}"]`); await A.waitForTimeout(1200);
+  const rp = await A.evaluate((rid) => ({ op: rels[rid].chk.c_pb.op.length, rep: Object.values(logs).filter((l) => l.relId === rid && l.tipo === "reposição" && l.chave === "chk.c_pb.op").length }), rid);
+  const opSrv = ((srv.get(path) || {}).chk || {}).c_pb.op.length, opB = await B.evaluate((rid) => rels[rid].chk.c_pb.op.length, rid);
+  confirma(rp.op === 0 && rp.rep === 1 && opSrv === 0 && opB === 0, `partilha: reposição não funcionou ou não ficou registada (${JSON.stringify({ rp, opSrv, opB })})`);
+  for (const pg of pags) await pg.context().close();
+}
 // gravação que falha: uma falha passageira volta a tentar sozinha; acesso perdido ("revoked") pede para recarregar
 for (const modo of ["passageira", "revoked"]) {
   const pg = await (await browser.newContext(ecras[0][1])).newPage();
@@ -220,7 +280,7 @@ for (const modo of ["passageira", "revoked"]) {
     window.claude = { use: async (n) => {
       if (n === "user") return { id: async () => "u_teste", isOwner: async () => true, can: async () => true, profiles: async () => ({}) };
       if (n === "db") return { collection: () => ({ onSnapshot: () => () => {} }),
-        doc: (p) => ({ set: async (b) => { if (window.__falhar && (modo === "revoked" || !falhou)) { falhou = true; throw { code: modo === "revoked" ? "revoked" : "unavailable", message: "simulado" }; } window.__docs[p] = JSON.parse(JSON.stringify(b)); }, delete: async () => {} }) };
+        doc: (p) => ({ set: async (b) => { if (window.__falhar && (modo === "revoked" || !falhou)) { falhou = true; throw { code: modo === "revoked" ? "revoked" : "unavailable", message: "simulado" }; } window.__docs[p] = JSON.parse(JSON.stringify(b)); }, update: async (b) => { if (window.__falhar && (modo === "revoked" || !falhou)) { falhou = true; throw { code: modo === "revoked" ? "revoked" : "unavailable", message: "simulado" }; } window.__docs[p] = { ...window.__docs[p], ...JSON.parse(JSON.stringify(b)) }; }, delete: async () => {} }) };
       return null; } };
   }, modo);
   await pg.goto(url); await pg.evaluate(() => localStorage.clear()); await pg.reload(); await pg.waitForTimeout(500);

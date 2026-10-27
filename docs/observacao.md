@@ -7,13 +7,13 @@ Existe para dar acesso a um observador de fora do clube sem ele ver o resto da a
 - **Código:** `observacao/page.html` (um só ficheiro, um só `<script>`) + `observacao/planteis.json`
 - **Build:** `npm run build` → `dist/observacao.html` (a página, o logo, a bola e os planteis embutidos)
 - **Testes:** `npm run check` (sintaxe) e `npm run test:obs` (browser, PC e telemóvel; `-- --ipad` para WebKit)
-- **Versão publicada:** Obs. 22 (26/10/2026) — ver `CHANGELOG.md`
+- **Versão publicada:** Obs. 23 (27/10/2026) — ver `CHANGELOG.md`
 
 ## Quem usa e com que acesso
 | Quem | O que vê | O que faz |
 |---|---|---|
-| Rodrigo Fonte (dono, equipa técnica) | Todos os relatórios | Revê, comenta na Síntese, marca como revisto; pode editar tudo |
-| Observador (Rodrigo Simão, de fora do clube) | Todos os relatórios e os planteis base (desde a Obs. 14) | Cria e preenche os seus relatórios; edita os planteis base; envia para revisão. Os relatórios dos outros são só leitura |
+| Rodrigo Fonte (dono, equipa técnica) | Todos os relatórios e o histórico | Edita tudo; revê e marca como revisto; apaga relatórios de qualquer autor; edita os planteis base; «Repor» no histórico |
+| Observador (Rodrigo Simão, de fora do clube) | Todos os relatórios, os planteis base e o histórico | Cria relatórios e edita os de qualquer autor (desde a Obs. 23); apaga só os seus; envia para revisão. Planteis base só leitura |
 
 - Na app, o dono aparece como **"equipa técnica"** (nunca "Rodrigo": o observador também se chama Rodrigo).
 - O observador tem de ser convidado por email com o nível **Editor**. Um convidado de fora como Leitor só lê e não grava.
@@ -22,21 +22,26 @@ Existe para dar acesso a um observador de fora do clube sem ele ver o resto da a
 
 ### Regras da base de dados (declaradas no publish; numa republicação omitir `capabilities`)
 ```
-""          read owner      write owner
-"obs"       read interact   write owner      (todos leem os relatórios de todos, desde a Obs. 14)
-"obs/{self}" read interact  write interact   (cada um escreve só no seu espaço)
-"base"      read interact   write interact   (planteis base; Obs. 13 escrevia só o dono, Obs. 14 todos)
-user: scopes ["profile"]   (nomes de quem observa)
+""           read owner      write owner
+"obs"        read interact   write interact   (qualquer membro edita relatórios de qualquer autor, Obs. 23)
+"rev"        read interact   write owner      (revisão da equipa técnica)
+"base"       read interact   write owner      (planteis base só o dono, Obs. 23; na Obs. 14 escreviam todos)
+"log"        read interact   write owner      (histórico: só o dono mexe nos registos dos outros)
+"log/{self}" write interact                   (cada um acrescenta e atualiza os seus registos)
+user: scopes ["profile"]   (nomes de quem edita)
 downloads: true             (PDF e PowerPoint, desde a Obs. 21)
 ```
-Verificado em 26/10/2026 (Obs. 13): ao nível `interact` lê-se `base` e não se escreve (regra da Obs. 13).
+Até à Obs. 22: `obs` escrevia só o dono, `obs/{self}` cada um no seu espaço, `base` escreviam todos.
+
+**Limites das regras** (a base de dados só sabe ler/escrever por caminho e nível): não verifica que `por` é quem está a gravar (só que o registo está no espaço dele, `log/<uid>`), não conhece a janela de 10 minutos nem distingue criar de apagar. Por isso: cada um pode apagar os seus próprios registos; apagar relatórios de outros autores está bloqueado só na app (a regra `obs` deixa).
 
 ## Dados
 | Caminho | Conteúdo |
 |---|---|
 | `obs/<uid>` | Marca de que o observador existe (o dono lista esta coleção para encontrar os observadores) |
-| `obs/<uid>/relatorios/<id>` | Um relatório por **jogo observado** (documento inteiro; só o autor escreve). `pend` {chave: true} = pontos que vieram do jogo anterior por confirmar (`chk:<id>`, `plantel`, `estr`, `bp:<id>`, `ref:<id>`, `sint`); `baseDe` {id, vs, data} = de que jogo vieram |
-| `obs/<uid>/revisoes/<id>` | Comentários do Rodrigo a esse relatório (só o dono escreve; documento separado para não haver choques) |
+| `obs/<uid>/relatorios/<id>` | Um relatório por **jogo observado** (`<uid>` = autor; desde a Obs. 23 qualquer membro edita). Grava-se **só o que mudou** (`update` com o patch, pela fila `pend`); o que chega da base de dados junta-se ao que está a ser escrito (junção a 3: base do servidor, local, remoto; em conflito no mesmo campo ganha o local). `ultPor` = quem alterou por último. `pend` {chave: true} = pontos que vieram do jogo anterior por confirmar (`chk:<id>`, `plantel`, `estr`, `bp:<id>`, `ref:<id>`, `sint`); `baseDe` {id, vs, data} = de que jogo vieram |
+| `rev/<id>` | Revisão da equipa técnica a esse relatório (só o dono escreve). Até à Obs. 22 era `obs/<uid>/revisoes/<id>` (a única que existia estava vazia e não foi passada) |
+| `log/<uid>/e/<id>` | **Histórico** (só acrescenta): `relId`, `autor`, `por` (= `<uid>`), `nome`, `em`, `sec`, `campo` (legível, ex. «Organização ofensiva › P1 › Opções»), `cam` (caminho), `antes`, `depois`, `tipo` (edição, criação, apagar item, reposição). A mesma pessoa no mesmo campo em menos de 10 min atualiza o mesmo registo e mantém o `antes` original. Valores grandes guardam-se inteiros e mostram-se resumidos (acima de 120 KB fica só a marca `grande`) |
 | `base/<equipa>` | Plantel base de cada equipa (id = nome sem acentos, ex.: `sao-roque`): `equipa` + `plantel`, `plantelFonte`, `treinador`, `adjunto`, `trGR`, `sistema`, `capitao`, `plantelNotas`, `cores`, `plXY`, `plNom`. Quem observa lê e escreve. Um relatório novo copia-o (se não houver, usa o zerozero); no relatório há "Repor o plantel base" e "Guardar como plantel base" |
 
 No aparelho: `sca-obs-cache-v1` (cópia dos relatórios), `sca-obs-pend-v1` (fila de envios sem rede), `sca-obs-vista` (onde estava).
@@ -74,6 +79,7 @@ A cache carrega-se em `carregaCache()`, **depois** de todas as constantes existi
 - [x] **Data e local apagados** (26/10/2026): uma atualização da base de dados que chegava enquanto um campo esperava para gravar (0,7 s) substituía-o e a alteração perdia-se. Agora, com alteração por gravar (`tSave`) ou por confirmar (`pend`), o que chega não substitui o relatório. Teste com base de dados simulada em `tests/observacao.mjs`.
 - [x] **Setas e arrasto** (26/10/2026): desenhar uma seta já não refaz o campo a meio (antes a seta perdia-se); o que chega da base de dados durante um arrasto espera pelo fim (`aArrastar`).
 - [x] **Plantel sem relatório** (Rodrigo Fonte, 26/10/2026): "Planteis base" na página inicial, um por equipa; os relatórios novos partem dele (regra `base`). Na Obs. 14 o observador passa a ver todos os relatórios e a editar os planteis base.
+- [x] **Edição partilhada com histórico** (Rodrigo Fonte, 27/10/2026, Obs. 23): qualquer membro edita qualquer relatório; grava só o campo alterado; secção «Histórico de alterações» em cada relatório (mais recente primeiro, filtro por pessoa); na lista, «Última alteração: nome, data»; o dono repõe um valor com 2 toques (fica um registo «reposição»). Teste com duas pessoas ao mesmo tempo na base de dados simulada.
 - [ ] **Convidar o observador** (Editor, por email) e fazer a primeira análise juntos; a partir daí ajustar o nível de detalhe do guião.
 - [ ] **Posições a confirmar:** ~54 jogadores ficaram com posição provável (tracejado laranja) porque o zerozero só dá a linha; 3 sem posição (Gonçalo Rodrigo/Barreiro, Afonso/Rabo de Peixe, Gustavo Silveira/Lusitânia).
 - [ ] **zerozero:** em 25/10/2026 a rede do Rodrigo ficou bloqueada depois de ~230 páginas lidas seguidas. Para atualizar planteis: poucas páginas, com pausas. Época 2027/28: o formato do campeonato muda; rever `EQUIPAS`, `EPOCA` e `planteis.json`.
