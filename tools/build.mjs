@@ -13,11 +13,15 @@ const troca = (txt, marca, valor) => {
 };
 
 // imagens e letras embutidas (a app tem de funcionar no iPad sem pedir ficheiros externos)
+// ficheiros iguais (ex.: s08, s09 e s10) entram uma só vez; as chaves de IMG_DATA ficam todas
 const manifesto = JSON.parse(ler("assets/manifest.json"));
-const imgData = "{" + Object.entries(manifesto).map(([nome, prefixo]) => {
-  const b64 = readFileSync(join(raiz, "assets", nome)).toString("base64");
-  return JSON.stringify(nome) + ": " + JSON.stringify(prefixo + b64);
-}).join(", ") + "}";
+const unicos = [], posDe = new Map();
+const chaves = Object.entries(manifesto).map(([nome, prefixo]) => {
+  const v = prefixo + readFileSync(join(raiz, "assets", nome)).toString("base64");
+  if (!posDe.has(v)) { posDe.set(v, unicos.length); unicos.push(v); }
+  return JSON.stringify(nome) + ": d[" + posDe.get(v) + "]";
+});
+const imgData = "(()=>{ const d=[" + unicos.map((v) => JSON.stringify(v)).join(", ") + "]; return {" + chaves.join(", ") + "}; })()";
 
 const ordem = JSON.parse(ler("src/js/ordem.json"));
 let app = ordem.map((f) => ler("src/" + f)).join("\n");
