@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| 92 | UT: a escolha de jogadores para um grupo de trabalho fica ordenada por posição (GR, centrais, alas, médios, avançados; sem posição no fim), com a posição escrita em cada jogador; quem já está noutro grupo continua no fim |
 | 91 | UT: ao escolher jogadores para um grupo de trabalho, quem já está noutro grupo aparece no fim da lista com «já no grupo …» (e continua a poder ser escolhido); os que ainda não estão em nenhum grupo aparecem primeiro |
 | 90 | UT: nos grupos de trabalho só se escolhem jogadores presentes (Presente ou Condicionado); marcar alguém como ausente, lesionado ou castigado tira-o dos grupos (com desfazer); grupos lidos do texto deixam de fora quem não está presente. No campo do plantel, os ausentes saem do campo e juntam-se aos lesionados em «Indisponíveis», com o motivo |
 | 89 | Exercícios: categorias e formatos do caderno de exercícios do clube. Categoria: Preparação do Jogador (Ativação e preparação / Capacidades motoras; nas categorias do Modelo de Jogo, as subfases dele), Fundamentos do Jogo, Princípios do Jogo, Organização Ofensiva e Defensiva, Transição Ofensiva e Defensiva, Finalização, Esquemas Táticos. Formato: Exercício Analítico, Circuito, Rondo, MPB, Jogo Posicional, Vagas, Situação Setorial e Intersetorial, Jogo Reduzido, Condicionado, Formal e Competição. O antigo «Formato» (8+2×4+GR) passa a «Estrutura». Os exercícios existentes passam sozinhos para a classificação nova; filtros, ficha, PDF e UT com os nomes novos |
