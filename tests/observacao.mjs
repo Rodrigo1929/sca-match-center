@@ -36,6 +36,12 @@ for (const [nome, opc] of ecras) {
   await pg.fill('#sec [data-b="treinador"]', "Treinador Base"); await pg.waitForTimeout(150);
   const base = await pg.evaluate(() => ({ n: bases.lusitania && bases.lusitania.plantel.length, tr: bases.lusitania && bases.lusitania.treinador, rels: Object.values(rels).filter((x) => x.adversario === "Lusitânia").length, cache: !!(JSON.parse(localStorage.getItem("sca-obs-base-v1") || "{}").lusitania) }));
   confirma(base.n > 15 && base.tr === "Treinador Base" && base.rels === 0 && base.cache, `${nome}: plantel base não ficou guardado ou criou relatório (${JSON.stringify(base)})`);
+  // exportar para o Match Center: plantel base + onze provável do último relatório (um jogador que só está no relatório entra no plantel)
+  const mc = await pg.evaluate(() => { const B = bases.lusitania, pl = B.plantel, R = novoRel("Lusitânia"); R.id = "rmc";
+    R.plantel = [...R.plantel, { id: "jnovo", n: "99", nome: "Jogador Novo", slot: "PL" }]; R.onzes.prov = { sis: "4-3-3", pos: { GR: pl[0].id, PL: "jnovo" } }; rels.rmc = R;
+    const P = plantelParaMC(B); delete rels.rmc;
+    return { botao: !!document.getElementById("b-mc"), n: P.plantel.length, base: pl.length, gr: P.onzeProv && P.onzeProv.pos.GR === pl[0].id, pl: P.onzeProv && P.onzeProv.pos.PL, sis: P.onzeProv && P.onzeProv.sis, novo: P.plantel.some((j) => j.id === "jnovo" && j.n === "99" && j.pos === "PL"), tipo: P.tipo, eq: P.equipa.id, cores: !!P.cores.cam }; });
+  confirma(mc.botao && mc.n === mc.base + 1 && mc.gr && mc.pl === "jnovo" && mc.sis === "4-3-3" && mc.novo && mc.tipo === "plantel-adversario" && mc.eq === "lusitania" && mc.cores, `${nome}: exportar para o Match Center errado (${JSON.stringify(mc)})`);
   await pg.screenshot({ path: join(cap, `${nome}-plantel-base.png`), fullPage: true });
   await pg.click("#voltar2"); await pg.waitForTimeout(150); // botão fixo em baixo
   await pg.click('[data-novo="Lusitânia"]'); await pg.click('nav.secs button[data-s="plantel"]'); await pg.waitForTimeout(300);

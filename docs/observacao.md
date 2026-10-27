@@ -7,13 +7,13 @@ Existe para dar acesso a um observador de fora do clube sem ele ver o resto da a
 - **Código:** `observacao/page.html` (um só ficheiro, um só `<script>`) + `observacao/planteis.json`
 - **Build:** `npm run build` → `dist/observacao.html` (a página, o logo, a bola e os planteis embutidos)
 - **Testes:** `npm run check` (sintaxe) e `npm run test:obs` (browser, PC e telemóvel; `-- --ipad` para WebKit)
-- **Versão publicada:** Obs. 23 (27/10/2026) — ver `CHANGELOG.md`
+- **Versão publicada:** Obs. 24 (27/10/2026) — ver `CHANGELOG.md`
 
 ## Quem usa e com que acesso
 | Quem | O que vê | O que faz |
 |---|---|---|
 | Rodrigo Fonte (dono, equipa técnica) | Todos os relatórios e o histórico | Edita tudo; revê e marca como revisto; apaga relatórios de qualquer autor; edita os planteis base; «Repor» no histórico |
-| Observador (Rodrigo Simão, de fora do clube) | Todos os relatórios, os planteis base e o histórico | Cria relatórios e edita os de qualquer autor (desde a Obs. 23); apaga só os seus; envia para revisão. Planteis base só leitura |
+| Observadores (Rodrigo Simão e Nuno Alves, de fora do clube) | Todos os relatórios, os planteis base e o histórico | Cria relatórios e edita os de qualquer autor (desde a Obs. 23); apaga só os seus; envia para revisão. Planteis base só leitura |
 
 - Na app, o dono aparece como **"equipa técnica"** (nunca "Rodrigo": o observador também se chama Rodrigo).
 - O observador tem de ser convidado por email com o nível **Editor**. Um convidado de fora como Leitor só lê e não grava.
@@ -81,6 +81,8 @@ A cache carrega-se em `carregaCache()`, **depois** de todas as constantes existi
 - [x] **Setas e arrasto** (26/10/2026): desenhar uma seta já não refaz o campo a meio (antes a seta perdia-se); o que chega da base de dados durante um arrasto espera pelo fim (`aArrastar`).
 - [x] **Plantel sem relatório** (Rodrigo Fonte, 26/10/2026): "Planteis base" na página inicial, um por equipa; os relatórios novos partem dele (regra `base`). Na Obs. 14 o observador passa a ver todos os relatórios e a editar os planteis base.
 - [x] **Edição partilhada com histórico** (Rodrigo Fonte, 27/10/2026, Obs. 23): qualquer membro edita qualquer relatório; grava só o campo alterado; secção «Histórico de alterações» em cada relatório (mais recente primeiro, filtro por pessoa); na lista, «Última alteração: nome, data»; o dono repõe um valor com 2 toques (fica um registo «reposição»). Teste com duas pessoas ao mesmo tempo na base de dados simulada.
+- [x] **Exportar para o Match Center** (Rodrigo Fonte, 27/10/2026, Obs. 24): no plantel base, «⬇ Exportar para o Match Center» (só a equipa técnica) descarrega `Plantel_<equipa>_<data>.json` com o plantel base (nº, nome, sigla da posição), sistema, cores e o onze provável e alternativo do último relatório dessa equipa (`plantelParaMC`); um jogador que só está no relatório entra no plantel exportado. Lê-se no separador Adversário da SCA Match Center.
+- [x] **Cópias diárias** (27/10/2026): tarefa agendada no PC do Rodrigo Fonte às 23h guarda `Copias SCA/observacao/<data>.json` quando houve alterações (ver `CLAUDE.md`).
 - [ ] **Convidar o observador** (Editor, por email) e fazer a primeira análise juntos; a partir daí ajustar o nível de detalhe do guião.
 - [ ] **Posições a confirmar:** ~54 jogadores ficaram com posição provável (tracejado laranja) porque o zerozero só dá a linha; 3 sem posição (Gonçalo Rodrigo/Barreiro, Afonso/Rabo de Peixe, Gustavo Silveira/Lusitânia).
 - [ ] **zerozero:** em 25/10/2026 a rede do Rodrigo ficou bloqueada depois de ~230 páginas lidas seguidas. Para atualizar planteis: poucas páginas, com pausas. Época 2027/28: o formato do campeonato muda; rever `EQUIPAS`, `EPOCA` e `planteis.json`.
