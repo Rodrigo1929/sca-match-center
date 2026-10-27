@@ -41,6 +41,9 @@ for (const [nome, opc] of ecras) {
     R.plantel = [...R.plantel, { id: "jnovo", n: "99", nome: "Jogador Novo", slot: "PL" }]; R.onzes.prov = { sis: "4-3-3", pos: { GR: pl[0].id, PL: "jnovo" } }; rels.rmc = R;
     const P = plantelParaMC(B); delete rels.rmc;
     return { botao: !!document.getElementById("b-mc"), n: P.plantel.length, base: pl.length, gr: P.onzeProv && P.onzeProv.pos.GR === pl[0].id, pl: P.onzeProv && P.onzeProv.pos.PL, sis: P.onzeProv && P.onzeProv.sis, novo: P.plantel.some((j) => j.id === "jnovo" && j.n === "99" && j.pos === "PL"), tipo: P.tipo, eq: P.equipa.id, cores: !!P.cores.cam }; });
+  // penáltis nas bolas paradas (ofensivas e defensivas): bola na marca dos 11 m e o guarda-redes na baliza
+  const pen = await pg.evaluate(() => { const o = novaBp("pen", "of"), d = novaBp("pen", "def"), bola = o.pecas.find((p) => p.eq === "bola"); return { nomeO: nomeBp(o), nomeD: nomeBp(d), bola: bola && bola.x === 34 && bola.y === 11, grO: o.pecas.some((p) => p.eq === "out" && p.n === "GR"), grD: d.pecas.some((p) => p.eq === "adv" && p.n === "GR") }; });
+  confirma(pen.nomeO === "Penálti ofensivo · Central" && pen.nomeD === "Penálti defensivo · Central" && pen.bola && pen.grO && pen.grD, `${nome}: penálti nas bolas paradas errado (${JSON.stringify(pen)})`);
   confirma(mc.botao && mc.n === mc.base + 1 && mc.gr && mc.pl === "jnovo" && mc.sis === "4-3-3" && mc.novo && mc.tipo === "plantel-adversario" && mc.eq === "lusitania" && mc.cores, `${nome}: exportar para o Match Center errado (${JSON.stringify(mc)})`);
   await pg.screenshot({ path: join(cap, `${nome}-plantel-base.png`), fullPage: true });
   await pg.click("#voltar2"); await pg.waitForTimeout(150); // botão fixo em baixo
@@ -262,12 +265,12 @@ for (const [nome, opc] of ecras) {
   await B.evaluate(() => { window.__desloca = 11 * 60 * 1000; }); await B.click('[data-q="c_pb"] [data-fq="as"]'); await B.waitForTimeout(300);
   const g2 = await B.evaluate((rid) => Object.values(logs).filter((l) => l.relId === rid && l.chave === "chk.c_pb.freq").length, rid);
   confirma(g1.length === 1 && !g1[0][0] && g1[0][1] === "muitas" && g2 === 2, `partilha: agrupamento dos 10 minutos errado (${JSON.stringify({ g1, g2 })})`);
-  // observador: sem "Repor" e sem editar os planteis base
+  // observador: sem "Repor"; edita os planteis base (desde a Obs. 25)
   await B.evaluate((rid) => { vista = { tipo: "rel", id: rid, sec: "hlog" }; render(); }, rid); await B.waitForTimeout(200);
   const rB = await B.locator("[data-repor]").count();
   await B.evaluate(() => { vista = { tipo: "base", id: "lusitania", sec: "plantel" }; render(); }); await B.waitForTimeout(200);
   const baseB = await B.evaluate(() => ({ add: !!document.getElementById("pl-add"), ed: podeEditar(relAtual()) }));
-  confirma(rB === 0 && !baseB.add && !baseB.ed, `partilha: o observador não devia ter Repor nem editar planteis base (${JSON.stringify({ rB, baseB })})`);
+  confirma(rB === 0 && baseB.add && baseB.ed, `partilha: o observador não devia ter Repor e devia poder editar os planteis base (Obs. 25) (${JSON.stringify({ rB, baseB })})`);
   // dono repõe a opção da P1: volta ao "antes" e fica registado como reposição
   await A.evaluate((rid) => { vista = { tipo: "rel", id: rid, sec: "hlog" }; render(); }, rid); await A.waitForTimeout(300);
   await A.screenshot({ path: join(cap, "partilha-historico.png"), fullPage: true });

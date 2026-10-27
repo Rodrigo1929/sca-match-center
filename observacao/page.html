@@ -304,7 +304,7 @@ const SECS=[
 const SEC_Q=SECS.filter(s=>s.q);
 const FREQ={rec:"Recorrente",pont:"Pontual",conf:"A confirmar"};
 const CTX={ganhar:"A ganhar",empatar:"Empatado",perder:"A perder"};
-const BP_TIPO={canto:"Canto",livre:"Livre",lanc:"Lançamento lateral"};
+const BP_TIPO={canto:"Canto",livre:"Livre",lanc:"Lançamento lateral",pen:"Penálti"};
 const BP_LADO={of:"Ofensivo",def:"Defensivo"};
 const BP_COR={esq:"Esquerda",dir:"Direita",cen:"Central"};
 const BP_ASP=[["bat","Batedores e jogadores de referência"],["pos","Posicionamentos, movimentos e combinações"],["marc","Tipo de marcação, zonas protegidas e espaços disponíveis"],["seg","Segundas bolas e transições"]];
@@ -435,7 +435,7 @@ function separaJogos(R){ const [J0,...resto]=R.jogos; resto.forEach(J=>{ const N
   editaRel(X=>{ X.jogos=[J0]; X.evid=X.evid.filter(e=>!resto.some(J=>J.id===e.jogo)); }); toast(`Separado em ${resto.length+1} relatórios`); }
 function relAtual(){ if(vista.tipo==="base") return bases[vista.id]||null; return vista.id&&rels[vista.id]?rels[vista.id]:null; }
 /* qualquer pessoa com acesso de edição edita qualquer relatório; os planteis base só o dono */
-function podeEditar(R){ return !soLeitura&&!!R&&(R.base?(souDono||semDb):true); }
+function podeEditar(R){ return !soLeitura&&!!R; }   // desde a Obs. 25 os observadores também editam os planteis base
 
 /* ======================= gravação com fila (funciona sem rede) ======================= */
 let pend=LS(PEND)||{}, pendSeq=0; const filas={};
@@ -766,7 +766,7 @@ function renderLista(){ const ls=Object.values(rels).sort((a,b)=>String(b.atuali
   EQUIPAS.forEach(([n,ilha])=>{ h+=cartaoEq(n,ilha,jogosDe(n)); });
   h+=`</div>`;
   /* planteis base: mexer no plantel de cada equipa sem começar um relatório */
-  h+=`<div class="row" style="justify-content:space-between;margin:0 0 10px"><h3 style="font-size:19px">Planteis base</h3><span class="hint">${souDono||semDb?"Mexe no plantel de cada equipa sem começar um relatório; os relatórios novos partem dele.":"Planteis de partida dos relatórios novos (só a equipa técnica os muda)."}</span></div>
+  h+=`<div class="row" style="justify-content:space-between;margin:0 0 10px"><h3 style="font-size:19px">Planteis base</h3><span class="hint">${!soLeitura?"Mexe no plantel de cada equipa sem começar um relatório; os relatórios novos partem dele.":"Planteis de partida dos relatórios novos."}</span></div>
     <div class="row" style="margin-bottom:22px">${EQUIPAS.map(([n])=>{ const B=bases[slugEq(n)]; return `<button class="btn" data-base="${slugEq(n)}">${esc(n)}${B&&B.atualizadoEm?`<span class="hint" style="font-weight:400"> · ${B.plantel.length}</span>`:""}</button>`; }).join("")}</div>`;
   const outros=ls.filter(R=>!EQUIPAS.some(([n])=>n===R.adversario));
   if(outros.length){ h+=`<h3 style="font-size:19px;margin:0 0 10px">Outros adversários</h3><div class="cards">`; [...new Set(outros.map(R=>R.adversario))].forEach(n=>h+=cartaoEq(n,"",jogosDe(n))); h+=`</div>`; }
@@ -1063,7 +1063,7 @@ function secPlantel(R,box,ed){ const modo=R.base?"plantel":(vista.plv||"plantel"
         ${Object.keys(O?O.xy:R.plXY[sis]||{}).length+Object.keys(O?O.nxy:R.plNom[sis]||{}).length?`<button class="btn sm" id="pl-rxy">Repor tudo no sítio do sistema</button>`:""}</div>`:""}
       <div style="overflow-x:auto"><div id="pl-svg" style="min-width:560px"></div></div></div>`
       :`<div class="empty"><b>Ainda sem plantel.</b><span>Acrescenta os jogadores à mão.</span></div>`}
-    ${ed&&modo==="plantel"?`<div class="row"><button class="btn primary" id="pl-add">+ Jogador</button>${!R.base&&bases[slugEq(R.adversario)]?`<button class="btn" id="pl-base">Repor o plantel base</button>`:""}${!R.base&&souDono&&EQUIPAS.some(([n])=>n===R.adversario)?`<button class="btn" id="pl-pbase">Guardar como plantel base</button>`:""}</div>`:""}
+    ${ed&&modo==="plantel"?`<div class="row"><button class="btn primary" id="pl-add">+ Jogador</button>${!R.base&&bases[slugEq(R.adversario)]?`<button class="btn" id="pl-base">Repor o plantel base</button>`:""}${!R.base&&EQUIPAS.some(([n])=>n===R.adversario)?`<button class="btn" id="pl-pbase">Guardar como plantel base</button>`:""}</div>`:""}
     ${R.plantel.length&&modo==="plantel"?`<div class="card" style="padding:0;overflow-x:auto"><table class="ptab"><thead><tr><th>Nº</th><th>Nome</th><th>Posição no campo (${esc(sis)})</th><th>Pé</th><th title="Posição confirmada nos jogos">Confirmada</th><th></th></tr></thead><tbody>
       ${lista.map(j=>`<tr${j.conf?"":' class="porconf"'}><td><input type="text" data-b="plantel.${j.id}.n" data-rr inputmode="numeric" maxlength="3" aria-label="Número" style="width:62px"></td>
         <td><input type="text" data-b="plantel.${j.id}.nome" data-rr aria-label="Nome" style="min-width:150px"><small>${esc([partePos(j.pos).join(" / "),j.idade?j.idade+" anos":""].filter(Boolean).join(" · "))}</small></td>
@@ -1184,11 +1184,14 @@ function novaBp(tipo,lado){ const b={id:nid("b"),tipo,lado,cor:"",asp:{},pecas:[
     else { P("adv",34,2,"GR"); [[30,5],[37,5],[34,8],[28,10],[40,10],[34,13],[30,17],[38,17]].forEach(([x,y])=>P("adv",x,y)); [[66,4],[33,11],[37,12],[31,8]].forEach(([x,y])=>P("out",x,y)); } }
   else if(tipo==="livre"){ P("bola",24,28); if(lado==="of"){ P("adv",22,30); [[28,12],[34,10],[39,13],[31,15]].forEach(([x,y])=>P("adv",x,y)); [[30,20],[32,20],[34,20],[36,20]].forEach(([x,y])=>P("out",x,y)); }
     else { P("adv",34,2,"GR"); [[27,19],[29,20],[31,21]].forEach(([x,y])=>P("adv",x,y)); [[30,11],[35,10],[40,12],[33,14]].forEach(([x,y])=>P("adv",x,y)); [[22,30],[33,12],[38,11]].forEach(([x,y])=>P("out",x,y)); } }
+  else if(tipo==="pen"){ b.cor="cen"; P("bola",34,11); /* marca de penálti a 11 m; os outros fora da área, à espera da recarga */
+    if(lado==="of"){ P("adv",34,15); P("out",34,1,"GR"); [[26,19],[31,20],[37,20],[42,19]].forEach(([x,y])=>P("adv",x,y)); [[28,20],[33,21],[35,21],[40,20]].forEach(([x,y])=>P("out",x,y)); }
+    else { P("adv",34,1,"GR"); P("out",34,15); [[27,19],[31,20],[37,20],[41,19]].forEach(([x,y])=>P("adv",x,y)); [[29,20],[33,21],[35,21],[39,20]].forEach(([x,y])=>P("out",x,y)); } }
   else { b.cor="dir"; P("bola",68,30); if(lado==="of"){ P("adv",67,31); [[62,26],[60,34],[54,30],[46,22]].forEach(([x,y])=>P("adv",x,y)); } else { [[62,27],[61,35],[55,30],[48,24]].forEach(([x,y])=>P("adv",x,y)); P("out",67,31); } }
   return b; }
 function secBp(R,box,ed,lado){ const ls=R.bp.filter(b=>b.lado===lado), nm=lado==="of"?"ofensivas":"defensivas";
   const item=b=>{ const ab=bpAberto===b.id, ne=R.evid.filter(e=>e.q==="bp:"+b.id).length; return `<button class="bpi" data-bp="${esc(b.id)}" aria-expanded="${ab}"><b>${esc(nomeBp(b))}</b>${R.pend&&R.pend["bp:"+b.id]?`<span class="chip env" style="margin-left:6px">⚠ por confirmar</span>`:""}<span>${ne?ne+(ne===1?" evidência":" evidências"):""} ${ab?"▴":"▾"}</span></button>${ab?`<div class="card" id="bp-ed"></div>`:""}`; };
-  box.innerHTML=`<header><h3>Bolas paradas ${nm}</h3><p>Cantos, livres e lançamentos laterais. Para cada um: batedores e referências, movimentos e combinações, marcação e espaços, segundas bolas e transições.</p></header>
+  box.innerHTML=`<header><h3>Bolas paradas ${nm}</h3><p>Cantos, livres, lançamentos laterais e penáltis. Para cada um: batedores e referências, movimentos e combinações, marcação e espaços, segundas bolas e transições.</p></header>
     ${ed?`<div class="card"><h4>Acrescentar</h4><div class="row">${Object.entries(BP_TIPO).map(([t,n])=>`<button class="btn sm" data-nbp="${t}:${lado}">+ ${n}</button>`).join("")}</div></div>`:""}
     <div class="card"><div class="bpl">${ls.map(item).join("")||`<p class="hint">Nenhuma registada.</p>`}</div></div>`;
   box.querySelectorAll("[data-nbp]").forEach(b=>b.onclick=()=>{ const [t,l]=b.dataset.nbp.split(":"), nb=novaBp(t,l); bpAberto=nb.id; editaRel(R=>R.bp.push(nb)); });

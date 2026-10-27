@@ -7,13 +7,13 @@ Existe para dar acesso a um observador de fora do clube sem ele ver o resto da a
 - **Código:** `observacao/page.html` (um só ficheiro, um só `<script>`) + `observacao/planteis.json`
 - **Build:** `npm run build` → `dist/observacao.html` (a página, o logo, a bola e os planteis embutidos)
 - **Testes:** `npm run check` (sintaxe) e `npm run test:obs` (browser, PC e telemóvel; `-- --ipad` para WebKit)
-- **Versão publicada:** Obs. 24 (27/10/2026) — ver `CHANGELOG.md`
+- **Versão publicada:** Obs. 25 (27/10/2026) — ver `CHANGELOG.md`
 
 ## Quem usa e com que acesso
 | Quem | O que vê | O que faz |
 |---|---|---|
-| Rodrigo Fonte (dono, equipa técnica) | Todos os relatórios e o histórico | Edita tudo; revê e marca como revisto; apaga relatórios de qualquer autor; edita os planteis base; «Repor» no histórico |
-| Observadores (Rodrigo Simão e Nuno Alves, de fora do clube) | Todos os relatórios, os planteis base e o histórico | Cria relatórios e edita os de qualquer autor (desde a Obs. 23); apaga só os seus; envia para revisão. Planteis base só leitura |
+| Rodrigo Fonte (dono, equipa técnica) | Todos os relatórios e o histórico | Edita tudo; revê e marca como revisto; apaga relatórios de qualquer autor; «Repor» no histórico; exporta o plantel para o Match Center |
+| Observadores (Rodrigo Simão e Nuno Alves, de fora do clube) | Todos os relatórios, os planteis base e o histórico | Cria relatórios e edita os de qualquer autor (desde a Obs. 23); apaga só os seus; envia para revisão; edita os planteis base e «Guarda como plantel base» (desde a Obs. 25) |
 
 - Na app, o dono aparece como **"equipa técnica"** (nunca "Rodrigo": o observador também se chama Rodrigo).
 - O observador tem de ser convidado por email com o nível **Editor**. Um convidado de fora como Leitor só lê e não grava.
@@ -25,7 +25,7 @@ Existe para dar acesso a um observador de fora do clube sem ele ver o resto da a
 ""           read owner      write owner
 "obs"        read interact   write interact   (qualquer membro edita relatórios de qualquer autor, Obs. 23)
 "rev"        read interact   write owner      (revisão da equipa técnica)
-"base"       read interact   write owner      (planteis base só o dono, Obs. 23; na Obs. 14 escreviam todos)
+"base"       read interact   write interact   (planteis base: desde a Obs. 25 os observadores também editam; na Obs. 23–24 só o dono)
 "log"        read interact   write owner      (histórico: só o dono mexe nos registos dos outros)
 "log/{self}" write interact                   (cada um acrescenta e atualiza os seus registos)
 user: scopes ["profile"]   (nomes de quem edita)
@@ -82,6 +82,8 @@ A cache carrega-se em `carregaCache()`, **depois** de todas as constantes existi
 - [x] **Plantel sem relatório** (Rodrigo Fonte, 26/10/2026): "Planteis base" na página inicial, um por equipa; os relatórios novos partem dele (regra `base`). Na Obs. 14 o observador passa a ver todos os relatórios e a editar os planteis base.
 - [x] **Edição partilhada com histórico** (Rodrigo Fonte, 27/10/2026, Obs. 23): qualquer membro edita qualquer relatório; grava só o campo alterado; secção «Histórico de alterações» em cada relatório (mais recente primeiro, filtro por pessoa); na lista, «Última alteração: nome, data»; o dono repõe um valor com 2 toques (fica um registo «reposição»). Teste com duas pessoas ao mesmo tempo na base de dados simulada.
 - [x] **Exportar para o Match Center** (Rodrigo Fonte, 27/10/2026, Obs. 24): no plantel base, «⬇ Exportar para o Match Center» (só a equipa técnica) descarrega `Plantel_<equipa>_<data>.json` com o plantel base (nº, nome, sigla da posição), sistema, cores e o onze provável e alternativo do último relatório dessa equipa (`plantelParaMC`); um jogador que só está no relatório entra no plantel exportado. Lê-se no separador Adversário da SCA Match Center.
+- [x] **Planteis base editáveis pelos observadores** (Rodrigo Fonte, 27/10/2026, Obs. 25): regra `base` passa a escrever `interact`.
+- [x] **Penáltis nas bolas paradas** (Obs. 25): tipo «Penálti» (`pen`) nas ofensivas e defensivas, com a bola na marca dos 11 m, o guarda-redes na baliza e os outros à entrada da área.
 - [x] **Cópias diárias** (27/10/2026): tarefa agendada no PC do Rodrigo Fonte às 23h guarda `Copias SCA/observacao/<data>.json` quando houve alterações (ver `CLAUDE.md`).
 - [ ] **Convidar o observador** (Editor, por email) e fazer a primeira análise juntos; a partir daí ajustar o nível de detalhe do guião.
 - [ ] **Posições a confirmar:** ~54 jogadores ficaram com posição provável (tracejado laranja) porque o zerozero só dá a linha; 3 sem posição (Gonçalo Rodrigo/Barreiro, Afonso/Rabo de Peixe, Gustavo Silveira/Lusitânia).
