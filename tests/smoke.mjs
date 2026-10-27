@@ -208,6 +208,11 @@ const k0 = await pg.evaluate(() => uts[uCur].grupos[0].jogadores[0]);
 await pg.click(".upres button >> nth=0", { button: "right" }); await pg.click(".mmenu button:has-text('Ausente')"); await pg.waitForTimeout(150);
 const aus = await pg.evaluate((k) => { const U = uts[uCur], txt = [...document.querySelectorAll(".ucampo text")].map((t) => t.textContent).join(" | "); return { noGrupo: U.grupos[0].jogadores.includes(k), indisp: txt.includes("INDISPONÍVEIS") && txt.includes("· Ausente"), naGrelha: (() => { folhaGrupoUT(U.id, null); const r = [...document.querySelectorAll("#ug-j button")].some((b) => b.dataset.k === k); document.querySelector("#sheet-root [data-close]").click(); return r; })() }; }, k0);
 if (aus.noGrupo || !aus.indisp || aus.naGrelha) erros.push("UT: ausente devia sair do grupo e ir para os Indisponíveis " + JSON.stringify(aus));
+// num grupo novo, quem já está noutro grupo aparece no fim, a dizer em que grupo está (e continua escolhível)
+const ord = await pg.evaluate(() => { const U = uts[uCur]; folhaGrupoUT(U.id, null); const bs = [...document.querySelectorAll("#ug-j button")], ja = U.grupos[0].jogadores;
+  const r = { ultimo: bs[bs.length - 1] && ja.includes(bs[bs.length - 1].dataset.k), aviso: bs[bs.length - 1] && bs[bs.length - 1].querySelector("small").textContent, primeiro: bs[0] && ja.includes(bs[0].dataset.k), escolhivel: bs.every((b) => !b.disabled) };
+  document.querySelector("#sheet-root [data-close]").click(); return r; });
+if (!ord.ultimo || !String(ord.aviso).includes("já no grupo «Guarda-redes»") || ord.primeiro || !ord.escolhivel) erros.push("UT: quem já está num grupo devia aparecer no fim e assinalado " + JSON.stringify(ord));
 await pg.click(".upres button >> nth=0", { button: "right" }); await pg.click(".mmenu button:has-text('Presente')"); await pg.waitForTimeout(100);
 // posição no Plantel → aparece na posição certa do campo do plantel
 await pg.click("#tab-p"); await pg.selectOption("#pp-0", "1"); await pg.waitForTimeout(800);

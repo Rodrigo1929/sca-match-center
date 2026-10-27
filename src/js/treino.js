@@ -261,7 +261,9 @@ function folhaGrupoUT(id,gid){ const U=uts[id]; if(!U) return; const G=gid?U.gru
     const atl=atletasUT(U).filter(a=>presenteUT(U,a.k)), fora=[...sel].filter(k=>!presenteUT(U,k));
     if(fora.length){ const f=q("#ug-fora"); f.hidden=false; f.innerHTML=`<b>Saem do grupo ao guardar</b> (não estão presentes): ${esc(fora.map(k=>nomeAtleta(U,k)).join(", "))}.`; }
     if(!atl.length) g.outerHTML=`<p class="sub" style="margin:0">Ainda ninguém está marcado como presente. Marca primeiro as presenças desta UT.</p>`;
-    else g.innerHTML=atl.map(a=>`<button data-k="${esc(a.k)}"><b>${esc(a.n||a.esc)}</b><span>${esc(a.nome||" ")}</span>${U.presencas[a.k]?`<small>${U.presencas[a.k]}</small>`:""}</button>`).join("");
+    /* quem já está noutro grupo continua escolhível, mas vai para o fim e diz em que grupo está */
+    else { const noutros=k=>U.grupos.filter(x=>x.id!==gid&&x.jogadores.includes(k)).map(x=>x.nome||"Grupo"), ord=atl.map((a,i)=>({a,i,o:noutros(a.k)})).sort((x,y)=>(x.o.length>0)-(y.o.length>0)||x.i-y.i);
+      g.innerHTML=ord.map(({a,o})=>`<button data-k="${esc(a.k)}"><b>${esc(a.n||a.esc)}</b><span>${esc(a.nome||" ")}</span><small>${esc([U.presencas[a.k]==="CO"?"Condicionado":"",o.length?"já no grupo "+o.map(n=>"«"+n+"»").join(", "):""].filter(Boolean).join(" · "))}</small></button>`).join(""); }
     const pintaG=()=>s.querySelectorAll("#ug-j button").forEach(b=>b.setAttribute("aria-pressed",String(sel.has(b.dataset.k))));
     s.querySelectorAll("#ug-j button").forEach(b=>b.onclick=()=>{ sel.has(b.dataset.k)?sel.delete(b.dataset.k):sel.add(b.dataset.k); pintaG(); }); pintaG();
     if(q("#ug-del")) confirma2(q("#ug-del"),"Toca outra vez",()=>{ fecha(); editaUT(U=>{ U.grupos=U.grupos.filter(x=>x.id!==gid); },"Grupo apagado"); });
