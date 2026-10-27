@@ -14,7 +14,7 @@ async function svgParaJpeg(svg,css,larg,alt){ alt=alt||Math.round(larg*H/W); con
   try{ const img=new Image(); await new Promise((ok,ko)=>{ img.onload=ok; img.onerror=()=>ko(new Error("svg")); img.src=url; }); if(img.decode) try{ await img.decode(); }catch(e){}
     const cv=document.createElement("canvas"); cv.width=larg; cv.height=alt; const cx=cv.getContext("2d"); cx.fillStyle="#fff"; cx.fillRect(0,0,cv.width,cv.height); cx.drawImage(img,0,0,cv.width,cv.height);
     return cv.toDataURL("image/jpeg",0.9); } finally { URL.revokeObjectURL(url); } }
-function folhaPdf(){ const grupos=[["JOGO","Jogo (Onze, Encaixe, Intervalo, Notas)",false],["DEF","Defensivos",true],["OF","Ofensivos",true],["REF","Referência",true]];
+function folhaPdf(){ const grupos=[["JOGO","Jogo (Onze, Possíveis Encaixes, Intervalo, Notas)",false],["DEF","Defensivos",true],["OF","Ofensivos",true],["REF","Referência",true]];
   folha(`<h3>Exportar PDF</h3><p class="sub" style="margin:0">Uma página por quadro, como no modo apresentação, com as trocas e alterações atuais.</p>
     <div id="pdf-g" style="display:flex;flex-direction:column;gap:6px;max-height:52vh;overflow:auto"></div>
     <p class="sub" id="pdf-p" style="margin:0"></p>

@@ -62,27 +62,36 @@ function largaFoco(){ const a=document.activeElement, v=$("view-d"); if(a&&v&&v.
 function guardaAdvJogo(A,soft){ largaFoco(); guardaJogo({...jogo,adv:A},soft!==false); renderAdv(); }
 function guardaEquipa(T,soft){ if(!soft) largaFoco(); advs[T.id]=normAdvEquipa(T,T.id); guardaLocal(); gravaDoc("adversarios/"+T.id,advs[T.id]); if(!soft) renderAdv(); }
 
-/* ---------- quadro Encaixe: as duas equipas no mesmo campo, com as substituições das duas ---------- */
+/* ---------- quadro «Possíveis Encaixes»: as duas equipas no mesmo campo, com as substituições e os cartões das duas (marcados no Ao vivo) ---------- */
+/* cartões de um jogador do adversário em campo (eventos amarelo_adv / vermelho_adv do Ao vivo, pelo id ou pelo número) */
+function cartoesAdvDe(o){ const ev=(jogo.eventos||[]).filter(e=>(e.tipo==="amarelo_adv"||e.tipo==="vermelho_adv")&&(e.pa&&o.pid?e.pa===o.pid:!!e.na&&e.na===o.n));
+  const am=ev.filter(e=>e.tipo==="amarelo_adv").length; return {am,verm:am>=2||ev.some(e=>e.tipo==="vermelho_adv")}; }
 function desenhaEncaixe(o_={}){
   const toca=!o_.clean||!!o_.arrastar, A=advJ(), C=A.cores, E=normEncaixe(jogo.encaixe);
   const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Encaixe das duas equipas"});
   campo(svg,false);
   const t=el("text",{x:9300,y:6050,"font-size":30*PT,"font-weight":700,class:"legtxt"},svg);
-  el("tspan",{fill:"#000"},t).textContent="Encaixe"; if(jogo.adversario) el("tspan",{fill:"#C00000"},t).textContent=" · vs "+jogo.adversario;
+  el("tspan",{fill:"#000"},t).textContent="Possíveis Encaixes"; if(jogo.adversario) el("tspan",{fill:"#C00000"},t).textContent=" · vs "+jogo.adversario;
   const adv=advEmCampo(), sN=subsReais().lista.map(l=>`${l.sai}→${l.entra}${l.min?` ${l.min}'`:""}`), sA=(jogo.subsAdv||[]).filter(s=>adv.ok.has(s.id)).map(s=>`${s.sai}→${s.entra}${s.min?` ${s.min}'`:""}`);
-  const rod=!A.onze.length?["Sem onze do adversário: preenche-o no separador Adversário.",""]:sN.length||sA.length?["Substituições:  ",[sN.length?"SCA "+sN.join(", "):"",sA.length?(jogo.adversario||"Adversário")+" "+sA.join(", "):""].filter(Boolean).join("   ·   ")]:null;
-  if(rod){ const fs=12*PT, t2=el("text",{x:2800,y:66350,"font-size":fs,class:"legtxt"},svg);
+  const banco=supAdv(A).filter(x=>!adv.on.some(o=>x.id===o.pid||!o.pid&&x.n===o.n)).map(x=>[x.n,nomeCurtoAdv(x.nome)].filter(Boolean).join(" "));
+  const linhas=!A.onze.length?[["Sem onze do adversário: preenche-o no separador Adversário.",""]]:[
+    ...(banco.length?[[`Suplentes ${jogo.adversario||"adversário"}:  `,banco.join("   ·   ")]]:[]),
+    ...(sN.length||sA.length?[["Substituições:  ",[sN.length?"SCA "+sN.join(", "):"",sA.length?(jogo.adversario||"Adversário")+" "+sA.join(", "):""].filter(Boolean).join("   ·   ")]]:[])];
+  linhas.forEach((rod,i)=>{ const fs=11.5*PT, t2=el("text",{x:2800,y:linhas.length>1?65350+i*1900:66350,"font-size":fs,class:"legtxt"},svg);
     el("tspan",{fill:"#C00000","font-weight":800},t2).textContent=rod[0]; el("tspan",{fill:"#1B1A17","font-weight":700},t2).textContent=rod[1];
-    if(textW(rod[0]+rod[1],fs,700)>86000){ t2.setAttribute("textLength",86000); t2.setAttribute("lengthAdjust","spacingAndGlyphs"); } }
+    if(textW(rod[0]+rod[1],fs,700)>86000){ t2.setAttribute("textLength",86000); t2.setAttribute("lengthAdjust","spacingAndGlyphs"); } });
   const peca=(k,o,e)=>{ const p=E[k][o.slot]||{x:o.x,y:o.y}, r=1450, quem=k==="nos"?"SC Angrense":(jogo.adversario||"Adversário");
     const g=el("g",{class:"bola",tabindex:toca?0:-1,role:toca?"button":"presentation","aria-label":`${quem} ${o.n||o.pos||""}`},svg);
     el("circle",{cx:p.x,cy:p.y,r:r*1.6,fill:"transparent"},g);
     el("circle",{cx:p.x,cy:p.y,r,fill:e.fill,stroke:e.stroke,"stroke-width":e.sw},g);
     el("text",{x:p.x,y:p.y+14*PT*.35,"text-anchor":"middle","font-size":14*PT,fill:e.color,class:"num"},g).textContent=o.n||"?";
-    { const nm=nomeCurtoAdv(k==="nos"?nome(o.n):nomeAdv(o.n,o.pid)); if(nm) etiqueta(g,p.x,p.y+r+260,nm,10.5*PT); }
+    if(k==="adv"){ const nm=nomeCurtoAdv(nomeAdv(o.n,o.pid)); if(nm) etiqueta(g,p.x,p.y+r+260,nm,10.5*PT); }
+    const ct=k==="nos"?(cartoes()[o.n]||{am:0,verm:false}):cartoesAdvDe(o);
+    if(ct.verm||ct.am) el("rect",{x:p.x-r*1.2,y:p.y-r*1.25,width:r*.55,height:r*.78,rx:70,fill:ct.verm?"#D00000":"#FFD400",stroke:"#1B1A17","stroke-width":50},g);
+    if(ct.verm) g.setAttribute("opacity",".45");
     if(o.entrou) el("circle",{cx:p.x+r*.78,cy:p.y-r*.78,r:r*.3,fill:"#2E9E4F",stroke:"#FFFFFF","stroke-width":70},g);
     if(!toca) return;
-    const mostra=()=>{ const nm=k==="nos"?nome(o.n):nomeAdv(o.n,o.pid); toast(`${quem} · ${o.n||"?"}${nm?" · "+nm:""}${o.pos?" · "+o.pos:""}${o.entrou?" · entrou":""}`); };
+    const mostra=()=>{ const nm=k==="nos"?nome(o.n):nomeAdv(o.n,o.pid); toast(`${quem} · ${o.n||"?"}${nm?" · "+nm:""}${o.pos?" · "+o.pos:""}${o.entrou?" · entrou":""}${ct.verm?" · expulso":ct.am?" · amarelo":""}`); };
     let start=null, moved=false;
     g.addEventListener("touchstart",ev=>{ ev.preventDefault(); },{passive:false});
     g.addEventListener("pointerdown",ev=>{ ev.preventDefault(); g.setPointerCapture(ev.pointerId); start=svgPt(svg,ev); moved=false; dragging=true; });
@@ -259,7 +268,7 @@ function folhaSubAdv(id){ const S0=id?(jogo.subsAdv||[]).find(s=>s.id===id):null
     <h4>Entra</h4><div id="sa-g2"></div><label class="f">Número de quem entra<input type="text" id="sa-n2" inputmode="numeric" maxlength="3"></label>
     <div class="actions">${S0?`<button class="btn danger l" id="sa-del">Apagar</button>`:""}<button class="btn" data-close>Cancelar</button><button class="btn primary" id="sa-ok">Guardar</button></div>`,(s_,fecha)=>{
     const im=s_.querySelector("#sa-min"), n1=s_.querySelector("#sa-n1"), n2=s_.querySelector("#sa-n2"), g1=s_.querySelector("#sa-g1"), g2=s_.querySelector("#sa-g2");
-    im.value=S0?S0.min:""; n1.value=S0?S0.sai:""; n2.value=S0?S0.entra:"";
+    im.value=S0?S0.min:minAgora(); n1.value=S0?S0.sai:""; n2.value=S0?S0.entra:"";
     let s1=S0?(S0.pidSai||"n:"+S0.sai):null, s2=S0?(S0.pidEntra||null):null, G1=null, G2=null;
     /* quem entra: suplentes primeiro e, entre eles, os da posição de quem sai */
     const montaEntra=alvo=>{ if(!fora.length){ g2.innerHTML=`<p class="sub" style="margin:0">Sem jogadores fora do onze no plantel: escreve o número.</p>`; return; }
@@ -278,3 +287,4 @@ function folhaSubAdv(id){ const S0=id?(jogo.subsAdv||[]).find(s=>s.id===id):null
       fecha(); guardaJogo({...jogo,subsAdv:[...L,S]}); const conta=advEmCampo().ok.has(S.id);
       toast(`🔁 ${jogo.adversario||"Adversário"} · ${min}' · sai ${rotAdv(sai,pidSai)} · entra ${rotAdv(entra,pidEntra)}${conta?"":" · ⚠ não conta (quem sai não estava em campo)"}`); }; }); }
 $("j-sa-add").onclick=()=>folhaSubAdv(null);
+$("ve-sa").onclick=()=>folhaSubAdv(null);

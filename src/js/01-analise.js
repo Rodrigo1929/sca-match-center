@@ -105,13 +105,15 @@ function folhaSubVivo(l0){ if(l0&&!l0.sai) l0=null; let sai=l0?l0.sai:null, entr
 function renderVivoJogo(){ if(!$("v-evs")) return; const C=COMPS[jogo.comp]||COMPS.taca, sr=subsReais(), np=paragensDe(sr.lista).length, pl=placar();
   $("v-pl").innerHTML=`SCA <span style="color:var(--red)">${pl.nos}</span>–<span style="color:var(--red)">${pl.eles}</span> ${esc((jogo.adversario||"ADV").slice(0,12))}`;
   $("v-subs").innerHTML=`Substituições <b>${sr.lista.length}/${C.subs>=99?"–":C.subs}</b> · Paragens <b>${np}/${C.paragens>=99?"–":C.paragens}</b>`;
-  const it=[...(jogo.eventos||[]).filter(e=>e.tipo!=="canto").map(e=>({t:minSeg(e.min)??0,min:e.min,txt:`${EVT[e.tipo][0]} ${EVT[e.tipo][1]}${e.n?" · "+rot(e.n):""}${e.gt?" · "+e.gt.join(" "):""}${e.as?" · assist. "+e.as:""}`,ev:e})),
-    ...(jogo.subs||[]).map(l=>({t:l.int?2700:(minSeg(l.min)??0),min:l.int?"Int.":l.min,txt:`🔁 ↓ ${rot(l.sai)}  ↑ ${rot(l.entra)}${sr.lista.includes(l)?"":" · ⚠ não conta"}`,sub:l}))].sort((a,b)=>b.t-a.t);
+  const it=[...(jogo.eventos||[]).filter(e=>e.tipo!=="canto").map(e=>({t:minSeg(e.min)??0,min:e.min,txt:`${EVT[e.tipo][0]} ${EVT[e.tipo][1]}${e.n?" · "+rot(e.n):""}${e.tipo.endsWith("_adv")&&(e.na||e.pa)?" · "+rotAdv(e.na||"",e.pa):""}${e.gt?" · "+e.gt.join(" "):""}${e.as?" · assist. "+e.as:""}`,ev:e})),
+    ...(jogo.subs||[]).map(l=>({t:l.int?2700:(minSeg(l.min)??0),min:l.int?"Int.":l.min,txt:`🔁 ↓ ${rot(l.sai)}  ↑ ${rot(l.entra)}${sr.lista.includes(l)?"":" · ⚠ não conta"}`,sub:l})),
+    ...(jogo.subsAdv||[]).map(x=>({t:minSeg(x.min)??0,min:x.min,txt:`🔁 ${(jogo.adversario||"Adversário").slice(0,14)} · ↓ ${rotAdv(x.sai,x.pidSai)}  ↑ ${rotAdv(x.entra,x.pidEntra)}`,sa:x}))].sort((a,b)=>b.t-a.t);
   const ul=$("v-evs"); ul.innerHTML=it.length?"":`<li class="sub">Ainda sem golos, cartões ou substituições.</li>`;
   const mostra=vTodos?it:it.slice(0,3);
   mostra.forEach(x=>{ const li=document.createElement("li"); li.innerHTML=`<span class="t"></span><span style="flex:1;cursor:pointer"></span><button class="icon x" aria-label="Apagar">✕</button>`;
     li.querySelector(".t").textContent=x.min||"?"; li.children[1].textContent=x.txt;
     if(x.ev){ li.children[1].onclick=()=>folhaEvento(x.ev.tipo,x.ev); li.querySelector(".x").onclick=()=>{ const prev=clone(jogo.eventos); guardaJogo({...jogo,eventos:jogo.eventos.filter(y=>y.id!==x.ev.id)},true); toast("Apagado",()=>guardaJogo({...jogo,eventos:prev},true)); }; }
+    else if(x.sa){ li.children[1].onclick=()=>folhaSubAdv(x.sa.id); li.querySelector(".x").onclick=()=>{ const prev=clone(jogo.subsAdv||[]); guardaJogo({...jogo,subsAdv:(jogo.subsAdv||[]).filter(y=>y.id!==x.sa.id)},true); toast("Substituição do adversário apagada",()=>guardaJogo({...jogo,subsAdv:prev},true)); }; }
     else { li.children[1].onclick=()=>folhaSubVivo(x.sub); li.querySelector(".x").onclick=()=>{ const prev=clone(jogo.subs); guardaJogo({...jogo,subs:jogo.subs.filter(y=>y.id!==x.sub.id)},true); toast("Substituição apagada",()=>guardaJogo({...jogo,subs:prev},true)); }; }
     ul.appendChild(li); });
   if(it.length>3){ const li=document.createElement("li"); li.style.cssText="justify-content:center;background:transparent"; li.innerHTML=`<button class="btn sm ghost">${vTodos?"Mostrar só os últimos":"Ver todos ("+it.length+")"}</button>`; li.querySelector("button").onclick=()=>{ vTodos=!vTodos; renderVivoJogo(); }; ul.appendChild(li); } }

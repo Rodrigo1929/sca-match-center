@@ -136,7 +136,7 @@ function snapshotJogo(){
     notas:notas.itens.map(n=>({t:n.t,txt:n.txt,cat:n.cat,parte:n.parte})),
     ficha:{prova:jogo.prova,jornada:jogo.jornada,local:jogo.local,casa:jogo.casa,hora:jogo.hora,escalao:jogo.escalao,resInt:jogo.resInt,staff:{...(est.staff||{})},staffNomes:Object.fromEntries(["cap1","cap2","cap3"].map(k=>[k,est.staff?.[k]?nome(est.staff[k]):""]))},
     vivo:clone(vivo), estat:estatJogo(),
-    comp:jogo.comp, eventos:(jogo.eventos||[]).map(e=>({...e,nome:e.n?nome(e.n):""})), minutos:minutosJogados().map(x=>({...x,nome:nome(x.n)})), subsReais:subsReais().lista.map(l=>({sai:l.sai,entra:l.entra,min:l.min||"",int:!!l.int})),
+    comp:jogo.comp, eventos:(jogo.eventos||[]).map(e=>({...e,nome:e.n?nome(e.n):e.na||e.pa?nomeAdv(e.na||"",e.pa):""})), minutos:minutosJogados().map(x=>({...x,nome:nome(x.n)})), subsReais:subsReais().lista.map(l=>({sai:l.sai,entra:l.entra,min:l.min||"",int:!!l.int})),
     analise:{regs:an.regs.map(r_=>({...r_,acao:acaoDe(r_.ac).nome,nome:r_.j?nome(r_.j):""})),posse:{"1":acumAgora(1),"2":acumAgora(2)}},
     adv:(()=>{ const A=advJ(), T=eqAdv(); return {equipa:A.equipa,nomeEquipa:T?T.nome:"",sistema:A.sistema,cores:{...A.cores},onze:A.onze.map(o=>({...o,nome:nomeAdv(o.n,o.pid)})),suplentes:supAdv(A).map(x=>({n:x.n,nome:x.nome})),
       subs:(jogo.subsAdv||[]).map(x=>({...x,nomeSai:nomeAdv(x.sai,x.pidSai),nomeEntra:nomeAdv(x.entra,x.pidEntra)}))}; })(), encaixe:normEncaixe(jogo.encaixe) }; }

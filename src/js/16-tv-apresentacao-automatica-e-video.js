@@ -1,5 +1,5 @@
 /* ---------- TV: apresentação automática e vídeo ---------- */
-function pickerQuadros(box,pre){ const grupos=[["JOGO","Jogo (Onze, Encaixe, Intervalo, Estatística, Notas)"],["DEF","Defensivos"],["OF","Ofensivos"],["REF","Referência"]];
+function pickerQuadros(box,pre){ const grupos=[["JOGO","Jogo (Onze, Possíveis Encaixes, Intervalo, Estatística, Notas)"],["DEF","Defensivos"],["OF","Ofensivos"],["REF","Referência"]];
   grupos.forEach(([t,n])=>{ const ls=lances().filter(l=>l.tipo===t); if(!ls.length) return;
     const g=document.createElement("div"); g.style.cssText="border:1px solid var(--line);border-radius:10px;background:var(--surface-2)";
     g.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px"><input type="checkbox" class="pdf-gr" style="width:20px;height:20px"><b style="flex:1;font-family:var(--f-display);font-size:15px"></b><button class="btn sm ghost pdf-ab">Escolher ▾</button></div><div class="pdf-ls" hidden style="display:flex;flex-direction:column;gap:2px;padding:0 10px 8px 40px"></div>`;
@@ -215,7 +215,7 @@ function folhaDup(){ const L=lanceAtual();
     <div class="actions"><button class="btn" data-close>Cancelar</button></div>`,(s,fecha)=>{
     s.querySelector("#dp-i").onclick=()=>{ fecha(); duplicaLance(false); }; s.querySelector("#dp-e").onclick=()=>{ fecha(); duplicaLance(true); }; }); }
 function duplicaLance(esp){ const L=lanceAtual();
-  if(L.dinamico){ toast(L.dinamico==="onze"?"O Onze Titular é sempre o do jogo — duplica antes as Indicações ou cria um lance novo.":L.dinamico==="encaixe"?"O Encaixe é sempre o do jogo e não se duplica.":"As Notas do Jogo não se duplicam."); return; }
+  if(L.dinamico){ toast(L.dinamico==="onze"?"O Onze Titular é sempre o do jogo — duplica antes as Indicações ou cria um lance novo.":L.dinamico==="encaixe"?"Os Possíveis Encaixes são sempre os do jogo e não se duplicam.":"As Notas do Jogo não se duplicam."); return; }
   const id="L"+Date.now().toString(36), nomes=new Set(lances().map(l=>l.nome));
   const b0=esp?trocaLado(L.nome):L.nome+" (cópia)"; let nm=b0, k=2; while(nomes.has(nm)) nm=`${b0} ${k++}`;
   const N={...(esp?espelha(L):clone(L)),id,nome:nm,ordem:(L.ordem||0)+0.5}; delete N.original; delete N.apagado;

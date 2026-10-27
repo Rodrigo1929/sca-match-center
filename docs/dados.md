@@ -11,7 +11,7 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
 | `analise/atual` | documento | Estado do Pós-jogo (posse, sentido de ataque) — sem registos |
 | `analise/config` | documento | Ações configuradas do Pós-jogo |
 | `tv/config` | documento | Escolha, ordem e tempo da TV das bolas paradas (`sel`, `ordem`, `seg`, `junta`) e, em `modelo`, os da TV do Modelo de Jogo (`sel`, `ordem`, `seg`, `conhecidos`) |
-| `eventos/{id}` | coleção | Golos, cartões, cantos… do jogo atual |
+| `eventos/{id}` | coleção | Golos, cartões, cantos… do jogo atual (nos do adversário — `golo_adv`, `amarelo_adv`, `vermelho_adv` — `na` = número e `pa` = id do jogador no plantel do adversário) |
 | `subs/{id}` | coleção | Substituições do jogo atual |
 | `subsAdv/{id}` | coleção | Substituições do adversário no jogo atual (não mexem nos quadros de bolas paradas) |
 | `adversarios/{id}` | coleção | Plantel de cada equipa adversária (id = nome sem acentos, ex.: `sc-barreiro`), para todos os jogos contra ela (ver abaixo) |
@@ -104,4 +104,4 @@ jogo.adv: { equipa (id em adversarios), sistema, cores, onze: [{ slot, n, pid?, 
 jogo.subsAdv: [{ id, sai, entra, pidSai?, pidEntra?, min, c }]       // gravadas uma a uma em subsAdv/{id}
 jogo.encaixe: { nos: { [slot]: {x,y} }, adv: { [slot]: {x,y} } }    // só o quadro Encaixe; o Onze não muda
 ```
-O adversário ataca para a esquerda (guarda-redes do lado direito), no mesmo campo do Onze. O Encaixe mostra o nosso onze e o do adversário com as substituições das duas equipas aplicadas (bolinha verde = entrou), com o número na bolinha e o nome por baixo; entra no PDF e na TV. Ao arquivar, o jogo do histórico guarda `adv` (com nomes e `subs`) e `encaixe`; o jogo seguinte começa sem onze nem substituições do adversário (os planteis ficam).
+O adversário ataca para a esquerda (guarda-redes do lado direito), no mesmo campo do Onze. O quadro «Possíveis Encaixes» (id `encaixe`) mostra o nosso onze e o do adversário com as substituições e os cartões das duas equipas marcados no Ao vivo (bolinha verde = entrou; cartão amarelo; vermelho ou 2.º amarelo = bolinha esbatida), o número na bolinha e o nome só nos do adversário; por baixo, os suplentes do adversário ainda por entrar e as substituições; entra no PDF e na TV. Ao arquivar, o jogo do histórico guarda `adv` (com nomes e `subs`) e `encaixe`; o jogo seguinte começa sem onze nem substituições do adversário (os planteis ficam).

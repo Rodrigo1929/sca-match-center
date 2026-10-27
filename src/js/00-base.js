@@ -12,7 +12,7 @@ const ESTILOS={
 };
 const ESPECIAIS=[
   {id:"onze",tipo:"JOGO",nome:"Onze Titular",fundo:"pitch",dinamico:"onze",bolas:[],legs:[],ordem:0},
-  {id:"encaixe",tipo:"JOGO",nome:"Encaixe",fundo:"pitch",dinamico:"encaixe",bolas:[],legs:[],ordem:.5},
+  {id:"encaixe",tipo:"JOGO",nome:"Possíveis Encaixes",fundo:"pitch",dinamico:"encaixe",bolas:[],legs:[],ordem:.5},
   {id:"intervalo",tipo:"JOGO",nome:"Indicações ao Intervalo",fundo:"pitch-full",campoV:2,semCabecalho:true,arrastavel:true,bolas:null,legs:[],ordem:1},
   {id:"notas",tipo:"JOGO",nome:"Notas do Jogo",fundo:"b-head",dinamico:"notas",bolas:[],legs:[],ordem:2},
   {id:"estat",tipo:"JOGO",nome:"Estatística",fundo:"b-head",dinamico:"estat",bolas:[],legs:[],ordem:1.5}
