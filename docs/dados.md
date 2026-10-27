@@ -64,7 +64,7 @@ As imagens ficam no armazenamento de ficheiros do link (capacidade `assets`), n�
   tempoTotal (s; null = soma dos exercícios), staff (rodapé; por defeito a equipa técnica do separador Jogo),
   presencas: { [nº ou "e:<id>"]: "P"|"L"|"A"|"C"|"CO" },
   extras: [{ id, nome, escalao: "Sub19"…, pos, alc? }],   // alc = alcunhas separadas por vírgulas                 // jogadores de fora do plantel chamados a esta UT
-  grupos: [{ id, nome, jogadores: [nº], nota }],
+  grupos: [{ id, nome, jogadores: [nº], nota }],   // só entra quem tem presença P ou CO (v90); outra marcação tira-o dos grupos
   exercicios: [{ id, exId, copia: { …exercício completo como estava no dia, com os ajustes desta UT… } }],   // pela ordem da UT
   criadoPor, criadoEm, alteradoPor, alteradoEm }
 ```

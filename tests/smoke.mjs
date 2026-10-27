@@ -198,10 +198,17 @@ await pg.click(".upres button >> nth=0"); await pg.waitForTimeout(100);
 await pg.click(".upres button >> nth=1", { button: "right" }); await pg.click(".mmenu button:has-text('Condicionado')"); await pg.waitForTimeout(100);
 // jogador de fora do plantel (júnior) com posição
 await pg.click("#u-xn"); await pg.fill("#ux-n", "Santiago C."); await pg.selectOption("#ux-p", "2"); await pg.click("#ux-ok"); await pg.waitForTimeout(150);
+await pg.click(".upres button:has-text('Santiago')"); await pg.waitForTimeout(100);   // nos grupos só entra quem está presente
 await pg.click("#u-gn"); await pg.fill("#ug-n", "Guarda-redes"); await pg.click("#ug-j button >> nth=0"); await pg.click("#ug-j button:has-text('Santiago')"); await pg.click("#ug-ok"); await pg.waitForTimeout(150);
 const pg2 = await pg.evaluate(() => { const U = uts[uCur]; return { pres: Object.values(U.presencas).sort(), ext: U.extras.map((e) => e.nome + "/" + e.escalao + "/" + e.pos), g: U.grupos.length, gj: U.grupos[0] && U.grupos[0].jogadores.length,
   campo: [...document.querySelectorAll(".ucampo text")].some((t) => t.textContent.includes("Santiago C.")), botao: [...document.querySelectorAll(".upres button")].some((b) => b.textContent.includes("Santiago")) }; });
-if (JSON.stringify(pg2.pres) !== '["CO","P"]' || JSON.stringify(pg2.ext) !== '["Santiago C./Sub19/2"]' || pg2.g !== 1 || pg2.gj !== 2 || !pg2.campo || !pg2.botao) erros.push("UT: presenças, jogadores de fora ou grupos errados " + JSON.stringify(pg2));
+if (JSON.stringify(pg2.pres) !== '["CO","P","P"]' || JSON.stringify(pg2.ext) !== '["Santiago C./Sub19/2"]' || pg2.g !== 1 || pg2.gj !== 2 || !pg2.campo || !pg2.botao) erros.push("UT: presenças, jogadores de fora ou grupos errados " + JSON.stringify(pg2));
+// ausente: sai do grupo e passa para os Indisponíveis do campo do plantel; a folha do grupo só mostra quem está presente
+const k0 = await pg.evaluate(() => uts[uCur].grupos[0].jogadores[0]);
+await pg.click(".upres button >> nth=0", { button: "right" }); await pg.click(".mmenu button:has-text('Ausente')"); await pg.waitForTimeout(150);
+const aus = await pg.evaluate((k) => { const U = uts[uCur], txt = [...document.querySelectorAll(".ucampo text")].map((t) => t.textContent).join(" | "); return { noGrupo: U.grupos[0].jogadores.includes(k), indisp: txt.includes("INDISPONÍVEIS") && txt.includes("· Ausente"), naGrelha: (() => { folhaGrupoUT(U.id, null); const r = [...document.querySelectorAll("#ug-j button")].some((b) => b.dataset.k === k); document.querySelector("#sheet-root [data-close]").click(); return r; })() }; }, k0);
+if (aus.noGrupo || !aus.indisp || aus.naGrelha) erros.push("UT: ausente devia sair do grupo e ir para os Indisponíveis " + JSON.stringify(aus));
+await pg.click(".upres button >> nth=0", { button: "right" }); await pg.click(".mmenu button:has-text('Presente')"); await pg.waitForTimeout(100);
 // posição no Plantel → aparece na posição certa do campo do plantel
 await pg.click("#tab-p"); await pg.selectOption("#pp-0", "1"); await pg.waitForTimeout(800);
 if ((await pg.evaluate(() => est.plantel[0].pos)) !== "1") erros.push("Plantel: a posição não ficou guardada");

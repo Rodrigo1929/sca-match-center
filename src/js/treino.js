@@ -2,6 +2,9 @@
 /* ================= TREINO · Unidades de Treino (UT) feitas com os exercícios do repositório ================= */
 const MATCH_DAYS=["MD+1","MD+2","MD-6","MD-5","MD-4","MD-3","MD-2","MD-1","MD"];
 const PRESENCAS=[["P","Presente","#1E9E3E"],["L","Lesão","#C00000"],["A","Ausente","#E36C09"],["C","Castigado","#7030A0"],["CO","Condicionado","#0070C0"]];
+/* nos grupos de trabalho só entra quem está no treino: presente ou condicionado */
+const PRES_GRUPO=new Set(["P","CO"]);
+const presenteUT=(U,k)=>PRES_GRUPO.has(U.presencas[k]);
 const U_LS="sca-uts-v1";
 const uParteOrd=k=>Math.max(0,PARTES.findIndex(p=>p[0]===k));
 const corPres=k=>(PRESENCAS.find(p=>p[0]===k)||[])[2]||"";
@@ -114,9 +117,9 @@ function renderUTPainel(U){ const pn=$("u-panel");
       <p class="sub" style="margin:0"><b>Toque</b>: Presente (<b style="color:${corPres("P")}">P</b>). <b>Botão direito</b> (no iPad, manter o dedo): ${PRESENCAS.filter(p=>p[0]!=="P").map(p=>`<b style="color:${p[2]}">${p[1]}</b>`).join(", ")}.</p>
       <div class="upres">${atl.map(a=>{ const k=U.presencas[a.k]||""; return `<button data-k="${esc(a.k)}" style="${k?`border-color:${corPres(k)};color:${corPres(k)}`:""}"><b>${esc(a.n||a.esc)}</b><span>${esc(a.nome)}</span>${a.n&&a.esc?`<small class="esc">${esc(a.esc)}</small>`:""}${k?`<i style="background:${corPres(k)}">${k}</i>`:""}</button>`; }).join("")||`<p class="sub">Sem jogadores no Plantel.</p>`}</div>
       <button class="btn sm" id="u-xn">+ Jogador de fora do plantel</button></div>
-    <div class="add"><h3>Grupos de trabalho</h3>${U.grupos.length?`<ul class="evl">${U.grupos.map(g=>`<li><span style="flex:1"><b>${esc(g.nome||"Grupo")}</b> · ${esc(g.jogadores.map(k=>nomeAtleta(U,k)).join(", ")||"sem jogadores")}${g.nota?`<br><small class="sub ug-nota">${esc(g.nota)}</small>`:""}</span>${g.nota?`<button class="btn sm ghost" data-lg="${esc(g.id)}" title="Procurar no texto os jogadores do Plantel">👥 Ler</button>`:""}<button class="btn sm ghost" data-g="${esc(g.id)}">✎</button></li>`).join("")}</ul>`:`<p class="sub" style="margin:0">Sem grupos (ex.: GR, condicionados, reforço).</p>`}
+    <div class="add"><h3>Grupos de trabalho</h3>${U.grupos.length?`<ul class="evl">${U.grupos.map(g=>`<li><span style="flex:1"><b>${esc(g.nome||"Grupo")}</b> · ${esc(g.jogadores.map(k=>nomeAtleta(U,k)+(presenteUT(U,k)?"":" (⚠ não presente)")).join(", ")||"sem jogadores")}${g.nota?`<br><small class="sub ug-nota">${esc(g.nota)}</small>`:""}</span>${g.nota?`<button class="btn sm ghost" data-lg="${esc(g.id)}" title="Procurar no texto os jogadores do Plantel">👥 Ler</button>`:""}<button class="btn sm ghost" data-g="${esc(g.id)}">✎</button></li>`).join("")}</ul>`:`<p class="sub" style="margin:0">Sem grupos (ex.: GR, condicionados, reforço).</p>`}
       <button class="btn sm" id="u-gn">+ Grupo</button></div>
-    <div class="add"><h3>Campo do plantel</h3><div class="ucampo"></div><p class="sub" style="margin:0">Cada atleta na sua posição (definida no separador Plantel), com a cor da presença; lesionados à parte. Entra no PDF.</p></div>`;
+    <div class="add"><h3>Campo do plantel</h3><div class="ucampo"></div><p class="sub" style="margin:0">Cada atleta na sua posição (definida no separador Plantel), com a cor da presença; indisponíveis (lesão ou ausente) à parte. Entra no PDF.</p></div>`;
   pn.querySelectorAll(".upres button").forEach(b=>{ const k=b.dataset.k;
     b.onclick=()=>{ if(b.dataset.longo){ delete b.dataset.longo; return; } marcaPres(k,(uts[uCur].presencas[k]==="P")?"":"P"); };
     b.oncontextmenu=e=>menuPres(e,k); premirLongo(b,e=>menuPres(e,k)); });
@@ -125,7 +128,9 @@ function renderUTPainel(U){ const pn=$("u-panel");
   pn.querySelector(".ucampo").appendChild(plantelSvg(U)); }
 
 /* ---------- presenças: toque = Presente; botão direito / dedo pressionado = escolher ---------- */
-function marcaPres(k,v){ editaUT(U=>{ if(v) U.presencas[k]=v; else delete U.presencas[k]; }); }
+function marcaPres(k,v){ const U0=uts[uCur]; if(!U0) return; const gs=PRES_GRUPO.has(v)?[]:U0.grupos.filter(g=>g.jogadores.includes(k)).map(g=>g.nome||"Grupo");
+  editaUT(U=>{ if(v) U.presencas[k]=v; else delete U.presencas[k]; if(gs.length) U.grupos.forEach(g=>{ g.jogadores=g.jogadores.filter(x=>x!==k); }); },
+    gs.length?`${nomeAtleta(U0,k)} saiu ${gs.length===1?"do grupo «"+gs[0]+"»":"dos grupos "+gs.map(x=>"«"+x+"»").join(", ")} (não está presente)`:null); }
 function menuPres(e,k){ const U=uts[uCur]; if(!U) return; const ext=String(k).startsWith("e:")?U.extras.find(x=>"e:"+x.id===k):null;
   menuContexto(e,[...PRESENCAS.map(([c,n])=>[`${c} · ${n}`,()=>marcaPres(k,c)]),["Sem marcação",()=>marcaPres(k,"")],...(ext?[["✎ Editar jogador",()=>folhaExtraUT(U.id,ext.id)]]:[])]); }
 /* iPad: manter o dedo meio segundo abre o mesmo menu do botão direito */
@@ -171,23 +176,25 @@ function plantelSvg(U){ const {W:VW,H:VH}=PLV, svg=el("svg",{viewBox:`0 0 ${VW} 
   el("rect",{x:cx-20.16*kx,y:fy,width:40.32*kx,height:16.5*ky,...L},svg); el("rect",{x:cx-9.16*kx,y:fy,width:18.32*kx,height:5.5*ky,...L},svg);
   el("path",{d:`M ${cx-7.31*kx} ${fy+16.5*ky} A ${9.15*kx} ${9.15*ky} 0 0 0 ${cx+7.31*kx} ${fy+16.5*ky}`,...L},svg);
   el("path",{d:`M ${cx-9.15*kx} ${fy+fh} A ${9.15*kx} ${9.15*ky} 0 0 1 ${cx+9.15*kx} ${fy+fh}`,...L},svg);
-  const atl=atletasUT(U), pres=a=>U.presencas[a.k]||"", les=atl.filter(a=>pres(a)==="L"), resto=atl.filter(a=>pres(a)!=="L"&&!(a.form&&!pres(a)));
+  /* indisponíveis (lesão ou ausente) saem do campo e ficam à parte */
+  const atl=atletasUT(U), pres=a=>U.presencas[a.k]||"", indisp=a=>pres(a)==="L"||pres(a)==="A", les=atl.filter(indisp), resto=atl.filter(a=>!indisp(a)&&!(a.form&&!pres(a)));
   /* caixa de nome com a borda na cor da presença (sem marcação: cinzento escuro) */
-  const caixa=(x,y,a,w)=>{ const p=pres(a), c=p?corPres(p):"#4A4A4A", g=el("g",{},svg), t=a.nome||a.n||"?", fs=23;
+  const caixa=(x,y,a,w,extra)=>{ const p=pres(a), c=p?corPres(p):"#4A4A4A", g=el("g",{},svg), t=a.nome||a.n||"?", fs=23;
     el("rect",{x:x-w/2,y,width:w,height:38,rx:5,fill:"#fff",stroke:c,"stroke-width":p?5:3},g);
     const tx=el("text",{x,y:y+27,"text-anchor":"middle","font-size":fs,"font-weight":700,fill:"#1B1A17",class:"lbl"},g); tx.textContent=t;
     if(a.esc){ const ts=el("tspan",{"font-size":13,fill:"#6B675E","font-weight":400},tx); ts.textContent=" ("+a.esc+")"; }
-    if(textW(t+(a.esc?" ("+a.esc+")":""),fs,700)>w-16){ tx.setAttribute("textLength",w-16); tx.setAttribute("lengthAdjust","spacingAndGlyphs"); } };
+    if(extra){ const ts=el("tspan",{"font-size":15,fill:c,"font-weight":700},tx); ts.textContent=" · "+extra; }
+    if(textW(t+(a.esc?" ("+a.esc+")":"")+(extra?" · "+extra:""),fs,700)>w-16){ tx.setAttribute("textLength",w-16); tx.setAttribute("lengthAdjust","spacingAndGlyphs"); } };
   POS_UT.forEach(([k,,px,py])=>{ const x=fx+px*fw, y=fy+py*fh, gr=k==="1";
     el("circle",{cx:x,cy:y,r:27,fill:gr?"#FFFF00":"#C00000",stroke:"#1B1A17","stroke-width":3},svg);
     el("text",{x,y:y+9,"text-anchor":"middle","font-size":26,"font-weight":700,fill:gr?"#000":"#fff",class:"num"},svg).textContent=k;
     resto.filter(a=>a.pos===k).forEach((a,i)=>caixa(x,y+34+i*44,a,250)); });
-  /* lesionados à parte (canto superior direito), contagens em cima à esquerda */
-  if(les.length){ const x=fx+fw-170; el("text",{x,y:fy+32,"text-anchor":"middle","font-size":24,"font-weight":800,fill:"#C00000",class:"lbl"},svg).textContent="LESIONADOS:";
-    les.forEach((a,i)=>caixa(x,fy+44+i*44,a,280)); }
+  /* indisponíveis à parte (canto superior direito), com o motivo; contagens em cima à esquerda */
+  if(les.length){ const x=fx+fw-170; el("text",{x,y:fy+32,"text-anchor":"middle","font-size":24,"font-weight":800,fill:"#C00000",class:"lbl"},svg).textContent="INDISPONÍVEIS:";
+    les.forEach((a,i)=>caixa(x,fy+44+i*44,a,300,pres(a)==="L"?"Lesão":"Ausente")); }
   const comPos=resto.filter(a=>a.pos), gr=comPos.filter(a=>a.pos==="1"), campo=comPos.filter(a=>a.pos!=="1"), ext=l=>l.filter(a=>a.esc).length, nP=atl.filter(a=>pres(a)==="P").length;
-  const resumo=`GR: ${gr.length-ext(gr)}${ext(gr)?"+"+ext(gr)+" (formação)":""}  //  Campo: ${campo.length-ext(campo)}${ext(campo)?"+"+ext(campo):""}  //  Presentes: ${nP}${les.length?"  //  Lesionados: "+les.length:""}`;
-  const rw=textW(resumo,24,700)+60; el("path",{d:`M ${fx} ${fy-58} H ${fx+rw} L ${fx+rw-24} ${fy-12} H ${fx} Z`,fill:"#1B1A17"},svg);
+  const resumo=`GR: ${gr.length-ext(gr)}${ext(gr)?"+"+ext(gr)+" (formação)":""}  //  Campo: ${campo.length-ext(campo)}${ext(campo)?"+"+ext(campo):""}  //  Presentes: ${nP}${les.length?"  //  Indisponíveis: "+les.length:""}`;
+  const rw=Math.min(VW-2*fx,textW(resumo,24,700)*1.12+70); el("path",{d:`M ${fx} ${fy-58} H ${fx+rw} L ${fx+rw-24} ${fy-12} H ${fx} Z`,fill:"#1B1A17"},svg);
   el("text",{x:fx+18,y:fy-26,"font-size":24,"font-weight":700,fill:"#fff",class:"lbl"},svg).textContent=resumo;
   const semPos=resto.filter(a=>!a.pos);
   if(semPos.length){ const t=el("text",{x:fx,y:VH-12,"font-size":22,class:"legtxt"},svg); el("tspan",{fill:"#C00000","font-weight":800},t).textContent="Sem posição no Plantel:  ";
@@ -247,13 +254,16 @@ function folhaAjusteUT(id,lid){ const U=uts[id], l=U&&U.exercicios.find(x=>x.id=
 function folhaGrupoUT(id,gid){ const U=uts[id]; if(!U) return; const G=gid?U.grupos.find(g=>g.id===gid):null, sel=new Set(G?G.jogadores:[]);
   folha(`<h3>${G?"Grupo de trabalho":"Novo grupo de trabalho"}</h3>
     <label class="f">Nome<input type="text" id="ug-n" value="${esc(G?G.nome:"")}" placeholder="Ex.: Guarda-redes, Condicionados, Reforço"></label>
-    <h4>Jogadores</h4><div class="pgrid" id="ug-j"></div>
+    <h4>Jogadores <span class="sub">(só quem está presente ou condicionado)</span></h4><div class="pgrid" id="ug-j"></div><p class="sub" id="ug-fora" style="margin:0" hidden></p>
     <label class="f">Nota (opcional)<textarea id="ug-o" rows="3" placeholder="Ex.: trabalho específico com o treinador de GR">${esc(G?G.nota:"")}</textarea></label>
     <div class="actions">${G?`<button class="btn danger l" id="ug-del">Apagar grupo</button>`:""}<button class="btn" data-close>Cancelar</button><button class="btn primary" id="ug-ok">Guardar</button></div>`,(s,fecha)=>{
     const q=x=>s.querySelector(x), g=q("#ug-j");
-    const atl=atletasUT(U); g.innerHTML=atl.map(a=>`<button data-k="${esc(a.k)}"><b>${esc(a.n||a.esc)}</b><span>${esc(a.nome||" ")}</span>${U.presencas[a.k]?`<small>${U.presencas[a.k]}</small>`:""}</button>`).join("");
-    const pintaG=()=>g.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(sel.has(b.dataset.k))));
-    g.querySelectorAll("button").forEach(b=>b.onclick=()=>{ sel.has(b.dataset.k)?sel.delete(b.dataset.k):sel.add(b.dataset.k); pintaG(); }); pintaG();
+    const atl=atletasUT(U).filter(a=>presenteUT(U,a.k)), fora=[...sel].filter(k=>!presenteUT(U,k));
+    if(fora.length){ const f=q("#ug-fora"); f.hidden=false; f.innerHTML=`<b>Saem do grupo ao guardar</b> (não estão presentes): ${esc(fora.map(k=>nomeAtleta(U,k)).join(", "))}.`; }
+    if(!atl.length) g.outerHTML=`<p class="sub" style="margin:0">Ainda ninguém está marcado como presente. Marca primeiro as presenças desta UT.</p>`;
+    else g.innerHTML=atl.map(a=>`<button data-k="${esc(a.k)}"><b>${esc(a.n||a.esc)}</b><span>${esc(a.nome||" ")}</span>${U.presencas[a.k]?`<small>${U.presencas[a.k]}</small>`:""}</button>`).join("");
+    const pintaG=()=>s.querySelectorAll("#ug-j button").forEach(b=>b.setAttribute("aria-pressed",String(sel.has(b.dataset.k))));
+    s.querySelectorAll("#ug-j button").forEach(b=>b.onclick=()=>{ sel.has(b.dataset.k)?sel.delete(b.dataset.k):sel.add(b.dataset.k); pintaG(); }); pintaG();
     if(q("#ug-del")) confirma2(q("#ug-del"),"Toca outra vez",()=>{ fecha(); editaUT(U=>{ U.grupos=U.grupos.filter(x=>x.id!==gid); },"Grupo apagado"); });
     q("#ug-ok").onclick=()=>{ const nm=q("#ug-n").value.trim(); if(!nm&&!sel.size){ toast("Dá um nome ou escolhe jogadores."); return; } fecha();
       const ng={id:gid||uId("g"),nome:nm,jogadores:atl.map(a=>a.k).filter(k=>sel.has(k)),nota:q("#ug-o").value.trim()};
@@ -300,9 +310,11 @@ function gruposDoTexto(U,txt){ const M=chavesAtletas(U), grupos=[], desc=new Set
       novo(rot); poe(r); rot=prox; } });
   if(cur&&!cur.jogadores.length) grupos.pop();
   return {grupos:grupos.map(g=>({nome:g.nome,jogadores:g.jogadores})),desc:[...desc]}; }
-function folhaLerGrupos(id,gid){ const U=uts[id], G=U&&U.grupos.find(g=>g.id===gid); if(!G) return; const r=gruposDoTexto(U,G.nota); let manter=true;
+function folhaLerGrupos(id,gid){ const U=uts[id], G=U&&U.grupos.find(g=>g.id===gid); if(!G) return; const r0=gruposDoTexto(U,G.nota); let manter=true;
+  const ausentes=[...new Set(r0.grupos.flatMap(g=>g.jogadores).filter(k=>!presenteUT(U,k)))], r={...r0,grupos:r0.grupos.map(g=>({...g,jogadores:g.jogadores.filter(k=>presenteUT(U,k))})).filter(g=>g.jogadores.length)};
   folha(`<h3>Ler jogadores do texto</h3><p class="sub" style="margin:0">Procura no texto de “${esc(G.nome||"Grupo")}” os nomes e as alcunhas do Plantel (e os jogadores de fora desta UT).</p>
     ${r.grupos.length?`<ul class="evl">${r.grupos.map(g=>`<li><span><b>${esc(g.nome)}</b> · ${esc(g.jogadores.map(k=>nomeAtleta(U,k)).join(", "))}</span></li>`).join("")}</ul>`:`<p class="sub" style="margin:0">Não encontrei jogadores do Plantel neste texto.</p>`}
+    ${ausentes.length?`<p class="sub" style="margin:0"><b>Ficam de fora</b> (não estão presentes): ${esc(ausentes.map(k=>nomeAtleta(U,k)).join(", "))}.</p>`:""}
     ${r.desc.length?`<p class="sub" style="margin:0"><b>Não reconheci:</b> ${esc(r.desc.join(", "))}. Se forem jogadores, escreve a alcunha no separador Plantel (coluna Alcunhas) ou no jogador de fora desta UT, e volta a ler.</p>`:""}
     <h4>Texto original</h4><div class="seg" id="ulg-t"><button data-k="1">Manter como nota</button><button data-k="">Apagar</button></div>
     <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="ulg-ok" ${r.grupos.length?"":"disabled"}>Criar ${r.grupos.length} ${r.grupos.length===1?"grupo":"grupos"}</button></div>`,(s,fecha)=>{
