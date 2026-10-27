@@ -42,7 +42,7 @@ Coordenadas em metros num campo de 105×68; a equipa SCA ataca da esquerda para 
 ```
 { id, nome, parte: "inicial"|"fundamental"|"final",
   momento (categoria): "prep"|"fund"|"princ"|"of"|"def"|"tda"|"tad"|"fin"|"esq"|""   // Preparação do Jogador, Fundamentos do Jogo, Princípios do Jogo, Organização Ofensiva/Defensiva, Transição Ofensiva/Defensiva, Finalização, Esquemas Táticos
-  sub: "ativ"|"cap"|""   (só na Preparação do Jogador: Ativação e preparação / Capacidades motoras)
+  sub: na Preparação do Jogador "ativ"|"cap" (Ativação e preparação / Capacidades motoras); em of/def/tda/tad a subfase do Modelo de Jogo (constr, criac, final, pressao, bmedio, bbaixo, contra, seg, reacao, reorg)
   tipo (formato do exercício): "analitico"|"circuito"|"rondo"|"mpb"|"posicional"|"vagas"|"setorial"|"intersetorial"|"reduzido"|"condicionado"|"formal"|"competicao"|""
   formato (estrutura, texto: "8+2×4+GR"), espaco: { txt },
   duracao: { series, pratica, pausa, total },   // segundos; total null = conta (séries × prática + pausas)
@@ -53,7 +53,7 @@ Coordenadas em metros num campo de 105×68; a equipa SCA ataca da esquerda para 
              usa: "quadro"|"imagem" },        // qual das duas aparece na ficha e no PDF
   criadoPor, criadoEm, alteradoPor, alteradoEm }   // ids de utilizador; o nome vem sempre na hora
 ```
-Categorias e formatos do caderno de exercícios do clube (v89). A classificação antiga passa sozinha ao ler (`migraCatEx`): ativação → Preparação › Ativação e preparação; físico → Preparação › Capacidades motoras; bola parada → Esquemas Táticos; finalização → Finalização; estratégico → Jogo Condicionado; rondo, MPB e jogo reduzido ficam; as subfases antigas do Modelo de Jogo deixam de ser usadas.
+Categorias e formatos do caderno de exercícios do clube (v89). A classificação antiga passa sozinha ao ler (`migraCatEx`): ativação → Preparação › Ativação e preparação; físico → Preparação › Capacidades motoras; bola parada → Esquemas Táticos; finalização → Finalização; estratégico → Jogo Condicionado; rondo, MPB e jogo reduzido ficam; as subfases do Modelo de Jogo mantêm-se nas 4 categorias dele.
 
 A figura é desenhada com o editor do Modelo de Jogo (id interno `fx:<id do exercício>`) e gravada dentro do exercício; não entra na lista do Modelo de Jogo.
 As imagens ficam no armazenamento de ficheiros do link (capacidade `assets`), não na base de dados (cada registo aceita no máximo 256 KB). A cópia de segurança guarda só o id da imagem. Tirar a imagem de um exercício não apaga o ficheiro (permite Desfazer e cópias duplicadas continuam a funcionar).

@@ -102,7 +102,7 @@ if (!ex || ex.n !== 1 || ex.tot !== 720 || ex.sub !== "cap" || ex.co !== 2 || ex
 // categorias e formatos do caderno do clube: a classificação antiga passa sozinha para a nova
 const mig = await pg.evaluate(() => [{ tipo: "fisico" }, { tipo: "ativacao" }, { momento: "bpof", tipo: "bolaparada" }, { momento: "of", sub: "constr", tipo: "estrategico" }, { momento: "of", sub: "final", tipo: "finalizacao" }, { momento: "tda", sub: "contra", tipo: "reduzido" }, { momento: "def", tipo: "gr" }]
   .map((d) => { const E = normEx({ id: "m", nome: "m", ...d }); return [E.momento, E.sub, E.tipo].join("/"); }));
-if (JSON.stringify(mig) !== JSON.stringify(["prep/cap/", "prep/ativ/", "esq//", "of//condicionado", "fin//", "tda//reduzido", "def//"])) erros.push("Exercícios: passagem para as categorias novas errada " + JSON.stringify(mig));
+if (JSON.stringify(mig) !== JSON.stringify(["prep/cap/", "prep/ativ/", "esq//", "of/constr/condicionado", "fin//", "tda/contra/reduzido", "def//"])) erros.push("Exercícios: passagem para as categorias novas errada " + JSON.stringify(mig));
 if (!(await pg.locator("#x-ficha .exf-dur").textContent()).includes("12'")) erros.push("Exercícios: a ficha devia mostrar o total 12'");
 await pg.screenshot({ path: join(cap, "exercicio-ficha.png") });
 // figura: abre o editor do Modelo de Jogo; o que se desenha fica no exercício e não na lista do Modelo

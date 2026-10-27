@@ -2,9 +2,9 @@
 /* ================= EXERCÍCIOS · repositório para as Unidades de Treino ================= */
 const PARTES=[["inicial","Parte inicial","#B8963F"],["fundamental","Parte fundamental","#C00000"],["final","Parte final","#1F3A5F"]];
 /* caderno de exercícios do clube (Rodrigo Fonte, 27/10/2026): categoria = o que se treina (campo momento), formato = como se treina (campo tipo);
-   só a Preparação do Jogador se divide em duas (campo sub) */
+   subdivisões (campo sub): a Preparação do Jogador em duas e as 4 categorias do Modelo de Jogo nas subfases dele */
 const MOM_EX=[["prep","Preparação do Jogador"],["fund","Fundamentos do Jogo"],["princ","Princípios do Jogo"],["of","Organização Ofensiva"],["def","Organização Defensiva"],["tda","Transição Ofensiva"],["tad","Transição Defensiva"],["fin","Finalização"],["esq","Esquemas Táticos"]];
-const SUB_EX={prep:[["ativ","Ativação e preparação"],["cap","Capacidades motoras"]]};
+const SUB_EX={prep:[["ativ","Ativação e preparação"],["cap","Capacidades motoras"]],...Object.fromEntries(MOMENTOS.map(m=>[m[0],m[3]]))};   // nas 4 do Modelo de Jogo, as subfases dele
 const TIPOS_EX=[["analitico","Exercício Analítico"],["circuito","Circuito"],["rondo","Rondo"],["mpb","MPB"],["posicional","Jogo Posicional"],["vagas","Vagas"],["setorial","Situação Setorial"],["intersetorial","Situação Intersetorial"],["reduzido","Jogo Reduzido"],["condicionado","Jogo Condicionado"],["formal","Jogo Formal"],["competicao","Competição"]];
 const subEx=E=>rotuloDe(SUB_EX[E.momento]||[],E.sub);
 const catEx=E=>rotuloDe(MOM_EX,E.momento)+(E.sub&&subEx(E)?" · "+subEx(E):"");
