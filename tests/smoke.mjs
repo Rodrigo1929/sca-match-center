@@ -271,6 +271,20 @@ const fb = await pg.evaluate(() => { const bs = [...document.querySelectorAll("#
   anSel = { ...anSel, ac: "fc", pt: { x: .5, y: .5 } }; const grava = tentaGravar(null); anSel = { ac: null, eq: "nos", pt: null }; renderAnalise(); return { fc: d("Falta cometida"), fs: d("Falta sofrida"), rem: d("Remate enquadrado"), grava }; });
 if (!fb.fc || !fb.fs || fb.rem || fb.grava) erros.push("Pós-jogo: as faltas do adversário deviam estar bloqueadas " + JSON.stringify(fb));
 await pg.evaluate(() => guardaJogo({ ...jogo, subs: [], eventos: [] }, true));
+// Arquivo: a análise pós-jogo de um jogo arquivado vê-se no Relatório (só leitura) e o jogo atual não muda
+const arq = await pg.evaluate(() => { const r = (ac, j) => ({ id: Math.random().toString(36).slice(2, 9), c: Date.now(), ac, eq: "nos", x: .6, y: .4, j, parte: 1, seg: 90 });
+  guardaAn({ ...an, regs: [r("re", "9"), r("golo", "9"), r("per", "7")] });
+  const J = { id: "Jtestearq", ...snapshotJogo(), adversario: "Arquivado FC", data: "2026-10-01", resultado: { nos: "1", eles: "0" }, obs: "", arquivadoEm: new Date().toISOString() };
+  J.analise.regs.forEach((x) => { if (x.j === "9") x.nome = "Ponta Teste"; });
+  hist[J.id] = J; guardaAn({ ...an, regs: [] }); return J.analise.regs.length; });
+await pg.click("#tab-h"); await pg.click("#h-lista button:has-text('Arquivado FC')"); await pg.click("#aj-an"); await pg.waitForTimeout(200);
+const vr = await pg.evaluate(() => ({ sel: $("r-jogo").value, info: !$("r-arqinfo").hidden, limpar: $("a-limpar").hidden, vis: !$("a-relatorio").hidden, jog: $("r-jog").textContent, golos: [...$("r-orig").querySelectorAll("tr")][1]?.children[4]?.textContent, atual: an.regs.length }));
+if (arq !== 3 || vr.sel !== "Jtestearq" || !vr.info || !vr.limpar || !vr.vis || !vr.jog.includes("Ponta Teste") || vr.golos !== "1" || vr.atual !== 0) erros.push("Arquivo: a análise do jogo arquivado devia abrir no Relatório " + JSON.stringify(vr));
+await pg.screenshot({ path: join(cap, "pos-jogo-arquivado.png") });
+await pg.selectOption("#r-jogo", ""); await pg.waitForTimeout(100);
+const va = await pg.evaluate(() => ({ info: !$("r-arqinfo").hidden, limpar: $("a-limpar").hidden, jog: $("r-jog").textContent }));
+if (va.info || va.limpar || !va.jog.includes("Ainda sem registos")) erros.push("Arquivo: voltar ao jogo atual no Relatório falhou " + JSON.stringify(va));
+await pg.evaluate(() => { delete hist.Jtestearq; relArq = ""; anVista = "reg"; renderAnalise(); });
 
 // Planeamento anual: marcar UT e folga num dia, microciclo e mesociclo; a semana nova segue o anual (nº da UT, folga, nº do microciclo)
 await pg.click("#tab-u"); await pg.click(".u-modo button[data-m='ano']"); await pg.waitForSelector(".pan");

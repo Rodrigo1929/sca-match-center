@@ -148,7 +148,7 @@ function guardaCfg(n){ anCfg=normCfg(n); guardaLocal(); renderAnalise(); gravaDo
 function acumAgora(parte){ const P=an.posse, a={...P.acum[String(parte)]}; if(P.estado&&P.parte===parte&&P.inicio) a[P.estado]+=Math.max(0,(Date.now()-P.inicio)/1000); return a; }
 function tempoParte(parte){ const a=acumAgora(parte); return a.nos+a.eles+a.div+a.fora; }
 function acaoDe(id){ return anCfg.acoes.find(a=>a.id===id)||{id,nome:id,cor:"#6B675E",dir:false,tipos:[]}; }
-function descReg(x){ return acaoDe(x.ac).nome+(x.tipo?" ("+x.tipo+")":"")+(x.x2!=null?" ↗":"")+(x.or==="trans"?" · Transição":x.or==="bp"?" · BP"+(x.bpl?": "+nomeBpl(x.bpl):""):""); }
+function descReg(x,A=acaoDe){ return A(x.ac).nome+(x.tipo?" ("+x.tipo+")":"")+(x.x2!=null?" ↗":"")+(x.or==="trans"?" · Transição":x.or==="bp"?" · BP"+(x.bpl?": "+nomeBpl(x.bpl):""):""); }
 function minutoReg(r_){ return fmt((r_.parte===2?2700:0)+r_.seg); }
 let usr=null, sala=null, meuId=null;
 async function renderPeers(peers){

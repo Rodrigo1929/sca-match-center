@@ -192,8 +192,10 @@
     </div>
     <div class="card rel" id="a-relatorio" hidden>
       <div class="an-top">
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h2 style="font-family:var(--f-display);margin:0;font-size:18px;margin-right:auto">Relatório</h2>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h2 style="font-family:var(--f-display);margin:0;font-size:18px">Relatório</h2>
+          <select id="r-jogo" aria-label="Jogo do relatório" style="margin-right:auto;max-width:100%;min-height:40px"></select>
           <button class="btn primary" id="a-rpdf">⬇ Relatório PDF</button><button class="btn" id="a-xlsx">⬇ Exportar Excel</button><button class="btn danger sm" id="a-limpar">Limpar análise</button></div>
+        <p class="sub" id="r-arqinfo" hidden style="margin:4px 0 0">Jogo arquivado · só para ver. O registo da análise continua no jogo atual.</p>
         <h3 style="font-family:var(--f-display);margin:6px 0 0">Posse e tempo útil</h3><div class="tblwrap" id="r-posse"></div>
         <h3 style="font-family:var(--f-display);margin:10px 0 0">Estatística do jogo <span class="sub" style="font-family:var(--f-body)">(vídeo substitui o ao vivo quando existir · toca num número ao vivo para corrigir)</span></h3><div class="tblwrap" id="r-est"></div>
         <h3 style="font-family:var(--f-display);margin:10px 0 0">Cantos SC Angrense por tipo <span class="sub" style="font-family:var(--f-body)">(toca num canto para completar)</span></h3><div class="tblwrap" id="r-cantos"></div>
