@@ -215,6 +215,16 @@ const n0 = await pg.evaluate(() => est.plantel[0].n);
 await pg.click("#u-xn"); await pg.fill("#ux-n", "Gustavo Rocha"); await pg.fill("#ux-a", "Guga"); await pg.click("#ux-ok"); await pg.waitForTimeout(150);
 const gx = await pg.evaluate(() => { const U = uts[uCur], e = U.extras.find((x) => x.nome === "Gustavo Rocha"); return { alc: e && e.alc, k: e && "e:" + e.id, lidos: gruposDoTexto(U, "Azuis: Guga").grupos.map((g) => g.jogadores.join(",")) }; });
 if (gx.alc !== "Guga" || JSON.stringify(gx.lidos) !== JSON.stringify([gx.k])) erros.push("UT: alcunha do jogador de fora não foi lida " + JSON.stringify(gx));
+// jogadores de fora que já treinaram: noutra UT escolhem-se da lista (com o escalão, a posição e a alcunha), sem escrever
+const utA = await pg.evaluate(() => uCur);
+await pg.evaluate(() => { const U = normUT({ id: "utx2", numero: 97, data: "2026-10-28" }); uts.utx2 = U; uCur = "utx2"; folhaExtraUT("utx2", null); });
+await pg.waitForSelector("#ux-us .chip");
+const lista = await pg.evaluate(() => [...document.querySelectorAll("#ux-us .chip")].map((b) => b.textContent));
+await pg.fill("#ux-q", "guga"); const visG = await pg.evaluate(() => [...document.querySelectorAll("#ux-us .chip")].filter((b) => !b.hidden).length);
+await pg.fill("#ux-q", ""); await pg.click("#ux-us .chip:has-text('Santiago C.')"); await pg.waitForTimeout(150);
+const ux = await pg.evaluate(() => { const e = uts.utx2.extras.find((x) => x.nome === "Santiago C."); return { e: e && [e.escalao, e.pos].join("/"), dis: document.querySelector("#ux-us .chip[disabled]")?.textContent }; });
+await pg.click("#sheet-root [data-close]"); await pg.evaluate((a) => { delete uts.utx2; uCur = a; }, utA);
+if (!lista.some((t) => t.includes("Santiago C.")) || !lista.some((t) => t.includes("Gustavo Rocha")) || visG !== 1 || ux.e !== "Sub19/2" || !String(ux.dis).includes("Santiago C.")) erros.push("UT: lista dos jogadores de fora que já treinaram falhou " + JSON.stringify({ lista, visG, ux }));
 // muitos grupos no PDF: continuam num bloco/página seguinte em vez de ficarem cortados
 const pgs = await pg.evaluate(async () => { const U = clone(uts[uCur]), n0 = (await pdfUT(U)).getNumberOfPages();
   U.grupos = Array.from({ length: 40 }, (_, i) => ({ id: "g" + i, nome: "Grupo " + (i + 1), jogadores: U.grupos[0].jogadores, nota: "linha 1\nlinha 2" })); return [n0, (await pdfUT(U)).getNumberOfPages()]; });
@@ -281,6 +291,12 @@ await pg.click("#tab-h"); await pg.click("#h-lista button:has-text('Arquivado FC
 const vr = await pg.evaluate(() => ({ sel: $("r-jogo").value, info: !$("r-arqinfo").hidden, limpar: $("a-limpar").hidden, vis: !$("a-relatorio").hidden, jog: $("r-jog").textContent, golos: [...$("r-orig").querySelectorAll("tr")][1]?.children[4]?.textContent, atual: an.regs.length }));
 if (arq !== 3 || vr.sel !== "Jtestearq" || !vr.info || !vr.limpar || !vr.vis || !vr.jog.includes("Ponta Teste") || vr.golos !== "1" || vr.atual !== 0) erros.push("Arquivo: a análise do jogo arquivado devia abrir no Relatório " + JSON.stringify(vr));
 await pg.screenshot({ path: join(cap, "pos-jogo-arquivado.png") });
+// PDF para os jogadores: grupo e individual (só as ações do jogador), a partir do jogo arquivado
+await pg.click("#a-jpdf"); await pg.waitForSelector("#pj-js");
+const pj = await pg.evaluate(async () => { const chips = [...document.querySelectorAll("#pj-js .chip")].map((b) => [b.dataset.k, b.getAttribute("aria-pressed")]); const G = hist.Jtestearq;
+  const g = await relatorioJogadoresPdf(G, null), i = await relatorioJogadoresPdf(G, "9"); return { chips, gp: g.getNumberOfPages(), ip: i.getNumberOfPages(), gt: g.output().length, it: i.output().length }; });
+await pg.screenshot({ path: join(cap, "pdf-jogadores-folha.png") }); await pg.click("#sheet-root [data-close]");
+if (!pj.chips.some(([k, p]) => k === "9" && p === "true") || !pj.chips.some(([k, p]) => k === "7" && p === "true") || pj.gp < 1 || pj.ip < 1 || pj.gt < 20000 || pj.it < 15000) erros.push("Pós-jogo: PDF para os jogadores falhou " + JSON.stringify(pj));
 await pg.selectOption("#r-jogo", ""); await pg.waitForTimeout(100);
 const va = await pg.evaluate(() => ({ info: !$("r-arqinfo").hidden, limpar: $("a-limpar").hidden, jog: $("r-jog").textContent }));
 if (va.info || va.limpar || !va.jog.includes("Ainda sem registos")) erros.push("Arquivo: voltar ao jogo atual no Relatório falhou " + JSON.stringify(va));

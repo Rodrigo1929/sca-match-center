@@ -490,3 +490,4 @@ ol.utx li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;al
 input[type=search]{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 10px;min-height:42px;width:100%;min-width:0}
 .ga-q{margin-bottom:8px}
 .pgrid [hidden],.dp-row[hidden]{display:none!important}
+.chips [hidden]{display:none!important}

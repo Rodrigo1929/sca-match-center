@@ -133,16 +133,27 @@ function premirLongo(b,fn){ let t=null; b.addEventListener("pointerdown",e=>{ if
     t=setTimeout(()=>{ t=null; b.dataset.longo="1"; fn({preventDefault(){},clientX:x,clientY:y}); },550); });
   ["pointerup","pointercancel","pointerleave"].forEach(ev=>b.addEventListener(ev,()=>{ if(t){ clearTimeout(t); t=null; } })); }
 function folhaExtraUT(id,eid){ const U=uts[id]; if(!U) return; const X=eid?U.extras.find(e=>e.id===eid):null; let escl=X?(X.escalao||"Outro"):"Sub19";
-  const usados=[...new Map(Object.values(uts).flatMap(u=>u.extras).map(e=>[e.nome,e])).values()];
-  folha(`<h3>Jogador de fora do plantel</h3><p class="sub" style="margin:0">Para juniores, juvenis ou outros chamados a esta UT. Fica só nesta UT (os nomes já usados aparecem como sugestão).</p>
-    <label class="f">Nome<input type="text" id="ux-n" list="ux-l" value="${esc(X?X.nome:"")}" placeholder="Ex.: Santiago C."><datalist id="ux-l">${usados.map(e=>`<option value="${esc(e.nome)}">`).join("")}</datalist></label>
+  /* atletas de fora que já estiveram noutras UT (o registo são as próprias UT): escolhem-se da lista; só um atleta novo se escreve à mão */
+  const chave=e=>semAcento(e.nome), vezes={}, ultimo={};
+  Object.values(uts).sort((a,b)=>String(a.data||"").localeCompare(String(b.data||""))).forEach(u=>u.extras.forEach(e=>{ const k=chave(e); vezes[k]=(vezes[k]||0)+1; ultimo[k]=e; }));
+  const usados=Object.keys(ultimo).map(k=>({...ultimo[k],vezes:vezes[k]})).sort((a,b)=>b.vezes-a.vezes||a.nome.localeCompare(b.nome,"pt"));
+  const jaNaUT=e=>U.extras.some(x=>chave(x)===chave(e));
+  folha(`<h3>Jogador de fora do plantel</h3><p class="sub" style="margin:0">Para juniores, juvenis ou outros chamados a esta UT.</p>
+    ${!X&&usados.length?`<h4 style="margin-bottom:0">Já treinaram connosco <span class="sub">(toca para adicionar)</span></h4><input type="search" id="ux-q" placeholder="Procurar nome ou escalão" aria-label="Procurar atleta">
+    <div class="chips" id="ux-us" style="max-height:34vh;overflow:auto">${usados.map((e,i)=>`<button class="chip" data-i="${i}" data-q="${esc(semAcento(e.nome+" "+(e.escalao||"")+" "+(e.alc||"")))}"${jaNaUT(e)?' aria-pressed="true" disabled':""}><span></span>${e.escalao?`<em class="esc">${esc(e.escalao)}</em>`:""}</button>`).join("")}</div>
+    <h4 style="margin-bottom:0">Ou outro atleta (novo)</h4>`:""}
+    <label class="f">Nome<input type="text" id="ux-n" value="${esc(X?X.nome:"")}" placeholder="Ex.: Santiago C."></label>
     <h4>Escalão</h4><div class="seg" id="ux-e">${[...ESC_FORM,"Outro"].map(x=>`<button data-k="${x}">${x}</button>`).join("")}</div>
     <label class="f">Alcunhas (separadas por vírgulas; para ler os grupos escritos em texto)<input type="text" id="ux-a" value="${esc(X?X.alc||"":"")}" placeholder="Ex.: Guga"></label>
     <label class="f">Posição no campo do plantel<select id="ux-p"><option value="">—</option>${POS_UT.map(([k,n])=>`<option value="${k}"${X&&X.pos===k?" selected":""}>${k} · ${n}</option>`).join("")}</select></label>
     <div class="actions">${X?`<button class="btn danger l" id="ux-del">Tirar da UT</button>`:""}<button class="btn" data-close>Cancelar</button><button class="btn primary" id="ux-ok">${X?"Guardar":"Adicionar"}</button></div>`,(s,fecha)=>{
     const q=x=>s.querySelector(x), pinta=()=>s.querySelectorAll("#ux-e button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===escl)));
     s.querySelectorAll("#ux-e button").forEach(b=>b.onclick=()=>{ escl=b.dataset.k; pinta(); }); pinta();
-    q("#ux-n").onchange=()=>{ const u=usados.find(e=>e.nome===q("#ux-n").value.trim()); if(u&&!X){ escl=u.escalao||"Outro"; q("#ux-p").value=u.pos||""; q("#ux-a").value=u.alc||""; pinta(); } };
+    q("#ux-n").onchange=()=>{ const u=usados.find(e=>chave(e)===semAcento(q("#ux-n").value.trim())); if(u&&!X){ escl=u.escalao||"Outro"; q("#ux-p").value=u.pos||""; q("#ux-a").value=u.alc||""; pinta(); } };
+    s.querySelectorAll("#ux-us .chip").forEach(b=>{ const u=usados[+b.dataset.i]; b.querySelector("span").textContent=u.nome;
+      b.onclick=()=>{ if(jaNaUT(u)) return; const e={id:uId("e"),nome:u.nome,escalao:u.escalao||"",pos:u.pos||"",...(u.alc?{alc:u.alc}:{})};
+        editaUT(V=>{ if(!V.extras.some(x=>chave(x)===chave(e))) V.extras.push(e); },`${u.nome} adicionado à UT`); b.setAttribute("aria-pressed","true"); b.disabled=true; }; });
+    if(q("#ux-q")) q("#ux-q").addEventListener("input",()=>{ const t=semAcento(q("#ux-q").value.trim()); s.querySelectorAll("#ux-us .chip").forEach(b=>b.hidden=!!t&&!b.dataset.q.includes(t)); });
     if(q("#ux-del")) confirma2(q("#ux-del"),"Toca outra vez",()=>{ fecha(); editaUT(U=>{ U.extras=U.extras.filter(e=>e.id!==eid); delete U.presencas["e:"+eid]; U.grupos.forEach(g=>{ g.jogadores=g.jogadores.filter(k=>k!=="e:"+eid); }); },`${X.nome} tirado da UT`); });
     q("#ux-ok").onclick=()=>{ const nm=q("#ux-n").value.trim(); if(!nm){ toast("Escreve o nome."); return; } fecha();
       const alc=q("#ux-a").value.trim(), e={id:eid||uId("e"),nome:nm,escalao:escl==="Outro"?"":escl,pos:q("#ux-p").value,...(alc?{alc}:{})};
