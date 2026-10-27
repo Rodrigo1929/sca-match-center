@@ -31,6 +31,7 @@ Existe para dar acesso a um observador de fora do clube sem ele ver o resto da a
 user: scopes ["profile"]   (nomes de quem edita)
 downloads: true             (PDF e PowerPoint, desde a Obs. 21)
 ```
+Verificado em 27/10/2026 (Obs. 23, nível `interact`): escreve em `obs/<outro>/relatorios` e em `log/<próprio>/e`; não escreve em `base`, `rev` nem `log/<outro>/e`.
 Até à Obs. 22: `obs` escrevia só o dono, `obs/{self}` cada um no seu espaço, `base` escreviam todos.
 
 **Limites das regras** (a base de dados só sabe ler/escrever por caminho e nível): não verifica que `por` é quem está a gravar (só que o registo está no espaço dele, `log/<uid>`), não conhece a janela de 10 minutos nem distingue criar de apagar. Por isso: cada um pode apagar os seus próprios registos; apagar relatórios de outros autores está bloqueado só na app (a regra `obs` deixa).
