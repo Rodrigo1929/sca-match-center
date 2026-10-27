@@ -218,7 +218,7 @@ let uFiltro={q:"",parte:"",mom:"",tipo:""};
 function folhaAddExUT(id){ const U=uts[id]; if(!U) return; const escolhidos=new Set();
   folha(`<h3>Adicionar exercícios à UT${U.numero}</h3><p class="sub" style="margin:0">Cada exercício entra como cópia de como está hoje no repositório.</p>
     <div class="ex-filtros" style="margin:0"><input type="search" id="ua-q" placeholder="Pesquisar…" aria-label="Pesquisar"><select id="ua-p" aria-label="Parte"><option value="">Todas as partes</option>${PARTES.map(p=>`<option value="${p[0]}">${p[1]}</option>`).join("")}</select>
-      <select id="ua-m" aria-label="Momento"><option value="">Todos os momentos</option>${MOM_EX.map(m=>`<option value="${m[0]}">${m[1]}</option>`).join("")}</select><select id="ua-t" aria-label="Tipo"><option value="">Todos os tipos</option>${TIPOS_EX.map(t=>`<option value="${t[0]}">${t[1]}</option>`).join("")}</select></div>
+      <select id="ua-m" aria-label="Categoria"><option value="">Todas as categorias</option>${MOM_EX.map(m=>`<option value="${m[0]}">${m[1]}</option>`).join("")}</select><select id="ua-t" aria-label="Formato"><option value="">Todos os formatos</option>${TIPOS_EX.map(t=>`<option value="${t[0]}">${t[1]}</option>`).join("")}</select></div>
     <div id="ua-l" class="ua-l"></div>
     <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="ua-ok" disabled>Adicionar</button></div>`,(s,fecha)=>{
     const q=x=>s.querySelector(x), ok=q("#ua-ok"); q("#ua-q").value=uFiltro.q; q("#ua-p").value=uFiltro.parte; q("#ua-m").value=uFiltro.mom; q("#ua-t").value=uFiltro.tipo;

@@ -92,13 +92,17 @@ await pg.screenshot({ path: join(cap, "tv-modelo.png") }); await pg.keyboard.pre
 // Exercícios: criar com a ficha da UT, conta da duração, figura com o editor do Modelo, duplicar, apagar e desfazer, filtros
 await pg.click("#tab-x"); await pg.click("#x-novo2");
 await pg.fill("#xe-n", "MPB Posicional"); await pg.fill("#xe-fo", "8+2×4+GR"); await pg.fill("#xe-es", "Dupla área");
-await pg.click("#xe-p [data-k='fundamental']"); await pg.click("#xe-m [data-k='of']"); await pg.click("#xe-s [data-k='constr']"); await pg.click("#xe-t [data-k='mpb']");
+await pg.click("#xe-p [data-k='fundamental']"); await pg.click("#xe-m [data-k='prep']"); await pg.click("#xe-s [data-k='cap']"); await pg.click("#xe-t [data-k='mpb']");
 await pg.fill("#xe-se", "3"); await pg.fill("#xe-pr", "3'"); await pg.fill("#xe-pa", "1,30");
 await pg.fill("#xe-ob", "Manter a posse em superioridade e acelerar para a finalização.");
 await pg.fill("#xe-co", "Criar linhas de passe\nReceção perfilada"); await pg.fill("#xe-va", "Competição interna"); await pg.fill("#xe-ma", "Bolas\nCones");
 await pg.click("#xe-ok"); await pg.waitForTimeout(200);
 const ex = await pg.evaluate(() => { const E = Object.values(exercicios)[0]; return E && { n: Object.keys(exercicios).length, tot: totalEx(E), sub: E.sub, co: E.comportamentos.length, ma: E.material.length, fig: temFigura(E) }; });
-if (!ex || ex.n !== 1 || ex.tot !== 720 || ex.sub !== "constr" || ex.co !== 2 || ex.ma !== 2 || ex.fig) erros.push("Exercícios: ficha criada com dados errados " + JSON.stringify(ex));
+if (!ex || ex.n !== 1 || ex.tot !== 720 || ex.sub !== "cap" || ex.co !== 2 || ex.ma !== 2 || ex.fig) erros.push("Exercícios: ficha criada com dados errados " + JSON.stringify(ex));
+// categorias e formatos do caderno do clube: a classificação antiga passa sozinha para a nova
+const mig = await pg.evaluate(() => [{ tipo: "fisico" }, { tipo: "ativacao" }, { momento: "bpof", tipo: "bolaparada" }, { momento: "of", sub: "constr", tipo: "estrategico" }, { momento: "of", sub: "final", tipo: "finalizacao" }, { momento: "tda", sub: "contra", tipo: "reduzido" }, { momento: "def", tipo: "gr" }]
+  .map((d) => { const E = normEx({ id: "m", nome: "m", ...d }); return [E.momento, E.sub, E.tipo].join("/"); }));
+if (JSON.stringify(mig) !== JSON.stringify(["prep/cap/", "prep/ativ/", "esq//", "of//condicionado", "fin//", "tda//reduzido", "def//"])) erros.push("Exercícios: passagem para as categorias novas errada " + JSON.stringify(mig));
 if (!(await pg.locator("#x-ficha .exf-dur").textContent()).includes("12'")) erros.push("Exercícios: a ficha devia mostrar o total 12'");
 await pg.screenshot({ path: join(cap, "exercicio-ficha.png") });
 // figura: abre o editor do Modelo de Jogo; o que se desenha fica no exercício e não na lista do Modelo
