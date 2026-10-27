@@ -348,6 +348,22 @@ await pg.click("#tab-h"); await pg.click("#h-arq"); await pg.click("#ar-ok"); aw
 const arqAdv = await pg.evaluate(() => { const J = Object.values(hist).find((h) => h.adversario === "Equipa Teste"); return { onze: J && J.adv.onze.filter((o) => o.n).length, subs: J && J.adv.subs.length, nomeSub: J && J.adv.subs[0]?.nomeEntra, novoOnze: advJ().onze.length, novoSubs: (jogo.subsAdv || []).length, equipa: advJ().equipa, plantel: Object.values(advs).find((t) => t.nome === "Equipa Teste")?.plantel.length }; });
 if (arqAdv.onze !== 11 || arqAdv.subs !== 1 || arqAdv.nomeSub !== "Adv 14" || arqAdv.novoOnze !== 0 || arqAdv.novoSubs !== 0 || arqAdv.equipa !== "" || arqAdv.plantel !== 14) erros.push("Adversário: arquivar devia guardar o onze e as substituições e começar o jogo seguinte limpo " + JSON.stringify(arqAdv));
 await pg.evaluate(() => { Object.keys(hist).forEach((k) => { if (hist[k].adversario === "Equipa Teste") delete hist[k]; }); });
+// importar da SCA Observação: ficheiro do plantel base → equipa com origem "observacao" e, no jogo atual, cores e onze provável (siglas iguais às da Observação)
+const Pobs = { app: "SCA Observação", tipo: "plantel-adversario", versao: 1, exportadoEm: "2026-10-27T10:00:00Z", equipa: { id: "lusitania", nome: "Lusitânia" },
+  plantel: Array.from({ length: 12 }, (_, i) => ({ id: "j" + i, n: String(i + 1), nome: "Lus " + (i + 1), pos: "" })), sistema: "4-4-2", cores: { cam: "#00A000", cam2: "#FFFFFF", num: "#FFFFFF", gr: "#FFFF00" },
+  onzeProv: { sis: "4-4-2", pos: { GR: "j0", LD: "j1", PLD: "j9", PLE: "j10" } }, onzeAlt: null, fonte: "plantel base de 27/10/2026 · onzes do relatório vs Teste" };
+await pg.evaluate(() => guardaJogo({ ...jogo, adversario: "Lusitânia" }, true));
+await pg.click("#tab-d"); await pg.waitForTimeout(150);
+await pg.setInputFiles("#d-file", { name: "Plantel_lusitania.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(Pobs)) });
+await pg.click("#ia-ok"); await pg.waitForTimeout(200);
+const imp = await pg.evaluate(() => { const T = advs.lusitania, A = advJ(); return { origem: T && T.origem, n: T && T.plantel.length, eq: A.equipa, sis: A.sistema, gr: A.onze.find((o) => o.slot === "GR")?.n, ple: A.onze.find((o) => o.slot === "PLE")?.n, cam: A.cores.cam, txt: $("d-form").textContent }; });
+if (imp.origem !== "observacao" || imp.n !== 12 || imp.eq !== "lusitania" || imp.sis !== "4-4-2" || imp.gr !== "1" || imp.ple !== "11" || imp.cam !== "#00A000" || !imp.txt.includes("importado da SCA Observação")) erros.push("Adversário: importar da Observação falhou " + JSON.stringify({ ...imp, txt: imp.txt.slice(0, 160) }));
+await pg.screenshot({ path: join(cap, "adversario-importado.png") });
+// importar outra vez substitui o plantel só com 2 toques
+await pg.setInputFiles("#d-file", { name: "Plantel_lusitania.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ ...Pobs, plantel: Pobs.plantel.slice(0, 11) })) });
+await pg.click("#ia-ok"); const n1 = await pg.evaluate(() => advs.lusitania.plantel.length); await pg.click("#ia-ok"); await pg.waitForTimeout(150);
+const n2 = await pg.evaluate(() => advs.lusitania.plantel.length);
+if (n1 !== 12 || n2 !== 11) erros.push("Adversário: substituir o plantel importado devia pedir 2 toques " + JSON.stringify({ n1, n2 }));
 
 // base de dados simulada: no link, os dados que chegam da base de dados vêm congelados (snapshots e data());
 // a app tem de os copiar à entrada (lerDoc), senão uma alteração a seguir pode não mudar nada sem dar erro (como na app de observação)

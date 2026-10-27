@@ -81,11 +81,14 @@ Ver `docs/regras.md`. As principais:
 - Um golo conta também como remate e como remate à baliza.
 - Cantos: o +1 do Ao vivo é a fonte única e cria a ficha do canto (com tipo).
 - Substituições do Ao vivo não mexem nos quadros de bolas paradas.
-- Adversário (desde a v84): plantel por equipa em `adversarios/<id>`, reutilizado entre jogos; onze, sistema, cores e suplentes por jogo (`jogo.adv`); substituições do adversário no separador Jogo, gravadas uma a uma (`subsAdv/<id>`), com minuto escrito à mão. Atualizam só o quadro Encaixe; não mexem nos quadros de bolas paradas nem no Onze (o Onze é só a nossa equipa). Arquivar guarda-as; o jogo seguinte começa limpo. Fase 2 (por fazer): importar da SCA Observação (`origem`, `versaoImportada`).
+- Adversário (desde a v84): plantel por equipa em `adversarios/<id>`, reutilizado entre jogos; onze, sistema, cores e suplentes por jogo (`jogo.adv`); substituições do adversário no separador Jogo, gravadas uma a uma (`subsAdv/<id>`), com minuto escrito à mão. Atualizam só o quadro Encaixe; não mexem nos quadros de bolas paradas nem no Onze (o Onze é só a nossa equipa). Arquivar guarda-as; o jogo seguinte começa limpo. Fase 2 (v85): «⬆ Importar da Observação» lê o ficheiro que a Observação exporta no plantel base («⬇ Exportar para o Match Center»): plantel, sistema, cores, onze provável e alternativo; a equipa fica com `origem: "observacao"` e `versaoImportada`. Sistemas e siglas do Adversário iguais aos da Observação (`SIS_OBS`). As duas apps continuam sem partilhar dados: só por ficheiro.
 - Um jogador não aparece duas vezes num lance, exceto como alternativa.
 - Com análise de vídeo, a estatística do vídeo substitui a do Ao vivo.
 
 ## Forma de trabalhar
 - Antes de uma mudança grande, perguntar o objetivo e quem usa (escolha múltipla quando fizer sentido).
 - Cada versão publicada: atualizar `CHANGELOG.md`, subir a versão em `package.json` e no dossier do projeto.
+
+## Cópias diárias
+Tarefa agendada «Cópia diária SCA» (Claude deste PC, 23h): lê as bases de dados das duas apps (ArtifactData) para `Copias SCA/_leitura` e corre `node tools/copia-diaria.mjs "<pasta>"`, que guarda `Copias SCA/<app>/<AAAA-MM-DD>.json` só quando algo mudou (e não guarda leituras incompletas). Pasta: `Documents/Claude/Code/Copias SCA` (fora do repositório). A cópia do Match Center está no formato da Cópia de segurança (Histórico › Repor cópia). Coleções novas na base de dados têm de entrar na lista da tarefa e em `tools/copia-diaria.mjs`.
 - Commits pequenos, com mensagem em português a dizer o que muda para o utilizador.

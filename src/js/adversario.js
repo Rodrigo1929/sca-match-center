@@ -3,16 +3,21 @@
    jogo.subsAdv (um documento por substituição: subsAdv/<id>) e jogo.encaixe (sítios das bolinhas no Encaixe, para o Onze não mudar).
    Pronto para a Fase 2 (importar da SCA Observação): origem "manual" | "observacao", versaoImportada, onzeProv/onzeAlt {sis, pos {código: idJogador}}. */
 const CORES_ADV_DEF={cam:"#1F4E9A",cam2:"#FFFFFF",num:"#FFFFFF",gr:"#2E9E4F"};
-/* [código, u, v]: u = distância à baliza deles (0) até à nossa (1), v = de cima (0) para baixo (1); o adversário ataca para a esquerda */
-const SIS_ADV={
-  "4-4-2":[["GR",.03,.5],["DD",.2,.12],["DCD",.15,.37],["DCE",.15,.63],["DE",.2,.88],["MD",.4,.12],["MCD",.36,.38],["MCE",.36,.62],["ME",.4,.88],["PLD",.52,.4],["PLE",.52,.6]],
-  "4-3-3":[["GR",.03,.5],["DD",.2,.12],["DCD",.15,.37],["DCE",.15,.63],["DE",.2,.88],["MC",.31,.5],["MD",.4,.3],["ME",.4,.7],["ED",.52,.15],["PL",.55,.5],["EE",.52,.85]],
-  "4-2-3-1":[["GR",.03,.5],["DD",.2,.12],["DCD",.15,.37],["DCE",.15,.63],["DE",.2,.88],["MCD",.31,.38],["MCE",.31,.62],["ED",.44,.15],["MO",.45,.5],["EE",.44,.85],["PL",.56,.5]],
-  "4-1-4-1":[["GR",.03,.5],["DD",.2,.12],["DCD",.15,.37],["DCE",.15,.63],["DE",.2,.88],["MC",.29,.5],["MD",.42,.12],["MID",.4,.38],["MIE",.4,.62],["ME",.42,.88],["PL",.55,.5]],
-  "3-4-3":[["GR",.03,.5],["DCD",.16,.25],["DC",.14,.5],["DCE",.16,.75],["AD",.35,.1],["MCD",.33,.38],["MCE",.33,.62],["AE",.35,.9],["ED",.52,.2],["PL",.55,.5],["EE",.52,.8]],
-  "3-5-2":[["GR",.03,.5],["DCD",.16,.25],["DC",.14,.5],["DCE",.16,.75],["AD",.36,.1],["MCD",.33,.35],["MC",.3,.5],["MCE",.33,.65],["AE",.36,.9],["PLD",.53,.4],["PLE",.53,.6]],
-  "5-3-2":[["GR",.03,.5],["AD",.24,.1],["DCD",.15,.3],["DC",.13,.5],["DCE",.15,.7],["AE",.24,.9],["MD",.36,.27],["MC",.34,.5],["ME",.36,.73],["PLD",.52,.4],["PLE",.52,.6]],
-  "5-4-1":[["GR",.03,.5],["AD",.24,.1],["DCD",.15,.3],["DC",.13,.5],["DCE",.15,.7],["AE",.24,.9],["MD",.4,.15],["MCD",.36,.4],["MCE",.36,.6],["ME",.4,.85],["PL",.53,.5]]};
+/* sistemas e siglas iguais aos da SCA Observação (LAYOUTS), para o onze importado cair no sítio certo: [código, nº, x, y],
+   com x = de um lado ao outro (0 = direita) e y = da baliza deles (0) para a frente; aqui o adversário ataca para a esquerda */
+const L4_ADV=[["GR","1",.5,.035],["LD","2",.10,.25],["DCD","3",.31,.20],["DCE","4",.69,.20],["LE","5",.90,.25]];
+const SIS_OBS={
+  "4-3-3":[...L4_ADV,["MDC","6",.5,.46],["MCD","8",.31,.53],["MO","10",.69,.53],["ED","7",.10,.75],["PL","9",.5,.78],["EE","11",.90,.75]],
+  "4-4-2":[...L4_ADV,["MD","7",.10,.55],["MCD","6",.31,.50],["MCE","8",.69,.50],["ME","11",.90,.55],["PLD","9",.31,.78],["PLE","10",.69,.78]],
+  "4-4-2 losango":[...L4_ADV,["MDC","6",.5,.40],["MCD","8",.28,.55],["MCE","7",.72,.55],["MO","10",.5,.66],["PLD","9",.33,.82],["PLE","11",.67,.82]],
+  "4-2-3-1":[...L4_ADV,["MDCD","6",.31,.45],["MDCE","8",.69,.45],["ED","7",.10,.62],["MO","10",.5,.58],["EE","11",.90,.62],["PL","9",.5,.80]],
+  "4-1-4-1":[...L4_ADV,["MDC","6",.5,.40],["MD","7",.10,.58],["MCD","8",.31,.56],["MCE","10",.69,.56],["ME","11",.90,.58],["PL","9",.5,.80]],
+  "3-5-2":[["GR","1",.5,.035],["DCD","2",.31,.22],["DC","3",.5,.30],["DCE","4",.69,.22],["ALD","7",.10,.45],["ALE","5",.90,.45],["MDC","6",.5,.58],["MCD","8",.31,.55],["MCE","10",.69,.55],["PLD","9",.31,.80],["PLE","11",.69,.80]],
+  "3-4-3":[["GR","1",.5,.05],["DCD","2",.278,.36],["DC","3",.5,.35],["DCE","4",.722,.36],["ALD","7",.075,.5],["ALE","5",.925,.5],["MCD","8",.32,.61],["MCE","6",.68,.62],["AVD","10",.16,.775],["PL","9",.5,.795],["AVE","11",.84,.775]],
+  "5-3-2":[["GR","1",.5,.035],["ALD","2",.10,.32],["DCD","3",.31,.22],["DC","4",.5,.30],["DCE","6",.69,.22],["ALE","5",.90,.32],["MCD","8",.31,.55],["MDC","7",.5,.58],["MCE","10",.69,.55],["PLD","9",.31,.80],["PLE","11",.69,.80]],
+  "5-4-1":[["GR","1",.5,.035],["ALD","2",.10,.30],["DCD","3",.31,.22],["DC","4",.5,.30],["DCE","6",.69,.22],["ALE","5",.90,.30],["MD","7",.10,.60],["MCD","8",.31,.55],["MCE","10",.69,.55],["ME","11",.90,.60],["PL","9",.5,.80]]};
+/* [código, u, v]: u = distância à baliza deles (0) até à nossa (1), v = de cima (0) para baixo (1) */
+const SIS_ADV=Object.fromEntries(Object.entries(SIS_OBS).map(([k,L])=>[k,L.map(([c,,x,y])=>[c,+(y*.68).toFixed(3),x])]));
 function slugEq(s){ return String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,60); }
 function normCoresAdv(c){ const h=v=>/^#[0-9a-f]{6}$/i.test(String(v||""))?String(v).toUpperCase():null; return {cam:h(c?.cam)||CORES_ADV_DEF.cam,cam2:h(c?.cam2)||CORES_ADV_DEF.cam2,num:h(c?.num)||CORES_ADV_DEF.num,gr:h(c?.gr)||CORES_ADV_DEF.gr}; }
 function normOnzeObs(o){ return o&&typeof o==="object"?{sis:String(o.sis||""),pos:Object.fromEntries(Object.entries(o.pos||{}).map(([k,v])=>[String(k),String(v)]))}:null; }
@@ -34,7 +39,7 @@ function rotAdv(n){ const nm=nomeAdv(n); return nm?`${n} · ${nm}`:n; }
 function corTexto(hex){ const v=parseInt(String(hex).slice(1),16), r=v>>16&255, g=v>>8&255, b=v&255; return (r*299+g*587+b*114)/1000>150?"#000000":"#FFFFFF"; }
 /* posições de um sistema no campo do separador (o mesmo do Onze) */
 function posSisAdv(sis){ const [x0,y0,x1,y1]=FUNDOS.pitch.campo, w=x1-x0, h=y1-y0;
-  return (SIS_ADV[sis]||SIS_ADV["4-4-2"]).map(([c,u,v])=>({slot:c,pos:c,x:Math.round(x1-u*w),y:Math.round(y0+v*h)})); }
+  return (SIS_ADV[sis]||SIS_ADV["4-3-3"]).map(([c,u,v])=>({slot:c,pos:c,x:Math.round(x1-u*w),y:Math.round(y0+v*h)})); }
 /* muda o sistema: cada jogador fica na posição com o mesmo código; os outros ocupam as que sobram, pela ordem */
 function onzeNoSistema(onze,sis){ const novo=posSisAdv(sis).map(p=>({...p,n:""})), sobra=[];
   onze.forEach(o=>{ if(!o.n) return; const p=novo.find(q=>q.slot===o.slot&&!q.n); if(p) p.n=o.n; else sobra.push(o.n); });
@@ -150,7 +155,8 @@ function renderAdv(){ const v=$("view-d"); if(!v||v.hidden) return; if(dragging)
   else st.innerHTML=`<p class="sub" style="padding:24px 16px;margin:0">${T?"Escolhe o sistema para pôr o onze no campo.":"Escolhe a equipa adversária (ou cria-a) para começar o onze."}</p>`;
   const fm=$("d-form");
   if(!ocupado(fm)){
-    fm.innerHTML=`<label class="f">Equipa (plantel)<select id="d-eq"><option value="">— Escolhe a equipa —</option>${lst.map(t=>`<option value="${esc(t.id)}">${esc(t.nome)} · ${t.plantel.length} jog.</option>`).join("")}<option value="__nova">+ Nova equipa…</option></select></label>
+    fm.innerHTML=`<button class="btn" id="d-imp" style="align-self:flex-start" title="Ficheiro exportado no plantel base da SCA Observação">⬆ Importar da Observação</button>
+      <label class="f">Equipa (plantel)<select id="d-eq"><option value="">— Escolhe a equipa —</option>${lst.map(t=>`<option value="${esc(t.id)}">${esc(t.nome)} · ${t.plantel.length} jog.</option>`).join("")}<option value="__nova">+ Nova equipa…</option></select></label>
       ${!T&&jogo.adversario?(advs[sug]?`<button class="btn" id="d-usa">Usar o plantel de ${esc(advs[sug].nome)}</button>`:`<button class="btn" id="d-cria">Criar a equipa «${esc(jogo.adversario)}»</button>`):""}
       ${!jogo.adversario?`<p class="sub" style="margin:0">Escreve o adversário no separador Jogo.</p>`:""}
       ${T?`<div class="fields"><label class="f">Sistema<select id="d-sis"><option value="">—</option>${Object.keys(SIS_ADV).map(k=>`<option>${k}</option>`).join("")}</select></label>
@@ -158,6 +164,7 @@ function renderAdv(){ const v=$("view-d"); if(!v||v.hidden) return; if(dragging)
       <div class="d-cores">${[["cam","Camisola"],["cam2","Contorno"],["num","Número"],["gr","Guarda-redes"]].map(([k,l])=>`<label>${l}<input type="color" id="d-c-${k}" value="${A.cores[k].toLowerCase()}"></label>`).join("")}</div>
       <p class="sub" style="margin:0">Origem do plantel: ${T.origem==="observacao"?`importado da SCA Observação${T.versaoImportada?" ("+esc(T.versaoImportada)+")":""}`:"manual"}</p>
       <button class="btn danger sm" id="d-limpa" style="align-self:flex-start">Limpar o onze deste jogo</button>`:""}`;
+    $("d-imp").onclick=()=>$("d-file").click();
     const sl=$("d-eq"); sl.value=T?T.id:""; sl.onchange=()=>{ const v_=sl.value; if(v_==="__nova"){ sl.value=T?T.id:""; folhaNovaEquipa(); return; } if(v_) escolheEquipa(v_); else guardaAdvJogo({...clone(A),equipa:""}); };
     if($("d-usa")) $("d-usa").onclick=()=>escolheEquipa(sug); if($("d-cria")) $("d-cria").onclick=()=>criaEquipa(jogo.adversario);
     if(T){ $("d-sis").value=A.sistema||""; $("d-sis").onchange=e=>{ const s_=e.target.value; if(!s_) return; const N=clone(advJ()); N.sistema=s_; N.onze=onzeNoSistema(N.onze,s_); pushUndo({tipo:"advonze",antes:clone(A.onze)});
@@ -181,6 +188,30 @@ function renderAdv(){ const v=$("view-d"); if(!v||v.hidden) return; if(dragging)
       b.onclick=()=>{ const N=clone(advJ()); N.suplentes=N.suplentes.includes(n)?N.suplentes.filter(x=>x!==n):[...N.suplentes,n].sort(byNum); guardaAdvJogo(N); }; sp.appendChild(b); }); }
   if(!sp.childElementCount) sp.innerHTML=`<p class="sub" style="margin:0">${T?"Os jogadores do plantel que não são titulares aparecem aqui.":"Escolhe primeiro a equipa."}</p>`;
 }
+/* ---------- importar da SCA Observação (Fase 2): ficheiro exportado no plantel base da Observação ---------- */
+function eqDoFicheiro(P){ const id=slugEq((P.equipa&&(P.equipa.id||P.equipa.nome))||"")||"eq-"+Date.now().toString(36); return {id,nome:String((P.equipa&&P.equipa.nome)||id)}; }
+/* onze da Observação {sis, pos {código: idJogador}} → onze do jogo com os números do plantel */
+function onzeDeObs(o,pl){ const sis=o&&SIS_ADV[o.sis]?o.sis:null; if(!sis) return null; const num=id=>{ const p=pl.find(x=>x.id===id); return p?p.n:""; };
+  return {sis,onze:posSisAdv(sis).map(p=>({...p,n:num((o.pos||{})[p.slot])}))}; }
+function folhaImportaAdv(P){ const {id,nome}=eqDoFicheiro(P), T=advs[id], pl=P.plantel, prov=onzeDeObs(P.onzeProv,pl), alt=!!(P.onzeAlt&&SIS_ADV[P.onzeAlt.sis]), A=advJ(), outro=A.equipa&&A.equipa!==id;
+  folha(`<h3>Importar da SCA Observação · ${esc(nome)}</h3>
+    <p class="sub" style="margin:0">${pl.length} jogadores (${pl.filter(p=>p.n).length} com número)${P.sistema?" · sistema "+esc(P.sistema):""}${prov?" · onze provável ("+esc(prov.sis)+")":""}${alt?" · onze alternativo":""}.<br>Origem: ${esc(P.fonte||"SCA Observação")}.</p>
+    ${T&&T.plantel.length?`<p class="sub" style="margin:0;color:var(--red)"><b>Substitui o plantel de ${esc(T.nome)} que está no Match Center (${T.plantel.length} jogadores).</b></p>`:""}
+    ${prov?`<label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="ia-jogo"${outro?"":" checked"} style="accent-color:var(--red);width:20px;height:20px"> Usar no jogo atual${jogo.adversario?" (vs "+esc(jogo.adversario)+")":""}: equipa, cores e onze provável</label>`:""}
+    <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="ia-ok">Importar</button></div>`,(s_,fecha)=>{
+    const ok=s_.querySelector("#ia-ok"), faz=()=>{ const c=s_.querySelector("#ia-jogo"), usa=!!(c&&c.checked); fecha(); importaAdv(P,usa); };
+    if(T&&T.plantel.length) confirma2(ok,"Toca outra vez para substituir",faz); else ok.onclick=faz; }); }
+function importaAdv(P,usaNoJogo){ const {id,nome}=eqDoFicheiro(P), T0=advs[id]||{}, cores=normCoresAdv(P.cores);
+  const versao=`${P.fonte||"SCA Observação"} · exportado a ${new Date(P.exportadoEm||Date.now()).toLocaleString("pt-PT",{dateStyle:"short",timeStyle:"short"})}`;
+  guardaEquipa({...T0,id,nome,plantel:P.plantel.map((p,i)=>({id:String(p.id||"o"+i),n:String(p.n||""),nome:String(p.nome||""),pos:String(p.pos||"")})),
+    sistema:SIS_ADV[P.sistema]?P.sistema:(T0.sistema||""),cores,onzeProv:P.onzeProv||null,onzeAlt:P.onzeAlt||null,origem:"observacao",versaoImportada:versao,importadoEm:new Date().toISOString()},usaNoJogo);
+  if(usaNoJogo){ const pl=advs[id].plantel, o=onzeDeObs(P.onzeProv,pl), N=clone(advJ()); pushUndo({tipo:"advonze",antes:clone(N.onze)});
+    N.equipa=id; N.cores=cores; if(o){ N.sistema=o.sis; N.onze=o.onze; } else if(!N.onze.length){ N.sistema=advs[id].sistema||"4-3-3"; N.onze=posSisAdv(N.sistema).map(p=>({...p,n:""})); }
+    N.suplentes=N.suplentes.filter(n=>pl.some(p=>p.n===n)&&!N.onze.some(x=>x.n===n)); guardaAdvJogo(N); }
+  toast(`Plantel de ${nome} importado da Observação · ${P.plantel.length} jogadores`); }
+$("d-file").onchange=async e=>{ const f=e.target.files[0]; e.target.value=""; if(!f) return; let P=null; try{ P=JSON.parse(await f.text()); }catch(err){}
+  if(!P||P.app!=="SCA Observação"||P.tipo!=="plantel-adversario"||!Array.isArray(P.plantel)){ toast("Este ficheiro não é um plantel exportado da SCA Observação."); return; }
+  folhaImportaAdv(P); };
 $("d-pladd").onclick=()=>{ const T=eqAdv(); if(!T) return; clearTimeout(dPlT); const L2=lePlantelAdv(T), id="p"+Date.now().toString(36);
   guardaEquipa({...L2,plantel:[...L2.plantel,{id,n:"",nome:"",pos:""}]}); const i=$("d-pl").querySelector(`[data-pid="${id}"] .dp-n`); if(i) i.focus(); };
 

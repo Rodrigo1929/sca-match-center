@@ -98,7 +98,7 @@ A semana nova do plano semanal usa o anual: UT nº → treino (de manhã na vés
 adversarios/{id}: { id, nome, plantel: [{ id, n, nome, pos }],     // pos = sigla (DC, MC, PL…)
   sistema (habitual), cores: { cam, cam2, num, gr },
   onzeProv, onzeAlt: { sis, pos: { [código]: idJogador } } | null,   // como na SCA Observação (Fase 2)
-  origem: "manual"|"observacao", versaoImportada, importadoEm? }    // Fase 2: importar da Observação sem implementar ainda
+  origem: "manual"|"observacao", versaoImportada (texto: de onde e quando), importadoEm? }   // importado do ficheiro da SCA Observação (v85)
 jogo.adv: { equipa (id em adversarios), sistema, cores, onze: [{ slot, n, pos, x, y }] (11), suplentes: [nº] }
 jogo.subsAdv: [{ id, sai, entra, min, c }]                          // gravadas uma a uma em subsAdv/{id}
 jogo.encaixe: { nos: { [slot]: {x,y} }, adv: { [slot]: {x,y} } }    // só o quadro Encaixe; o Onze não muda
