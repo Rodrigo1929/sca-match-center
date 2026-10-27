@@ -99,8 +99,9 @@ adversarios/{id}: { id, nome, plantel: [{ id, n, nome, pos }],     // pos = sigl
   sistema (habitual), cores: { cam, cam2, num, gr },
   onzeProv, onzeAlt: { sis, pos: { [código]: idJogador } } | null,   // como na SCA Observação (Fase 2)
   origem: "manual"|"observacao", versaoImportada (texto: de onde e quando), importadoEm? }   // importado do ficheiro da SCA Observação (v85)
-jogo.adv: { equipa (id em adversarios), sistema, cores, onze: [{ slot, n, pos, x, y }] (11), suplentes: [nº] }
-jogo.subsAdv: [{ id, sai, entra, min, c }]                          // gravadas uma a uma em subsAdv/{id}
+jogo.adv: { equipa (id em adversarios), sistema, cores, onze: [{ slot, n, pid?, pos, x, y }] (11), suplentes: [id do jogador (ou nº, nos antigos)] }
+                                                                    // pid = id do jogador no plantel: dois jogadores podem ter o mesmo número
+jogo.subsAdv: [{ id, sai, entra, pidSai?, pidEntra?, min, c }]       // gravadas uma a uma em subsAdv/{id}
 jogo.encaixe: { nos: { [slot]: {x,y} }, adv: { [slot]: {x,y} } }    // só o quadro Encaixe; o Onze não muda
 ```
-O adversário ataca para a esquerda (guarda-redes do lado direito), no mesmo campo do Onze. O Encaixe mostra o nosso onze e o do adversário com as substituições das duas equipas aplicadas (bolinha verde = entrou); entra no PDF e na TV. Ao arquivar, o jogo do histórico guarda `adv` (com nomes e `subs`) e `encaixe`; o jogo seguinte começa sem onze nem substituições do adversário (os planteis ficam).
+O adversário ataca para a esquerda (guarda-redes do lado direito), no mesmo campo do Onze. O Encaixe mostra o nosso onze e o do adversário com as substituições das duas equipas aplicadas (bolinha verde = entrou), com o número na bolinha e o nome por baixo; entra no PDF e na TV. Ao arquivar, o jogo do histórico guarda `adv` (com nomes e `subs`) e `encaixe`; o jogo seguinte começa sem onze nem substituições do adversário (os planteis ficam).

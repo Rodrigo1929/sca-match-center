@@ -337,10 +337,10 @@ const BP = (await pg.evaluate(() => lances().find((l) => l.tipo !== "JOGO").id))
 const antesAdv = await pg.evaluate((bp) => ({ linhas: JSON.stringify(est.linhas), onze: JSON.stringify(jogo.onze), svgOnze: desenha(lances().find((l) => l.id === "onze"), { clean: true }).outerHTML, svgBP: desenha(lances().find((l) => l.id === bp), { clean: true, semAnim: true }).outerHTML, gr: advJ().onze[0].n }), BP);
 await pg.click("#tab-j"); await pg.click("#j-sa-add"); await pg.fill("#sa-min", "63"); await pg.click("#sa-g1 button[data-n='9']"); await pg.click("#sa-g2 button[data-n='14']"); await pg.click("#sa-ok"); await pg.waitForTimeout(150);
 const depoisAdv = await pg.evaluate((bp) => { const svg = desenhaEncaixe({ clean: true }), lab = [...svg.querySelectorAll("g.bola")].map((g) => g.getAttribute("aria-label"));
-  return { n: (jogo.subsAdv || []).length, em: advEmCampo().on.map((o) => o.n), tem14: lab.includes("Equipa Teste 14"), tem9: lab.includes("Equipa Teste 9"), nos: lab.filter((l) => l.startsWith("SC Angrense")).length, lista: $("j-sa").textContent,
+  return { n: (jogo.subsAdv || []).length, nomes: svg.textContent.includes("Adv 14") && svg.textContent.includes("Adv 2"), em: advEmCampo().on.map((o) => o.n), tem14: lab.includes("Equipa Teste 14"), tem9: lab.includes("Equipa Teste 9"), nos: lab.filter((l) => l.startsWith("SC Angrense")).length, lista: $("j-sa").textContent,
     linhas: JSON.stringify(est.linhas), onze: JSON.stringify(jogo.onze), svgOnze: desenha(lances().find((l) => l.id === "onze"), { clean: true }).outerHTML, svgBP: desenha(lances().find((l) => l.id === bp), { clean: true, semAnim: true }).outerHTML,
     pdf: lances().filter((l) => l.tipo === "JOGO").map((l) => l.id), tv: !!desenhaItemTV(itensTV(lances(), false).find((x) => x.ids[0] === "encaixe")) }; }, BP);
-if (antesAdv.gr !== "1" || depoisAdv.n !== 1 || !depoisAdv.em.includes("14") || depoisAdv.em.includes("9") || !depoisAdv.tem14 || depoisAdv.tem9 || depoisAdv.nos !== 11 || !depoisAdv.lista.includes("63'")) erros.push("Adversário: a substituição devia atualizar o Encaixe " + JSON.stringify({ ...depoisAdv, svgOnze: 0, svgBP: 0, linhas: 0, onze: 0 }));
+if (antesAdv.gr !== "1" || depoisAdv.n !== 1 || !depoisAdv.em.includes("14") || depoisAdv.em.includes("9") || !depoisAdv.tem14 || depoisAdv.tem9 || depoisAdv.nos !== 11 || !depoisAdv.lista.includes("63'") || !depoisAdv.nomes) erros.push("Adversário: a substituição devia atualizar o Encaixe " + JSON.stringify({ ...depoisAdv, svgOnze: 0, svgBP: 0, linhas: 0, onze: 0 }));
 if (depoisAdv.linhas !== antesAdv.linhas || depoisAdv.onze !== antesAdv.onze || depoisAdv.svgOnze !== antesAdv.svgOnze || depoisAdv.svgBP !== antesAdv.svgBP) erros.push("Adversário: a substituição do adversário mexeu no Onze ou nas bolas paradas");
 if (depoisAdv.pdf[1] !== "encaixe" || !depoisAdv.tv) erros.push("Adversário: o Encaixe devia estar nos quadros do jogo (PDF e TV) a seguir ao Onze " + JSON.stringify(depoisAdv.pdf));
 await pg.click("#tab-q"); await pg.evaluate(() => { curId = "encaixe"; render(); }); await pg.waitForTimeout(150); await pg.screenshot({ path: join(cap, "encaixe.png") });
@@ -350,20 +350,29 @@ if (arqAdv.onze !== 11 || arqAdv.subs !== 1 || arqAdv.nomeSub !== "Adv 14" || ar
 await pg.evaluate(() => { Object.keys(hist).forEach((k) => { if (hist[k].adversario === "Equipa Teste") delete hist[k]; }); });
 // importar da SCA Observação: ficheiro do plantel base → equipa com origem "observacao" e, no jogo atual, cores e onze provável (siglas iguais às da Observação)
 const Pobs = { app: "SCA Observação", tipo: "plantel-adversario", versao: 1, exportadoEm: "2026-10-27T10:00:00Z", equipa: { id: "lusitania", nome: "Lusitânia" },
-  plantel: Array.from({ length: 12 }, (_, i) => ({ id: "j" + i, n: String(i + 1), nome: "Lus " + (i + 1), pos: "" })), sistema: "4-4-2", cores: { cam: "#00A000", cam2: "#FFFFFF", num: "#FFFFFF", gr: "#FFFF00" },
+  plantel: [...Array.from({ length: 12 }, (_, i) => ({ id: "j" + i, n: String(i + 1), nome: "Lus " + (i + 1), pos: i ? "" : "GR" })), { id: "j12", n: "1", nome: "Lus Duplicado", pos: "GR" }], sistema: "4-4-2", cores: { cam: "#00A000", cam2: "#FFFFFF", num: "#FFFFFF", gr: "#FFFF00" },
   onzeProv: { sis: "4-4-2", pos: { GR: "j0", LD: "j1", PLD: "j9", PLE: "j10" } }, onzeAlt: null, fonte: "plantel base de 27/10/2026 · onzes do relatório vs Teste" };
 await pg.evaluate(() => guardaJogo({ ...jogo, adversario: "Lusitânia" }, true));
 await pg.click("#tab-d"); await pg.waitForTimeout(150);
 await pg.setInputFiles("#d-file", { name: "Plantel_lusitania.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(Pobs)) });
 await pg.click("#ia-ok"); await pg.waitForTimeout(200);
 const imp = await pg.evaluate(() => { const T = advs.lusitania, A = advJ(); return { origem: T && T.origem, n: T && T.plantel.length, eq: A.equipa, sis: A.sistema, gr: A.onze.find((o) => o.slot === "GR")?.n, ple: A.onze.find((o) => o.slot === "PLE")?.n, cam: A.cores.cam, txt: $("d-form").textContent }; });
-if (imp.origem !== "observacao" || imp.n !== 12 || imp.eq !== "lusitania" || imp.sis !== "4-4-2" || imp.gr !== "1" || imp.ple !== "11" || imp.cam !== "#00A000" || !imp.txt.includes("importado da SCA Observação")) erros.push("Adversário: importar da Observação falhou " + JSON.stringify({ ...imp, txt: imp.txt.slice(0, 160) }));
+if (imp.origem !== "observacao" || imp.n !== 13 || imp.eq !== "lusitania" || imp.sis !== "4-4-2" || imp.gr !== "1" || imp.ple !== "11" || imp.cam !== "#00A000" || !imp.txt.includes("importado da SCA Observação")) erros.push("Adversário: importar da Observação falhou " + JSON.stringify({ ...imp, txt: imp.txt.slice(0, 160) }));
 await pg.screenshot({ path: join(cap, "adversario-importado.png") });
+// dois jogadores com o mesmo número aparecem os dois; ao tocar no GR, os GR vêm primeiro; a pesquisa filtra
+await pg.click("#dstage g.bola[aria-label^='GR ']"); await pg.waitForSelector("#ao-g .pgrid");
+const gr = await pg.evaluate(() => { const bs = [...document.querySelectorAll("#ao-g .pgrid button")]; return { um: bs.filter((b) => b.dataset.n === "1").length, primeiros: bs.slice(0, 2).map((b) => b.querySelector("small").textContent) }; });
+await pg.fill("#ao-g .ga-q", "dupl"); const vis = await pg.evaluate(() => [...document.querySelectorAll("#ao-g .pgrid button")].filter((b) => !b.hidden).map((b) => b.querySelector("span").textContent));
+await pg.click("#ao-g .pgrid button:not([hidden])"); await pg.click("#ao-ok"); await pg.waitForTimeout(150);
+const dup = await pg.evaluate(() => { const o = advJ().onze.find((x) => x.slot === "GR"); return { pid: o.pid, n: o.n, nome: nomeAdv(o.n, o.pid), sup: [...document.querySelectorAll("#d-sup .chip")].filter((c) => c.children[0].textContent === "1").length }; });
+if (gr.um !== 2 || !gr.primeiros.every((t) => t.startsWith("GR")) || vis.length !== 1 || vis[0] !== "Lus Duplicado" || dup.pid !== "j12" || dup.n !== "1" || dup.nome !== "Lus Duplicado" || dup.sup !== 1) erros.push("Adversário: números repetidos, GR primeiro ou pesquisa falharam " + JSON.stringify({ gr, vis, dup }));
+await pg.fill("#d-plq", "lus 1"); const filtro = await pg.evaluate(() => [...document.querySelectorAll("#d-pl .dp-row")].filter((r) => !r.hidden).length); await pg.fill("#d-plq", "");
+if (filtro !== 4) erros.push("Adversário: a pesquisa no plantel devia mostrar Lus 1, 10, 11 e 12, mostrou " + filtro);
 // importar outra vez substitui o plantel só com 2 toques
 await pg.setInputFiles("#d-file", { name: "Plantel_lusitania.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ ...Pobs, plantel: Pobs.plantel.slice(0, 11) })) });
 await pg.click("#ia-ok"); const n1 = await pg.evaluate(() => advs.lusitania.plantel.length); await pg.click("#ia-ok"); await pg.waitForTimeout(150);
 const n2 = await pg.evaluate(() => advs.lusitania.plantel.length);
-if (n1 !== 12 || n2 !== 11) erros.push("Adversário: substituir o plantel importado devia pedir 2 toques " + JSON.stringify({ n1, n2 }));
+if (n1 !== 13 || n2 !== 11) erros.push("Adversário: substituir o plantel importado devia pedir 2 toques " + JSON.stringify({ n1, n2 }));
 
 // base de dados simulada: no link, os dados que chegam da base de dados vêm congelados (snapshots e data());
 // a app tem de os copiar à entrada (lerDoc), senão uma alteração a seguir pode não mudar nada sem dar erro (como na app de observação)

@@ -138,8 +138,8 @@ function snapshotJogo(){
     vivo:clone(vivo), estat:estatJogo(),
     comp:jogo.comp, eventos:(jogo.eventos||[]).map(e=>({...e,nome:e.n?nome(e.n):""})), minutos:minutosJogados().map(x=>({...x,nome:nome(x.n)})), subsReais:subsReais().lista.map(l=>({sai:l.sai,entra:l.entra,min:l.min||"",int:!!l.int})),
     analise:{regs:an.regs.map(r_=>({...r_,acao:acaoDe(r_.ac).nome,nome:r_.j?nome(r_.j):""})),posse:{"1":acumAgora(1),"2":acumAgora(2)}},
-    adv:(()=>{ const A=advJ(), T=eqAdv(); return {equipa:A.equipa,nomeEquipa:T?T.nome:"",sistema:A.sistema,cores:{...A.cores},onze:A.onze.map(o=>({...o,nome:nomeAdv(o.n)})),suplentes:A.suplentes.map(n=>({n,nome:nomeAdv(n)})),
-      subs:(jogo.subsAdv||[]).map(x=>({...x,nomeSai:nomeAdv(x.sai),nomeEntra:nomeAdv(x.entra)}))}; })(), encaixe:normEncaixe(jogo.encaixe) }; }
+    adv:(()=>{ const A=advJ(), T=eqAdv(); return {equipa:A.equipa,nomeEquipa:T?T.nome:"",sistema:A.sistema,cores:{...A.cores},onze:A.onze.map(o=>({...o,nome:nomeAdv(o.n,o.pid)})),suplentes:supAdv(A).map(x=>({n:x.n,nome:x.nome})),
+      subs:(jogo.subsAdv||[]).map(x=>({...x,nomeSai:nomeAdv(x.sai,x.pidSai),nomeEntra:nomeAdv(x.entra,x.pidEntra)}))}; })(), encaixe:normEncaixe(jogo.encaixe) }; }
 $("h-bk").onclick=exportaCopia;
 $("h-rp").onclick=()=>$("h-file").click();
 $("h-file").onchange=async e=>{ const f=e.target.files[0]; e.target.value=""; if(!f) return; try{ repoeCopia(JSON.parse(await f.text())); }catch(err){ toast("Não consegui ler o ficheiro."); } };
