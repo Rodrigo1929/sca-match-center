@@ -352,6 +352,59 @@ const alc = await pg.evaluate((ks) => { const pl0 = clone(est.plantel), i0 = est
   const pl2 = clone(est.plantel); pl2[i1] = { ...pl2[i1], alc: "mika" }; guardaEst({ ...est, plantel: pl2 }, true); setTab("p"); renderPlantel(); r.aviso = !$("p-alc").hidden && $("p-alc").textContent.includes("Mika");
   guardaEst({ ...est, plantel: pl0 }, true); setTab("u"); return r; }, utA0.ks);
 if (alc.a !== "Mika" || alc.b !== "João Silva" || alc.num || !alc.aviso) erros.push("Alcunhas: grupos ou aviso de repetidas errados " + JSON.stringify(alc));
+// Entrega B (v95): marcação no repositório → ativa na UT com selo; jogos gerados da rotação; golos com marcador e auto-golo; GR; fim do jogo; anular com 2 toques; meinho e rankings
+const pl0B = await pg.evaluate((ks) => { const pl0 = clone(est.plantel), pl = clone(est.plantel); pl.forEach((p) => { if (ks.includes(p.n)) p.pos = p.n === ks[1] ? "1" : "2"; }); guardaEst({ ...est, plantel: pl }, true); return pl0; }, utA0.ks);
+await pg.evaluate(() => { exercicios.tL = normEx({ id: "tL", nome: "Liga 3 equipas teste", parte: "fundamental", duracao: { series: 4, pratica: 180, pausa: 60 } }); folhaEx("tL"); });
+await pg.click("#xe-cp [data-k='liga']"); await pg.click("#xe-mh [data-k='1']"); await pg.click("#xe-ok"); await pg.waitForTimeout(100);
+await pg.click("#tab-u"); await pg.evaluate(() => { uModo = "ut"; uCur = "ta"; renderUT(); });
+await pg.click("#u-add"); await pg.fill("#ua-q", "Liga 3 equipas teste"); await pg.check("#ua-l input[value='tL']"); await pg.click("#ua-ok"); await pg.waitForTimeout(150);
+const lidL = await pg.evaluate(() => { const l = uts.ta.exercicios.find((x) => x.exId === "tL"); editaUT((U) => { const x = U.exercicios.find((y) => y.id === l.id); x.grupos = ["g0", "g1", "g2"]; x.rot = { nEq: 3, nJogo: 2, modo: "rodar", equipas: ["g0", "g1", "g2"], grelha: propoeRot(3, 2, 4, []) }; }); return l.id; });
+const selo = await pg.evaluate((lid) => ({ rep: exercicios.tL.comp + "/" + exercicios.tL.meinho, ut: compDe(uts.ta.exercicios.find((x) => x.id === lid)), tags: document.querySelector(`li[data-l='${lid}'] .utx-tags`).textContent }), lidL);
+await pg.click(`li[data-l='${lidL}'] [data-a='jg']`); await pg.waitForSelector("#cp-gera"); await pg.click("#cp-gera"); await pg.waitForTimeout(100);
+const jgs = await pg.evaluate((lid) => jogosDe("ta", lid).map((j) => `${j.serie}:${j.a}-${j.b}:${j.grA}`), lidL);
+// jogo 1: golo da equipa A (escolhe o marcador) e auto-golo de um jogador da A que conta para a B; GR da B escolhido à mão; fim
+await pg.click(".cp-j >> nth=0 >> [data-g='a']"); await pg.click(`.cp-pick [data-k='${utA0.ks[0]}']`); await pg.waitForTimeout(50);
+await pg.click(".cp-j >> nth=0 >> [data-g='b']"); await pg.click(".cp-pick [data-ag]"); await pg.click(`.cp-pick [data-k='${utA0.ks[0]}']`); await pg.waitForTimeout(50);
+await pg.selectOption(".cp-j >> nth=0 >> select[data-f='grB']", utA0.ks[2]); await pg.waitForTimeout(50);
+await pg.click(".cp-j >> nth=0 >> [data-fim]"); await pg.waitForTimeout(50);
+// jogo 2: sem GR, 0–0, fim; jogo 4: golo e tirar com 2 toques (fica por terminar, tal como o 3)
+await pg.click(".cp-j >> nth=1 >> [data-semgr]"); await pg.click(".cp-j >> nth=1 >> [data-fim]"); await pg.waitForTimeout(50);
+await pg.click(".cp-j >> nth=3 >> [data-g='a']"); await pg.click(`.cp-pick [data-k='${utA0.ks[1]}']`); await pg.waitForTimeout(50);
+await pg.click(".cp-j >> nth=3 >> [data-xg]"); await pg.click(".cp-j >> nth=3 >> [data-xg]"); await pg.waitForTimeout(50);
+await pg.screenshot({ path: join(cap, "treino-competicao-registo.png") }); await pg.click("#sheet-root [data-close]"); await pg.waitForTimeout(100);
+const cs = await pg.evaluate((ks) => { cF = { ep: "26.27", me: "", mi: "", et: "" }; const F = utsFiltro(), S = compStats(F), p = (k) => S.P["n:" + k] || {};
+  return { a0: [p(ks[0]).J, p(ks[0]).E, p(ks[0]).Pts, p(ks[0]).golos, p(ks[0]).AG, p(ks[0]).GM, p(ks[0]).GS].join(","), gr1: !!S.P["n:" + ks[1]], grA: S.GR["n:" + ks[1]] && [S.GR["n:" + ks[1]].J, S.GR["n:" + ks[1]].GS].join(","),
+    grB: S.GR["n:" + ks[2]] && S.GR["n:" + ks[2]].J, pend: S.pend.length, av: S.aviso.length, golos: Object.values(compGolos).length }; }, utA0.ks);
+if (selo.rep !== "liga/true" || selo.ut !== "liga" || !selo.tags.includes("LIGA") || !selo.tags.includes("MEINHO") || jgs.length !== 4 || jgs[0] !== `1:g0-g1:${utA0.ks[1]}` ||
+  cs.a0 !== "2,2,2,1,1,1,1" || cs.gr1 || cs.grA !== "1,1" || cs.grB !== 1 || cs.pend !== 2 || cs.av || cs.golos !== 2) erros.push("Competição: jogos, golos, GR ou classificação errados " + JSON.stringify({ selo, jgs, cs }));
+// anular nesta UT com registos: 2 toques; os registos ficam e deixam de contar; reativar volta a contar
+await pg.click(`li[data-l='${lidL}'] [data-a='aj']`); await pg.click("#uj-c [data-k='-']"); await pg.click("#uj-ok"); await pg.waitForTimeout(50);
+const arm = await pg.evaluate(() => ({ aberta: !!document.querySelector("#uj-ok"), txt: document.querySelector("#uj-ok").textContent, av: document.querySelector("#uj-av").textContent }));
+await pg.click("#uj-ok"); await pg.waitForTimeout(100);
+const anul = await pg.evaluate((lid) => ({ et: compDe(uts.ta.exercicios.find((x) => x.id === lid)), jogos: jogosDe("ta", lid).length, n: Object.keys(compStats(utsFiltro()).P).length }), lidL);
+await pg.evaluate((lid) => editaUT((U) => { delete U.exercicios.find((x) => x.id === lid).comp; }), lidL);
+const reat = await pg.evaluate(() => Object.keys(compStats(utsFiltro()).P).length);
+if (!arm.aberta || !arm.txt.includes("outra vez") || !arm.av.includes("deixam de contar") || anul.et !== "" || anul.jogos !== 4 || anul.n || !reat) erros.push("Competição: anular com registos errado " + JSON.stringify({ arm, anul, reat }));
+// meinho: 21 passes com 2 atletas, cueca com 1; desfazer o último com 2 toques; rei partilhado
+await pg.click(`li[data-l='${lidL}'] [data-a='mh']`); await pg.waitForSelector(".mh-g");
+await pg.click(`.mh-g [data-k='${utA0.ks[3]}']`); await pg.click(`.mh-g [data-k='${utA0.ks[4]}']`); await pg.click("#mh-ok"); await pg.waitForTimeout(50);
+await pg.click("#mh-t [data-k='cueca']"); await pg.click(`.mh-g [data-k='${utA0.ks[5]}']`); await pg.click("#mh-ok"); await pg.waitForTimeout(50);
+await pg.click(`.mh-g [data-k='${utA0.ks[6]}']`); await pg.click("#mh-ok"); await pg.waitForTimeout(50);
+await pg.click("#mh-un"); await pg.click("#mh-un"); await pg.waitForTimeout(50); const un1 = await pg.evaluate(() => Object.keys(meinhoRegs).length);
+await pg.screenshot({ path: join(cap, "treino-meinho.png") }); await pg.click("#sheet-root [data-close]"); await pg.waitForTimeout(100);
+await pg.click(".u-modo button[data-m='rank']"); await pg.waitForSelector(".rk-rei");
+const rk = await pg.evaluate((ks) => { const R = meinhoStats(utsFiltro()); return { regs: Object.keys(meinhoRegs).length, m: [R["21"]["n:" + ks[3]].tot, R["21"]["n:" + ks[4]].tot, R.cueca["n:" + ks[5]].tot].join(","),
+  reis: [...document.querySelectorAll(".rk-rei")].map((x) => x.textContent) }; }, utA0.ks);
+await pg.screenshot({ path: join(cap, "treino-rankings.png"), fullPage: true });
+const [dRk] = await Promise.all([pg.waitForEvent("download", { timeout: 30000 }), pg.click("#rk-csv")]);
+await pg.click(".u-modo button[data-m='comp']"); await pg.waitForSelector("table.cptab"); await pg.screenshot({ path: join(cap, "treino-competicao.png"), fullPage: true });
+const [dCp] = await Promise.all([pg.waitForEvent("download", { timeout: 30000 }), pg.click("#cp-csv")]);
+const vc = await pg.evaluate(() => ({ linhas: document.querySelectorAll("table.cptab tbody tr").length, pend: document.querySelector("#u-panel").textContent.includes("sem resultado") }));
+await pg.click(".u-modo button[data-m='ut']"); await pg.waitForTimeout(100);
+const pdfB = await pg.evaluate(async () => { const t = (await pdfUT(uts.ta)).output(); return t.includes("LIGA") && t.includes("MEINHO"); });
+if (un1 !== 2 || rk.regs !== 2 || rk.m !== "1,1,1" || !rk.reis[0].includes("partilham") || !rk.reis[1] || !dRk.suggestedFilename().startsWith("Meinho_SCA_26-27") || !dCp.suggestedFilename().startsWith("Competicao_SCA_26-27") || !vc.linhas || !vc.pend || !pdfB)
+  erros.push("Meinho / Rankings / Competição: errado " + JSON.stringify({ un1, rk, vc, pdfB, f: [dRk.suggestedFilename(), dCp.suggestedFilename()] }));
+await pg.evaluate((pl0) => { Object.keys(compJogos).forEach((id) => tiraJogoInt(id)); Object.keys(meinhoRegs).forEach((id) => tiraMeinho(id)); delete exercicios.tL; guardaEst({ ...est, plantel: pl0 }, true); }, pl0B);
 await pg.evaluate((a) => { ["ta", "utlk"].forEach((id) => delete uts[id]); ["tP", "tC", "tI"].forEach((id) => delete exercicios[id]); uCur = a; renderUT(); }, utA0.ant);
 
 // Ao vivo: substituição feita e depois editada; cartão a quem já saiu e a um suplente no banco

@@ -420,6 +420,26 @@ table.ttab tfoot td{font-weight:700;border-top:2px solid var(--ink)}
 .tjuntos li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 10px;align-items:center;background:var(--surface-2);border-radius:8px;padding:8px 10px;min-height:44px}
 .tjuntos li span{font-family:var(--f-display);font-weight:800;font-size:17px;color:var(--red)}
 .tjuntos li small{grid-column:1/-1;color:var(--muted);font-size:12px}
+/* competição interna e meinho */
+.utx-tags{display:flex;gap:4px;flex-wrap:wrap}
+.tag.cp-tag{background:#1F3A5F}
+.cp-jogos{display:flex;flex-direction:column;gap:10px}
+.cp-j{border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--surface-2);display:flex;flex-direction:column;gap:8px}
+.cp-j.fim{border-color:color-mix(in srgb,#1E7A46 50%,var(--line))}
+.cp-cab{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.cp-s{font-family:var(--f-display);font-weight:800;color:#C00000}
+.cp-res{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center}
+.cp-eq{display:flex;flex-direction:column;gap:6px}.cp-eq select{min-height:44px}
+.cp-pl{font-family:var(--f-display);font-size:30px;font-weight:800;min-width:84px;text-align:center}
+.cp-gl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}.cp-gl li{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--surface);border-radius:8px;padding:2px 2px 2px 10px;min-height:40px}
+.cp-gr{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}.cp-gr .f{flex:1;min-width:140px}
+.cp-ac{display:flex;gap:8px;flex-wrap:wrap}.cp-ac .btn{min-height:44px}
+.cp-pick button.cp-ag{border-style:dashed}
+.cp-mais select{width:auto;min-width:80px}
+.mh-g{max-height:46vh}
+.cp-h{font-family:var(--f-display);font-size:18px;margin:6px 14px 8px}
+table.cptab th .lnk{text-decoration:none;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit}
+.rk-rei{margin:0 14px 10px;padding:12px 14px;border-radius:12px;background:#FFF2CC;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;font-size:18px}
+.rk-rei span{color:var(--muted);font-size:13.5px}
 .aviso-alc{margin:0 16px 10px;padding:8px 12px;border-radius:8px;background:#FFF2CC;color:#7A4B00;font-size:13px}
 /* ligações do exercício (só no repositório) */
 .xlinks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
@@ -431,7 +451,7 @@ table.ttab tfoot td{font-weight:700;border-top:2px solid var(--ink)}
 @media (max-width:640px){ .xe-lkr{grid-template-columns:minmax(0,1fr) 40px 40px 40px}.xe-lkr input[data-f=t]{grid-column:1/-1} }
 .ug-nota{white-space:pre-line}
 /* Treino: alternar UT / Plano semanal */
-.u-modo{margin:0 0 10px;display:grid;grid-template-columns:repeat(4,1fr)}
+.u-modo{margin:0 0 10px;display:grid;grid-template-columns:repeat(3,1fr)}
 .u-modo button{min-height:40px;font-size:12.5px;padding:4px 2px}
 /* Plano semanal: a grelha do plano do clube */
 .psem-wrap{margin:12px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch}

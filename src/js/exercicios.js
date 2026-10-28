@@ -41,6 +41,7 @@ function normEx(d){ const s=v=>String(v??"").trim(), L=v=>(Array.isArray(v)?v.ma
     ligacoes:{modelo:L(d.ligacoes&&d.ligacoes.modelo), lances:L(d.ligacoes&&d.ligacoes.lances)},
     links:(Array.isArray(d.links)?d.links:[]).filter(x=>x&&urlOk(x.url)).map(x=>({t:s(x.t)||hostDe(x.url),url:s(x.url)})),
     contaTempo:typeof d.contaTempo==="boolean"?d.contaTempo:null,
+    comp:d.comp==="liga"||d.comp==="champions"?d.comp:"", meinho:!!d.meinho,   // v95: competição interna (etiqueta) e meinho
     criadoPor:s(d.criadoPor), criadoEm:s(d.criadoEm), alteradoPor:s(d.alteradoPor), alteradoEm:s(d.alteradoEm)};
   if(d.figura&&typeof d.figura==="object"){ const F={};
     if(d.figura.quadro&&typeof d.figura.quadro==="object") F.quadro=d.figura.quadro;
@@ -194,7 +195,8 @@ function renderExPainel(E){ const pn=$("x-panel");
   pn.innerHTML=`<header><h2>Classificação</h2><p class="sub">Para encontrar o exercício e, mais tarde, montar as UT.</p></header>
     <dl class="exd"><dt>Parte</dt><dd>${esc(parteDe(E.parte)[1])}</dd><dt>Categoria</dt><dd>${esc(catEx(E)||"–")}</dd>
       <dt>Formato</dt><dd>${esc(rotuloDe(TIPOS_EX,E.tipo)||"–")}</dd><dt>Estrutura</dt><dd>${esc(E.formato||"–")}</dd>
-      <dt>Tempos</dt><dd>${contaExDef(E)?"Conta para a estatística":"Não conta"}${E.contaTempo===null?" (pela parte)":""}</dd></dl>
+      <dt>Tempos</dt><dd>${contaExDef(E)?"Conta para a estatística":"Não conta"}${E.contaTempo===null?" (pela parte)":""}</dd>
+      <dt>Competição interna</dt><dd>${E.comp?(E.comp==="liga"?"Liga":"Champions"):"–"}</dd><dt>Meinho</dt><dd>${E.meinho?"Sim":"–"}</dd></dl>
     <div class="add"><h3>Material</h3>${E.material.length?`<div class="picks">${E.material.map(m=>`<label>${esc(m)}</label>`).join("")}</div>`:`<p class="sub" style="margin:0">Sem material indicado.</p>`}</div>
     <div class="add"><h3>Ligações</h3>${lM.length||lL.length?`<div class="xlig">${lM.map(id=>`<button class="btn sm" data-m="${esc(id)}">Modelo · ${esc(modelos[id].nome)}</button>`).join("")}${lL.map(L=>`<button class="btn sm" data-l="${esc(L.id)}">Bola parada · ${esc(L.nome)}</button>`).join("")}</div>`:`<p class="sub" style="margin:0">Sem ligações a quadros do Modelo de Jogo ou de bolas paradas.</p>`}</div>
     <div class="add"><h3>Vídeos e ligações</h3>${E.links.length?`<ul class="xlinks">${E.links.map(x=>`<li><a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a><small>${esc(hostDe(x.url))}</small></li>`).join("")}</ul>`:`<p class="sub" style="margin:0">Sem ligações.</p>`}<p class="sub" style="margin:0">Só no repositório: não passam para as UT nem para os PDF.</p></div>
@@ -210,7 +212,7 @@ async function preencheNomes(root){ const els=[...root.querySelectorAll("[data-u
 
 /* ---------- ficha: criar e editar ---------- */
 function folhaEx(id){ const E0=id?exercicios[id]:null, E=E0?clone(E0):normEx({id:xId()}); if(!E0) E.nome="";
-  let parte=E.parte, mom=E.momento, sub=E.sub, tipo=E.tipo, conta=E.contaTempo, lk=E.links.map(x=>({...x})); const D=E.duracao, tt=s=>s?fmtTempo(s):"";
+  let parte=E.parte, mom=E.momento, sub=E.sub, tipo=E.tipo, conta=E.contaTempo, comp=E.comp, mh=E.meinho, lk=E.links.map(x=>({...x})); const D=E.duracao, tt=s=>s?fmtTempo(s):"";
   const ta=(i,lab,val,rows,ph)=>`<label class="f">${lab}<textarea id="${i}" rows="${rows}" placeholder="${esc(ph||"")}">${esc(val)}</textarea></label>`;
   const ligM=listaModelos(), ligL=lances().filter(l=>l.tipo==="OF"||l.tipo==="DEF");
   folha(`<h3>${E0?"Editar exercício":"Novo exercício"}</h3>
@@ -231,6 +233,9 @@ function folhaEx(id){ const E0=id?exercicios[id]:null, E=E0?clone(E0):normEx({id
     ${ta("xe-ma","Material (um por linha)",E.material.join("\n"),2,"Ex.: Bolas\nCones\nColetes\nMini-balizas")}
     <h4>Estatística de tempos</h4><div class="seg" id="xe-ct"><button data-k="">Pela parte</button><button data-k="1">Conta</button><button data-k="0">Não conta</button></div>
     <p class="sub" id="xe-ctd" style="margin:0"></p>
+    <h4>Competição interna</h4><div class="seg" id="xe-cp"><button data-k="">Não</button><button data-k="liga">Liga</button><button data-k="champions">Champions</button></div>
+    <h4>Meinho</h4><div class="seg" id="xe-mh"><button data-k="">Não</button><button data-k="1">Sim (Rei do Meinho e Rei das Cuecas)</button></div>
+    <p class="sub" style="margin:0">Vêm ativas ao pôr o exercício numa UT, com selo no exercício e no PDF da UT; cada UT pode anular ou ativar.</p>
     <h4>Vídeos e ligações</h4><div class="xe-lk" id="xe-lk"></div><button class="btn sm" id="xe-lka" type="button">+ Ligação</button>
     <p class="sub" style="margin:0">Título e endereço (http:// ou https://). Abrem numa janela nova. Só ficam no repositório: não passam para as UT nem para os PDF.</p>
     <details class="more"><summary>Ligações a quadros do Modelo de Jogo e de bolas paradas</summary><div class="picks" id="xe-lg" style="margin-top:8px">
@@ -248,6 +253,8 @@ function folhaEx(id){ const E0=id?exercicios[id]:null, E=E0?clone(E0):normEx({id
     const pintaCt=()=>{ s.querySelectorAll("#xe-ct button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===(conta===null?"":conta?"1":"0"))));
       q("#xe-ctd").textContent=conta===null?`Pela parte: ${parte==="fundamental"?"conta":"não conta"} (só a parte fundamental conta). Cada UT pode mudar.`:"Cada UT pode mudar."; };
     s.querySelectorAll("#xe-ct button").forEach(b=>b.onclick=()=>{ conta=b.dataset.k===""?null:b.dataset.k==="1"; pintaCt(); });
+    const pintaM=()=>{ s.querySelectorAll("#xe-cp button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===comp))); s.querySelectorAll("#xe-mh button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===(mh?"1":"")))); };
+    s.querySelectorAll("#xe-cp button").forEach(b=>b.onclick=()=>{ comp=b.dataset.k; pintaM(); }); s.querySelectorAll("#xe-mh button").forEach(b=>b.onclick=()=>{ mh=!!b.dataset.k; pintaM(); }); pintaM();
     /* ligações: acrescentar, tirar e mudar a ordem */
     const pintaLk=()=>{ const bx=q("#xe-lk"); bx.innerHTML=lk.map((x,i)=>`<div class="xe-lkr" data-i="${i}"><input type="text" data-f="t" value="${esc(x.t)}" placeholder="Título" aria-label="Título da ligação"><input type="url" data-f="url" value="${esc(x.url)}" placeholder="https://…" aria-label="Endereço" autocapitalize="off" spellcheck="false">
         <button class="icon" type="button" data-a="up" aria-label="Subir" ${i?"":"disabled"}>▲</button><button class="icon" type="button" data-a="dn" aria-label="Descer" ${i<lk.length-1?"":"disabled"}>▼</button><button class="icon" type="button" data-a="x" aria-label="Tirar ligação">✕</button></div>`).join("");
@@ -271,7 +278,7 @@ function folhaEx(id){ const E0=id?exercicios[id]:null, E=E0?clone(E0):normEx({id
       const lks=[], mal=lk.findIndex(x=>{ const t=String(x.t||"").trim(), u=String(x.url||"").trim(); if(!t&&!u) return false; if(!urlOk(u)) return true; lks.push({t,url:u}); return false; });
       if(mal>=0){ const inp=s.querySelectorAll("#xe-lk .xe-lkr")[mal]?.querySelector("[data-f=url]");
         if(inp){ inp.classList.add("bad"); inp.focus(); } toast("Endereço da ligação inválido: tem de começar por http:// ou https://"); return; }
-      const N={...E,contaTempo:conta,links:lks,nome,formato:q("#xe-fo").value,espaco:{...E.espaco,txt:q("#xe-es").value},parte,momento:mom,sub,tipo,
+      const N={...E,contaTempo:conta,links:lks,comp,meinho:mh,nome,formato:q("#xe-fo").value,espaco:{...E.espaco,txt:q("#xe-es").value},parte,momento:mom,sub,tipo,
         duracao:{series:d.series,pratica:d.pratica,pausa:d.pausa,total:d.total||null},
         objetivos:q("#xe-ob").value,comportamentos:q("#xe-co").value,condicionantes:q("#xe-cd").value,descricao:q("#xe-de").value,variantes:q("#xe-va").value,material:q("#xe-ma").value,
         ligacoes:{modelo:[...s.querySelectorAll("#xe-lg input[data-m]:checked")].map(i=>i.dataset.m),lances:[...s.querySelectorAll("#xe-lg input[data-l]:checked")].map(i=>i.dataset.l)}};

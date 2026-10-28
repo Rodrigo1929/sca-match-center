@@ -21,6 +21,9 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
 | `modelo/{id}` | coleção | Quadros do Modelo de Jogo |
 | `exercicios/{id}` | coleção | Repositório de exercícios para as UT (ver abaixo) |
 | `uts/{id}` | coleção | Unidades de Treino (ver abaixo) |
+| `compJogos/{id}` | coleção | Jogos da competição interna (v95): `{ut, lid, serie, a, b (ids dos grupos), grA, grB (GR de cada equipa), semGR, fim, criadoEm, criadoPor}` |
+| `compGolos/{id}` | coleção | Golos da competição interna (v95): `{jogo, eq: "a"\|"b" (equipa que ganha o golo), k (quem marcou), ag (auto-golo: k é da outra equipa), em, por}` |
+| `meinho/{id}` | coleção | Registos do meinho (v95): `{ut, lid, tipo: "21"\|"cueca", ks: [1 a 3 atletas], em, por}` |
 | `semanas/{id}` | coleção | Planos semanais (id = segunda-feira da semana; ver abaixo) |
 | `calendario/{id}` | coleção | Jogos da época, oficiais e jogos-treino (ver abaixo) |
 | `anual/{AAAA-MM-DD}` | coleção | Planeamento anual: um documento por dia com conteúdo (ver abaixo) |
@@ -50,6 +53,7 @@ Coordenadas em metros num campo de 105×68; a equipa SCA ataca da esquerda para 
   ligacoes: { modelo: [ids], lances: [ids] },
   links: [{ t, url }],          // v93: vídeos e artigos (só http/https), pela ordem; só no repositório — nunca na UT, no PDF da UT nem no plano semanal
   contaTempo: true|false|null,  // v93: conta para a estatística de tempos; null = pela parte (só a fundamental conta)
+  comp: "liga"|"champions"|"", meinho: true|false,   // v95: competição interna (a etiqueta só identifica e filtra; a classificação é a mesma) e meinho
   figura?: { quadro?: { …mesmo formato de um quadro do Modelo de Jogo, sem id/nome… },
              imagem?: { id, w, h },          // id do ficheiro no armazenamento do link (assets); mostrada em "/_blob/"+id
              usa: "quadro"|"imagem" },        // qual das duas aparece na ficha e no PDF
@@ -70,6 +74,7 @@ As imagens ficam no armazenamento de ficheiros do link (capacidade `assets`), n�
   exercicios: [{ id, exId, copia: { …exercício completo como estava no dia, com os ajustes desta UT, sem links… },   // pela ordem da UT
      pai?,        // v93: complementar — id da linha do exercício principal; vem logo a seguir a ele (3.1, 3.2…) e não soma ao tempo da UT nem ao da parte
      conta?,      // v93: true|false = conta para os tempos só nesta UT; sem campo = como no repositório (contaTempo)
+     comp?, meinho?,   // v95: só nesta UT ("" = anulada; sem campo = como no repositório); fica fora da cópia, por isso o «↻ Atualizar» não a perde
      grupos?,     // v93: ids dos grupos de trabalho que fazem este exercício (no principal; os complementares tiram-nos da rotação)
      rot? }],     // v93 no principal com complementares; v94 em qualquer exercício: { nEq (até 20), nJogo (equipas ao mesmo tempo / grupos por período), modo: "rodar"|"periodos", equipas: [id do grupo|""],
                   //   grelha: [série][equipa] = "p" (principal) | id da linha do complementar | "" (descanso) }
@@ -117,3 +122,9 @@ jogo.subsAdv: [{ id, sai, entra, pidSai?, pidEntra?, min, c }]       // gravadas
 jogo.encaixe: { nos: { [slot]: {x,y} }, adv: { [slot]: {x,y} } }    // só o quadro Encaixe; o Onze não muda
 ```
 O adversário ataca para a esquerda (guarda-redes do lado direito), no mesmo campo do Onze. O quadro «Possíveis Encaixes» (id `encaixe`) mostra o nosso onze e o do adversário com as substituições e os cartões das duas equipas marcados no Ao vivo (bolinha verde = entrou; cartão amarelo; vermelho ou 2.º amarelo = bolinha esbatida), o número na bolinha e o nome só nos do adversário; por baixo, os suplentes do adversário ainda por entrar e as substituições; entra no PDF e na TV. Ao arquivar, o jogo do histórico guarda `adv` (com nomes e `subs`) e `encaixe`; o jogo seguinte começa sem onze nem substituições do adversário (os planteis ficam).
+
+## Competição interna e Meinho (v95)
+- Classificação calculada na hora: cada jogador presente no grupo de uma equipa num jogo **terminado** (`fim`) soma o resultado dessa equipa (3-1-0), GM/GS da equipa, os seus golos (sem auto-golos) e os seus auto-golos (AG). Jogadores com posição GR no Plantel ficam de fora desta tabela.
+- Guarda-redes: o `grA`/`grB` de cada jogo terminado soma J e golos sofridos; jogo sem GR (e sem `semGR`) fica assinalado e os golos sofridos não se atribuem.
+- Uma marcação anulada numa UT não apaga registos: deixam de contar e voltam se for reativada. Registos de UT apagadas ou de exercícios tirados da UT não contam.
+- Meinho: cada registo vale 1 para cada atleta escolhido; «UT com meinho» = UT com exercício de meinho ativo em que o atleta esteve presente (P ou CO).

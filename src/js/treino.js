@@ -27,7 +27,8 @@ function normUT(d){ const s=v=>String(v??"").trim(), L=v=>(Array.isArray(v)?v.ma
        Na linha: pai (complementar de), conta (estatística de tempos só nesta UT), grupos (ids dos grupos de trabalho) e rot (rotação, no principal) — ver tempos.js */
     exercicios:arrumaLinhas((Array.isArray(d.exercicios)?d.exercicios:[]).filter(e=>e&&e.copia).map(e=>{ const c=normEx({...e.copia,id:s(e.exId)||s(e.copia.id)}); delete c.links;
       const l={id:s(e.id)||uId("l"),exId:s(e.exId),copia:c}; if(s(e.pai)) l.pai=s(e.pai); if(typeof e.conta==="boolean") l.conta=e.conta;
-      if(Array.isArray(e.grupos)) l.grupos=L(e.grupos); if(e.rot&&typeof e.rot==="object") l.rot=e.rot; return l; }),grupos),
+      if(Array.isArray(e.grupos)) l.grupos=L(e.grupos); if(e.rot&&typeof e.rot==="object") l.rot=e.rot;
+      if(["","liga","champions"].includes(e.comp)) l.comp=e.comp; if(typeof e.meinho==="boolean") l.meinho=e.meinho; return l; }),grupos),
     criadoPor:s(d.criadoPor), criadoEm:s(d.criadoEm), alteradoPor:s(d.alteradoPor), alteradoEm:s(d.alteradoEm)}; }
 Object.keys(uts).forEach(id=>{ try{ uts[id]=normUT({...uts[id],id}); }catch(e){ delete uts[id]; } });
 
@@ -67,7 +68,7 @@ function duplicaUT(id){ const U=uts[id]; if(!U) return; const num=Math.max(0,...
 function repoeUTs(X){ Object.keys(uts).forEach(id=>{ if(!X[id]) apagaDoc("uts/"+id); }); uts={}; Object.entries(X||{}).forEach(([id,U])=>{ uts[id]=normUT({...U,id}); gravaDoc("uts/"+id,uts[id]); }); guardaUTLocal(); renderUT(); }
 
 /* ---------- ecrã ---------- */
-function renderUT(){ const v=$("view-u"); if(!v||v.hidden) return; if(uModo==="semana"){ renderSemana(); return; } if(uModo==="ano"){ renderAnual(); return; } if(uModo==="tempos"){ renderTempos(); return; } const ls=listaUTs(); let U=uts[uCur]||ls[0]||null; uCur=U?U.id:null;
+function renderUT(){ const v=$("view-u"); if(!v||v.hidden) return; if(uModo==="semana"){ renderSemana(); return; } if(uModo==="ano"){ renderAnual(); return; } if(uModo==="tempos"){ renderTempos(); return; } if(uModo==="comp"){ renderComp(); return; } if(uModo==="rank"){ renderRank(); return; } const ls=listaUTs(); let U=uts[uCur]||ls[0]||null; uCur=U?U.id:null;
   try{ localStorage.setItem("sca-ut-cur",uCur||""); }catch(e){}
   renderUTNav(ls,U); renderUTCorpo(U); renderUTPainel(U); }
 function renderUTNav(ls,U){ const nav=$("u-nav");
@@ -95,9 +96,10 @@ function renderUTCorpo(U){ const bx=$("u-corpo"), bar=$("u-bar"), tg=$("u-tag");
     h+=`<ol class="utx">${U.exercicios.map(l=>{ const E=l.copia, P=parteDe(E.parte), mud=mudouNoRepo(l), ip=pr.indexOf(l), cs=U.exercicios.filter(c=>c.pai===l.id), ct=contaLinha(l);
       const gs=(l.grupos||[]).map(id=>U.grupos.find(g=>g.id===id)).filter(Boolean), av=l.pai?[]:T.avisos.filter(a=>a.lid===l.id).map(a=>a.t.replace(/^[\d.]+ · /,""));
       const tempo=l.pai?(ct?"⏱ conta para os tempos":"não conta para os tempos"):!ct&&!cs.some(contaLinha)?"não conta para os tempos":gs.length?`👥 ${gs.map(g=>g.nome||"Grupo").join(", ")}`:"";
-      return `<li data-l="${esc(l.id)}"${l.pai?' class="utx-c"':""}><span class="utx-n">${nums[l.id]}</span><div class="utx-t"><span class="tag" style="background:${l.pai?"#5B5B5B":P[2]}">${l.pai?"COMPLEMENTAR":esc(P[1].replace("Parte ","").toUpperCase())}</span><b>${esc(E.nome)}</b><small>${esc([E.formato,E.espaco.txt,totalEx(E)?fmtTempo(totalEx(E)):"",rotuloDe(TIPOS_EX,E.tipo),l.pai?"em paralelo, não soma ao tempo":""].filter(Boolean).join(" · "))}${mud?` · <span class="utx-mud">mudou no repositório</span>`:""}${!exercicios[l.exId]?` · <span class="sub">já não está no repositório</span>`:""}</small>${tempo?`<small class="utx-tp">${esc(tempo)}</small>`:""}
+      const et=compDe(l), mh=meinhoDe(l);
+      return `<li data-l="${esc(l.id)}"${l.pai?' class="utx-c"':""}><span class="utx-n">${nums[l.id]}</span><div class="utx-t"><div class="utx-tags"><span class="tag" style="background:${l.pai?"#5B5B5B":P[2]}">${l.pai?"COMPLEMENTAR":esc(P[1].replace("Parte ","").toUpperCase())}</span>${et?`<span class="tag cp-tag">🏆 ${esc(rotComp(et).toUpperCase())}</span>`:""}${mh?`<span class="tag cp-tag">👑 MEINHO</span>`:""}</div><b>${esc(E.nome)}</b><small>${esc([E.formato,E.espaco.txt,totalEx(E)?fmtTempo(totalEx(E)):"",rotuloDe(TIPOS_EX,E.tipo),l.pai?"em paralelo, não soma ao tempo":""].filter(Boolean).join(" · "))}${mud?` · <span class="utx-mud">mudou no repositório</span>`:""}${!exercicios[l.exId]?` · <span class="sub">já não está no repositório</span>`:""}</small>${tempo?`<small class="utx-tp">${esc(tempo)}</small>`:""}
         ${l.rot?rotMiniHtml(U,l,cs,nums):""}${av.length?`<ul class="uavisos">${av.map(t=>`<li>⚠ ${esc(t)}</li>`).join("")}</ul>`:""}</div>
-        <div class="rowbtns">${l.pai?"":`<button class="icon" data-a="up" aria-label="Subir" ${ip?"":"disabled"}>▲</button><button class="icon" data-a="dn" aria-label="Descer" ${ip<pr.length-1?"":"disabled"}>▼</button>`}<button class="btn sm ghost" data-a="aj">Ajustar</button>${mud?`<button class="btn sm ghost" data-a="at">↻ Atualizar</button>`:""}<button class="btn sm ghost" data-a="gt" aria-label="Grupos e tempos">👥 Grupos</button>${l.pai?"":`<button class="btn sm ghost" data-a="cp" aria-label="Juntar exercício complementar">+ Compl.</button>`}<button class="btn sm ghost" data-a="x" aria-label="Tirar da UT">✕</button></div></li>`; }).join("")}</ol>`; }
+        <div class="rowbtns">${l.pai?"":`<button class="icon" data-a="up" aria-label="Subir" ${ip?"":"disabled"}>▲</button><button class="icon" data-a="dn" aria-label="Descer" ${ip<pr.length-1?"":"disabled"}>▼</button>`}<button class="btn sm ghost" data-a="aj">Ajustar</button>${mud?`<button class="btn sm ghost" data-a="at">↻ Atualizar</button>`:""}${et?`<button class="btn sm" data-a="jg" aria-label="Registar jogos">🏆 Jogos</button>`:""}${mh?`<button class="btn sm" data-a="mh" aria-label="Registar meinho">👑 Meinho</button>`:""}<button class="btn sm ghost" data-a="gt" aria-label="Grupos e tempos">👥 Grupos</button>${l.pai?"":`<button class="btn sm ghost" data-a="cp" aria-label="Juntar exercício complementar">+ Compl.</button>`}<button class="btn sm ghost" data-a="x" aria-label="Tirar da UT">✕</button></div></li>`; }).join("")}</ol>`; }
   bx.innerHTML=h; if($("u-add2")) $("u-add2").onclick=()=>folhaAddExUT(U.id);
   bx.querySelectorAll("li[data-l]").forEach(li=>{ const lid=li.dataset.l, eC=!!(U.exercicios.find(l=>l.id===lid)||{}).pai;
     li.querySelector(".utx-t").onclick=()=>folhaVerExUT(U.id,lid);
@@ -105,6 +107,8 @@ function renderUTCorpo(U){ const bx=$("u-corpo"), bar=$("u-bar"), tg=$("u-tag");
     li.querySelectorAll("[data-a]").forEach(b=>{ const a=b.dataset.a;
       if(a==="up"||a==="dn") b.onclick=()=>editaUT(U=>moveBloco(U,lid,a==="up"?-1:1));
       else if(a==="gt") b.onclick=()=>folhaTemposEx(U.id,lid);
+      else if(a==="jg") b.onclick=()=>folhaCompUT(U.id,lid);
+      else if(a==="mh") b.onclick=()=>folhaMeinhoUT(U.id,lid);
       else if(a==="cp") b.onclick=()=>folhaAddExUT(U.id,lid);
       else if(a==="aj") b.onclick=()=>folhaAjusteUT(U.id,lid);
       else if(a==="at") b.onclick=()=>folhaAtualizaUT(U.id,lid);
@@ -263,17 +267,30 @@ function folhaAddExUT(id,pai){ const U=uts[id]; if(!U) return; const escolhidos=
       /* cada um entra no fim da sua parte (inicial → fundamental → final) */
       editaUT(U=>novos.forEach(E=>{ const l={id:uId("l"),exId:E.id,copia:clone(E)}, j=U.exercicios.findIndex(x=>uParteOrd(x.copia.parte)>uParteOrd(E.parte)); if(j<0) U.exercicios.push(l); else U.exercicios.splice(j,0,l); }),`${novos.length} ${novos.length===1?"exercício adicionado":"exercícios adicionados"}`); }; }); }
 function folhaAjusteUT(id,lid){ const U=uts[id], l=U&&U.exercicios.find(x=>x.id===lid); if(!l) return; const E=l.copia, D=E.duracao, tt=s=>s?fmtTempo(s):""; let parte=E.parte;
+  let cp=typeof l.comp==="string"?(l.comp||"-"):"", mh=typeof l.meinho==="boolean"?(l.meinho?"1":"0"):"", armado=false;
   folha(`<h3>Ajustar nesta UT</h3><p class="sub" style="margin:0"><b>${esc(E.nome)}</b> · as mudanças ficam só na UT${U.numero}; o exercício do repositório não muda.</p>
     <h4>Parte</h4><div class="seg" id="uj-p">${PARTES.map(p=>`<button data-k="${p[0]}">${p[1]}</button>`).join("")}</div>
     <label class="f">Espaço<input type="text" id="uj-e" value="${esc(E.espaco.txt)}"></label>
     <div class="xe-dur"><label class="f">Séries / reps.<input type="text" inputmode="numeric" id="uj-se" value="${D.series||""}"></label><label class="f">Tempo prática<input type="text" id="uj-pr" value="${tt(D.pratica)}"></label><label class="f">Pausa<input type="text" id="uj-pa" value="${tt(D.pausa)}"></label><label class="f">Total<input type="text" id="uj-to" value="${tt(D.total)}" placeholder="Conta: ${fmtTempo(contaDur(D))}"></label></div>
     <label class="f">Variantes (uma por linha)<textarea id="uj-v" rows="3">${esc(E.variantes.join("\n"))}</textarea></label>
+    <h4>Competição interna nesta UT</h4><div class="seg" id="uj-c"><button data-k="">Como no repositório (${esc(rotComp(E.comp)||"não")})</button><button data-k="liga">Liga</button><button data-k="champions">Champions</button><button data-k="-">Não</button></div>
+    <h4>Meinho nesta UT</h4><div class="seg" id="uj-m"><button data-k="">Como no repositório (${E.meinho?"sim":"não"})</button><button data-k="1">Sim</button><button data-k="0">Não</button></div>
+    <p class="sub" id="uj-av" style="margin:0"></p>
     <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="uj-ok">Guardar</button></div>`,(s,fecha)=>{
     const q=x=>s.querySelector(x), pinta=()=>s.querySelectorAll("#uj-p button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===parte)));
     s.querySelectorAll("#uj-p button").forEach(b=>b.onclick=()=>{ parte=b.dataset.k; pinta(); }); pinta();
-    q("#uj-ok").onclick=()=>{ const d={series:Math.max(0,parseInt(q("#uj-se").value)||0),pratica:lerDur(q("#uj-pr").value),pausa:lerDur(q("#uj-pa").value),total:lerDur(q("#uj-to").value)};
+    /* anular uma marcação que já tem registos: 2 toques; os registos ficam guardados e voltam a contar se for reativada */
+    const novaL=()=>({...l,comp:cp===""?undefined:cp==="-"?"":cp,meinho:mh===""?undefined:mh==="1"}), perde=()=>{ const N=novaL(), x=[];
+      if(compDe(l)&&!compDe(N)&&nRegistos(id,lid,"comp")) x.push(`${nRegistos(id,lid,"comp")} registos da competição`);
+      if(meinhoDe(l)&&!meinhoDe(N)&&nRegistos(id,lid,"meinho")) x.push(`${nRegistos(id,lid,"meinho")} registos de meinho`); return x; };
+    const pintaM=()=>{ s.querySelectorAll("#uj-c button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===cp))); s.querySelectorAll("#uj-m button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===mh)));
+      const p=perde(); q("#uj-av").innerHTML=p.length?`<b style="color:var(--red)">Há ${esc(p.join(" e "))}:</b> deixam de contar (não se apagam) e voltam se reativares.`:""; armado=false; q("#uj-ok").textContent="Guardar"; q("#uj-ok").style.background=""; };
+    s.querySelectorAll("#uj-c button").forEach(b=>b.onclick=()=>{ cp=b.dataset.k; pintaM(); }); s.querySelectorAll("#uj-m button").forEach(b=>b.onclick=()=>{ mh=b.dataset.k; pintaM(); }); pintaM();
+    q("#uj-ok").onclick=()=>{ if(perde().length&&!armado){ armado=true; q("#uj-ok").textContent="Toca outra vez para anular"; q("#uj-ok").style.background="#C00000"; return; }
+      const d={series:Math.max(0,parseInt(q("#uj-se").value)||0),pratica:lerDur(q("#uj-pr").value),pausa:lerDur(q("#uj-pa").value),total:lerDur(q("#uj-to").value)};
       if(["pratica","pausa","total"].some(k=>isNaN(d[k]))){ toast("Corrige os tempos da duração."); return; } fecha();
-      editaUT(U=>{ const x=U.exercicios.find(y=>y.id===lid); x.copia={...x.copia,parte,espaco:{...x.copia.espaco,txt:q("#uj-e").value},duracao:{...d,total:d.total||null},variantes:q("#uj-v").value}; },"Ajustado nesta UT"); }; }); }
+      editaUT(U=>{ const x=U.exercicios.find(y=>y.id===lid); x.copia={...x.copia,parte,espaco:{...x.copia.espaco,txt:q("#uj-e").value},duracao:{...d,total:d.total||null},variantes:q("#uj-v").value};
+        if(cp==="") delete x.comp; else x.comp=cp==="-"?"":cp; if(mh==="") delete x.meinho; else x.meinho=mh==="1"; },"Ajustado nesta UT"); }; }); }
 function folhaGrupoUT(id,gid){ const U=uts[id]; if(!U) return; const G=gid?U.grupos.find(g=>g.id===gid):null, sel=new Set(G?G.jogadores:[]);
   folha(`<h3>${G?"Grupo de trabalho":"Novo grupo de trabalho"}</h3>
     <label class="f">Nome<input type="text" id="ug-n" value="${esc(G?G.nome:"")}" placeholder="Ex.: Guarda-redes, Condicionados, Reforço"></label>
@@ -415,7 +432,7 @@ async function pdfUT(U){
     const l=B.l, E=l.copia, ind=l.pai?12:0, bx=x+ind, bw=cw-ind, hf=ch*.52, P=l.pai?U.exercicios.find(p=>p.id===l.pai):null;
     const dono=P&&P.rot&&U.exercicios.filter(c=>c.pai===P.id).slice(-1)[0]===l?P:!l.pai&&l.rot&&!U.exercicios.some(c=>c.pai===l.id)?l:null, gh=dono?Math.min(11+(dono.rot.grelha.length+1)*9,(ch-hf)*.6):0;
     if(ind){ doc.setFillColor(...RED); doc.rect(x+2,y,4,ch,"F"); }
-    fichaExPdf(doc,E,bx,y,bw,{k:.6,hMax:hf,num:nums[l.id]+(l.pai?" · COMPLEMENTAR":"")});
+    fichaExPdf(doc,E,bx,y,bw,{k:.6,hMax:hf,num:nums[l.id]+(l.pai?" · COMPLEMENTAR":"")+(compDe(l)?" · "+rotComp(compDe(l)).toUpperCase():"")+(meinhoDe(l)?" · MEINHO":"")});
     const fig=await figuraJpegEx(E), fy=y+hf+3, fh=ch-hf-3-(gh?gh+3:0);
     if(fig){ let w=bw, h=bw*fig.h/fig.w; if(h>fh){ h=fh; w=h*fig.w/fig.h; } figuraNoPdf(doc,fig,bx+(bw-w)/2,fy+(fh-h)/2,w,h); }
     doc.setDrawColor(...INK); doc.setLineWidth(.9); doc.rect(bx,fy,bw,fh);

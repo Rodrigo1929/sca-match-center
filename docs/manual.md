@@ -43,6 +43,29 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - O Quadro, a ficha de jogo e o Onze continuam com números.
 - No **Plantel**, um aviso amarelo mostra **alcunhas repetidas** (duas pessoas com a mesma alcunha confundem-se nos grupos).
 
+## Competição interna (Liga / Champions) (v95)
+- No repositório (✎ Editar ficha): **Competição interna** → Liga ou Champions. A etiqueta só identifica e filtra: as duas somam na **mesma** classificação.
+- Ao pôr o exercício numa UT vem ativo, com o selo 🏆 LIGA / 🏆 CHAMPIONS no exercício e no PDF da UT.
+- Em **Ajustar nesta UT** anula-se (ou ativa-se num exercício sem marcação) só nessa UT. Se já houver registos, guardar pede **2 toques**; os registos não se apagam e voltam a contar se reativares.
+- Botão **🏆 Jogos** na linha do exercício:
+  - «Gerar jogos»: a partir das equipas (👥 Grupos) e da rotação por séries (ex.: série 1 A×B, série 2 A×C, série 3 B×C). Depois podes mudar as equipas, acrescentar (+ Jogo) ou tirar jogos.
+  - **+ golo** pede logo o marcador (os jogadores dessa equipa) ou **Auto-golo** (escolhes o jogador adversário que o fez; conta para a equipa beneficiada e só aparece na coluna AG). Sem teclado.
+  - Tirar um golo: ✕ com 2 toques.
+  - **GR** de cada equipa: vem preenchido pelo jogador com posição GR no Plantel; muda-se em cada jogo. **Sem GR**: não se pede GR.
+  - **✓ Fim do jogo**: só os jogos terminados contam (0–0 incluído). «Reabrir» para corrigir.
+- **Treino › Competição**: J, V, E, D, Pts, Pts/J, GM, GS, DG, golos e AG por jogador. Pontos 3-1-0 (o resultado da equipa em que jogou). Desempate: Pts, DG, GM, golos. Toca no cabeçalho para ordenar por qualquer coluna; toca num jogador para ver os jogos dele.
+  - Os **GR** não entram nesta tabela: têm a tabela **Guarda-redes** (J, golos sofridos, média, jogos sem sofrer; ordenada pela média, menor primeiro).
+  - **Jogos assinalados**: sem «Fim do jogo» (não contam) ou sem GR (golos sofridos não atribuídos).
+  - Filtros: época, mesociclo, microciclo e Liga/Champions. **⬇ CSV**.
+
+## Meinho: Rei do Meinho e Rei das Cuecas (v95)
+- No repositório: **Meinho** → Sim. Na UT funciona como a competição (selo 👑 MEINHO, anular só nessa UT).
+- Botão **👑 Meinho** na linha: os presentes aparecem com a alcunha.
+  - **21 passes**: escolhe 1 a 3 atletas (os que estavam no meio) e regista: conta 1 para cada.
+  - **Cueca**: escolhe quem levou a cueca: conta 1. Não se regista quem a fez.
+  - Cada registo grava em separado com a hora (vários aparelhos ao mesmo tempo). **Desfazer o último**: 2 toques.
+- **Treino › Rankings**: Rei do Meinho e Rei das Cuecas com 👑 (empate partilha o título); total, UT com meinho em que esteve presente, média por UT; toca num atleta para ver as ocorrências. Os GR entram como os outros. Filtros: época, mesociclo, microciclo. **⬇ CSV**.
+
 ## Tempos de treino (Treino › Tempos) (v93)
 - **Minutos de cada atleta** = para cada exercício que conta, as séries em que a equipa dele está nesse exercício × o tempo de prática (sem pausas).
 - Só contam os **presentes** (Presente e Condicionado).
