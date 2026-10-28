@@ -36,6 +36,7 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
   - equipa sem grupo;
   - «conta para os tempos mas não tem grupos».
 - A grelha aparece na linha do principal e no PDF da UT (por baixo do complementar, indentado).
+- **Sem complementar** (v94), em «Rotação por séries»: **Equipas rodam** (há quem descanse; ex.: Liga de 3, jogam 2 e descansa 1) ou **Grupos por período / parte** (em cada série só contam os grupos desse período). Até 20 grupos.
 
 ### Nomes nos grupos (v93)
 - Nos grupos de trabalho, no campo do plantel, nos tempos e no PDF da UT aparece a **alcunha** do Plantel (a 1.ª, se houver várias). Sem alcunha, aparece o **primeiro e o último nome**. Nunca aparece o número.
@@ -50,4 +51,5 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - **Presentes sem grupo**: quem esteve no treino mas não estava em nenhum grupo dos exercícios que contam. Esses minutos não entram.
 - **Avisos**: exercícios que contam sem grupos e rotações desequilibradas, com ligação à UT.
 - **⬇ CSV**: a tabela, o detalhe por exercício e os presentes sem grupo (abre no Excel).
+- **Minutos em conjunto** (v94): tocar num atleta mostra com quem esteve **na mesma equipa** (mesmo grupo, no mesmo exercício e na mesma série) e quantos minutos, do mais para o menos. O CSV leva a tabela completa atleta × atleta.
 - Tudo é calculado na hora a partir das UT: corrigir uma UT corrige os tempos.

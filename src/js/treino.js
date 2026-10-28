@@ -96,7 +96,7 @@ function renderUTCorpo(U){ const bx=$("u-corpo"), bar=$("u-bar"), tg=$("u-tag");
       const gs=(l.grupos||[]).map(id=>U.grupos.find(g=>g.id===id)).filter(Boolean), av=l.pai?[]:T.avisos.filter(a=>a.lid===l.id).map(a=>a.t.replace(/^[\d.]+ · /,""));
       const tempo=l.pai?(ct?"⏱ conta para os tempos":"não conta para os tempos"):!ct&&!cs.some(contaLinha)?"não conta para os tempos":gs.length?`👥 ${gs.map(g=>g.nome||"Grupo").join(", ")}`:"";
       return `<li data-l="${esc(l.id)}"${l.pai?' class="utx-c"':""}><span class="utx-n">${nums[l.id]}</span><div class="utx-t"><span class="tag" style="background:${l.pai?"#5B5B5B":P[2]}">${l.pai?"COMPLEMENTAR":esc(P[1].replace("Parte ","").toUpperCase())}</span><b>${esc(E.nome)}</b><small>${esc([E.formato,E.espaco.txt,totalEx(E)?fmtTempo(totalEx(E)):"",rotuloDe(TIPOS_EX,E.tipo),l.pai?"em paralelo, não soma ao tempo":""].filter(Boolean).join(" · "))}${mud?` · <span class="utx-mud">mudou no repositório</span>`:""}${!exercicios[l.exId]?` · <span class="sub">já não está no repositório</span>`:""}</small>${tempo?`<small class="utx-tp">${esc(tempo)}</small>`:""}
-        ${l.rot&&cs.length?rotMiniHtml(U,l,cs,nums):""}${av.length?`<ul class="uavisos">${av.map(t=>`<li>⚠ ${esc(t)}</li>`).join("")}</ul>`:""}</div>
+        ${l.rot?rotMiniHtml(U,l,cs,nums):""}${av.length?`<ul class="uavisos">${av.map(t=>`<li>⚠ ${esc(t)}</li>`).join("")}</ul>`:""}</div>
         <div class="rowbtns">${l.pai?"":`<button class="icon" data-a="up" aria-label="Subir" ${ip?"":"disabled"}>▲</button><button class="icon" data-a="dn" aria-label="Descer" ${ip<pr.length-1?"":"disabled"}>▼</button>`}<button class="btn sm ghost" data-a="aj">Ajustar</button>${mud?`<button class="btn sm ghost" data-a="at">↻ Atualizar</button>`:""}<button class="btn sm ghost" data-a="gt" aria-label="Grupos e tempos">👥 Grupos</button>${l.pai?"":`<button class="btn sm ghost" data-a="cp" aria-label="Juntar exercício complementar">+ Compl.</button>`}<button class="btn sm ghost" data-a="x" aria-label="Tirar da UT">✕</button></div></li>`; }).join("")}</ol>`; }
   bx.innerHTML=h; if($("u-add2")) $("u-add2").onclick=()=>folhaAddExUT(U.id);
   bx.querySelectorAll("li[data-l]").forEach(li=>{ const lid=li.dataset.l, eC=!!(U.exercicios.find(l=>l.id===lid)||{}).pai;
@@ -385,7 +385,7 @@ async function pdfUT(U){
   const y0=M+HC+6, cw=hw, ch=(PH-y0-26-G)/2, nums=numerosUT(U), blocos=[...U.exercicios.map((l,i)=>({l,i})),{grupos:true}];
   /* grelha da rotação (série × equipa) no fundo do último complementar */
   const grelhaPdf=(P,x,y,w,h)=>{ const R=P.rot, cs=U.exercicios.filter(c=>c.pai===P.id), S=R.grelha.length, rh=Math.min(9,(h-11)/(S+1)), c0=26, cwid=(w-c0)/R.nEq;
-    caixa(x,y,w,10,INK,`ROTAÇÃO  ${nums[P.id]} + ${cs.map(c=>nums[c.id]).join(" + ")}  ·  ${R.nJogo} ${R.nJogo===1?"EQUIPA":"EQUIPAS"} AO MESMO TEMPO NO ${nums[P.id]}`,{s:5.6});
+    caixa(x,y,w,10,INK,R.modo==="periodos"?`GRUPOS POR PERÍODO  ·  ${nums[P.id]}`:`ROTAÇÃO  ${nums[P.id]}${cs.length?" + "+cs.map(c=>nums[c.id]).join(" + "):""}  ·  ${R.nJogo} ${R.nJogo===1?"EQUIPA":"EQUIPAS"} AO MESMO TEMPO${cs.length?" NO "+nums[P.id]:""}`,{s:5.6});
     let yy=y+10; doc.setDrawColor(...LN); doc.setLineWidth(.4); T("SÉRIE",x+c0/2,yy+rh*.7,5.2,{b:1,c:MUT,al:"center"});
     R.equipas.forEach((g,j)=>{ doc.setFont("helvetica","bold"); doc.setFontSize(5.4); const t=doc.splitTextToSize(pdfTxt(nomeEquipa(U,R,j)),cwid-3)[0]; T(t,x+c0+j*cwid+cwid/2,yy+rh*.7,5.4,{b:1,al:"center"}); });
     yy+=rh; R.grelha.forEach((r,i)=>{ doc.line(x,yy,x+w,yy); T(String(i+1),x+c0/2,yy+rh*.72,6,{b:1,c:RED,al:"center"});
@@ -413,13 +413,13 @@ async function pdfUT(U){
     if(B.grupos){ gruposNoPdf(b); continue; }
     /* complementar: indentado, com a marca vermelha à esquerda; o último do principal leva a grelha da rotação */
     const l=B.l, E=l.copia, ind=l.pai?12:0, bx=x+ind, bw=cw-ind, hf=ch*.52, P=l.pai?U.exercicios.find(p=>p.id===l.pai):null;
-    const ult=P&&P.rot&&U.exercicios.filter(c=>c.pai===P.id).slice(-1)[0]===l, gh=ult?Math.min(11+(P.rot.grelha.length+1)*9,(ch-hf)*.6):0;
+    const dono=P&&P.rot&&U.exercicios.filter(c=>c.pai===P.id).slice(-1)[0]===l?P:!l.pai&&l.rot&&!U.exercicios.some(c=>c.pai===l.id)?l:null, gh=dono?Math.min(11+(dono.rot.grelha.length+1)*9,(ch-hf)*.6):0;
     if(ind){ doc.setFillColor(...RED); doc.rect(x+2,y,4,ch,"F"); }
     fichaExPdf(doc,E,bx,y,bw,{k:.6,hMax:hf,num:nums[l.id]+(l.pai?" · COMPLEMENTAR":"")});
     const fig=await figuraJpegEx(E), fy=y+hf+3, fh=ch-hf-3-(gh?gh+3:0);
     if(fig){ let w=bw, h=bw*fig.h/fig.w; if(h>fh){ h=fh; w=h*fig.w/fig.h; } figuraNoPdf(doc,fig,bx+(bw-w)/2,fy+(fh-h)/2,w,h); }
     doc.setDrawColor(...INK); doc.setLineWidth(.9); doc.rect(bx,fy,bw,fh);
-    if(gh) grelhaPdf(P,bx,fy+fh+3,bw,gh); }
+    if(gh) grelhaPdf(dono,bx,fy+fh+3,bw,gh); }
   const np=doc.getNumberOfPages(), rod=U.staff||staffPadrao();
   for(let i=1;i<=np;i++){ doc.setPage(i); T(`${rod}${np>1?`   ·   ${i}/${np}`:""}`,PW/2,PH-12,6.5,{b:1,c:RED,al:"center"}); }
   return doc; }

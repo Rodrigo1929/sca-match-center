@@ -327,10 +327,20 @@ if (tp2.m !== 26 || tp2.rep !== null) erros.push("Tempos: contar o aquecimento s
 await pg.click(".u-modo button[data-m='tempos']"); await pg.waitForSelector("table.ttab"); await pg.selectOption("#tp-ut", "ta"); await pg.waitForTimeout(100);
 const vt = await pg.evaluate(() => ({ linhas: document.querySelectorAll("table.ttab tbody tr").length, pri: document.querySelector("table.ttab tbody tr td:nth-child(2)")?.textContent, sem: document.querySelector("#u-panel").textContent.includes("Presentes sem grupo") }));
 await pg.screenshot({ path: join(cap, "treino-tempos.png"), fullPage: true });
-await pg.click("table.ttab tbody tr >> nth=0"); await pg.waitForTimeout(100); const det = await pg.evaluate(() => document.querySelector("#sheet-root").textContent); await pg.click("#sheet-root [data-close]");
+await pg.click("table.ttab tbody tr >> nth=0"); await pg.waitForTimeout(100); await pg.screenshot({ path: join(cap, "treino-tempos-juntos.png") }); const det = await pg.evaluate(() => document.querySelector("#sheet-root").textContent); await pg.click("#sheet-root [data-close]");
+// minutos em conjunto (na mesma equipa): ks0 e ks1 no mesmo grupo (aquecimento 10' + rotação 16'); ks0 e ks2 nunca na mesma equipa
+const jt = await pg.evaluate((ks) => { const F = temposFiltro(), p = F.par["n:" + ks[0]] || {}; return { com1: p["n:" + ks[1]], com2: p["n:" + ks[2]], sim: (F.par["n:" + ks[1]] || {})["n:" + ks[0]] }; }, utA0.ks);
+if (jt.com1 !== 1560 || jt.com2 || jt.sim !== 1560 || !det.includes("Minutos em conjunto")) erros.push("Tempos: minutos em conjunto errados " + JSON.stringify(jt));
 const [dCsv] = await Promise.all([pg.waitForEvent("download", { timeout: 30000 }), pg.click("#tp-csv")]);
 if (vt.linhas !== 8 || vt.pri !== "26'" || !vt.sem || !det.includes("2.1") || !dCsv.suggestedFilename().startsWith("Tempos_SCA_26-27_UT90")) erros.push("Tempos: vista ou CSV errados " + JSON.stringify({ vt, det: det.slice(0, 120), f: dCsv.suggestedFilename() }));
 await pg.click(".u-modo button[data-m='ut']"); await pg.waitForTimeout(100);
+// rotação sem complementar (equipas que descansam) e por períodos
+await pg.click("li[data-l='lf'] [data-a='gt']"); await pg.waitForSelector("#ut-md"); await pg.click("#ut-gs [data-t]"); await pg.click("#ut-md [data-k='rodar']"); await pg.waitForTimeout(50);
+const rs = await pg.evaluate(() => ({ ne: document.querySelector("#ut-ne").value, nj: document.querySelector("#ut-nj").value, casas: document.querySelectorAll("#ut-gr td button").length }));
+await pg.click("#ut-ok"); await pg.waitForTimeout(150);
+const rs2 = await pg.evaluate((ks) => { const l = uts.ta.exercicios.find((x) => x.id === "lf"), T = temposUT(uts.ta), d = (T.por[ks[0]] || { det: [] }).det.find((x) => x.lid === "lf");
+  return { modo: l.rot && l.rot.modo, seg: d && d.seg, mini: !!document.querySelector("li[data-l='lf'] table.urot.mini"), per: JSON.stringify(propoeRot(4, 2, 4, [], "periodos")) }; }, utA0.ks);
+if (rs.ne !== "4" || rs.nj !== "2" || rs.casas !== 16 || rs2.modo !== "rodar" || rs2.seg !== 480 || !rs2.mini || rs2.per !== JSON.stringify([["p","p","",""],["p","p","",""],["","","p","p"],["","","p","p"]])) erros.push("UT: rotação sem complementar errada " + JSON.stringify({ rs, rs2 }));
 // PDF da UT com o complementar indentado e a grelha
 { const [dC] = await Promise.all([pg.waitForEvent("download", { timeout: 60000 }), pg.click("#u-pdf")]); await dC.saveAs(join(cap, "treino-ut-complementar.pdf")); }
 const pdfC = await pg.evaluate(async () => { const t = (await pdfUT(uts.ta)).output(); return { c: t.includes("2.1") && t.includes("COMPLEMENTAR"), r: t.includes("ROTA") }; });
