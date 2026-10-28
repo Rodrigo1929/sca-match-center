@@ -275,6 +275,75 @@ await pg.click("#tab-x"); await pg.evaluate(() => { const E = exercicios[xCur]; 
 const [dSemEx] = await Promise.all([pg.waitForEvent("download", { timeout: 60000 }), pg.click("#x-pdf")]); await dSemEx.saveAs(join(cap, "exercicio-sem-imagem.pdf"));
 if (statSync(join(cap, "exercicio-sem-imagem.pdf")).size < 10000) erros.push("Exercício: com a imagem em falta o PDF devia sair na mesma");
 
+// Entrega A (v93): nome SCA Performance, ligações do exercício, complementares com rotação, grupos por exercício, estatística de tempos e alcunhas
+const nomeApp = await pg.evaluate(() => ({ t: document.title, h: document.querySelector(".brand h1").textContent }));
+if (nomeApp.t !== "SCA Performance" || nomeApp.h !== "SCA Performance") erros.push("Nome: a app devia chamar-se SCA Performance " + JSON.stringify(nomeApp));
+// ligações: só http/https; ficam no repositório, nunca na UT nem no PDF da UT
+await pg.click("#tab-x"); await pg.click("#x-ed"); await pg.waitForSelector("#xe-lka");
+await pg.click("#xe-lka"); await pg.fill("#xe-lk .xe-lkr [data-f=t]", "Vídeo do exercício"); await pg.fill("#xe-lk .xe-lkr [data-f=url]", "ftp://mau.pt/x"); await pg.click("#xe-ok"); await pg.waitForTimeout(100);
+const lkMau = await pg.evaluate(() => ({ aberta: !!document.querySelector("#xe-ok"), marcada: !!document.querySelector("#xe-lk input.bad"), n: exercicios[xCur].links.length }));
+await pg.fill("#xe-lk .xe-lkr [data-f=url]", "https://youtu.be/sca123"); await pg.click("#xe-lka"); await pg.fill("#xe-lk .xe-lkr:nth-child(2) [data-f=url]", "https://www.exemplo.pt/artigo");
+await pg.click("#xe-lk .xe-lkr:nth-child(2) [data-a=up]"); await pg.click("#xe-ok"); await pg.waitForTimeout(150);
+const lk = await pg.evaluate(() => { const E = exercicios[xCur], a = [...document.querySelectorAll("#x-panel .xlinks a")]; return { n: E.links.length, t: E.links.map((x) => x.t), alvo: a.every((x) => x.target === "_blank" && x.rel.includes("noopener")), na: a.length }; });
+if (!lkMau.aberta || !lkMau.marcada || lkMau.n || lk.n !== 2 || lk.t[0] !== "exemplo.pt" || lk.t[1] !== "Vídeo do exercício" || !lk.alvo || lk.na !== 2) erros.push("Exercício: ligações erradas " + JSON.stringify({ lkMau, lk }));
+const utLk = await pg.evaluate(async () => { const id = xCur, U = normUT({ id: "utlk", numero: 91, data: "2026-10-22", exercicios: [{ id: "l1", exId: id, copia: clone(exercicios[id]) }] }), l = U.exercicios[0];
+  const txt = (await pdfUT(U)).output(); return { copia: "links" in l.copia, aviso: mudouNoRepo(l), pdf: /youtu|exemplo\.pt/.test(txt) }; });
+if (utLk.copia || utLk.aviso || utLk.pdf) erros.push("UT: as ligações não deviam ir para a UT nem para o PDF " + JSON.stringify(utLk));
+// complementar: escolhido do repositório, corre em paralelo e não soma ao tempo da UT; rotação proposta (série × equipa)
+await pg.click("#tab-u");
+const utA0 = await pg.evaluate(() => { const ks = est.plantel.filter((p) => p.n && !p.esc).slice(0, 9).map((p) => p.n), pres = {}; ks.forEach((k) => pres[k] = "P"); pres[ks[8]] = "A";
+  exercicios.tP = normEx({ id: "tP", nome: "Jogo reduzido 4 equipas", parte: "fundamental", duracao: { series: 4, pratica: 240, pausa: 60 } });
+  exercicios.tC = normEx({ id: "tC", nome: "Finalização complementar", parte: "inicial", duracao: { total: 300 } });
+  exercicios.tI = normEx({ id: "tI", nome: "Aquecimento com bola", parte: "inicial", duracao: { pratica: 600 } });
+  const gr = [0, 1, 2, 3].map((i) => ({ id: "g" + i, nome: ["Vermelhos", "Azuis", "Amarelos", "Verdes"][i], jogadores: [ks[2 * i], ks[2 * i + 1]], nota: "" }));
+  gr[3].jogadores = [ks[6]];  // ks[7] presente sem grupo
+  const ant = uCur; uts.ta = normUT({ id: "ta", numero: 90, data: "2026-10-22", presencas: pres, grupos: gr, exercicios: [
+    { id: "li", exId: "tI", copia: exercicios.tI, grupos: ["g0", "g1", "g2", "g3"] }, { id: "lp", exId: "tP", copia: exercicios.tP, grupos: ["g0", "g1", "g2", "g3"] },
+    { id: "lf", exId: "tP", copia: { ...exercicios.tP, nome: "Sem grupos" } }] });
+  uCur = "ta"; uModo = "ut"; renderUT(); return { ant, ks }; });
+await pg.click("li[data-l='lp'] [data-a='cp']"); await pg.waitForSelector("#ua-l"); await pg.fill("#ua-q", "Finalização complementar"); await pg.check("#ua-l input[value='tC']"); await pg.click("#ua-ok"); await pg.waitForTimeout(150);
+const cp = await pg.evaluate(() => { const U = uts.ta, c = U.exercicios.find((l) => l.pai === "lp"), P = U.exercicios.find((l) => l.id === "lp"), nums = numerosUT(U);
+  return { ordem: U.exercicios.map((l) => nums[l.id]).join(","), pai: !!c, parte: c && c.copia.parte, tot: totalUT(U), rot: P.rot && [P.rot.nEq, P.rot.nJogo, P.rot.grelha.length].join("/"),
+    eq: avisosRot(U, P, [c], nums).length, li: document.querySelector("li.utx-c .utx-n")?.textContent, mini: !!document.querySelector("li[data-l='lp'] table.urot.mini") }; });
+if (cp.ordem !== "1,2,2.1,3" || !cp.pai || cp.parte !== "fundamental" || cp.tot !== 600 + 1140 + 1140 || cp.rot !== "4/2/4" || cp.eq || cp.li !== "2.1" || !cp.mini) erros.push("UT: complementar ou rotação proposta errados " + JSON.stringify(cp));
+// ajuste manual da grelha com um toque → aviso de rotação desequilibrada (não bloqueia)
+await pg.click("li[data-l='lp'] [data-a='gt']"); await pg.waitForSelector("#ut-gr");
+await pg.click("#ut-gr button[data-s='0'][data-e='2']"); await pg.waitForTimeout(50);
+const avR = await pg.evaluate(() => document.querySelector("#ut-av").textContent);
+await pg.click("#ut-ok"); await pg.waitForTimeout(150);
+const rotM = await pg.evaluate(() => ({ casa: uts.ta.exercicios.find((l) => l.id === "lp").rot.grelha[0][2], aviso: [...document.querySelectorAll("li[data-l='lp'] .uavisos li")].map((x) => x.textContent).join(" | ") }));
+if (!avR.includes("desequilibrada") || rotM.casa !== "" || !rotM.aviso.includes("desequilibrada")) erros.push("UT: ajuste manual da rotação ou aviso errados " + JSON.stringify({ avR, rotM }));
+await pg.screenshot({ path: join(cap, "treino-complementar.png"), fullPage: true });
+await pg.evaluate(() => editaUT((U) => { const P = U.exercicios.find((l) => l.id === "lp"); P.rot.grelha = propoeRot(4, 2, 4, U.exercicios.filter((c) => c.pai === "lp").map((c) => c.id)); }));
+// tempos: séries da equipa × prática (sem pausas); aquecimento não conta por defeito; ausentes fora; presentes sem grupo à parte; conta sem grupos = aviso
+const tp = await pg.evaluate((ks) => { const T = temposUT(uts.ta), m = (k) => T.por[k] ? T.por[k].seg / 60 : 0;
+  return { a: m(ks[0]), d: m(ks[6]), aus: ks[8] in T.por, sem: T.semGrupo.map((a) => a.k), av: T.avisos.map((x) => x.t).join(" | "), aq: (T.por[ks[0]] || { det: [] }).det.some((d) => d.lid === "li"), sg: !!document.querySelector("li[data-l='lf'] .uavisos") }; }, utA0.ks);
+if (tp.a !== 16 || tp.d !== 16 || tp.aus || JSON.stringify(tp.sem) !== JSON.stringify([utA0.ks[7]]) || !tp.av.includes("não tem grupos") || tp.aq || !tp.sg) erros.push("Tempos: minutos por atleta errados " + JSON.stringify(tp));
+// por UT: o aquecimento passa a contar só nesta UT
+await pg.click("li[data-l='li'] [data-a='gt']"); await pg.waitForSelector("#ut-ct"); await pg.click("#ut-ct button[data-k='1']"); await pg.click("#ut-ok"); await pg.waitForTimeout(150);
+const tp2 = await pg.evaluate((k) => ({ m: temposUT(uts.ta).por[k].seg / 60, rep: exercicios.tI.contaTempo }), utA0.ks[0]);
+if (tp2.m !== 26 || tp2.rep !== null) erros.push("Tempos: contar o aquecimento só nesta UT falhou " + JSON.stringify(tp2));
+// vista Tempos: tabela, detalhe, sem grupo à parte e CSV
+await pg.click(".u-modo button[data-m='tempos']"); await pg.waitForSelector("table.ttab"); await pg.selectOption("#tp-ut", "ta"); await pg.waitForTimeout(100);
+const vt = await pg.evaluate(() => ({ linhas: document.querySelectorAll("table.ttab tbody tr").length, pri: document.querySelector("table.ttab tbody tr td:nth-child(2)")?.textContent, sem: document.querySelector("#u-panel").textContent.includes("Presentes sem grupo") }));
+await pg.screenshot({ path: join(cap, "treino-tempos.png"), fullPage: true });
+await pg.click("table.ttab tbody tr >> nth=0"); await pg.waitForTimeout(100); const det = await pg.evaluate(() => document.querySelector("#sheet-root").textContent); await pg.click("#sheet-root [data-close]");
+const [dCsv] = await Promise.all([pg.waitForEvent("download", { timeout: 30000 }), pg.click("#tp-csv")]);
+if (vt.linhas !== 8 || vt.pri !== "26'" || !vt.sem || !det.includes("2.1") || !dCsv.suggestedFilename().startsWith("Tempos_SCA_26-27_UT90")) erros.push("Tempos: vista ou CSV errados " + JSON.stringify({ vt, det: det.slice(0, 120), f: dCsv.suggestedFilename() }));
+await pg.click(".u-modo button[data-m='ut']"); await pg.waitForTimeout(100);
+// PDF da UT com o complementar indentado e a grelha
+{ const [dC] = await Promise.all([pg.waitForEvent("download", { timeout: 60000 }), pg.click("#u-pdf")]); await dC.saveAs(join(cap, "treino-ut-complementar.pdf")); }
+const pdfC = await pg.evaluate(async () => { const t = (await pdfUT(uts.ta)).output(); return { c: t.includes("2.1") && t.includes("COMPLEMENTAR"), r: t.includes("ROTA") }; });
+if (!pdfC.c || !pdfC.r) erros.push("UT: PDF sem o complementar ou sem a grelha da rotação " + JSON.stringify(pdfC));
+// alcunhas nos grupos (sem números); sem alcunha, primeiro e último nome; alcunhas repetidas avisam no Plantel
+const alc = await pg.evaluate((ks) => { const pl0 = clone(est.plantel), i0 = est.plantel.findIndex((p) => p.n === ks[0]), i1 = est.plantel.findIndex((p) => p.n === ks[1]);
+  const pl = clone(est.plantel); pl[i0] = { ...pl[i0], alc: "Mika, Miki" }; pl[i1] = { ...pl[i1], nome: "João Pedro Santos Silva", alc: "" }; guardaEst({ ...est, plantel: pl }, true); renderUT();
+  const txt = document.querySelector("#u-panel .evl").textContent, r = { a: nomeAtleta(uts.ta, ks[0]), b: nomeAtleta(uts.ta, ks[1]), num: txt.includes(ks[0] + " · "), txt: txt.slice(0, 80) };
+  const pl2 = clone(est.plantel); pl2[i1] = { ...pl2[i1], alc: "mika" }; guardaEst({ ...est, plantel: pl2 }, true); setTab("p"); renderPlantel(); r.aviso = !$("p-alc").hidden && $("p-alc").textContent.includes("Mika");
+  guardaEst({ ...est, plantel: pl0 }, true); setTab("u"); return r; }, utA0.ks);
+if (alc.a !== "Mika" || alc.b !== "João Silva" || alc.num || !alc.aviso) erros.push("Alcunhas: grupos ou aviso de repetidas errados " + JSON.stringify(alc));
+await pg.evaluate((a) => { ["ta", "utlk"].forEach((id) => delete uts[id]); ["tP", "tC", "tI"].forEach((id) => delete exercicios[id]); uCur = a; renderUT(); }, utA0.ant);
+
 // Ao vivo: substituição feita e depois editada; cartão a quem já saiu e a um suplente no banco
 await pg.click("#tab-v"); await pg.waitForTimeout(150);
 const supl = await pg.evaluate(() => { const t = new Set(titulares()), s = est.plantel.map((p) => p.n).filter((n) => n && !t.has(n)).slice(0, 3); guardaJogo({ ...jogo, suplentes: s, subs: [], eventos: [] }, true); return s; });

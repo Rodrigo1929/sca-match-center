@@ -12,7 +12,7 @@ Existe para dar acesso a um observador de fora do clube sem ele ver o resto da a
 ## Quem usa e com que acesso
 | Quem | O que vê | O que faz |
 |---|---|---|
-| Rodrigo Fonte (dono, equipa técnica) | Todos os relatórios e o histórico | Edita tudo; revê e marca como revisto; apaga relatórios de qualquer autor; «Repor» no histórico; exporta o plantel para o Match Center |
+| Rodrigo Fonte (dono, equipa técnica) | Todos os relatórios e o histórico | Edita tudo; revê e marca como revisto; apaga relatórios de qualquer autor; «Repor» no histórico; exporta o plantel para a SCA Performance |
 | Observadores (Rodrigo Simão e Nuno Alves, de fora do clube) | Todos os relatórios, os planteis base e o histórico | Cria relatórios e edita os de qualquer autor (desde a Obs. 23); apaga só os seus; envia para revisão; edita os planteis base e «Guarda como plantel base» (desde a Obs. 25) |
 
 - Na app, o dono aparece como **"equipa técnica"** (nunca "Rodrigo": o observador também se chama Rodrigo).

@@ -7,7 +7,12 @@ const nomePosUT=k=>{ const p=POS_UT.find(x=>x[0]===k); return p?`${p[0]} · ${p[
 const ESC_FORM=["Sub19","Sub17","Sub15"];
 const escalaoDe=n=>{ const p=est.plantel.find(p=>p.n===n); return p&&p.esc?p.esc:""; };
 let pTimer=null;
-function renderPlantel(){
+/* alcunhas repetidas: nos grupos e nos tempos aparece a 1.ª alcunha, por isso duas pessoas com a mesma confundem-se */
+function avisoAlcunhas(){ const el_=$("p-alc"); if(!el_) return; const nA=t=>String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim(), m=new Map();
+  est.plantel.forEach(p=>String(p.alc||"").split(/[,;]/).map(x=>x.trim()).filter(Boolean).forEach(a=>{ const k=nA(a); if(!m.has(k)) m.set(k,{a,ps:[]}); const x=m.get(k); if(!x.ps.includes(p)) x.ps.push(p); }));
+  const rep=[...m.values()].filter(x=>x.ps.length>1);
+  el_.hidden=!rep.length; el_.innerHTML=rep.length?`⚠ <b>Alcunhas repetidas:</b> ${rep.map(x=>`«${esc(x.a)}» (${x.ps.map(p=>esc(`${p.n} · ${p.nome||"?"}`)).join(", ")})`).join("; ")}. Nos grupos de trabalho e nos tempos aparece a alcunha: muda uma delas.`:""; }
+function renderPlantel(){ avisoAlcunhas();
   const tb=$("ptb"); if(tb.contains(document.activeElement)) return;
   tb.innerHTML=""; const tit=new Set(titulares());
   /* seniores primeiro (pela ordem do plantel) e depois os jovens da formação */
@@ -19,7 +24,7 @@ function renderPlantel(){
       <td><select id="pp-${i}" aria-label="Posição no campo do plantel (UT)"><option value="">—</option>${POS_UT.map(([k,n])=>`<option value="${k}">${k} · ${n}</option>`).join("")}</select></td>
       <td><select id="pe-${i}" aria-label="Escalão"><option value="">Sénior</option>${ESC_FORM.map(e=>`<option value="${e}">${e}</option>`).join("")}</select></td><td>${est_}</td><td><button class="icon" aria-label="Remover">✕</button></td>`;
     const [inN,inM,inA]=tr.querySelectorAll("input"), [inP,inE]=tr.querySelectorAll("select"); inN.value=p.n; inM.value=p.nome||""; inA.value=p.alc||""; inP.value=p.pos||""; inE.value=p.esc||"";
-    const upd=()=>{ clearTimeout(pTimer); pTimer=setTimeout(()=>{ const pl=est.plantel.slice(); pl[i]={n:inN.value.trim(),nome:inM.value.trim(),...(inA.value.trim()?{alc:inA.value.trim()}:{}),...(inP.value?{pos:inP.value}:{}),...(inE.value?{esc:inE.value}:{})}; guardaEst({...est,plantel:pl},true); },600); };
+    const upd=()=>{ clearTimeout(pTimer); pTimer=setTimeout(()=>{ const pl=est.plantel.slice(); pl[i]={n:inN.value.trim(),nome:inM.value.trim(),...(inA.value.trim()?{alc:inA.value.trim()}:{}),...(inP.value?{pos:inP.value}:{}),...(inE.value?{esc:inE.value}:{})}; guardaEst({...est,plantel:pl},true); avisoAlcunhas(); },600); };
     inN.oninput=upd; inM.oninput=upd; inA.oninput=upd; inP.onchange=upd; inE.onchange=()=>{ upd(); setTimeout(()=>{ document.activeElement.blur(); renderPlantel(); },700); };
     tr.querySelector(".icon").onclick=()=>{ if(tit.has(p.n)){ toast("É titular: troca-o primeiro no separador Jogo."); return; }
       const pl=est.plantel.slice(); const rem=pl.splice(i,1)[0]; guardaEst({...est,plantel:pl}); toast(`Jogador ${rem.n} removido`,()=>{ const r=est.plantel.slice(); r.splice(i,0,rem); guardaEst({...est,plantel:r}); }); };

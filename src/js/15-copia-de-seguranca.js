@@ -1,14 +1,14 @@
 /* ---------- cópia de segurança ---------- */
 function ultimaCopia(){ try{ return localStorage.getItem("sca-ultima-copia")||""; }catch(e){ return ""; } }
 function infoCopia(){ const el_=$("h-bkinfo"); if(!el_) return; const u=ultimaCopia(); el_.textContent=u?`Última cópia feita neste aparelho: ${new Date(u).toLocaleString("pt-PT")}. Recomendado: depois de cada jogo.`:"Ainda não fizeste nenhuma cópia neste aparelho. Recomendado: depois de cada jogo."; }
-async function exportaCopia(){ const B={app:"SCA Match Center",versao:1,criadaEm:new Date().toISOString(),est,jogo,lancesDb,notas,hist,an,anCfg,vivo,modelo:(typeof modelos!=="undefined"?modelos:{}),exercicios:(typeof exercicios!=="undefined"?exercicios:{}),uts:(typeof uts!=="undefined"?uts:{}),semanas:(typeof semanas!=="undefined"?semanas:{}),calendario:(typeof calendario!=="undefined"?calendario:{}),anual:(typeof anual!=="undefined"?anual:{}),ciclos:(typeof ciclos!=="undefined"?ciclos:{}),adversarios:advs,tv:tvCfg||null};
-  const nomeF=`Copia_SCA_Match_Center_${new Date().toISOString().slice(0,16).replace(/[T:]/g,"-")}.json`, txt=JSON.stringify(B);
+async function exportaCopia(){ const B={app:"SCA Performance",versao:1,criadaEm:new Date().toISOString(),est,jogo,lancesDb,notas,hist,an,anCfg,vivo,modelo:(typeof modelos!=="undefined"?modelos:{}),exercicios:(typeof exercicios!=="undefined"?exercicios:{}),uts:(typeof uts!=="undefined"?uts:{}),semanas:(typeof semanas!=="undefined"?semanas:{}),calendario:(typeof calendario!=="undefined"?calendario:{}),anual:(typeof anual!=="undefined"?anual:{}),ciclos:(typeof ciclos!=="undefined"?ciclos:{}),adversarios:advs,tv:tvCfg||null};
+  const nomeF=`Copia_SCA_Performance_${new Date().toISOString().slice(0,16).replace(/[T:]/g,"-")}.json`, txt=JSON.stringify(B);
   let dl=null; try{ dl=await window.claude.use("downloads"); }catch(e){}
   try{ if(!dl){ const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([txt],{type:"application/json"})); a.download=nomeF; document.body.appendChild(a); a.click(); a.remove(); }
     else await dl.save({filename:nomeF,data:txt});
     try{ localStorage.setItem("sca-ultima-copia",new Date().toISOString()); }catch(e){} infoCopia(); toast(`Cópia guardada · ${Object.keys(hist).length} jogos no histórico, ${an.regs.length} ações`); }
   catch(e){ if(e?.code!=="declined") toast("Não foi possível guardar a cópia ("+(e?.code||"erro")+")"); } }
-function repoeCopia(B){ if(!B||!["SCA Match Center","SCA Bolas Paradas"].includes(B.app)||!B.est){ toast("Este ficheiro não é uma cópia desta aplicação."); return; }
+function repoeCopia(B){ if(!B||!["SCA Performance","SCA Match Center","SCA Bolas Paradas"].includes(B.app)||!B.est){ toast("Este ficheiro não é uma cópia desta aplicação."); return; }
   const nL=Object.keys(B.lancesDb||{}).length, nH=Object.keys(B.hist||{}).length, nR=(B.an?.regs||[]).length;
   folha(`<h3>Repor esta cópia?</h3><p class="sub" style="margin:0">Cópia de <b>${esc(new Date(B.criadaEm).toLocaleString("pt-PT"))}</b>: ${nL} lances editados, ${nH} jogos no histórico, ${nR} ações de análise${B.jogo?.adversario?`, jogo vs ${esc(B.jogo.adversario)}`:""}.</p>
     <p class="sub" style="margin:0;color:var(--red)"><b>Substitui tudo o que está agora na aplicação</b>, para todos os aparelhos. Antes de repor, é feita automaticamente uma cópia do estado atual.</p>

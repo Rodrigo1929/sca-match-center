@@ -21,7 +21,7 @@ const canon = (v) => Array.isArray(v) ? "[" + v.map(canon).join(",") + "]" : v &
 
 function colecao(docs, nome) { const out = {}; Object.entries(docs).forEach(([k, v]) => { const i = k.lastIndexOf("/"); if (k.slice(0, i) === nome) out[k.slice(i + 1)] = { ...v, id: k.slice(i + 1) }; }); return out; }
 const lista = (o) => Object.values(o).sort((a, b) => (a.c || 0) - (b.c || 0));
-// Match Center: o mesmo formato de exportaCopia (src/js/15-copia-de-seguranca.js)
+// SCA Performance (antes Match Center): o mesmo formato de exportaCopia (src/js/15-copia-de-seguranca.js)
 function copiaMatchCenter(d) { const doc = (k) => d[k] || null;
   const jogo = { ...(doc("jogo/atual") || {}), eventos: lista(colecao(d, "eventos")), subs: lista(colecao(d, "subs")), subsAdv: lista(colecao(d, "subsAdv")) };
   return { est: doc("estado/atual"), jogo, notas: doc("jogo/notas") || { itens: [] }, vivo: doc("jogo/vivo"),
@@ -31,7 +31,7 @@ function copiaMatchCenter(d) { const doc = (k) => d[k] || null;
     tv: doc("tv/config"), adversarios: colecao(d, "adversarios") }; }
 
 // documentos que têm de existir: sem eles a leitura ficou a meio e a cópia não se faz (nunca substituir uma cópia boa por uma incompleta)
-const APPS = { "match-center": { nome: "SCA Match Center", forma: copiaMatchCenter, precisa: ["estado/atual", "jogo/atual"] },
+const APPS = { "match-center": { nome: "SCA Performance", forma: copiaMatchCenter, precisa: ["estado/atual", "jogo/atual"] },
   "observacao": { nome: "SCA Observação", forma: (d) => ({ docs: d }), precisa: ["obs/"] } };
 const resumo = [];
 for (const [app, A] of Object.entries(APPS)) {

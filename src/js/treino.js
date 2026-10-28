@@ -17,22 +17,33 @@ const uId=p=>(p||"u")+Date.now().toString(36)+Math.random().toString(36).slice(2
 function staffPadrao(){ const S=est.staff||{}; return ["treinador","adjunto","trgr","prepfis"].map(k=>S[k]).filter(Boolean).join(" | ").toUpperCase(); }
 function normUT(d){ const s=v=>String(v??"").trim(), L=v=>(Array.isArray(v)?v.map(s):s(v).split(/\n/).map(x=>x.trim())).filter(Boolean), n=v=>{ const x=Math.round(+v); return isFinite(x)&&x>0?x:0; };
   const pres={}; Object.entries(d.presencas||{}).forEach(([k,v])=>{ if(PRESENCAS.some(p=>p[0]===v)) pres[String(k)]=v; });
+  const grupos=(Array.isArray(d.grupos)?d.grupos:[]).filter(g=>g&&(g.nome||(g.jogadores||[]).length)).map(g=>({id:s(g.id)||uId("g"),nome:s(g.nome),jogadores:L(g.jogadores),nota:s(g.nota)}));
   return {id:s(d.id)||uId(), numero:n(d.numero), data:/^\d{4}-\d{2}-\d{2}$/.test(s(d.data))?s(d.data):"", matchDay:s(d.matchDay), regime:s(d.regime),
     objetivos:L(d.objetivos), material:L(d.material), tempoTotal:n(d.tempoTotal)||null, presencas:pres, staff:s(d.staff),
     /* jogadores chamados de fora do plantel (juniores, juvenis…): só nesta UT; nas presenças e grupos são "e:<id>" */
     extras:(Array.isArray(d.extras)?d.extras:[]).filter(e=>e&&s(e.nome)).map(e=>({id:s(e.id)||uId("e"),nome:s(e.nome),escalao:s(e.escalao),pos:POS_UT.some(x=>x[0]===s(e.pos))?s(e.pos):"",...(s(e.alc)?{alc:s(e.alc)}:{})})),
-    grupos:(Array.isArray(d.grupos)?d.grupos:[]).filter(g=>g&&(g.nome||(g.jogadores||[]).length)).map(g=>({id:s(g.id)||uId("g"),nome:s(g.nome),jogadores:L(g.jogadores),nota:s(g.nota)})),
-    /* cada exercício da UT é uma cópia do exercício no dia: mudar o repositório depois não mexe nas UT antigas */
-    exercicios:(Array.isArray(d.exercicios)?d.exercicios:[]).filter(e=>e&&e.copia).map(e=>({id:s(e.id)||uId("l"),exId:s(e.exId),copia:normEx({...e.copia,id:s(e.exId)||s(e.copia.id)})})),
+    grupos,
+    /* cada exercício da UT é uma cópia do exercício no dia: mudar o repositório depois não mexe nas UT antigas. As ligações (vídeos) nunca vêm para a UT.
+       Na linha: pai (complementar de), conta (estatística de tempos só nesta UT), grupos (ids dos grupos de trabalho) e rot (rotação, no principal) — ver tempos.js */
+    exercicios:arrumaLinhas((Array.isArray(d.exercicios)?d.exercicios:[]).filter(e=>e&&e.copia).map(e=>{ const c=normEx({...e.copia,id:s(e.exId)||s(e.copia.id)}); delete c.links;
+      const l={id:s(e.id)||uId("l"),exId:s(e.exId),copia:c}; if(s(e.pai)) l.pai=s(e.pai); if(typeof e.conta==="boolean") l.conta=e.conta;
+      if(Array.isArray(e.grupos)) l.grupos=L(e.grupos); if(e.rot&&typeof e.rot==="object") l.rot=e.rot; return l; }),grupos),
     criadoPor:s(d.criadoPor), criadoEm:s(d.criadoEm), alteradoPor:s(d.alteradoPor), alteradoEm:s(d.alteradoEm)}; }
 Object.keys(uts).forEach(id=>{ try{ uts[id]=normUT({...uts[id],id}); }catch(e){ delete uts[id]; } });
 
 /* atletas da UT: plantel (chave = nº) e jogadores de fora (chave = "e:<id>") */
-function atletasUT(U){ const pl=est.plantel.filter(p=>p.n).slice().sort((a,b)=>byNum(a.n,b.n)), at=p=>({k:p.n,n:p.n,nome:p.nome||"",pos:p.pos||"",esc:p.esc||"",form:!!p.esc});
+function atletasUT(U){ const pl=est.plantel.filter(p=>p.n).slice().sort((a,b)=>byNum(a.n,b.n)), at=p=>({k:p.n,n:p.n,nome:p.nome||"",pos:p.pos||"",esc:p.esc||"",form:!!p.esc,alc:p.alc||""});
   return [...pl.filter(p=>!p.esc).map(at),...pl.filter(p=>p.esc).map(at),
-  ...U.extras.map(e=>({k:"e:"+e.id,n:"",nome:e.nome,pos:e.pos,esc:e.escalao||"Extra"}))]; }
-function nomeAtleta(U,k){ if(String(k).startsWith("e:")){ const e=U.extras.find(x=>"e:"+x.id===k); return e?`${e.nome}${e.escalao?" ("+e.escalao+")":""}`:"?"; } return rot(k); }
-const totalUT=U=>U.tempoTotal||U.exercicios.reduce((a,l)=>a+totalEx(l.copia),0);
+  ...U.extras.map(e=>({k:"e:"+e.id,n:"",nome:e.nome,pos:e.pos,esc:e.escalao||"Extra",alc:e.alc||""}))]; }
+/* nos grupos, no campo do plantel e nos tempos: a 1.ª alcunha; sem alcunha, primeiro e último nome (nunca o nome completo nem o número).
+   A ligação ao atleta continua pela chave (nº do plantel ou "e:<id>"); Quadro, ficha de jogo e Onze continuam com números */
+function nomeCurto(a){ const al=String(a&&a.alc||"").split(/[,;]/)[0].trim(); if(al) return al; const w=String(a&&a.nome||"").trim().split(/\s+/).filter(Boolean);
+  return w.length>1?`${w[0]} ${w[w.length-1]}`:(w[0]||(a&&a.n?"nº "+a.n:"?")); }
+function nomeAtleta(U,k){ const a=atletasUT(U).find(x=>x.k===k); if(!a) return String(k).startsWith("e:")?"?":"nº "+k;
+  return nomeCurto(a)+(String(k).startsWith("e:")&&a.esc&&a.esc!=="Extra"?` (${a.esc})`:""); }
+/* complementares não somam ao tempo da UT nem ao da parte */
+const principaisUT=U=>U.exercicios.filter(l=>!l.pai);
+const totalUT=U=>U.tempoTotal||principaisUT(U).reduce((a,l)=>a+totalEx(l.copia),0);
 const materialUT=U=>[...new Set([...U.material,...U.exercicios.flatMap(l=>l.copia.material)])];
 const listaUTs=()=>Object.values(uts).sort((a,b)=>(b.data||"").localeCompare(a.data||"")||b.numero-a.numero);
 const dataPt_=d=>d?new Date(d+"T12:00").toLocaleDateString("pt-PT"):"sem data";
@@ -50,16 +61,17 @@ function novaUT(){ const ls=listaUTs(), ult=ls[0], hoje=isoDia(new Date()), A=di
 function apagaUT(id){ const U=uts[id]; if(!U) return; const antes=clone(U); delete uts[id]; guardaUTLocal(); apagaDoc("uts/"+id); if(uCur===id) uCur=null; renderUT();
   toast(`UT${U.numero} apagada`,()=>{ uts[id]=antes; guardaUTLocal(); gravaDoc("uts/"+id,antes); uCur=id; renderUT(); }); }
 function duplicaUT(id){ const U=uts[id]; if(!U) return; const num=Math.max(0,...listaUTs().map(u=>u.numero))+1;
-  const N=guardaUT({...clone(U),id:uId(),numero:num,data:new Date().toISOString().slice(0,10),presencas:{},exercicios:U.exercicios.map(l=>({...clone(l),id:uId("l")})),criadoPor:meuId||"",criadoEm:new Date().toISOString()},true);
+  const N=guardaUT({...clone(U),id:uId(),numero:num,data:new Date().toISOString().slice(0,10),presencas:{},exercicios:(()=>{ const m={}; U.exercicios.forEach(l=>m[l.id]=uId("l"));
+      return U.exercicios.map(l=>{ const x={...clone(l),id:m[l.id]}; if(x.pai) x.pai=m[x.pai]; if(x.rot) x.rot.grelha=x.rot.grelha.map(r=>r.map(v=>m[v]||v)); return x; }); })(),criadoPor:meuId||"",criadoEm:new Date().toISOString()},true);
   uCur=N.id; renderUT(); toast(`UT${num} criada a partir da UT${U.numero}`); }
 function repoeUTs(X){ Object.keys(uts).forEach(id=>{ if(!X[id]) apagaDoc("uts/"+id); }); uts={}; Object.entries(X||{}).forEach(([id,U])=>{ uts[id]=normUT({...U,id}); gravaDoc("uts/"+id,uts[id]); }); guardaUTLocal(); renderUT(); }
 
 /* ---------- ecrã ---------- */
-function renderUT(){ const v=$("view-u"); if(!v||v.hidden) return; if(uModo==="semana"){ renderSemana(); return; } if(uModo==="ano"){ renderAnual(); return; } const ls=listaUTs(); let U=uts[uCur]||ls[0]||null; uCur=U?U.id:null;
+function renderUT(){ const v=$("view-u"); if(!v||v.hidden) return; if(uModo==="semana"){ renderSemana(); return; } if(uModo==="ano"){ renderAnual(); return; } if(uModo==="tempos"){ renderTempos(); return; } const ls=listaUTs(); let U=uts[uCur]||ls[0]||null; uCur=U?U.id:null;
   try{ localStorage.setItem("sca-ut-cur",uCur||""); }catch(e){}
   renderUTNav(ls,U); renderUTCorpo(U); renderUTPainel(U); }
 function renderUTNav(ls,U){ const nav=$("u-nav");
-  nav.innerHTML=modoUTHtml()+`<button class="newl" id="u-nova">+ Nova UT</button><div class="grp"><h3>Unidades de treino</h3><ul>${ls.length?ls.map(x=>`<li><button data-id="${esc(x.id)}" aria-current="${!!U&&x.id===U.id}"><span class="n">${x.numero||"–"}</span><span class="m-nm">UT${x.numero} · ${esc(dataPt_(x.data).slice(0,5))}<small>${esc([x.matchDay,x.exercicios.length+" exerc.",totalUT(x)?fmtTempo(totalUT(x)):""].filter(Boolean).join(" · "))}</small></span></button></li>`).join(""):`<li><span class="m-nada">Ainda sem UT</span></li>`}</ul></div>`;
+  nav.innerHTML=modoUTHtml()+`<button class="newl" id="u-nova">+ Nova UT</button><div class="grp"><h3>Unidades de treino</h3><ul>${ls.length?ls.map(x=>`<li><button data-id="${esc(x.id)}" aria-current="${!!U&&x.id===U.id}"><span class="n">${x.numero||"–"}</span><span class="m-nm">UT${x.numero} · ${esc(dataPt_(x.data).slice(0,5))}<small>${esc([x.matchDay,principaisUT(x).length+" exerc.",totalUT(x)?fmtTempo(totalUT(x)):""].filter(Boolean).join(" · "))}</small></span></button></li>`).join(""):`<li><span class="m-nada">Ainda sem UT</span></li>`}</ul></div>`;
   $("u-nova").onclick=novaUT; ligaModoUT(nav);
   nav.querySelectorAll("button[data-id]").forEach(b=>{ b.onclick=()=>{ uCur=b.dataset.id; renderUT(); };
     b.oncontextmenu=e=>{ const X=uts[b.dataset.id]; if(X) menuContexto(e,[["⧉ Duplicar UT",()=>duplicaUT(X.id)],[`🗑 Apagar UT${X.numero}`,()=>apagaUT(X.id),"perigo"]]); }; }); }
@@ -79,20 +91,26 @@ function renderUTCorpo(U){ const bx=$("u-corpo"), bar=$("u-bar"), tg=$("u-tag");
     <div class="utc-l"><div><span>DATA</span><b>${esc(dataPt_(U.data))}</b></div><div><span>UNIDADE DE TREINO</span><b class="r">${U.numero||"–"}</b></div><div><span>MATCH DAY</span><b>${esc(U.matchDay||"–")}</b></div><div><span>REGIME</span><b>${esc(U.regime||"–")}</b></div><div><span>TEMPO TOTAL TREINO</span><b>${tot?fmtTempo(tot):"–"}</b></div></div></div>`;
   /* exercícios por ordem, numerados */
   if(!U.exercicios.length) h+=`<div class="m-vazio"><b>Ainda não há exercícios nesta UT.</b><span>Vai buscá-los ao repositório. Cada um entra como cópia: podes ajustar a duração ou as variantes só nesta UT.</span><button class="btn primary" id="u-add2">+ Adicionar exercícios do repositório</button></div>`;
-  else h+=`<ol class="utx">${U.exercicios.map((l,i)=>{ const E=l.copia, P=parteDe(E.parte), mud=mudouNoRepo(l);
-    return `<li data-l="${esc(l.id)}"><span class="utx-n">${i+1}</span><div class="utx-t"><span class="tag" style="background:${P[2]}">${esc(P[1].replace("Parte ","").toUpperCase())}</span><b>${esc(E.nome)}</b><small>${esc([E.formato,E.espaco.txt,totalEx(E)?fmtTempo(totalEx(E)):"",rotuloDe(TIPOS_EX,E.tipo)].filter(Boolean).join(" · "))}${mud?` · <span class="utx-mud">mudou no repositório</span>`:""}${!exercicios[l.exId]?` · <span class="sub">já não está no repositório</span>`:""}</small></div>
-      <div class="rowbtns"><button class="icon" data-a="up" aria-label="Subir" ${i?"":"disabled"}>▲</button><button class="icon" data-a="dn" aria-label="Descer" ${i<U.exercicios.length-1?"":"disabled"}>▼</button><button class="btn sm ghost" data-a="aj">Ajustar</button>${mud?`<button class="btn sm ghost" data-a="at">↻ Atualizar</button>`:""}<button class="btn sm ghost" data-a="x" aria-label="Tirar da UT">✕</button></div></li>`; }).join("")}</ol>`;
+  else { const nums=numerosUT(U), pr=principaisUT(U), T=temposUT(U);
+    h+=`<ol class="utx">${U.exercicios.map(l=>{ const E=l.copia, P=parteDe(E.parte), mud=mudouNoRepo(l), ip=pr.indexOf(l), cs=U.exercicios.filter(c=>c.pai===l.id), ct=contaLinha(l);
+      const gs=(l.grupos||[]).map(id=>U.grupos.find(g=>g.id===id)).filter(Boolean), av=l.pai?[]:T.avisos.filter(a=>a.lid===l.id).map(a=>a.t.replace(/^[\d.]+ · /,""));
+      const tempo=l.pai?(ct?"⏱ conta para os tempos":"não conta para os tempos"):!ct&&!cs.some(contaLinha)?"não conta para os tempos":gs.length?`👥 ${gs.map(g=>g.nome||"Grupo").join(", ")}`:"";
+      return `<li data-l="${esc(l.id)}"${l.pai?' class="utx-c"':""}><span class="utx-n">${nums[l.id]}</span><div class="utx-t"><span class="tag" style="background:${l.pai?"#5B5B5B":P[2]}">${l.pai?"COMPLEMENTAR":esc(P[1].replace("Parte ","").toUpperCase())}</span><b>${esc(E.nome)}</b><small>${esc([E.formato,E.espaco.txt,totalEx(E)?fmtTempo(totalEx(E)):"",rotuloDe(TIPOS_EX,E.tipo),l.pai?"em paralelo, não soma ao tempo":""].filter(Boolean).join(" · "))}${mud?` · <span class="utx-mud">mudou no repositório</span>`:""}${!exercicios[l.exId]?` · <span class="sub">já não está no repositório</span>`:""}</small>${tempo?`<small class="utx-tp">${esc(tempo)}</small>`:""}
+        ${l.rot&&cs.length?rotMiniHtml(U,l,cs,nums):""}${av.length?`<ul class="uavisos">${av.map(t=>`<li>⚠ ${esc(t)}</li>`).join("")}</ul>`:""}</div>
+        <div class="rowbtns">${l.pai?"":`<button class="icon" data-a="up" aria-label="Subir" ${ip?"":"disabled"}>▲</button><button class="icon" data-a="dn" aria-label="Descer" ${ip<pr.length-1?"":"disabled"}>▼</button>`}<button class="btn sm ghost" data-a="aj">Ajustar</button>${mud?`<button class="btn sm ghost" data-a="at">↻ Atualizar</button>`:""}<button class="btn sm ghost" data-a="gt" aria-label="Grupos e tempos">👥 Grupos</button>${l.pai?"":`<button class="btn sm ghost" data-a="cp" aria-label="Juntar exercício complementar">+ Compl.</button>`}<button class="btn sm ghost" data-a="x" aria-label="Tirar da UT">✕</button></div></li>`; }).join("")}</ol>`; }
   bx.innerHTML=h; if($("u-add2")) $("u-add2").onclick=()=>folhaAddExUT(U.id);
-  bx.querySelectorAll("li[data-l]").forEach(li=>{ const lid=li.dataset.l, i=U.exercicios.findIndex(l=>l.id===lid);
+  bx.querySelectorAll("li[data-l]").forEach(li=>{ const lid=li.dataset.l, eC=!!(U.exercicios.find(l=>l.id===lid)||{}).pai;
     li.querySelector(".utx-t").onclick=()=>folhaVerExUT(U.id,lid);
-    li.oncontextmenu=e=>menuContexto(e,[["Ajustar nesta UT",()=>folhaAjusteUT(U.id,lid)],["🗑 Tirar da UT",()=>tiraExUT(lid),"perigo"]]);
+    li.oncontextmenu=e=>{ if(e.target.closest("li[data-l]")!==li) return; menuContexto(e,[["Ajustar nesta UT",()=>folhaAjusteUT(U.id,lid)],["👥 Grupos e tempos",()=>folhaTemposEx(U.id,lid)],...(eC?[]:[["+ Exercício complementar",()=>folhaAddExUT(U.id,lid)]]),["🗑 Tirar da UT",()=>tiraExUT(lid),"perigo"]]); };
     li.querySelectorAll("[data-a]").forEach(b=>{ const a=b.dataset.a;
-      if(a==="up"||a==="dn") b.onclick=()=>editaUT(U=>{ const j=i+(a==="up"?-1:1); [U.exercicios[i],U.exercicios[j]]=[U.exercicios[j],U.exercicios[i]]; });
+      if(a==="up"||a==="dn") b.onclick=()=>editaUT(U=>moveBloco(U,lid,a==="up"?-1:1));
+      else if(a==="gt") b.onclick=()=>folhaTemposEx(U.id,lid);
+      else if(a==="cp") b.onclick=()=>folhaAddExUT(U.id,lid);
       else if(a==="aj") b.onclick=()=>folhaAjusteUT(U.id,lid);
       else if(a==="at") b.onclick=()=>folhaAtualizaUT(U.id,lid);
       else if(a==="x") confirma2(b,"Tirar?",()=>tiraExUT(lid)); }); }); }
 /* para comparar cópia e repositório sem contar quem alterou e quando */
-const semAutoria=E=>{ const c={...E}; ["criadoPor","criadoEm","alteradoPor","alteradoEm"].forEach(k=>delete c[k]); return c; };
+const semAutoria=E=>{ const c={...E}; ["criadoPor","criadoEm","alteradoPor","alteradoEm","links","contaTempo"].forEach(k=>delete c[k]); return c; };
 /* só avisa se o exercício foi alterado no repositório depois de entrar na UT: a cópia guarda a data de alteração que o exercício tinha nesse dia
    (os ajustes do dia, como a duração ou a figura, não contam) */
 function mudouNoRepo(l){ const R=exercicios[l.exId]; if(!R) return false;
@@ -107,12 +125,14 @@ function folhaAtualizaUT(id,lid){ const U=uts[id], l=U&&U.exercicios.find(x=>x.i
     const vai=tudo=>{ fecha(); editaUT(U=>{ const x=U.exercicios.find(y=>y.id===lid), N=clone(exercicios[x.exId]); if(!tudo) AJUSTES_DIA.forEach(k=>{ N[k]=clone(x.copia[k]); }); x.copia=N; },
       tudo?"Exercício substituído pela versão do repositório":"Exercício atualizado · ajustes desta UT mantidos"); };
     s.querySelector("#uat-ok").onclick=()=>vai(false); confirma2(s.querySelector("#uat-tudo"),"Toca outra vez",()=>vai(true)); }); }
-function tiraExUT(lid){ const U=uts[uCur], l=U&&U.exercicios.find(x=>x.id===lid); if(!l) return; editaUT(U=>{ U.exercicios=U.exercicios.filter(x=>x.id!==lid); },`“${l.copia.nome}” tirado da UT`); }
+function tiraExUT(lid){ const U=uts[uCur], l=U&&U.exercicios.find(x=>x.id===lid); if(!l) return; const nC=U.exercicios.filter(x=>x.pai===lid).length;
+  editaUT(U=>{ U.exercicios=U.exercicios.filter(x=>x.id!==lid&&x.pai!==lid); const P=l.pai&&U.exercicios.find(x=>x.id===l.pai); if(P) rotRefaz(U,P); },
+    `“${l.copia.nome}”${nC?` e ${nC===1?"o complementar":"os "+nC+" complementares"}`:""} ${nC?"tirados":"tirado"} da UT${l.pai?" · rotação proposta de novo":""}`); }
 function renderUTPainel(U){ const pn=$("u-panel");
   if(!U){ pn.innerHTML=`<header><h2>Unidades de Treino</h2><p class="sub">Feitas com os exercícios do repositório.</p></header>`; return; }
-  const porParte=PARTES.map(([k,n])=>{ const ls=U.exercicios.filter(l=>l.copia.parte===k); return ls.length?`${n.replace("Parte ","")}: ${ls.length} · ${fmtTempo(ls.reduce((a,l)=>a+totalEx(l.copia),0))}`:""; }).filter(Boolean);
+  const porParte=PARTES.map(([k,n])=>{ const ls=principaisUT(U).filter(l=>l.copia.parte===k); return ls.length?`${n.replace("Parte ","")}: ${ls.length} · ${fmtTempo(ls.reduce((a,l)=>a+totalEx(l.copia),0))}`:""; }).filter(Boolean);
   const atl=atletasUT(U), nP=atl.filter(a=>U.presencas[a.k]==="P").length;
-  pn.innerHTML=`<header><h2>Resumo</h2><p class="sub">${U.exercicios.length} exercícios · ${totalUT(U)?fmtTempo(totalUT(U)):"sem duração"}${U.tempoTotal?" (escrito à mão)":""}</p>${porParte.length?`<p class="sub" style="margin:2px 0 0">${esc(porParte.join(" · "))}</p>`:""}</header>
+  pn.innerHTML=`<header><h2>Resumo</h2><p class="sub">${principaisUT(U).length} exercícios${U.exercicios.length>principaisUT(U).length?` + ${U.exercicios.length-principaisUT(U).length} complementar${U.exercicios.length-principaisUT(U).length>1?"es":""}`:""} · ${totalUT(U)?fmtTempo(totalUT(U)):"sem duração"}${U.tempoTotal?" (escrito à mão)":""}</p>${porParte.length?`<p class="sub" style="margin:2px 0 0">${esc(porParte.join(" · "))}</p>`:""}</header>
     <div class="add"><h3>Presenças <span class="count" title="Presentes">${nP}</span></h3>
       <p class="sub" style="margin:0"><b>Toque</b>: Presente (<b style="color:${corPres("P")}">P</b>). <b>Botão direito</b> (no iPad, manter o dedo): ${PRESENCAS.filter(p=>p[0]!=="P").map(p=>`<b style="color:${p[2]}">${p[1]}</b>`).join(", ")}.</p>
       <div class="upres">${atl.map(a=>{ const k=U.presencas[a.k]||""; return `<button data-k="${esc(a.k)}" style="${k?`border-color:${corPres(k)};color:${corPres(k)}`:""}"><b>${esc(a.n||a.esc)}</b><span>${esc(a.nome)}</span>${a.n&&a.esc?`<small class="esc">${esc(a.esc)}</small>`:""}${k?`<i style="background:${corPres(k)}">${k}</i>`:""}</button>`; }).join("")||`<p class="sub">Sem jogadores no Plantel.</p>`}</div>
@@ -179,7 +199,7 @@ function plantelSvg(U){ const {W:VW,H:VH}=PLV, svg=el("svg",{viewBox:`0 0 ${VW} 
   /* indisponíveis (lesão ou ausente) saem do campo e ficam à parte */
   const atl=atletasUT(U), pres=a=>U.presencas[a.k]||"", indisp=a=>pres(a)==="L"||pres(a)==="A", les=atl.filter(indisp), resto=atl.filter(a=>!indisp(a)&&!(a.form&&!pres(a)));
   /* caixa de nome com a borda na cor da presença (sem marcação: cinzento escuro) */
-  const caixa=(x,y,a,w,extra)=>{ const p=pres(a), c=p?corPres(p):"#4A4A4A", g=el("g",{},svg), t=a.nome||a.n||"?", fs=23;
+  const caixa=(x,y,a,w,extra)=>{ const p=pres(a), c=p?corPres(p):"#4A4A4A", g=el("g",{},svg), t=nomeCurto(a), fs=23;
     el("rect",{x:x-w/2,y,width:w,height:38,rx:5,fill:"#fff",stroke:c,"stroke-width":p?5:3},g);
     const tx=el("text",{x,y:y+27,"text-anchor":"middle","font-size":fs,"font-weight":700,fill:"#1B1A17",class:"lbl"},g); tx.textContent=t;
     if(a.esc){ const ts=el("tspan",{"font-size":13,fill:"#6B675E","font-weight":400},tx); ts.textContent=" ("+a.esc+")"; }
@@ -210,7 +230,7 @@ function folhaCabUT(id){ const U=uts[id]; if(!U) return; let md=U.matchDay; cons
     <label class="f">Regime<input type="text" id="uc-r" list="uc-rl" value="${esc(U.regime)}" placeholder="Ex.: Híbrido (+/-)"><datalist id="uc-rl">${regimes.map(r=>`<option value="${esc(r)}">`).join("")}</datalist></label>
     <label class="f">Objetivos (um por linha)<textarea id="uc-o" rows="3" placeholder="Ex.: Tensão\nPrincípios estratégicos org. ofensiva da 1.ª fase">${esc(U.objetivos.join("\n"))}</textarea></label>
     <label class="f">Material extra (um por linha; o dos exercícios junta-se sozinho)<textarea id="uc-m" rows="2">${esc(U.material.join("\n"))}</textarea></label>
-    <div class="fields"><label class="f">Tempo total do treino<input type="text" id="uc-t" value="${U.tempoTotal?fmtTempo(U.tempoTotal):""}" placeholder="Soma: ${fmtTempo(U.exercicios.reduce((a,l)=>a+totalEx(l.copia),0))}"></label>
+    <div class="fields"><label class="f">Tempo total do treino<input type="text" id="uc-t" value="${U.tempoTotal?fmtTempo(U.tempoTotal):""}" placeholder="Soma: ${fmtTempo(principaisUT(U).reduce((a,l)=>a+totalEx(l.copia),0))}"></label>
       <label class="f">Equipa técnica (rodapé)<input type="text" id="uc-s" value="${esc(U.staff||staffPadrao())}"></label></div>
     <div class="actions"><button class="btn danger l" id="uc-del">Apagar UT</button><button class="btn" data-close>Cancelar</button><button class="btn primary" id="uc-ok">Guardar</button></div>`,(s,fecha)=>{
     const q=x=>s.querySelector(x), pinta=()=>s.querySelectorAll("#uc-md button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===md)));
@@ -222,8 +242,8 @@ function folhaCabUT(id){ const U=uts[id]; if(!U) return; let md=U.matchDay; cons
     q("#uc-ok").onclick=()=>{ const t=lerDur(q("#uc-t").value); if(isNaN(t)){ toast("Tempo total que não percebo. Usa por exemplo 88'."); return; }
       const X=uts[id]; fecha(); guardaUT({...clone(X),numero:q("#uc-n").value,data:q("#uc-d").value,matchDay:md,regime:q("#uc-r").value,objetivos:q("#uc-o").value,material:q("#uc-m").value,tempoTotal:t||null,staff:q("#uc-s").value}); toast("Cabeçalho guardado"); }; }); }
 let uFiltro={q:"",parte:"",mom:"",tipo:""};
-function folhaAddExUT(id){ const U=uts[id]; if(!U) return; const escolhidos=new Set();
-  folha(`<h3>Adicionar exercícios à UT${U.numero}</h3><p class="sub" style="margin:0">Cada exercício entra como cópia de como está hoje no repositório.</p>
+function folhaAddExUT(id,pai){ const U=uts[id]; if(!U) return; const escolhidos=new Set(), P=pai?U.exercicios.find(l=>l.id===pai&&!l.pai):null; if(pai&&!P) return; const nP=P?numerosUT(U)[P.id]:"";
+  folha(`<h3>${P?`Exercício complementar do ${nP}`:`Adicionar exercícios à UT${U.numero}`}</h3><p class="sub" style="margin:0">${P?`Corre em paralelo com <b>${esc(P.copia.nome)}</b> (${nP}.1, ${nP}.2…) e não soma ao tempo da UT. A rotação por séries fica em 👥 Grupos do ${nP}.`:"Cada exercício entra como cópia de como está hoje no repositório."}</p>
     <div class="ex-filtros" style="margin:0"><input type="search" id="ua-q" placeholder="Pesquisar…" aria-label="Pesquisar"><select id="ua-p" aria-label="Parte"><option value="">Todas as partes</option>${PARTES.map(p=>`<option value="${p[0]}">${p[1]}</option>`).join("")}</select>
       <select id="ua-m" aria-label="Categoria"><option value="">Todas as categorias</option>${MOM_EX.map(m=>`<option value="${m[0]}">${m[1]}</option>`).join("")}</select><select id="ua-t" aria-label="Formato"><option value="">Todos os formatos</option>${TIPOS_EX.map(t=>`<option value="${t[0]}">${t[1]}</option>`).join("")}</select></div>
     <div id="ua-l" class="ua-l"></div>
@@ -237,6 +257,9 @@ function folhaAddExUT(id){ const U=uts[id]; if(!U) return; const escolhidos=new 
     const conta=()=>{ ok.disabled=!escolhidos.size; ok.textContent=escolhidos.size?`Adicionar ${escolhidos.size}`:"Adicionar"; };
     ["#ua-q","#ua-p","#ua-m","#ua-t"].forEach(i=>q(i).addEventListener(i==="#ua-q"?"input":"change",lista)); lista(); conta();
     ok.onclick=()=>{ const novos=[...escolhidos].map(x=>exercicios[x]).filter(Boolean).sort((a,b)=>uParteOrd(a.parte)-uParteOrd(b.parte)); fecha();
+      if(P){ editaUT(U=>{ const Q=U.exercicios.find(l=>l.id===P.id); if(!Q) return; let j=U.exercicios.indexOf(Q)+1; while(j<U.exercicios.length&&U.exercicios[j].pai===Q.id) j++;
+          U.exercicios.splice(j,0,...novos.map(E=>({id:uId("l"),exId:E.id,copia:{...clone(E),parte:Q.copia.parte},pai:Q.id}))); rotRefaz(U,Q); },
+        `${novos.length===1?"Complementar adicionado":novos.length+" complementares adicionados"} ao ${nP} · rotação proposta em 👥 Grupos`); return; }
       /* cada um entra no fim da sua parte (inicial → fundamental → final) */
       editaUT(U=>novos.forEach(E=>{ const l={id:uId("l"),exId:E.id,copia:clone(E)}, j=U.exercicios.findIndex(x=>uParteOrd(x.copia.parte)>uParteOrd(E.parte)); if(j<0) U.exercicios.push(l); else U.exercicios.splice(j,0,l); }),`${novos.length} ${novos.length===1?"exercício adicionado":"exercícios adicionados"}`); }; }); }
 function folhaAjusteUT(id,lid){ const U=uts[id], l=U&&U.exercicios.find(x=>x.id===lid); if(!l) return; const E=l.copia, D=E.duracao, tt=s=>s?fmtTempo(s):""; let parte=E.parte;
@@ -264,7 +287,7 @@ function folhaGrupoUT(id,gid){ const U=uts[id]; if(!U) return; const G=gid?U.gru
     /* por posição (GR, centrais, alas, médios, avançados; sem posição no fim); quem já está noutro grupo continua escolhível, mas vai para o fim e diz em que grupo está */
     else { const noutros=k=>U.grupos.filter(x=>x.id!==gid&&x.jogadores.includes(k)).map(x=>x.nome||"Grupo"), iPos=a=>{ const i=POS_UT.findIndex(p=>p[0]===a.pos); return i<0?99:i; }, nomePos=a=>(POS_UT.find(p=>p[0]===a.pos)||[])[1]||"";
       const ord=atl.map((a,i)=>({a,i,o:noutros(a.k)})).sort((x,y)=>(x.o.length>0)-(y.o.length>0)||iPos(x.a)-iPos(y.a)||x.i-y.i);
-      g.innerHTML=ord.map(({a,o})=>`<button data-k="${esc(a.k)}"><b>${esc(a.n||a.esc)}</b><span>${esc(a.nome||" ")}</span><small>${esc([nomePos(a),U.presencas[a.k]==="CO"?"Condicionado":"",o.length?"já no grupo "+o.map(n=>"«"+n+"»").join(", "):""].filter(Boolean).join(" · "))}</small></button>`).join(""); }
+      g.innerHTML=ord.map(({a,o})=>`<button data-k="${esc(a.k)}"><b>${esc(nomeCurto(a))}</b><small>${esc([nomePos(a),U.presencas[a.k]==="CO"?"Condicionado":"",o.length?"já no grupo "+o.map(n=>"«"+n+"»").join(", "):""].filter(Boolean).join(" · "))}</small></button>`).join(""); }
     const pintaG=()=>s.querySelectorAll("#ug-j button").forEach(b=>b.setAttribute("aria-pressed",String(sel.has(b.dataset.k))));
     s.querySelectorAll("#ug-j button").forEach(b=>b.onclick=()=>{ sel.has(b.dataset.k)?sel.delete(b.dataset.k):sel.add(b.dataset.k); pintaG(); }); pintaG();
     if(q("#ug-del")) confirma2(q("#ug-del"),"Toca outra vez",()=>{ fecha(); editaUT(U=>{ U.grupos=U.grupos.filter(x=>x.id!==gid); },"Grupo apagado"); });
@@ -327,8 +350,8 @@ function folhaLerGrupos(id,gid){ const U=uts[id], G=U&&U.grupos.find(g=>g.id===g
       editaUT(U=>{ const i=U.grupos.findIndex(g=>g.id===gid), novos=r.grupos.map(g=>({id:uId("g"),nome:g.nome,jogadores:g.jogadores,nota:""})); U.grupos.splice(i<0?U.grupos.length:i,manter||i<0?0:1,...novos); },
         `${r.grupos.length} ${r.grupos.length===1?"grupo criado":"grupos criados"} a partir do texto`); }; }); }
 /* ver a ficha do exercício tal como está nesta UT */
-function folhaVerExUT(id,lid){ const U=uts[id], i=U?U.exercicios.findIndex(x=>x.id===lid):-1; if(i<0) return; const E=U.exercicios[i].copia;
-  folha(`<h3>Exercício ${i+1} · UT${U.numero}</h3>${fichaHtml(E,i+1)}<div class="ufig"></div>
+function folhaVerExUT(id,lid){ const U=uts[id], i=U?U.exercicios.findIndex(x=>x.id===lid):-1; if(i<0) return; const E=U.exercicios[i].copia, num=numerosUT(U)[lid];
+  folha(`<h3>Exercício ${num}${U.exercicios[i].pai?" (complementar)":""} · UT${U.numero}</h3>${fichaHtml(E,num)}<div class="ufig"></div>
     <div class="actions"><button class="btn" data-close>Fechar</button><button class="btn primary" id="uv-aj">Ajustar nesta UT</button></div>`,(s,fecha)=>{
     const f=s.querySelector(".ufig");
     if(usaImagem(E)){ const im=document.createElement("img"); im.alt="Figura do exercício"; im.src=srcImagem(E.figura.imagem); f.appendChild(im); }
@@ -359,7 +382,16 @@ async function pdfUT(U){
     const xR=M+hw+G; caixa(xR,y,hw,14,RED,`SC ANGRENSE ${epocaDe(U.data)}`,{i:1,s:7});
     const r_=PLV.W/PLV.H, wi=Math.min(hw,(HC-20)*r_), hi=wi/r_; doc.addImage(campoJpg,"JPEG",xR+(hw-wi)/2,y+17,wi,hi,undefined,"FAST"); doc.rect(xR,y+17,hw,hi); };
   /* 4 blocos por página; o último bloco livre leva os grupos de trabalho */
-  const y0=M+HC+6, cw=hw, ch=(PH-y0-26-G)/2, blocos=[...U.exercicios.map((l,i)=>({l,i})),{grupos:true}];
+  const y0=M+HC+6, cw=hw, ch=(PH-y0-26-G)/2, nums=numerosUT(U), blocos=[...U.exercicios.map((l,i)=>({l,i})),{grupos:true}];
+  /* grelha da rotação (série × equipa) no fundo do último complementar */
+  const grelhaPdf=(P,x,y,w,h)=>{ const R=P.rot, cs=U.exercicios.filter(c=>c.pai===P.id), S=R.grelha.length, rh=Math.min(9,(h-11)/(S+1)), c0=26, cwid=(w-c0)/R.nEq;
+    caixa(x,y,w,10,INK,`ROTAÇÃO  ${nums[P.id]} + ${cs.map(c=>nums[c.id]).join(" + ")}  ·  ${R.nJogo} ${R.nJogo===1?"EQUIPA":"EQUIPAS"} AO MESMO TEMPO NO ${nums[P.id]}`,{s:5.6});
+    let yy=y+10; doc.setDrawColor(...LN); doc.setLineWidth(.4); T("SÉRIE",x+c0/2,yy+rh*.7,5.2,{b:1,c:MUT,al:"center"});
+    R.equipas.forEach((g,j)=>{ doc.setFont("helvetica","bold"); doc.setFontSize(5.4); const t=doc.splitTextToSize(pdfTxt(nomeEquipa(U,R,j)),cwid-3)[0]; T(t,x+c0+j*cwid+cwid/2,yy+rh*.7,5.4,{b:1,al:"center"}); });
+    yy+=rh; R.grelha.forEach((r,i)=>{ doc.line(x,yy,x+w,yy); T(String(i+1),x+c0/2,yy+rh*.72,6,{b:1,c:RED,al:"center"});
+      r.forEach((v,j)=>{ const cx=x+c0+j*cwid; if(v==="p"){ doc.setFillColor(250,226,226); doc.rect(cx+.5,yy+.5,cwid-1,rh-1,"F"); } T(rotCasa(v,nums,P.id).replace("–","-"),cx+cwid/2,yy+rh*.72,6.2,{b:v==="p",c:v?INK:MUT,al:"center"}); });
+      yy+=rh; });
+    doc.rect(x,y,w,yy-y); };
   const slot=b=>({x:M+(b%4%2)*(cw+G), y:y0+Math.floor(b%4/2)*(ch+G)});
   /* grupos de trabalho em 2 colunas; se não couberem no bloco, continuam nos blocos seguintes (e em páginas novas, com o cabeçalho) */
   const gruposNoPdf=b=>{ const colW=(cw-24)/2, L=[];
@@ -379,10 +411,15 @@ async function pdfUT(U){
   for(let b=0;b<blocos.length;b++){ const pos=b%4; if(pos===0){ if(b) doc.addPage(); cabecalho(); }
     const {x,y}=slot(b), B=blocos[b];
     if(B.grupos){ gruposNoPdf(b); continue; }
-    const E=B.l.copia, hf=ch*.52; fichaExPdf(doc,E,x,y,cw,{k:.6,hMax:hf,num:B.i+1});
-    const fig=await figuraJpegEx(E), fy=y+hf+3, fh=ch-hf-3;
-    if(fig){ let w=cw, h=cw*fig.h/fig.w; if(h>fh){ h=fh; w=h*fig.w/fig.h; } figuraNoPdf(doc,fig,x+(cw-w)/2,fy+(fh-h)/2,w,h); }
-    doc.setDrawColor(...INK); doc.setLineWidth(.9); doc.rect(x,fy,cw,fh); }
+    /* complementar: indentado, com a marca vermelha à esquerda; o último do principal leva a grelha da rotação */
+    const l=B.l, E=l.copia, ind=l.pai?12:0, bx=x+ind, bw=cw-ind, hf=ch*.52, P=l.pai?U.exercicios.find(p=>p.id===l.pai):null;
+    const ult=P&&P.rot&&U.exercicios.filter(c=>c.pai===P.id).slice(-1)[0]===l, gh=ult?Math.min(11+(P.rot.grelha.length+1)*9,(ch-hf)*.6):0;
+    if(ind){ doc.setFillColor(...RED); doc.rect(x+2,y,4,ch,"F"); }
+    fichaExPdf(doc,E,bx,y,bw,{k:.6,hMax:hf,num:nums[l.id]+(l.pai?" · COMPLEMENTAR":"")});
+    const fig=await figuraJpegEx(E), fy=y+hf+3, fh=ch-hf-3-(gh?gh+3:0);
+    if(fig){ let w=bw, h=bw*fig.h/fig.w; if(h>fh){ h=fh; w=h*fig.w/fig.h; } figuraNoPdf(doc,fig,bx+(bw-w)/2,fy+(fh-h)/2,w,h); }
+    doc.setDrawColor(...INK); doc.setLineWidth(.9); doc.rect(bx,fy,bw,fh);
+    if(gh) grelhaPdf(P,bx,fy+fh+3,bw,gh); }
   const np=doc.getNumberOfPages(), rod=U.staff||staffPadrao();
   for(let i=1;i<=np;i++){ doc.setPage(i); T(`${rod}${np>1?`   ·   ${i}/${np}`:""}`,PW/2,PH-12,6.5,{b:1,c:RED,al:"center"}); }
   return doc; }

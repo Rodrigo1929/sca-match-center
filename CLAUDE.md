@@ -1,4 +1,4 @@
-# SCA Match Center — instruções para o Claude
+# SCA Performance (antes SCA Match Center) — instruções para o Claude
 
 App da equipa técnica do **SC Angrense** para preparar, acompanhar e analisar cada jogo.
 Responsável único: Rodrigo Fonte (treinador adjunto, bolas paradas). Responde sempre em **português de Portugal**.
@@ -19,6 +19,7 @@ src/js/exercicios.js     separador Exercícios, repositório para as UT (3.º <s
 src/js/treino.js         separador Treino, Unidades de Treino e PDF da UT (4.º <script>)
 src/js/semana.js         Plano semanal e calendário de jogos (no separador Treino; junta-se ao 4.º <script>)
 src/js/anual.js          Planeamento anual: dias, microciclos e mesociclos (no separador Treino; junta-se ao 4.º <script>)
+src/js/tempos.js         Complementares, rotação, grupos por exercício e vista Tempos (no separador Treino; junta-se ao 4.º <script>, depois do anual)
 src/js/adversario.js     separador Adversário, substituições do adversário (no Jogo) e quadro Encaixe (1.º <script>, antes do arranque)
 src/data/lances-base.json lances de bolas paradas de origem (DEF_LANCES)
 assets/                  imagens dos campos, logo e letras (embutidos no build como data URI)
@@ -43,6 +44,7 @@ Os **dados de toda a equipa** (lances, jogos, histórico, análises, Modelo de J
 - Publicar **sempre para esse mesmo link**, com o ficheiro `dist/index.html`. Nunca criar um artefacto novo para a app.
 - Manter as capacidades atuais (`db`, `downloads`, `room`, `user` com `scopes:["profile"]`, e desde a v68 `assets` com `upload:"interact"` para as imagens dos exercícios): numa republicação não as alterar (omitir `capabilities` mantém as guardadas).
 - Antes de publicar: `npm run check` e, se possível, `npm test` e `npm run test:ipad`.
+- Desde a v93 a app chama-se **SCA Performance** (título, cabeçalho, PDF, cópias). O link, os dados e os nomes internos das coleções da base de dados não mudam; a cópia de segurança aceita ficheiros com `app` "SCA Performance", "SCA Match Center" ou "SCA Bolas Paradas".
 - Se a sessão não conseguir publicar no link, gerar `dist/index.html` e dizer ao Rodrigo que a publicação tem de ser feita numa conversa do Projeto "SCA Match Center" no claude.ai. Não procurar outra forma de alojar a app.
 - Em dia de jogo, não publicar alterações ao Ao vivo sem o Rodrigo confirmar.
 
@@ -81,9 +83,10 @@ Ver `docs/regras.md`. As principais:
 - Um golo conta também como remate e como remate à baliza.
 - Cantos: o +1 do Ao vivo é a fonte única e cria a ficha do canto (com tipo).
 - Substituições do Ao vivo não mexem nos quadros de bolas paradas.
-- Adversário (desde a v84): plantel por equipa em `adversarios/<id>`, reutilizado entre jogos; onze, sistema, cores e suplentes por jogo (`jogo.adv`); substituições do adversário no separador Jogo, gravadas uma a uma (`subsAdv/<id>`), com minuto escrito à mão. Marcam-se no Ao vivo («🔁 Subst. adversário»; cartões do adversário no botão do cartão, com o jogador do plantel dele) ou no Jogo. Atualizam só o quadro «Possíveis Encaixes» (número nas bolinhas, nome só no adversário, cartões, suplentes do adversário por baixo); não mexem nos quadros de bolas paradas nem no Onze (o Onze é só a nossa equipa). Os jogadores do adversário escolhem-se pelo id (`pid`), não pelo número: dois jogadores podem ter o mesmo número. As listas para escolher jogadores têm pesquisa e mostram primeiro os da posição tocada. Arquivar guarda-as; o jogo seguinte começa limpo. Fase 2 (v85): «⬆ Importar da Observação» lê o ficheiro que a Observação exporta no plantel base («⬇ Exportar para o Match Center»): plantel, sistema, cores, onze provável e alternativo; a equipa fica com `origem: "observacao"` e `versaoImportada`. Sistemas e siglas do Adversário iguais aos da Observação (`SIS_OBS`). As duas apps continuam sem partilhar dados: só por ficheiro.
+- Adversário (desde a v84): plantel por equipa em `adversarios/<id>`, reutilizado entre jogos; onze, sistema, cores e suplentes por jogo (`jogo.adv`); substituições do adversário no separador Jogo, gravadas uma a uma (`subsAdv/<id>`), com minuto escrito à mão. Marcam-se no Ao vivo («🔁 Subst. adversário»; cartões do adversário no botão do cartão, com o jogador do plantel dele) ou no Jogo. Atualizam só o quadro «Possíveis Encaixes» (número nas bolinhas, nome só no adversário, cartões, suplentes do adversário por baixo); não mexem nos quadros de bolas paradas nem no Onze (o Onze é só a nossa equipa). Os jogadores do adversário escolhem-se pelo id (`pid`), não pelo número: dois jogadores podem ter o mesmo número. As listas para escolher jogadores têm pesquisa e mostram primeiro os da posição tocada. Arquivar guarda-as; o jogo seguinte começa limpo. Fase 2 (v85): «⬆ Importar da Observação» lê o ficheiro que a Observação exporta no plantel base («⬇ Exportar para a SCA Performance»; antes da Obs. 26, «Exportar para o Match Center»): plantel, sistema, cores, onze provável e alternativo; a equipa fica com `origem: "observacao"` e `versaoImportada`. Sistemas e siglas do Adversário iguais aos da Observação (`SIS_OBS`). As duas apps continuam sem partilhar dados: só por ficheiro.
 - Um jogador não aparece duas vezes num lance, exceto como alternativa.
 - Com análise de vídeo, a estatística do vídeo substitui a do Ao vivo.
+- Treino (v93): toda a estatística de treino calcula-se dos registos das UT, na hora (nada gravado à parte). Complementar = linha da UT com `pai`; não soma ao tempo da UT nem ao da parte. Tempos = séries em que a equipa do atleta está no exercício × tempo de prática, sem pausas, só presentes (P, CO); por defeito só conta a parte fundamental (o repositório e cada UT podem mudar). As ligações (vídeos) do exercício ficam só no repositório: nunca na UT, no PDF da UT nem no PDF do plano semanal. Nos grupos, no campo do plantel, nos tempos e no PDF da UT aparece a 1.ª alcunha (sem alcunha, primeiro e último nome), nunca o número nem o nome completo; Quadro, ficha de jogo e Onze continuam com números. A ligação ao atleta continua pela chave (nº ou `e:<id>`).
 
 ## Forma de trabalhar
 - Antes de uma mudança grande, perguntar o objetivo e quem usa (escolha múltipla quando fizer sentido).

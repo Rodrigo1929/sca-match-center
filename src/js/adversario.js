@@ -231,7 +231,7 @@ function onzeDeObs(o,pl){ const sis=o&&SIS_ADV[o.sis]?o.sis:null; if(!sis) retur
 function folhaImportaAdv(P){ const {id,nome}=eqDoFicheiro(P), T=advs[id], pl=P.plantel, prov=onzeDeObs(P.onzeProv,pl), alt=!!(P.onzeAlt&&SIS_ADV[P.onzeAlt.sis]), A=advJ(), outro=A.equipa&&A.equipa!==id;
   folha(`<h3>Importar da SCA Observação · ${esc(nome)}</h3>
     <p class="sub" style="margin:0">${pl.length} jogadores (${pl.filter(p=>p.n).length} com número)${P.sistema?" · sistema "+esc(P.sistema):""}${prov?" · onze provável ("+esc(prov.sis)+")":""}${alt?" · onze alternativo":""}.<br>Origem: ${esc(P.fonte||"SCA Observação")}.</p>
-    ${T&&T.plantel.length?`<p class="sub" style="margin:0;color:var(--red)"><b>Substitui o plantel de ${esc(T.nome)} que está no Match Center (${T.plantel.length} jogadores).</b></p>`:""}
+    ${T&&T.plantel.length?`<p class="sub" style="margin:0;color:var(--red)"><b>Substitui o plantel de ${esc(T.nome)} que está na SCA Performance (${T.plantel.length} jogadores).</b></p>`:""}
     ${prov?`<label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="ia-jogo"${outro?"":" checked"} style="accent-color:var(--red);width:20px;height:20px"> Usar no jogo atual${jogo.adversario?" (vs "+esc(jogo.adversario)+")":""}: equipa, cores e onze provável</label>`:""}
     <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="ia-ok">Importar</button></div>`,(s_,fecha)=>{
     const ok=s_.querySelector("#ia-ok"), faz=()=>{ const c=s_.querySelector("#ia-jogo"), usa=!!(c&&c.checked); fecha(); importaAdv(P,usa); };

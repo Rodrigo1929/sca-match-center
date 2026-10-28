@@ -48,6 +48,8 @@ Coordenadas em metros num campo de 105×68; a equipa SCA ataca da esquerda para 
   duracao: { series, pratica, pausa, total },   // segundos; total null = conta (séries × prática + pausas)
   objetivos, comportamentos: [], condicionantes: [], descricao, variantes: [], material: [],
   ligacoes: { modelo: [ids], lances: [ids] },
+  links: [{ t, url }],          // v93: vídeos e artigos (só http/https), pela ordem; só no repositório — nunca na UT, no PDF da UT nem no plano semanal
+  contaTempo: true|false|null,  // v93: conta para a estatística de tempos; null = pela parte (só a fundamental conta)
   figura?: { quadro?: { …mesmo formato de um quadro do Modelo de Jogo, sem id/nome… },
              imagem?: { id, w, h },          // id do ficheiro no armazenamento do link (assets); mostrada em "/_blob/"+id
              usa: "quadro"|"imagem" },        // qual das duas aparece na ficha e no PDF
@@ -65,9 +67,16 @@ As imagens ficam no armazenamento de ficheiros do link (capacidade `assets`), n�
   presencas: { [nº ou "e:<id>"]: "P"|"L"|"A"|"C"|"CO" },
   extras: [{ id, nome, escalao: "Sub19"…, pos, alc? }],   // alc = alcunhas separadas por vírgulas                 // jogadores de fora do plantel chamados a esta UT
   grupos: [{ id, nome, jogadores: [nº], nota }],   // só entra quem tem presença P ou CO (v90); outra marcação tira-o dos grupos
-  exercicios: [{ id, exId, copia: { …exercício completo como estava no dia, com os ajustes desta UT… } }],   // pela ordem da UT
+  exercicios: [{ id, exId, copia: { …exercício completo como estava no dia, com os ajustes desta UT, sem links… },   // pela ordem da UT
+     pai?,        // v93: complementar — id da linha do exercício principal; vem logo a seguir a ele (3.1, 3.2…) e não soma ao tempo da UT nem ao da parte
+     conta?,      // v93: true|false = conta para os tempos só nesta UT; sem campo = como no repositório (contaTempo)
+     grupos?,     // v93: ids dos grupos de trabalho que fazem este exercício (no principal; os complementares tiram-nos da rotação)
+     rot? }],     // v93, no principal com complementares: { nEq, nJogo (equipas ao mesmo tempo no principal), equipas: [id do grupo|""],
+                  //   grelha: [série][equipa] = "p" (principal) | id da linha do complementar | "" (descanso) }
   criadoPor, criadoEm, alteradoPor, alteradoEm }
 ```
+**Tempos (v93):** minutos de um atleta numa UT = para cada exercício que conta, séries em que a equipa (grupo) dele está nesse exercício × tempo de prática (sem pausas); sem rotação, séries × prática do exercício (só com total escrito: o total). Só contam presentes (P e CO). Num complementar, a prática por série é a dele ou, sem ela, a do principal. Tudo é calculado das UT na hora (`temposUT`); não se grava nada à parte. UTs antigas abrem como estavam: sem `grupos`, os exercícios que contam avisam «conta mas sem grupos». Os atletas são ligados pela chave (nº do plantel ou `e:<id>`); na vista Tempos, os de fora do plantel juntam-se pelo nome.
+
 A UT guarda cópias: mudar um exercício no repositório não muda UTs antigas. A cópia guarda o `alteradoEm` que o exercício tinha quando entrou na UT; só quando o repositório tem uma alteração mais recente (e o conteúdo é diferente) a UT avisa e oferece "↻ Atualizar". Os ajustes do dia não contam. Ao atualizar, por defeito ficam os campos do dia (`parte`, `espaco`, `duracao`, `variantes`); "Substituir tudo" traz a cópia inteira.
 
 ## Plano semanal (`semanas/{id}`)

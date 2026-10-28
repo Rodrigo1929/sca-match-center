@@ -1,8 +1,8 @@
 {
   "name": "sca-match-center",
-  "version": "92.0.0",
+  "version": "93.0.0",
   "private": true,
-  "description": "SCA Match Center — app da equipa técnica do SC Angrense (bolas paradas, jogo, ao vivo, pós-jogo, modelo de jogo).",
+  "description": "SCA Performance — app da equipa técnica do SC Angrense (bolas paradas, jogo, ao vivo, pós-jogo, modelo de jogo).",
   "type": "module",
   "scripts": {
     "build": "node tools/build.mjs",

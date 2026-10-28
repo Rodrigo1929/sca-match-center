@@ -1,4 +1,4 @@
-# SCA Match Center
+# SCA Performance (antes SCA Match Center)
 
 App da equipa técnica do SC Angrense: quadros de bolas paradas, Modelo de Jogo animado, ficha e banco de jogo, estatística ao vivo, análise pós-jogo por vídeo, histórico, PDF e modo TV.
 
