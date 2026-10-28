@@ -409,6 +409,13 @@ await pg.click(".u-modo button[data-m='ut']"); await pg.waitForTimeout(100);
 const pdfB = await pg.evaluate(async () => { const t = (await pdfUT(uts.ta)).output(); return t.includes("LIGA") && t.includes("MEINHO"); });
 if (un1 !== 2 || rk.regs !== 2 || rk.m !== "1,1,1" || !rk.reis[0].includes("partilham") || !rk.reis[1] || !dRk.suggestedFilename().startsWith("Meinho_SCA_26-27") || !dCp.suggestedFilename().startsWith("Competicao_SCA_26-27") || !vc.linhas || !vc.pend || !pdfB)
   erros.push("Meinho / Rankings / Competição: errado " + JSON.stringify({ un1, rk, vc, pdfB, f: [dRk.suggestedFilename(), dCp.suggestedFilename()] }));
+// histórico do Excel: soma à classificação, aos GR e aos rankings pela data (sem jogos nem equipas)
+const hs = await pg.evaluate((ks) => { histTreino.h1 = normHist({ id: "h1", tipo: "comp", ut: 13, data: "2026-09-11", linhas: [{ k: "n:" + ks[3], nome: "X", J: 4, V: 3, E: 1, D: 0, golos: 2 }, { k: "n:" + ks[1], nome: "Y", gr: true, J: 4, GS: 5 }, { k: "x:fulano de tal", nome: "Fulano de Tal", J: 2, V: 0, E: 0, D: 2 }] });
+  histTreino.h2 = normHist({ id: "h2", tipo: "meinho", ut: 13, data: "2026-09-11", linhas: [{ k: "n:" + ks[3], nome: "X", m21: 5, cuecas: 0, presente: true }] });
+  const F = utsFiltro(), S = compStats(F), M = meinhoStats(F), p = S.P["n:" + ks[3]], g = S.GR["n:" + ks[1]];
+  const r = { pts: p && p.Pts, golos: p && p.golos, gr: g && [g.J, g.GS].join(","), fulano: S.P["x:fulano de tal"] && S.P["x:fulano de tal"].nome, m: M["21"]["n:" + ks[3]].tot, det: p && p.jogos.some((j) => j.hist) };
+  delete histTreino.h1; delete histTreino.h2; return r; }, utA0.ks);
+if (hs.pts < 10 || hs.golos < 2 || hs.gr !== "5,6" || hs.fulano !== "Fulano Tal" || hs.m < 5 || !hs.det) erros.push("Histórico do Excel: não entrou nas tabelas " + JSON.stringify(hs));
 await pg.evaluate((pl0) => { Object.keys(compJogos).forEach((id) => tiraJogoInt(id)); Object.keys(meinhoRegs).forEach((id) => tiraMeinho(id)); delete exercicios.tL; guardaEst({ ...est, plantel: pl0 }, true); }, pl0B);
 await pg.evaluate((a) => { ["ta", "utlk"].forEach((id) => delete uts[id]); ["tP", "tC", "tI"].forEach((id) => delete exercicios[id]); uCur = a; renderUT(); }, utA0.ant);
 

@@ -29,7 +29,7 @@ function copiaMatchCenter(d) { const doc = (k) => d[k] || null;
     lancesDb: colecao(d, "lances"), hist: colecao(d, "historico"), modelo: colecao(d, "modelo"), exercicios: colecao(d, "exercicios"),
     uts: colecao(d, "uts"), semanas: colecao(d, "semanas"), calendario: colecao(d, "calendario"), anual: colecao(d, "anual"), ciclos: colecao(d, "ciclos"),
     tv: doc("tv/config"), adversarios: colecao(d, "adversarios"),
-    compJogos: colecao(d, "compJogos"), compGolos: colecao(d, "compGolos"), meinho: colecao(d, "meinho") }; }
+    compJogos: colecao(d, "compJogos"), compGolos: colecao(d, "compGolos"), meinho: colecao(d, "meinho"), histTreino: colecao(d, "histTreino") }; }
 
 // documentos que têm de existir: sem eles a leitura ficou a meio e a cópia não se faz (nunca substituir uma cópia boa por uma incompleta)
 const APPS = { "match-center": { nome: "SCA Performance", forma: copiaMatchCenter, precisa: ["estado/atual", "jogo/atual"] },

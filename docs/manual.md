@@ -59,6 +59,8 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
   - **Jogos assinalados**: sem «Fim do jogo» (não contam) ou sem GR (golos sofridos não atribuídos).
   - Filtros: época, mesociclo, microciclo e Liga/Champions. **⬇ CSV**.
 
+- **Histórico do Excel** (v97): os totais da «Champions do Municipal» (UT13 a UT38) entram na classificação e na tabela dos GR, por UT e pela data (os filtros funcionam). O Excel não tem os jogos: GM, GS e DG só contam os jogos registados na app. No detalhe do atleta, essas linhas aparecem como «Excel».
+
 ## Meinho: Rei do Meinho e Rei das Cuecas (v95)
 - No repositório: **Meinho** → Sim. Na UT funciona como a competição (selo 👑 MEINHO, anular só nessa UT).
 - Botão **👑 Meinho** na linha: os presentes aparecem com a alcunha.
@@ -66,6 +68,7 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
   - **Cueca**: escolhe quem levou a cueca: conta 1. Não se regista quem a fez.
   - Cada registo grava em separado com a hora (vários aparelhos ao mesmo tempo). **Desfazer o último**: 2 toques.
 - **Treino › Rankings**: Rei do Meinho e Rei das Cuecas com 👑 (empate partilha o título); total, UT com meinho em que esteve presente, média por UT; toca num atleta para ver as ocorrências. Os GR entram como os outros. Filtros: época, mesociclo, microciclo. **⬇ CSV**.
+- **Histórico do Excel** (v97): os 21 passes e as cuecas do Excel (setembro e outubro de 2026) contam pela data de cada treino; «UT com meinho» conta quando o atleta estava presente (presenças do emjogo). Os registos de 23/10 ficaram na UT39 (21/10).
 
 ## Tempos de treino (Treino › Tempos) (v93)
 - **Minutos de cada atleta** = para cada exercício que conta, as séries em que a equipa dele está nesse exercício × o tempo de prática (sem pausas).

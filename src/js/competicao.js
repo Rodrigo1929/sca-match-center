@@ -4,20 +4,27 @@
    compJogos/{id} = {id, ut, lid, serie, a, b (ids dos grupos), grA, grB (atleta GR de cada equipa), semGR, fim, criadoEm, criadoPor}
    compGolos/{id} = {id, jogo, eq: "a"|"b" (equipa que ganha o golo), k (quem marcou), ag (auto-golo: k é da outra equipa), em, por}
    meinho/{id}    = {id, ut, lid, tipo: "21"|"cueca", ks: [1 a 3 atletas], em, por}
+   histTreino/{id} = histórico de antes da app, importado do Excel (v97): um documento por UT {tipo: "comp"|"meinho", et, ut (nº), data, origem,
+     linhas: comp [{k, nome, gr, J, V, E, D, golos, GS}] | meinho [{k, nome, m21, cuecas, presente}]}; k = "n:<nº do plantel>" ou "x:<nome>" (como nos Tempos).
+     Só entra nas tabelas pela data (filtros); GM, GS e DG da equipa e os jogos sem sofrer não existem no Excel.
    Uma marcação anulada não apaga registos: deixam de contar e voltam se for reativada. Tudo se calcula na hora a partir das UT e dos registos. */
 const COMP_ET=[["liga","Liga"],["champions","Champions"]];
 const compDe=l=>typeof l.comp==="string"?l.comp:(l.copia.comp||"");
 const meinhoDe=l=>typeof l.meinho==="boolean"?l.meinho:!!l.copia.meinho;
 const rotComp=k=>(COMP_ET.find(x=>x[0]===k)||[0,""])[1];
-const CJ_LS="sca-comp-jogos-v1", CG_LS="sca-comp-golos-v1", MH_LS="sca-meinho-v1";
-let compJogos={}, compGolos={}, meinhoRegs={};
-try{ compJogos=JSON.parse(localStorage.getItem(CJ_LS)||"{}")||{}; compGolos=JSON.parse(localStorage.getItem(CG_LS)||"{}")||{}; meinhoRegs=JSON.parse(localStorage.getItem(MH_LS)||"{}")||{}; }catch(e){}
+const CJ_LS="sca-comp-jogos-v1", CG_LS="sca-comp-golos-v1", MH_LS="sca-meinho-v1", HT_LS="sca-hist-treino-v1";
+let compJogos={}, compGolos={}, meinhoRegs={}, histTreino={};
+try{ compJogos=JSON.parse(localStorage.getItem(CJ_LS)||"{}")||{}; compGolos=JSON.parse(localStorage.getItem(CG_LS)||"{}")||{}; meinhoRegs=JSON.parse(localStorage.getItem(MH_LS)||"{}")||{}; histTreino=JSON.parse(localStorage.getItem(HT_LS)||"{}")||{}; }catch(e){}
 function normJogoInt(d){ const s=v=>String(v??"").trim(); return {id:s(d.id)||uId("cj"),ut:s(d.ut),lid:s(d.lid),serie:Math.max(1,Math.round(+d.serie)||1),a:s(d.a),b:s(d.b),
   grA:s(d.grA),grB:s(d.grB),semGR:!!d.semGR,fim:!!d.fim,criadoEm:s(d.criadoEm),criadoPor:s(d.criadoPor)}; }
 function normGoloInt(d){ const s=v=>String(v??"").trim(); return {id:s(d.id)||uId("cg"),jogo:s(d.jogo),eq:d.eq==="b"?"b":"a",k:s(d.k),ag:!!d.ag,em:s(d.em),por:s(d.por)}; }
+function normHist(d){ const s=v=>String(v??"").trim(), n=v=>Math.max(0,Math.round(+v)||0), tipo=d.tipo==="meinho"?"meinho":"comp";
+  return {id:s(d.id)||uId("ht"),tipo,et:d.et==="liga"?"liga":"champions",ut:n(d.ut),data:/^\d{4}-\d{2}-\d{2}$/.test(s(d.data))?s(d.data):"",origem:s(d.origem),
+    linhas:(Array.isArray(d.linhas)?d.linhas:[]).filter(l=>l&&s(l.k)).map(l=>tipo==="meinho"?{k:s(l.k),nome:s(l.nome),m21:n(l.m21),cuecas:n(l.cuecas),presente:!!l.presente}
+      :{k:s(l.k),nome:s(l.nome),gr:!!l.gr,J:n(l.J),V:n(l.V),E:n(l.E),D:n(l.D),golos:n(l.golos),GS:n(l.GS)})}; }
 function normMeinho(d){ const s=v=>String(v??"").trim(); return {id:s(d.id)||uId("mh"),ut:s(d.ut),lid:s(d.lid),tipo:d.tipo==="cueca"?"cueca":"21",ks:(Array.isArray(d.ks)?d.ks:[]).map(s).filter(Boolean).slice(0,3),em:s(d.em),por:s(d.por)}; }
-[[compJogos,normJogoInt],[compGolos,normGoloInt],[meinhoRegs,normMeinho]].forEach(([o,f])=>Object.keys(o).forEach(id=>{ try{ o[id]=f({...o[id],id}); }catch(e){ delete o[id]; } }));
-function guardaCompLocal(){ try{ localStorage.setItem(CJ_LS,JSON.stringify(compJogos)); localStorage.setItem(CG_LS,JSON.stringify(compGolos)); localStorage.setItem(MH_LS,JSON.stringify(meinhoRegs)); }catch(e){} }
+[[compJogos,normJogoInt],[compGolos,normGoloInt],[meinhoRegs,normMeinho],[histTreino,normHist]].forEach(([o,f])=>Object.keys(o).forEach(id=>{ try{ o[id]=f({...o[id],id}); }catch(e){ delete o[id]; } }));
+function guardaCompLocal(){ try{ localStorage.setItem(CJ_LS,JSON.stringify(compJogos)); localStorage.setItem(CG_LS,JSON.stringify(compGolos)); localStorage.setItem(MH_LS,JSON.stringify(meinhoRegs)); localStorage.setItem(HT_LS,JSON.stringify(histTreino)); }catch(e){} }
 const gravaJogoInt=J=>{ const N=normJogoInt(J); compJogos[N.id]=N; guardaCompLocal(); gravaDoc("compJogos/"+N.id,N); return N; };
 const gravaGolo=G=>{ const N=normGoloInt(G); compGolos[N.id]=N; guardaCompLocal(); gravaDoc("compGolos/"+N.id,N); return N; };
 const gravaMeinho=M=>{ const N=normMeinho(M); meinhoRegs[N.id]=N; guardaCompLocal(); gravaDoc("meinho/"+N.id,N); return N; };
@@ -29,10 +36,10 @@ const golosDe=jid=>Object.values(compGolos).filter(g=>g.jogo===jid).sort((a,b)=>
 const meinhoDeLinha=(ut,lid)=>Object.values(meinhoRegs).filter(m=>m.ut===ut&&m.lid===lid).sort((a,b)=>a.em.localeCompare(b.em));
 /* registos que deixam de contar se a marcação for anulada nesta UT (jogos e golos, ou registos de meinho) */
 const nRegistos=(ut,lid,tipo)=>tipo==="meinho"?meinhoDeLinha(ut,lid).length:jogosDe(ut,lid).reduce((a,j)=>a+1+golosDe(j.id).length,0);
-function repoeCompeticao(B){ [["compJogos",compJogos,normJogoInt],["compGolos",compGolos,normGoloInt],["meinho",meinhoRegs,normMeinho]].forEach(([c,o,f])=>{ const X=B[c]||{};
+function repoeCompeticao(B){ [["compJogos",compJogos,normJogoInt],["compGolos",compGolos,normGoloInt],["meinho",meinhoRegs,normMeinho],["histTreino",histTreino,normHist]].forEach(([c,o,f])=>{ const X=B[c]||{};
   Object.keys(o).forEach(id=>{ if(!X[id]){ delete o[id]; apagaDoc(c+"/"+id); } }); Object.entries(X).forEach(([id,v])=>{ o[id]=f({...v,id}); gravaDoc(c+"/"+id,o[id]); }); }); guardaCompLocal(); }
 function ligaCompDb(){ if(!db) return;
-  [["compJogos",()=>compJogos,v=>compJogos=v,normJogoInt],["compGolos",()=>compGolos,v=>compGolos=v,normGoloInt],["meinho",()=>meinhoRegs,v=>meinhoRegs=v,normMeinho]].forEach(([c,get,set,f])=>
+  [["compJogos",()=>compJogos,v=>compJogos=v,normJogoInt],["compGolos",()=>compGolos,v=>compGolos=v,normGoloInt],["meinho",()=>meinhoRegs,v=>meinhoRegs=v,normMeinho],["histTreino",()=>histTreino,v=>histTreino=v,normHist]].forEach(([c,get,set,f])=>
     db.collection(c).onSnapshot(q=>{ if(q.metadata?.hasPendingWrites) return; const m={};
       q.docs.forEach(d=>{ const x=lerDoc(d); if(x){ delete x.atualizadoEm; try{ m[d.id]=f({...x,id:d.id}); }catch(e){} } });
       mergeCol(c+"/",m,get()); if(JSON.stringify(m)!==JSON.stringify(get())){ set(m); guardaCompLocal(); compRefresca(); } },()=>{})); }
@@ -125,14 +132,17 @@ function folhaMeinhoUT(id,lid){ const U0=uts[id], l=U0&&U0.exercicios.find(x=>x.
 /* ---------- filtros comuns às vistas Competição e Rankings: época, mesociclo, microciclo (e Liga/Champions) ---------- */
 let cF={ep:"",me:"",mi:"",et:""}, cOrd={k:"",d:-1}, gOrd={k:"",d:1};
 try{ const f=JSON.parse(localStorage.getItem("sca-comp-f")||"null"); if(f) cF={...cF,...f}; }catch(e){}
-function utsFiltro(){ const todas=listaUTs().filter(U=>U.data), eps=[...new Set(todas.map(U=>epocaDe(U.data)))].sort().reverse();
+function utsFiltro(){ const todas=listaUTs().filter(U=>U.data), hs=Object.values(histTreino).filter(h=>h.data), ds=[...todas.map(U=>U.data),...hs.map(h=>h.data)], eps=[...new Set(ds.map(epocaDe))].sort().reverse();
   if(!eps.includes(cF.ep)) cF.ep=eps.includes(epocaDe(isoDia(new Date())))?epocaDe(isoDia(new Date())):(eps[0]||"");
-  const daEp=todas.filter(U=>epocaDe(U.data)===cF.ep), uniq=xs=>[...new Map(xs.filter(Boolean).map(M=>[M.id,M])).values()].sort((a,b)=>a.inicio.localeCompare(b.inicio));
-  const mesos=uniq(daEp.map(U=>mesoDe(U.data))); if(cF.me&&!mesos.some(M=>M.id===cF.me)) cF.me="";
-  const doMe=daEp.filter(U=>!cF.me||(mesoDe(U.data)||{}).id===cF.me), micros=uniq(doMe.map(U=>microDe(U.data))); if(cF.mi&&!micros.some(M=>M.id===cF.mi)) cF.mi="";
-  const ls=doMe.filter(U=>!cF.mi||(microDe(U.data)||{}).id===cF.mi).sort((a,b)=>a.data.localeCompare(b.data)||a.numero-b.numero);
+  const daEp=ds.filter(d=>epocaDe(d)===cF.ep), uniq=xs=>[...new Map(xs.filter(Boolean).map(M=>[M.id,M])).values()].sort((a,b)=>a.inicio.localeCompare(b.inicio));
+  const mesos=uniq(daEp.map(mesoDe)); if(cF.me&&!mesos.some(M=>M.id===cF.me)) cF.me="";
+  const noMe=d=>epocaDe(d)===cF.ep&&(!cF.me||(mesoDe(d)||{}).id===cF.me), micros=uniq(daEp.filter(noMe).map(microDe)); if(cF.mi&&!micros.some(M=>M.id===cF.mi)) cF.mi="";
+  const passa=d=>noMe(d)&&(!cF.mi||(microDe(d)||{}).id===cF.mi);
+  const ls=todas.filter(U=>passa(U.data)).sort((a,b)=>a.data.localeCompare(b.data)||a.numero-b.numero), hist=hs.filter(h=>passa(h.data)).sort((a,b)=>a.data.localeCompare(b.data));
   try{ localStorage.setItem("sca-comp-f",JSON.stringify(cF)); }catch(e){}
-  return {eps,mesos,micros,ls}; }
+  return {eps,mesos,micros,ls,hist}; }
+/* nome de uma linha do histórico: do Plantel (alcunha), senão o nome do Excel */
+const nomeHist=l=>{ if(l.k.startsWith("n:")){ const p=est.plantel.find(x=>x.n===l.k.slice(2)); if(p) return nomeCurto({nome:p.nome,alc:p.alc,n:p.n}); } return nomeCurto({nome:l.nome}); };
 function navFiltro(F,comEt){ const nav=$("u-nav"), dd=d=>dataPt_(d).slice(0,5);
   nav.innerHTML=modoUTHtml()+`<div class="grp tfiltro"><h3>Filtrar</h3>
     <label class="f">Época<select id="cf-ep">${F.eps.map(e=>`<option value="${e}">${e}</option>`).join("")||`<option value="">–</option>`}</select></label>
@@ -162,6 +172,11 @@ function compStats(F){ const P={}, GR={}, pend=[], aviso=[];
             x.jogos.push({U,num,eq:nomeGrupoUT(U,J[e]),res,gm,gs,golos:meus.filter(g=>!g.ag).length,ag:meus.filter(g=>g.ag).length}); });
           const gk=J.semGR?"":J["gr"+e.toUpperCase()]; if(gk){ const a=aDe(gk); if(a){ const c=chaveT(a), y=GR[c]||(GR[c]={nome:nomeCurto(a),J:0,GS:0,zero:0,jogos:[]}); y.J++; y.GS+=gs; if(!gs) y.zero++; y.jogos.push({U,num,eq:nomeGrupoUT(U,J[e]),gs}); } } });
         gls.forEach(g=>{ const a=aDe(g.k); if(!a||ehGR(a)) return; const x=P[chaveT(a)]; if(!x) return; if(g.ag) x.AG++; else x.golos++; }); }); }); });
+  /* histórico do Excel (antes da app): J, V, E, D e golos; nos GR, jogos e golos sofridos */
+  (F.hist||[]).filter(h=>h.tipo==="comp"&&(!cF.et||cF.et===h.et)).forEach(h=>h.linhas.forEach(l=>{ const nome=nomeHist(l);
+    if(l.gr){ const y=GR[l.k]||(GR[l.k]={nome,J:0,GS:0,zero:0,jogos:[]}); y.J+=l.J; y.GS+=l.GS; y.jogos.push({hist:h,J:l.J,gs:l.GS}); return; }
+    const x=P[l.k]||(P[l.k]={nome,J:0,V:0,E:0,D:0,GM:0,GS:0,golos:0,AG:0,jogos:[]}); ["J","V","E","D","golos"].forEach(c=>x[c]+=l[c]); x.jogos.push({hist:h,...l}); }));
+  [P,GR].forEach(o=>Object.values(o).forEach(x=>x.jogos.sort((a,b)=>(a.hist?a.hist.data:a.U.data).localeCompare(b.hist?b.hist.data:b.U.data))));
   Object.values(P).forEach(x=>{ x.Pts=3*x.V+x.E; x.PtsJ=x.J?x.Pts/x.J:0; x.DG=x.GM-x.GS; });
   Object.values(GR).forEach(y=>{ y.med=y.J?y.GS/y.J:0; });
   return {P,GR,pend,aviso}; }
@@ -174,7 +189,7 @@ function renderComp(){ const F=utsFiltro(), S=compStats(F); navFiltro(F,true);
   $("u-tit").textContent="Competição interna"; $("u-tag").hidden=true;
   $("u-bar").innerHTML=`<button class="btn sm" id="cp-csv">⬇ CSV</button>`; $("cp-csv").onclick=()=>csvComp(F,S);
   const ls=Object.entries(S.P).sort((a,b)=>ordemC(a[1],b[1])), gr=Object.entries(S.GR).sort((a,b)=>ordemG(a[1],b[1])), seta=(o,k)=>o.k===k?(o.d>0?" ▲":" ▼"):"";
-  $("u-corpo").innerHTML=`<p class="sub" style="margin:0 14px 8px">Liga e Champions somam na mesma classificação. Pontos 3-1-0 por jogador (o resultado da equipa em que jogou). Desempate: Pts, DG, GM, golos. Os GR não entram aqui: têm a tabela deles.</p>
+  $("u-corpo").innerHTML=`<p class="sub" style="margin:0 14px 8px">Liga e Champions somam na mesma classificação. Pontos 3-1-0 por jogador (o resultado da equipa em que jogou). Desempate: Pts, DG, GM, golos. Os GR não entram aqui: têm a tabela deles.${F.hist.some(h=>h.tipo==="comp")?" Inclui o histórico do Excel (antes da app): J, V, E, D, Pts e golos; GM, GS e DG só contam os jogos registados na app.":""}</p>
     ${ls.length?`<div class="tblwrap" style="margin:0 14px 14px"><table class="ttab cptab"><thead><tr><th>#</th><th>Atleta</th>${COLS_C.map(([k,n])=>`<th class="n"><button class="lnk" data-o="${k}">${n}${seta(cOrd,k)}</button></th>`).join("")}</tr></thead><tbody>
       ${ls.map(([c,x],i)=>`<tr data-c="${esc(c)}"><td>${i+1}</td><td><b>${esc(x.nome)}</b></td>${COLS_C.map(([k])=>`<td class="n">${k==="PtsJ"?f1(x[k]):k==="Pts"?`<b>${x[k]}</b>`:x[k]}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`
       :`<div class="m-vazio"><b>Sem jogos terminados neste filtro.</b><span>Os jogos registam-se na UT, no botão 🏆 dos exercícios marcados como Liga ou Champions.</span></div>`}
@@ -192,7 +207,8 @@ function renderComp(){ const F=utsFiltro(), S=compStats(F); navFiltro(F,true);
   $("u-panel").querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{ const x=lst[+b.dataset.i]; uModo="ut"; try{ localStorage.setItem("sca-u-modo","ut"); }catch(e){} uCur=x.U.id; renderUT(); }); }
 function folhaJogosAtleta(x,gr){ if(!x) return; const res={V:"Vitória",E:"Empate",D:"Derrota"};
   folha(`<h3>${esc(x.nome)}${gr?" · GR":""}</h3><p class="sub" style="margin:0">${gr?`${x.J} jogos · ${x.GS} golos sofridos · ${x.zero} sem sofrer`:`${x.J} jogos · ${x.Pts} pts · ${x.golos} golos${x.AG?` · ${x.AG} AG`:""}`}</p>
-    <ul class="evl">${x.jogos.map(j=>`<li><span style="flex:1"><b>${esc(dataPt_(j.U.data).slice(0,5))}</b> · UT${j.U.numero} ${esc(j.num)} · ${esc(j.eq)} · ${gr?`sofreu ${j.gs}`:`${res[j.res]} ${j.gm}–${j.gs}${j.golos?` · ⚽ ${j.golos}`:""}${j.ag?` · AG ${j.ag}`:""}`}</span></li>`).join("")}</ul>
+    <ul class="evl">${x.jogos.map(j=>j.hist?`<li><span style="flex:1"><b>${esc(dataPt_(j.hist.data).slice(0,5))}</b> · UT${j.hist.ut} · <i>Excel</i> · ${gr?`${j.J} ${j.J===1?"jogo":"jogos"} · sofreu ${j.gs}`:`${j.J} ${j.J===1?"jogo":"jogos"} · ${j.V}V ${j.E}E ${j.D}D${j.golos?` · ⚽ ${j.golos}`:""}`}</span></li>`
+      :`<li><span style="flex:1"><b>${esc(dataPt_(j.U.data).slice(0,5))}</b> · UT${j.U.numero} ${esc(j.num)} · ${esc(j.eq)} · ${gr?`sofreu ${j.gs}`:`${res[j.res]} ${j.gm}–${j.gs}${j.golos?` · ⚽ ${j.golos}`:""}${j.ag?` · AG ${j.ag}`:""}`}</span></li>`).join("")}</ul>
     <div class="actions"><button class="btn primary" data-close>Fechar</button></div>`,()=>{}); }
 function csvComp(F,S){ const ls=Object.values(S.P).sort(ordemC), gr=Object.values(S.GR).sort(ordemG);
   guardaCsv(nomeCsv("Competicao",F),[["SCA Performance · Competição interna",filtroTxt(F)],[],["#","Atleta",...COLS_C.map(c=>c[1])],
@@ -205,6 +221,9 @@ function meinhoStats(F){ const R={"21":{},cueca:{}};
     at.filter(a=>presenteUT(U,a.k)).forEach(a=>["21","cueca"].forEach(t=>{ const c=chaveT(a), x=R[t][c]||(R[t][c]={nome:nomeCurto(a),tot:0,nUT:0,oc:[]}); x.nUT++; }));
     Object.values(meinhoRegs).filter(m=>m.ut===U.id&&lids.has(m.lid)).forEach(m=>m.ks.forEach(k=>{ const a=at.find(x=>x.k===k); if(!a) return; const c=chaveT(a), x=R[m.tipo][c]||(R[m.tipo][c]={nome:nomeCurto(a),tot:0,nUT:0,oc:[]});
       x.tot++; x.oc.push({U,num:num[m.lid],em:m.em,com:m.ks.filter(o=>o!==k).map(o=>nomeK(U,o))}); })); });
+  /* histórico do Excel: contagens por UT; «UT com meinho» só quando estava presente (presenças do emjogo) */
+  (F.hist||[]).filter(h=>h.tipo==="meinho").forEach(h=>h.linhas.forEach(l=>["21","cueca"].forEach(t=>{ const n=t==="21"?l.m21:l.cuecas;
+    if(!n&&!l.presente) return; const x=R[t][l.k]||(R[t][l.k]={nome:nomeHist(l),tot:0,nUT:0,oc:[]}); if(l.presente) x.nUT++; x.tot+=n; for(let i=0;i<n;i++) x.oc.push({hist:h,em:h.data,com:[]}); })));
   ["21","cueca"].forEach(t=>Object.values(R[t]).forEach(x=>{ x.med=x.nUT?x.tot/x.nUT:0; x.oc.sort((a,b)=>a.em.localeCompare(b.em)); }));
   return R; }
 function renderRank(){ const F=utsFiltro(), R=meinhoStats(F); navFiltro(F,false);
@@ -218,9 +237,9 @@ function renderRank(){ const F=utsFiltro(), R=meinhoStats(F); navFiltro(F,false)
   $("u-corpo").innerHTML=`<p class="sub" style="margin:0 14px 8px">Cada registo vale 1 para cada atleta escolhido. Os GR entram como os outros. «UT com meinho» = UT com exercício de meinho em que o atleta esteve presente.</p>${quadro("21","Rei do Meinho (21 passes)")}${quadro("cueca","Rei das Cuecas")}`;
   $("u-corpo").querySelectorAll("tr[data-c]").forEach(tr=>tr.onclick=()=>{ const x=R[tr.dataset.t][tr.dataset.c]; if(!x) return;
     folha(`<h3>${esc(x.nome)} · ${tr.dataset.t==="cueca"?"Cuecas":"21 passes"}</h3><p class="sub" style="margin:0">${x.tot} em ${x.nUT} UT com meinho.</p>
-      <ul class="evl">${x.oc.map(o=>`<li><span><b>${esc(dataPt_(o.U.data).slice(0,5))}</b> · UT${o.U.numero} ${esc(o.num)} · ${esc(new Date(o.em).toLocaleTimeString("pt-PT",{hour:"2-digit",minute:"2-digit"}))}${o.com.length?" · com "+esc(o.com.join(", ")):""}</span></li>`).join("")||`<li><span class="sub">Sem ocorrências.</span></li>`}</ul>
+      <ul class="evl">${x.oc.map(o=>o.hist?`<li><span><b>${esc(dataPt_(o.hist.data).slice(0,5))}</b> · UT${o.hist.ut} · <i>Excel</i></span></li>`:`<li><span><b>${esc(dataPt_(o.U.data).slice(0,5))}</b> · UT${o.U.numero} ${esc(o.num)} · ${esc(new Date(o.em).toLocaleTimeString("pt-PT",{hour:"2-digit",minute:"2-digit"}))}${o.com.length?" · com "+esc(o.com.join(", ")):""}</span></li>`).join("")||`<li><span class="sub">Sem ocorrências.</span></li>`}</ul>
       <div class="actions"><button class="btn primary" data-close>Fechar</button></div>`,()=>{}); });
-  const nM=F.ls.filter(U=>U.exercicios.some(meinhoDe)).length, nR=Object.values(meinhoRegs).filter(m=>F.ls.some(U=>U.id===m.ut)).length;
+  const hM=F.hist.filter(h=>h.tipo==="meinho"), nM=F.ls.filter(U=>U.exercicios.some(meinhoDe)).length+hM.length, nR=Object.values(meinhoRegs).filter(m=>F.ls.some(U=>U.id===m.ut)).length+hM.reduce((a,h)=>a+h.linhas.reduce((b,l)=>b+l.m21+l.cuecas,0),0);
   $("u-panel").innerHTML=`<header><h2>Resumo</h2><p class="sub">${F.ls.length} UT · ${nM} com meinho · ${nR} registos</p></header>`; }
 function csvRank(F,R){ const tab=t=>Object.values(R[t]).filter(x=>x.tot||x.nUT).sort((a,b)=>b.tot-a.tot||a.nome.localeCompare(b.nome,"pt")).map((x,i)=>[i+1,x.nome,x.tot,x.nUT,f1(x.med)]);
   guardaCsv(nomeCsv("Meinho",F),[["SCA Performance · Rankings do Meinho",filtroTxt(F)],[],["Rei do Meinho (21 passes)"],["#","Atleta","Total","UT com meinho","Média por UT"],...tab("21"),[],["Rei das Cuecas"],["#","Atleta","Total","UT com meinho","Média por UT"],...tab("cueca")]); }
