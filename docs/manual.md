@@ -35,7 +35,8 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
   - complementar mais longo do que a série do principal;
   - equipa sem grupo;
   - «conta para os tempos mas não tem grupos».
-- A grelha aparece na linha do principal e no PDF da UT (por baixo do complementar, indentado).
+- A grelha aparece na linha do principal e no PDF da UT (por baixo do complementar, indentado). Com complementares, cada casa diz em que exercício está a equipa (3, 3.1…); sem complementar, ✓ (no PDF, casa sombreada) = joga nessa série, – = descansa.
+- Exercício com grupos e **sem rotação** (v96): na linha da UT e no PDF aparecem as equipas, ex.: «Equipa 1 (Vermelhos) vs. Equipa 2 (Brancos)» (apoios no fim). No PDF, grupos por período aparecem em lista por série.
 - **Sem complementar** (v94), em «Rotação por séries»: **Equipas rodam** (há quem descanse; ex.: Liga de 3, jogam 2 e descansa 1) ou **Grupos por período / parte** (em cada série só contam os grupos desse período). Até 20 grupos.
 
 ### Nomes nos grupos (v93)

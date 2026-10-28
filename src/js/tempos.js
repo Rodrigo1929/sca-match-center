@@ -41,14 +41,24 @@ function moveBloco(U,lid,dir){ const bl=[]; U.exercicios.forEach(l=>{ if(l.pai&&
 
 /* grelha pequena na linha do principal (só para ver; muda-se em 👥 Grupos) */
 function rotMiniHtml(U,l,cs,nums){ const R=l.rot;
-  return `<div class="tblwrap"><table class="urot mini"><thead><tr><th>Série</th>${R.equipas.map((g,j)=>`<th>${esc(nomeEquipa(U,R,j))}</th>`).join("")}</tr></thead><tbody>${R.grelha.map((r,i)=>`<tr><th>${i+1}</th>${r.map(v=>`<td class="${v==="p"?"p":v?"c":"d"}">${esc(rotCasa(v,nums,l.id))}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`; }
+  return `<div class="tblwrap"><table class="urot mini"><thead><tr><th>Série</th>${R.equipas.map((g,j)=>`<th>${esc(nomeEquipa(U,R,j))}</th>`).join("")}</tr></thead><tbody>${R.grelha.map((r,i)=>`<tr><th>${i+1}</th>${r.map(v=>`<td class="${v==="p"?"p":v?"c":"d"}">${esc(rotCasa(v,nums,l.id,!cs.length))}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`; }
 /* tempos: prática sem pausas */
 const praticaEx=E=>{ const D=E.duracao; return D.pratica?seriesDe(E)*D.pratica:(D.total||0); };
 const praticaSerie=E=>{ const D=E.duracao; return D.pratica||Math.round((D.total||0)/seriesDe(E)); };
 const praticaCompl=(c,P)=>c.copia.duracao.pratica||praticaSerie(P.copia);
 const contaLinha=l=>typeof l.conta==="boolean"?l.conta:contaExDef(l.copia);
 const nomeEquipa=(U,R,j)=>{ const g=U.grupos.find(x=>x.id===R.equipas[j]); return g?(g.nome||`Grupo ${j+1}`):`Equipa ${j+1}`; };
-const rotCasa=(v,nums,pid)=>v==="p"?nums[pid]:v?nums[v]||"?":"–";
+/* casa da grelha: com complementares, o nº do exercício onde a equipa está (3, 3.1…); sem complementar, ✓ = joga nessa série */
+const rotCasa=(v,nums,pid,so)=>v==="p"?(so?"✓":nums[pid]):v?nums[v]||"?":"–";
+/* equipas de um exercício sem rotação: «Equipa 1 (Vermelhos) vs. Equipa 2 (Brancos)»; um grupo já chamado «Equipa …» fica com o nome dele */
+function equipasTxt(U,l){ const gs=(l.grupos||[]).map(id=>U.grupos.find(g=>g.id===id)).filter(Boolean);
+  /* nomes lidos do texto trazem o cabeçalho («3 Equipas · Vermelhos»): fica a parte «Equipa …» se houver, senão a última */
+  const nm=(g,i)=>{ const ps=String(g.nome||"Grupo").split(/\s*·\s*/).filter(Boolean), eq=ps.find(p=>/^equipa\b/i.test(p)); return eq||`Equipa ${i+1} (${ps[ps.length-1]||"Grupo"})`; };
+  /* apoios e jokers não são equipas: vão no fim («+ Apoios») */
+  const ult=g=>{ const ps=String(g.nome||"").split(/\s*·\s*/).filter(Boolean); return ps[ps.length-1]||""; }, ap=g=>/apoio|joker/i.test(ult(g));
+  const eqs=gs.filter(g=>!ap(g)), aps=gs.filter(ap), extra=aps.length?" + "+aps.map(ult).join(" + "):"";
+  if(eqs.length<2) return (eqs.length?`Grupo: ${ult(eqs[0])||"Grupo"}`:"")+(eqs.length?extra:aps.map(ult).join(" + "));
+  return eqs.map(nm).join(eqs.length===2?" vs. ":" · ")+extra; }
 function avisosRot(U,l,cs,nums){ const R=l.rot, av=[]; if(!R) return av; const nome=j=>nomeEquipa(U,R,j);
   if(R.modo!=="periodos") R.grelha.forEach((r,i)=>{ const n=r.filter(v=>v==="p").length; if(n!==R.nJogo) av.push(`Série ${i+1}: ${n} ${n===1?"equipa":"equipas"} no ${nums[l.id]} (definiste ${R.nJogo} ao mesmo tempo).`); });
   const vezes=v=>Array.from({length:R.nEq},(_,j)=>R.grelha.filter(r=>r[j]===v).length);
@@ -100,7 +110,7 @@ function folhaTemposEx(id,lid){ const U=uts[id], l0=U&&U.exercicios.find(x=>x.id
     ${cs.length?"":`<div class="seg" id="ut-md"><button data-k="">Sem rotação (todos os grupos em todas as séries)</button><button data-k="rodar">Equipas rodam (há quem descanse)</button><button data-k="periodos">Grupos por período / parte</button></div>`}
     <div id="ut-rb"><div class="fields"><label class="f">Nº de equipas (grupos)<select id="ut-ne">${NE.map(n=>`<option value="${n}">${n}</option>`).join("")}</select></label><label class="f"><span id="ut-njl">Ao mesmo tempo no ${nums[lid]}</span><select id="ut-nj"></select></label></div>
       <div class="tblwrap"><table class="urot" id="ut-gr"></table></div>
-      <p class="sub" style="margin:0">Toca numa casa para mudar: ${nums[lid]}${cs.length?" (principal) → "+cs.map(c=>nums[c.id]).join(" → "):""} → descanso (–). As equipas são os grupos escolhidos acima, por ordem.</p>
+      <p class="sub" style="margin:0">Toca numa casa para mudar: ${cs.length?nums[lid]+" (principal) → "+cs.map(c=>nums[c.id]).join(" → "):"✓ (joga nessa série)"} → descanso (–). As equipas são os grupos escolhidos acima, por ordem.</p>
       <div><button class="btn sm" id="ut-rp" type="button">↺ Propor de novo</button></div></div>
     ${cs.length?"":`<p class="sub" style="margin:0">Exercício complementar em paralelo? Junta-o com «+ Compl.» na linha do exercício.</p>`}
     <div id="ut-av"></div>
@@ -117,7 +127,7 @@ function folhaTemposEx(id,lid){ const U=uts[id], l0=U&&U.exercicios.find(x=>x.id
       q("#ut-rb").hidden=!R; if(!R){ avisos(); return; } q("#ut-ne").value=String(R.nEq);
       q("#ut-njl").textContent=R.modo==="periodos"?"Grupos em cada período":`Ao mesmo tempo no ${nums[lid]}`;
       q("#ut-nj").innerHTML=Array.from({length:maxJ()},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join(""); q("#ut-nj").value=String(R.nJogo);
-      q("#ut-gr").innerHTML=`<thead><tr><th>Série</th>${R.equipas.map((g,j)=>`<th>${esc(nomeEquipa(U,R,j))}</th>`).join("")}</tr></thead><tbody>${R.grelha.map((r,i)=>`<tr><th>${i+1}</th>${r.map((v,j)=>`<td><button type="button" data-s="${i}" data-e="${j}" class="${v==="p"?"p":v?"c":"d"}">${esc(rotCasa(v,nums,lid))}</button></td>`).join("")}</tr>`).join("")}</tbody>`;
+      q("#ut-gr").innerHTML=`<thead><tr><th>Série</th>${R.equipas.map((g,j)=>`<th>${esc(nomeEquipa(U,R,j))}</th>`).join("")}</tr></thead><tbody>${R.grelha.map((r,i)=>`<tr><th>${i+1}</th>${r.map((v,j)=>`<td><button type="button" data-s="${i}" data-e="${j}" class="${v==="p"?"p":v?"c":"d"}">${esc(rotCasa(v,nums,lid,!cs.length))}</button></td>`).join("")}</tr>`).join("")}</tbody>`;
       const ciclo=["p",...cs.map(c=>c.id),""];   // sem complementar: joga ↔ descansa
       q("#ut-gr").querySelectorAll("button").forEach(b=>b.onclick=()=>{ const i=+b.dataset.s, j=+b.dataset.e; R.grelha[i][j]=ciclo[(ciclo.indexOf(R.grelha[i][j])+1)%ciclo.length]; pintaGr(); });
       avisos(); };

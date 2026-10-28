@@ -401,7 +401,7 @@ ol.utx>li.utx-c .utx-n{font-size:16px}
 .lnk{border:0;background:none;color:var(--red);font-weight:700;padding:0 2px;min-height:0;cursor:pointer;text-decoration:underline}
 table.urot{border-collapse:collapse;font-size:12.5px;margin-top:4px}
 table.urot th,table.urot td{border:1px solid var(--line);padding:0;text-align:center;min-width:44px}
-table.urot thead th{font-weight:700;padding:4px 6px;background:var(--surface-2);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+table.urot thead th{font-weight:700;padding:4px 6px;background:var(--surface-2);min-width:52px;max-width:110px;white-space:normal;overflow-wrap:anywhere;line-height:1.2;font-size:11.5px}
 table.urot tbody th{padding:0 8px;color:#C00000;font-weight:800}
 table.urot td button{width:100%;min-height:40px;border:0;background:none;font-weight:700;font-size:14px;cursor:pointer}
 table.urot td button.p,table.urot td.p{background:#FBE3E3;color:#8B0000}

@@ -344,6 +344,11 @@ if (rs.ne !== "4" || rs.nj !== "2" || rs.casas !== 16 || rs2.modo !== "rodar" ||
 // PDF da UT com o complementar indentado e a grelha
 { const [dC] = await Promise.all([pg.waitForEvent("download", { timeout: 60000 }), pg.click("#u-pdf")]); await dC.saveAs(join(cap, "treino-ut-complementar.pdf")); }
 const pdfC = await pg.evaluate(async () => { const t = (await pdfUT(uts.ta)).output(); return { c: t.includes("2.1") && t.includes("COMPLEMENTAR"), r: t.includes("ROTA") }; });
+// equipas «vs.» num exercício com grupos e sem rotação (linha da UT e PDF); apoios no fim; nomes lidos do texto sem o cabeçalho
+const eqT = await pg.evaluate(async () => { const U = normUT({ id: "teq", numero: 89, data: "2026-10-23", grupos: [{ id: "a", nome: "Exercício 6 · Vermelhos", jogadores: [] }, { id: "b", nome: "Brancos", jogadores: [] }, { id: "c", nome: "Apoios", jogadores: [] }, { id: "d", nome: "Equipa Amarela (9) · Grupo 5", jogadores: [] }],
+  exercicios: [{ id: "x1", exId: "tP", copia: exercicios.tP, grupos: ["a", "b", "c"] }] }), t = (await pdfUT(U)).output();
+  return { dois: equipasTxt(U, U.exercicios[0]), tres: equipasTxt(U, { grupos: ["a", "d", "b"] }), pdf: t.includes("EQUIPAS") && t.includes(" vs. Equipa 2 ") }; });
+if (eqT.dois !== "Equipa 1 (Vermelhos) vs. Equipa 2 (Brancos) + Apoios" || eqT.tres !== "Equipa 1 (Vermelhos) · Equipa Amarela (9) · Equipa 3 (Brancos)" || !eqT.pdf) erros.push("UT: equipas do exercício erradas " + JSON.stringify(eqT));
 if (!pdfC.c || !pdfC.r) erros.push("UT: PDF sem o complementar ou sem a grelha da rotação " + JSON.stringify(pdfC));
 // alcunhas nos grupos (sem números); sem alcunha, primeiro e último nome; alcunhas repetidas avisam no Plantel
 const alc = await pg.evaluate((ks) => { const pl0 = clone(est.plantel), i0 = est.plantel.findIndex((p) => p.n === ks[0]), i1 = est.plantel.findIndex((p) => p.n === ks[1]);
