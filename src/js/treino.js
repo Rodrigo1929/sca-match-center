@@ -116,7 +116,7 @@ function renderUTCorpo(U){ const bx=$("u-corpo"), bar=$("u-bar"), tg=$("u-tag");
       else if(a==="at") b.onclick=()=>folhaAtualizaUT(U.id,lid);
       else if(a==="x") confirma2(b,"Tirar?",()=>tiraExUT(lid)); }); }); }
 /* para comparar cópia e repositório sem contar quem alterou e quando */
-const semAutoria=E=>{ const c={...E}; ["criadoPor","criadoEm","alteradoPor","alteradoEm","links","contaTempo"].forEach(k=>delete c[k]); return c; };
+const semAutoria=E=>{ const c={...E}; ["criadoPor","criadoEm","alteradoPor","alteradoEm","links","contaTempo","n"].forEach(k=>delete c[k]); return c; };
 /* só avisa se o exercício foi alterado no repositório depois de entrar na UT: a cópia guarda a data de alteração que o exercício tinha nesse dia
    (os ajustes do dia, como a duração ou a figura, não contam) */
 function mudouNoRepo(l){ const R=exercicios[l.exId]; if(!R) return false;

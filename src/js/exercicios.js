@@ -40,7 +40,8 @@ function normEx(d){ const s=v=>String(v??"").trim(), L=v=>(Array.isArray(v)?v.ma
     objetivos:s(d.objetivos), objEsp:L(d.objEsp),   // v99: objetivos gerais (campo antigo) e específicos (um por linha; não saem no PDF da UT)
     comportamentos:L(d.comportamentos), condicionantes:L(d.condicionantes), descricao:s(d.descricao), variantes:L(d.variantes), material:L(d.material),
     ligacoes:{modelo:L(d.ligacoes&&d.ligacoes.modelo), lances:L(d.ligacoes&&d.ligacoes.lances)},
-    links:(Array.isArray(d.links)?d.links:[]).filter(x=>x&&urlOk(x.url)).map(x=>({t:s(x.t)||hostDe(x.url),url:s(x.url)})),
+    links:(Array.isArray(d.links)?d.links:[]).filter(x=>x&&urlOk(x.url)).map(x=>({t:s(x.t)||hostDe(x.url),url:s(x.url),...(x.pub?{pub:true}:{})})),   // pub (v103): sai no livro para fora do clube
+    n:n(d.n),   // v103: nº fixo do repositório (1, 2, 3… pela data de criação)
     contaTempo:typeof d.contaTempo==="boolean"?d.contaTempo:null,
     comp:d.comp==="liga"||d.comp==="champions"?d.comp:"", meinho:!!d.meinho,   // v95: competição interna (etiqueta) e meinho
     criadoPor:s(d.criadoPor), criadoEm:s(d.criadoEm), alteradoPor:s(d.alteradoPor), alteradoEm:s(d.alteradoEm)};
@@ -63,10 +64,11 @@ function totalEx(E){ return E.duracao.total||contaDur(E.duracao); }
 
 /* ---------- gravação (um documento por exercício, pela fila pendentes) ---------- */
 function guardaExLocal(){ try{ localStorage.setItem(X_LS,JSON.stringify(exercicios)); }catch(e){} }
-function guardaEx(E,semRender){ const N=normEx({...E,alteradoPor:meuId||E.alteradoPor||"",alteradoEm:new Date().toISOString()}); exercicios[N.id]=N; guardaExLocal(); gravaDoc("exercicios/"+N.id,N); if(!semRender) renderEx(); return N; }
+const proxNumEx=()=>Math.max(0,...Object.values(exercicios).map(x=>x.n||0))+1;
+function guardaEx(E,semRender){ const N=normEx({...E,alteradoPor:meuId||E.alteradoPor||"",alteradoEm:new Date().toISOString()}); if(!N.n) N.n=proxNumEx(); exercicios[N.id]=N; guardaExLocal(); gravaDoc("exercicios/"+N.id,N); if(!semRender) renderEx(); return N; }
 function apagaEx(id){ const E=exercicios[id]; if(!E) return; const antes=clone(E); delete exercicios[id]; guardaExLocal(); apagaDoc("exercicios/"+id); if(xCur===id) xCur=null; renderEx();
   toast(`Exercício “${E.nome}” apagado`,()=>{ exercicios[id]=antes; guardaExLocal(); gravaDoc("exercicios/"+id,antes); xCur=id; renderEx(); }); }
-function duplicaEx(id){ const E=exercicios[id]; if(!E) return; const N=guardaEx({...clone(E),id:xId(),nome:E.nome+" (cópia)",criadoPor:meuId||"",criadoEm:new Date().toISOString()},true); xCur=N.id; renderEx(); toast("Exercício duplicado"); }
+function duplicaEx(id){ const E=exercicios[id]; if(!E) return; const N=guardaEx({...clone(E),id:xId(),n:0,nome:E.nome+" (cópia)",criadoPor:meuId||"",criadoEm:new Date().toISOString()},true); xCur=N.id; renderEx(); toast("Exercício duplicado"); }
 function repoeExercicios(X){ Object.keys(exercicios).forEach(id=>{ if(!X[id]) apagaDoc("exercicios/"+id); }); exercicios={};
   Object.entries(X||{}).forEach(([id,E])=>{ exercicios[id]=normEx({...E,id}); gravaDoc("exercicios/"+id,exercicios[id]); }); guardaExLocal(); renderEx(); }
 
@@ -126,7 +128,8 @@ function renderExFiltros(){ const bx=$("x-filtros"); if($("x-q")) return;
   bx.innerHTML=`<input type="search" id="x-q" placeholder="Pesquisar exercícios…" aria-label="Pesquisar exercícios">
     <select id="x-fm" aria-label="Categoria"><option value="">Todas as categorias</option>${MOM_EX.map(m=>`<option value="${m[0]}">${m[1]}</option>`).join("")}</select>
     <select id="x-ft" aria-label="Formato do exercício"><option value="">Todos os formatos</option>${TIPOS_EX.map(t=>`<option value="${t[0]}">${t[1]}</option>`).join("")}</select>
-    <span class="sub" id="x-n"></span><button class="btn primary" id="x-novo">+ Novo exercício</button>`;
+    <span class="sub" id="x-n"></span><button class="btn" id="x-livro">📕 Livro de exercícios</button><button class="btn primary" id="x-novo">+ Novo exercício</button>`;
+  $("x-livro").onclick=()=>folhaLivros();
   const q=$("x-q"), fm=$("x-fm"), ft=$("x-ft"); q.value=xFiltro.q; fm.value=xFiltro.mom; ft.value=xFiltro.tipo;
   q.oninput=()=>{ xFiltro.q=q.value; guardaFiltro(); renderExNav(exFiltrados(),exercicios[xCur]); };
   fm.onchange=()=>{ xFiltro.mom=fm.value; guardaFiltro(); renderEx(); }; ft.onchange=()=>{ xFiltro.tipo=ft.value; guardaFiltro(); renderEx(); };
@@ -135,7 +138,7 @@ function renderExNav(ls,E){ const nav=$("x-nav"), tot=Object.keys(exercicios).le
   $("x-n").textContent=tot?(ls.length===tot?`${tot} ${tot===1?"exercício":"exercícios"}`:`${ls.length} de ${tot}`):"";
   let h=""; PARTES.forEach(([pk,pn,cor])=>{ const q=ls.filter(x=>x.parte===pk); h+=`<div class="grp"><h3><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cor};margin-right:6px"></i>${pn}</h3><ul>`;
     if(!q.length) h+=`<li><span class="m-nada">${tot?"Nenhum com estes filtros":"Sem exercícios"}</span></li>`;
-    q.forEach((x,i)=>{ const t=totalEx(x); h+=`<li><button data-id="${esc(x.id)}" aria-current="${!!E&&x.id===E.id}"><span class="n">${i+1}</span><span class="m-nm">${esc(x.nome)}<small>${esc([rotuloDe(TIPOS_EX,x.tipo),x.formato,t?fmtTempo(t):""].filter(Boolean).join(" · "))}</small></span></button></li>`; });
+    q.forEach((x,i)=>{ const t=totalEx(x); h+=`<li><button data-id="${esc(x.id)}" aria-current="${!!E&&x.id===E.id}"><span class="n" title="Nº do repositório">${x.n||"–"}</span><span class="m-nm">${esc(x.nome)}<small>${esc([rotuloDe(TIPOS_EX,x.tipo),x.formato,t?fmtTempo(t):""].filter(Boolean).join(" · "))}</small></span></button></li>`; });
     h+=`</ul></div>`; });
   nav.innerHTML=h;
   nav.querySelectorAll("button[data-id]").forEach(b=>{ b.onclick=()=>{ xCur=b.dataset.id; renderEx(); };
@@ -157,7 +160,7 @@ function renderExFicha(E){ const bx=$("x-ficha"), bar=$("x-bar"), tg=$("x-tag");
   bar.innerHTML=`<button class="btn sm" id="x-ed">✎ Editar ficha</button><button class="btn sm" id="x-fig">✎ ${temFigura(E)?"Editar":"Desenhar"} figura</button><button class="btn sm" id="x-img">🖼 Imagem</button><button class="btn sm" id="x-dup">⧉ Duplicar</button><button class="btn sm" id="x-pdf">⬇ PDF</button>`;
   $("x-ed").onclick=()=>folhaEx(E.id); $("x-fig").onclick=()=>{ xPara(); mEntraFig(E.id); }; $("x-img").onclick=()=>folhaImagemEx(E.id); $("x-dup").onclick=()=>duplicaEx(E.id);
   $("x-pdf").onclick=e=>guardaPdfEx(E.id,e.currentTarget);
-  bx.innerHTML=fichaHtml(E); }
+  bx.innerHTML=fichaHtml(E,E.n?"· Nº "+E.n:""); }
 /* ficha com o desenho da ficha de UT do clube (repositório e cópias nas UT); num = nº do exercício na UT */
 function fichaHtml(E,num){ const P=parteDe(E.parte), D=E.duracao, tot=totalEx(E), tit=E.nome+(E.formato&&!E.nome.includes(E.formato)?" – "+E.formato:"");
   return `<div class="exf">
@@ -259,10 +262,10 @@ function folhaEx(id){ const E0=id?exercicios[id]:null, E=E0?clone(E0):normEx({id
     s.querySelectorAll("#xe-cp button").forEach(b=>b.onclick=()=>{ comp=b.dataset.k; pintaM(); }); s.querySelectorAll("#xe-mh button").forEach(b=>b.onclick=()=>{ mh=!!b.dataset.k; pintaM(); }); pintaM();
     /* ligações: acrescentar, tirar e mudar a ordem */
     const pintaLk=()=>{ const bx=q("#xe-lk"); bx.innerHTML=lk.map((x,i)=>`<div class="xe-lkr" data-i="${i}"><input type="text" data-f="t" value="${esc(x.t)}" placeholder="Título" aria-label="Título da ligação"><input type="url" data-f="url" value="${esc(x.url)}" placeholder="https://…" aria-label="Endereço" autocapitalize="off" spellcheck="false">
-        <button class="icon" type="button" data-a="up" aria-label="Subir" ${i?"":"disabled"}>▲</button><button class="icon" type="button" data-a="dn" aria-label="Descer" ${i<lk.length-1?"":"disabled"}>▼</button><button class="icon" type="button" data-a="x" aria-label="Tirar ligação">✕</button></div>`).join("");
+        <button class="btn sm xe-pub" type="button" data-a="pub" aria-pressed="${!!x.pub}" title="Público: sai no livro de exercícios para fora do clube">${x.pub?"🌐 Público":"🔒 Interno"}</button><button class="icon" type="button" data-a="up" aria-label="Subir" ${i?"":"disabled"}>▲</button><button class="icon" type="button" data-a="dn" aria-label="Descer" ${i<lk.length-1?"":"disabled"}>▼</button><button class="icon" type="button" data-a="x" aria-label="Tirar ligação">✕</button></div>`).join("");
       bx.querySelectorAll(".xe-lkr").forEach(r=>{ const i=+r.dataset.i;
         r.querySelectorAll("input").forEach(inp=>inp.oninput=()=>{ lk[i][inp.dataset.f]=inp.value; inp.classList.remove("bad"); });
-        r.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{ const a=b.dataset.a; if(a==="x") lk.splice(i,1); else { const j=i+(a==="up"?-1:1); [lk[i],lk[j]]=[lk[j],lk[i]]; } pintaLk(); }); }); };
+        r.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{ const a=b.dataset.a; if(a==="pub") lk[i].pub=!lk[i].pub; else if(a==="x") lk.splice(i,1); else { const j=i+(a==="up"?-1:1); [lk[i],lk[j]]=[lk[j],lk[i]]; } pintaLk(); }); }); };
     q("#xe-lka").onclick=()=>{ lk.push({t:"",url:""}); pintaLk(); const r=q("#xe-lk").lastElementChild; if(r) r.querySelector("input").focus(); }; pintaLk();
     s.querySelectorAll("#xe-p button").forEach(b=>b.onclick=()=>{ parte=b.dataset.k; pinta(); pintaCt(); });
     s.querySelectorAll("#xe-m button").forEach(b=>b.onclick=()=>{ mom=mom===b.dataset.k?"":b.dataset.k; sub=""; pinta(); });
@@ -277,7 +280,7 @@ function folhaEx(id){ const E0=id?exercicios[id]:null, E=E0?clone(E0):normEx({id
     if(q("#xe-del")) confirma2(q("#xe-del"),"Toca outra vez para apagar",()=>{ fecha(); apagaEx(E0.id); });
     q("#xe-ok").onclick=()=>{ const nome=q("#xe-n").value.trim(); if(!nome){ toast("Escreve o nome do exercício."); q("#xe-n").focus(); return; }
       const d=dur(); if(["pratica","pausa","total"].some(k=>isNaN(d[k]))){ toast("Corrige os tempos da duração."); return; }
-      const lks=[], mal=lk.findIndex(x=>{ const t=String(x.t||"").trim(), u=String(x.url||"").trim(); if(!t&&!u) return false; if(!urlOk(u)) return true; lks.push({t,url:u}); return false; });
+      const lks=[], mal=lk.findIndex(x=>{ const t=String(x.t||"").trim(), u=String(x.url||"").trim(); if(!t&&!u) return false; if(!urlOk(u)) return true; lks.push({t,url:u,...(x.pub?{pub:true}:{})}); return false; });
       if(mal>=0){ const inp=s.querySelectorAll("#xe-lk .xe-lkr")[mal]?.querySelector("[data-f=url]");
         if(inp){ inp.classList.add("bad"); inp.focus(); } toast("Endereço da ligação inválido: tem de começar por http:// ou https://"); return; }
       const N={...E,contaTempo:conta,links:lks,comp,meinho:mh,nome,formato:q("#xe-fo").value,espaco:{...E.espaco,txt:q("#xe-es").value},parte,momento:mom,sub,tipo,
@@ -345,7 +348,7 @@ async function pdfExercicio(E){
   if(IMG_DATA["slides/logo-pdf.png"]) try{ doc.addImage(IMG_DATA["slides/logo-pdf.png"],"PNG",M,6,52,46); }catch(e){}
   T("SPORT CLUB ANGRENSE",M+56,26,{b:1,s:14,c:[255,255,255]}); T("Ficha de exercício · Repositório para as Unidades de Treino",M+56,42,{s:9,c:[255,225,225]});
   T("COMPROMISSO | RESILIÊNCIA | UNIÃO | ATITUDE | PAIXÃO | ALEGRIA",PW-M,26,{b:1,i:1,s:7,c:[255,225,225],al:"right"});
-  let y=fichaExPdf(doc,E,M,74,W)+10;
+  let y=fichaExPdf(doc,E,M,74,W,{num:E.n?"· Nº "+E.n:""})+10;
   /* classificação e material numa linha */
   const cls=[E.momento&&("Categoria: "+catEx(E)),rotuloDe(TIPOS_EX,E.tipo)&&("Formato: "+rotuloDe(TIPOS_EX,E.tipo)),E.material.length&&("Material: "+E.material.join(", "))].filter(Boolean).join("   |   ");
   if(cls){ linhas(cls,W,8).forEach(l=>{ y+=10; T(l,M,y,{s:8,c:MUT}); }); y+=6; }

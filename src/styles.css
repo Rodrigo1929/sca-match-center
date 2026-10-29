@@ -468,7 +468,10 @@ table.cptab th .lnk{text-decoration:none;color:inherit;font:inherit;letter-spaci
 @media (max-width:640px){ .xe-lkr{grid-template-columns:minmax(0,1fr) 40px 40px 40px}.xe-lkr input[data-f=t]{grid-column:1/-1} }
 .ug-nota{white-space:pre-line}
 /* Treino: alternar UT / Plano semanal */
-.u-modo{margin:0 0 10px;display:grid;grid-template-columns:repeat(3,1fr)}
+.u-modo{margin:0 0 10px}
+.u-modo h3{font-family:var(--f-display);font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin:4px 0 4px 4px}
+.u-modo h3+.seg{margin-bottom:8px}
+.u-modo .seg{display:grid}.u-modo .seg.g4{grid-template-columns:repeat(2,1fr)}.u-modo .seg.g3{grid-template-columns:repeat(3,1fr)}
 .u-modo button{min-height:40px;font-size:12.5px;padding:4px 2px}
 /* Plano semanal: a grelha do plano do clube */
 .psem-wrap{margin:12px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -627,3 +630,11 @@ small.mc-e.fechado,.mc-e.fechado{color:var(--ink);font-weight:600}
 .mc-av.ia{background:color-mix(in srgb,#7030A0 12%,var(--surface));display:flex;gap:10px;align-items:center;justify-content:space-between}
 .mc-iad{float:right;border:1px solid var(--line);background:var(--surface);border-radius:8px;min-width:40px;min-height:36px;font-size:15px;cursor:pointer;margin:-4px -2px 0 4px}
 .mc-iad:disabled{opacity:.4;cursor:default}
+/* livro de exercícios (v103) */
+.lv-dim{margin:6px 0}.lv-dim small{display:block;font-family:var(--f-display);text-transform:uppercase;letter-spacing:1px;font-size:10px;color:var(--muted);margin-bottom:4px}
+.lv-lista{max-height:38vh;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:4px}
+.lv-ex{display:flex;gap:10px;align-items:center;padding:6px 8px;border-bottom:1px solid var(--line);min-height:44px;cursor:pointer}
+.lv-ex:last-child{border-bottom:0}.lv-ex input{width:20px;height:20px;accent-color:var(--red);flex:none}
+.lv-ex span{display:flex;flex-direction:column;min-width:0}.lv-ex small{color:var(--muted);font-size:12px}
+.lv-it{text-align:left;min-height:40px;width:100%}
+.xe-pub{white-space:nowrap}.xe-pub[aria-pressed="true"]{background:color-mix(in srgb,#1E9E3E 14%,var(--surface))}

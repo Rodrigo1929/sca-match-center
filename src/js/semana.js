@@ -129,7 +129,9 @@ const resumoAtividade=x=>[tituloAtividade(x),x.tipo!=="outro"?x.txt:"",x.conc?"c
 const htmlLinhasSem=L=>L.map(l=>l.gap?"<i></i>":`<span class="${l.tit?"t":l.b?"b":""}">${esc(l.t)}</span>`).join("");
 
 /* ---------- ecrã ---------- */
-function modoUTHtml(){ return `<div class="seg u-modo"><button data-m="ut" aria-pressed="${uModo==="ut"}">UT</button><button data-m="semana" aria-pressed="${uModo==="semana"}">Semana</button><button data-m="ano" aria-pressed="${uModo==="ano"}">Ano</button><button data-m="micro" aria-pressed="${uModo==="micro"}">Micro</button><button data-m="tempos" aria-pressed="${uModo==="tempos"}">Tempos</button><button data-m="comp" aria-pressed="${uModo==="comp"}">Competição</button><button data-m="rank" aria-pressed="${uModo==="rank"}">Rankings</button></div>`; }
+/* modos do separador Treino em dois grupos (v103): planear (do ano à UT) e estatística */
+function modoUTHtml(){ const b=(m,n)=>`<button data-m="${m}" aria-pressed="${uModo===m}">${n}</button>`;
+  return `<div class="u-modo"><h3>Planear</h3><div class="seg g4">${b("ano","Ano")}${b("micro","Micro")}${b("semana","Semana")}${b("ut","UT")}</div><h3>Estatística</h3><div class="seg g3">${b("tempos","Tempos")}${b("comp","Competição")}${b("rank","Rankings")}</div></div>`; }
 function ligaModoUT(nav){ nav.querySelectorAll(".u-modo button").forEach(b=>b.onclick=()=>{ uModo=b.dataset.m; try{ localStorage.setItem("sca-u-modo",uModo); }catch(e){} renderUT(); }); }
 function renderSemana(){ const ls=listaSemanas(); let S=semanas[sCur]||ls.find(x=>x.inicio<=isoDia(new Date())&&diaMais(x.inicio,6)>=isoDia(new Date()))||ls[0]||null; sCur=S?S.id:null;
   try{ localStorage.setItem("sca-sem-cur",sCur||""); }catch(e){}

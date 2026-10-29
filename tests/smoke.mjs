@@ -5,6 +5,7 @@
 //      (precisa de: npx playwright install webkit)
 import { chromium, webkit, devices } from "playwright";
 import { mkdirSync, statSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -510,6 +511,29 @@ if (va.info || va.limpar || !va.jog.includes("Ainda sem registos")) erros.push("
 await pg.evaluate(() => { delete hist.Jtestearq; relArq = ""; anVista = "reg"; renderAnalise(); });
 
 // Planeamento anual: marcar UT e folga num dia, microciclo e mesociclo; a semana nova segue o anual (nº da UT, folga, nº do microciclo)
+// livro de exercícios (v103): filtros + seleção à mão, guardar, versão para fora sem nomes nem ligações internas, índice com as páginas certas e QR legível
+await pg.click("#tab-x"); await pg.click("#x-livro"); await pg.waitForSelector("#lv-novo"); await pg.click("#lv-novo"); await pg.waitForSelector("#lv-f");
+const lv0 = await pg.evaluate(() => { const ex = Object.values(exercicios); return { n: ex.length, partes: [...new Set(ex.map((E) => E.parte))] }; });
+await pg.fill("#lv-n", "Livro teste"); await pg.fill("#lv-t", "Caderno de teste");
+await pg.click(`#lv-f [data-d='parte'][data-v='${lv0.partes[0]}']`); await pg.waitForTimeout(50);
+const lvSel = await pg.evaluate(() => document.querySelectorAll("#lv-l input:checked").length);
+await pg.locator("#lv-l input:checked").first().click(); await pg.waitForTimeout(50);
+await pg.screenshot({ path: join(cap, "livro-editor.png") });
+await pg.click("#lv-v [data-k='fora']"); await pg.click("#lv-ok"); await pg.waitForTimeout(100);
+const lv = await pg.evaluate(async () => { const L = Object.values(livros).find((x) => x.nome === "Livro teste"), exs = exDoLivro(L), E = exs[0];
+  E.links = [{ t: "Público", url: "https://youtu.be/dQw4w9WgXcQ", pub: true }, { t: "Interno", url: "https://exemplo.pt/so-interno" }];
+  const nomeP = est.plantel.find((p) => p.nome && p.nome.trim().split(/\s+/).length > 1); if (nomeP) E.descricao = "Apoio: " + nomeP.nome + ".";
+  const { doc, n, caps } = await pdfLivro(L, null, { cancelado: false }), txt = doc.output();
+  const pags = doc.getNumberOfPages(), esperado = caps.reduce((a, c) => a + 1 + c.exs.length, 0) + 1 + (caps[0].pag - 2);
+  const ordem = caps.every((c) => c.exs.every((x, i) => x.pag === c.pag + 1 + i));
+  const r = { L: [L.versao, L.menos.length, L.filtros.parte.length].join(","), n, sel: exs.length, pags, esperado, ordem, pub: txt.includes("youtu.be/dQw4w9WgXcQ"), interno: txt.includes("so-interno"), nome: nomeP ? txt.includes(nomeP.nome) : false };
+  const Li = normLivro({ ...L, versao: "interna" }), ti = (await pdfLivro(Li, null, { cancelado: false })).doc.output(); r.internaTemInterno = ti.includes("so-interno");
+  r.qr = JSON.stringify([{ texto: "https://youtu.be/dQw4w9WgXcQ", m: qrMatriz("https://youtu.be/dQw4w9WgXcQ").map((l) => l.map((c) => (c ? 1 : 0))) }, { texto: "Ação · ÇÃO · 2026/27", m: qrMatriz("Ação · ÇÃO · 2026/27").map((l) => l.map((c) => (c ? 1 : 0))) }]);
+  r.av = avisosLivro(L).exs.length === exs.length; apagaLivro(L.id); return r; });
+await pg.click("#sheet-root [data-close]").catch(() => {}); await pg.waitForTimeout(50);
+writeFileSync(join(cap, "qr-teste.json"), lv.qr); const py = spawnSync("python", ["-I", "-X", "utf8", join(raiz, "tests/qr-verifica.py"), join(cap, "qr-teste.json")], { encoding: "utf8" });
+if (lv.L !== "fora,1,1" || lv.sel !== lvSel - 1 || lv.n !== lv.sel || lv.pags !== lv.esperado || !lv.ordem || !lv.pub || lv.interno || lv.nome || !lv.internaTemInterno || !lv.av || (py.status !== 0 && !py.error))
+  erros.push("Livro de exercícios: errado " + JSON.stringify({ ...lv, qr: undefined, lvSel, py: py.stdout + py.stderr }));
 // resumo do microciclo (v101): MD só pelos jogos oficiais, blocos, atletas, volume sem complementares, textos por campo, fechar/reabrir e PDF
 const SEGM = "2027-06-07";
 const mc = await pg.evaluate(async (seg) => { const ks = est.plantel.filter((p) => p.n).slice(0, 4).map((p) => String(p.n)), E = Object.values(exercicios)[0];

@@ -1,5 +1,7 @@
 # Manual da SCA Performance
 
+> Treino (v103): os modos estão em dois grupos — **Planear** (Ano, Micro, Semana, UT) e **Estatística** (Tempos, Competição, Rankings).
+
 App da equipa técnica do SC Angrense (antes «SCA Match Center»). O link e os dados são os mesmos de sempre.
 Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 
@@ -102,6 +104,19 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
   - Sem IA (sem autorização, sem rede ou limite atingido), o resumo continua com os textos automáticos.
   - Os objetivos propostos pela IA só passam para o microciclo da Época quando os aprovas.
   - No PDF os rascunhos saem como texto normal; ao fechar, o painel avisa quantos textos IA faltam aprovar.
+
+## Livro de exercícios em PDF (Exercícios › 📕 Livro de exercícios) (v103)
+- **+ Novo livro**: nome (só na app), título da capa e versão:
+  - **Interna**: ficha completa, autoria e todas as ligações.
+  - **Para fora do clube**: figura sem nomes; nomes e alcunhas do Plantel trocados por «jogador» no texto; sem autoria; só as ligações marcadas como **🌐 Público**.
+- **1 · Filtros**: toca nos chips (parte da UT, categoria, subfase, tipo, formato, espaço, Liga / Champions, meinho). Sem nenhum escolhido = todos.
+- **2 · Exercícios**: os que passam nos filtros vêm marcados; desmarca os que não queres. Para acrescentar outro, procura-o e marca-o. O total aparece em cima.
+- **Guardar** fica com as escolhas (filtros, acrescentados e tirados à mão, versão): gera-se outra vez mais tarde com as fichas atualizadas.
+- **⬇ Gerar PDF**: primeiro, os avisos (sem figura, ficha incompleta, figura em imagem — onde a app não consegue tirar nomes — e exercícios com nomes trocados); depois **Gerar** (1 a 2 minutos; **Cancelar** a meio).
+- O PDF tem capa, índice com as páginas (no ecrã, tocar leva à página), um separador por capítulo (categorias do caderno do clube; sem categoria = Outros) e um exercício por página com a figura em destaque. Numeração do livro: sigla do capítulo + nº (ex.: **OO-03**), com o **Nº do repositório** ao lado.
+- **Ligações** como **QR code** com o título por baixo (no PDF também se pode tocar).
+- No exercício (✎ Editar › Vídeos e ligações), cada ligação tem **🔒 Interno / 🌐 Público** (por defeito Interno).
+- Cada exercício tem um **Nº fixo do repositório**, que aparece na lista e na ficha.
 
 ## Fotos dos atletas (v100)
 - **Plantel**: toca na bolinha à esquerda do número. **Escolher foto** (no iPad abre a câmara ou as fotos). A app recorta a cara em círculo sozinha; se for preciso, **arrasta** a foto e usa o **zoom**. **Guardar** (precisa de internet). **Trocar foto** ou **Tirar foto** (2 toques, com Desfazer).

@@ -27,6 +27,7 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
 | `regimes/{id}` | coleção | Regimes do microciclo (v101): `{nome, int (símbolo de intensidade), cor, ordem, bloco}`; os ids `folga`, `jogo`, `md` e `estagio` guardam só a cor dos blocos |
 | `microCampo/{seg}~{campo}` | coleção | Campos do resumo do microciclo escritos ou acertados à mão (v101), um documento por campo: `{seg, campo, v, ia}` (`ia: true` = rascunho da IA por aprovar, v102; `objPrin`/`objSec` = objetivos propostos pela IA até serem aprovados); campo = `<dia>.md|regime|nivel|obj|pi|pf|pfin` ou `analise`, `perf`, `positivos`, `melhorar`. Sem documento = valor automático |
 | `microResumo/{seg}` | coleção | Estado do resumo do microciclo (v101): `{estado: "rascunho"|"fechado", fechadoEm, fechadoPor, hist: [{acao: "fechar"|"reabrir", em, por}]}` |
+| `livros/{id}` | coleção | Livros de exercícios (v103): `{nome, titulo, versao: "interna"|"fora", filtros: {parte, momento, sub ("momento.sub"), tipo, formato, espaco: [valores], comp: ""|"liga"|"champions"|"qualquer", meinho}, mais: [id], menos: [id], gerado: {em, n}}`. Guarda as escolhas, não os exercícios |
 | `fotos/{chave}` | coleção | Fotos dos atletas (v100): `{img: {id, w, h}, alteradoPor, alteradoEm}`; a imagem (600×600, já recortada em quadrado) fica no armazenamento do link (`assets`), mostrada em "/_blob/"+id. `chave` = nº do plantel; jogadores de fora = "x-" + nome sem acentos (o mesmo atleta em várias UT). A foto segue o número: se o atleta mudar de número, põe-se outra vez. A cópia de segurança guarda só o id |
 | `histTreino/{id}` | coleção | Histórico de antes da app, importado do Excel (v97), um documento por UT: `{tipo: "comp"\|"meinho", et, ut (nº), data, origem, linhas}`; comp: `{k, nome, gr, J, V, E, D, golos, GS}`; meinho: `{k, nome, m21, cuecas, presente}`; `k` = "n:<nº>" ou "x:<nome>". Só se lê; soma às tabelas pela data |
 | `meinho/{id}` | coleção | Registos do meinho (v95): `{ut, lid, tipo: "21"\|"cueca", ks: [1 a 3 atletas], em, por}` |
@@ -57,7 +58,8 @@ Coordenadas em metros num campo de 105×68; a equipa SCA ataca da esquerda para 
   duracao: { series, pratica, pausa, total },   // segundos; total null = conta (séries × prática + pausas)
   objetivos, comportamentos: [], condicionantes: [], descricao, variantes: [], material: [],
   ligacoes: { modelo: [ids], lances: [ids] },
-  links: [{ t, url }],          // v93: vídeos e artigos (só http/https), pela ordem; só no repositório — nunca na UT, no PDF da UT nem no plano semanal
+  links: [{ t, url, pub? }],    // v93: vídeos e artigos (só http/https), pela ordem; só no repositório — nunca na UT, no PDF da UT nem no plano semanal; pub (v103) = sai no livro para fora do clube
+  n,                            // v103: nº fixo do repositório (1, 2, 3… pela data de criação)
   objEsp: [texto],              // v99: objetivos específicos, um por linha (o campo «objetivos» passa a ser os objetivos gerais); não saem no PDF da UT
   contaTempo: true|false|null,  // v93: conta para a estatística de tempos; null = pela parte (só a fundamental conta)
   comp: "liga"|"champions"|"", meinho: true|false,   // v95: competição interna (a etiqueta só identifica e filtra; a classificação é a mesma) e meinho
