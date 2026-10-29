@@ -499,12 +499,31 @@ await pg.click("#tab-h"); await pg.click("#h-lista button:has-text('Arquivado FC
 const vr = await pg.evaluate(() => ({ sel: $("r-jogo").value, info: !$("r-arqinfo").hidden, limpar: $("a-limpar").hidden, vis: !$("a-relatorio").hidden, jog: $("r-jog").textContent, golos: [...$("r-orig").querySelectorAll("tr")][1]?.children[4]?.textContent, atual: an.regs.length }));
 if (arq !== 3 || vr.sel !== "Jtestearq" || !vr.info || !vr.limpar || !vr.vis || !vr.jog.includes("Ponta Teste") || vr.golos !== "1" || vr.atual !== 0) erros.push("Arquivo: a análise do jogo arquivado devia abrir no Relatório " + JSON.stringify(vr));
 await pg.screenshot({ path: join(cap, "pos-jogo-arquivado.png") });
-// PDF para os jogadores: grupo e individual (só as ações do jogador), a partir do jogo arquivado
-await pg.click("#a-jpdf"); await pg.waitForSelector("#pj-js");
-const pj = await pg.evaluate(async () => { const chips = [...document.querySelectorAll("#pj-js .chip")].map((b) => [b.dataset.k, b.getAttribute("aria-pressed")]); const G = hist.Jtestearq;
-  const g = await relatorioJogadoresPdf(G, null), i = await relatorioJogadoresPdf(G, "9"); return { chips, gp: g.getNumberOfPages(), ip: i.getNumberOfPages(), gt: g.output().length, it: i.output().length }; });
-await pg.screenshot({ path: join(cap, "pdf-jogadores-folha.png") }); await pg.click("#sheet-root [data-close]");
-if (!pj.chips.some(([k, p]) => k === "9" && p === "true") || !pj.chips.some(([k, p]) => k === "7" && p === "true") || pj.gp < 1 || pj.ip < 1 || pj.gt < 20000 || pj.it < 15000) erros.push("Pós-jogo: PDF para os jogadores falhou " + JSON.stringify(pj));
+// relatório para jogadores (v104): lances escolhidos, mensagens, coletivo sem dados individuais, individual sem colegas, ZIP com Grupo e Individuais
+await pg.click("#a-jpdf"); await pg.waitForSelector("#rj-m");
+await pg.fill("#rj-m", "• Pressão alta\n• Ataque à profundidade");
+await pg.click("#rj-g [data-k='per']"); await pg.waitForSelector("#rj-l [data-r]"); await pg.locator("#rj-l [data-r]").first().click(); await pg.waitForTimeout(50);
+await pg.click("#rj-g [data-k='golo']"); await pg.waitForTimeout(50); if (await pg.locator("#rj-l [data-r]").count()) await pg.locator("#rj-l [data-r]").first().click();
+await pg.fill("#rj-i textarea[data-k='9']", "Boa pressão. Atenção às receções."); await pg.screenshot({ path: join(cap, "relatorio-jogadores-folha.png") });
+await pg.click("#rj-ok"); await pg.waitForTimeout(100);
+const rj = await pg.evaluate(async () => { const G = hist.Jtestearq, R = relJogDe(G), outrosNomes = (G.onze || []).filter((o) => o.n !== "9" && o.nome).map((o) => o.nome);
+  G.video = { url: "https://www.youtube.com/watch?v=abcdefghijk", k1: 30, k2: 3000, antes: 10 };
+  const g = await pdfRelJog(G, null, R), i = await pdfRelJog(G, "9", R), gt = g.output(), it = i.output();
+  const eg = await ecrasRelJog(G, null, R), ei = await ecrasRelJog(G, "9", R), ls = lancesRel(G, R), li = lancesRel(G, R, "9");
+  const zip = zipFicheiros([{ nome: "Grupo/a.pdf", dados: new Uint8Array([1, 2, 3]) }, { nome: "Individuais/b.jpg", dados: new Uint8Array([4]) }]), zb = new Uint8Array(await zip.arrayBuffer());
+  const zs = new TextDecoder().decode(zb);
+  return { msg: R.msg, ind: R.msgInd["9"], lances: R.lances.length, gMsg: gt.includes("Pressão alta"), gInd: gt.includes("Atenção às receções"), iInd: it.includes("Atenção às receções"),
+    iOutros: outrosNomes.some((n) => it.includes(n)), iNotas: it.includes("Notas") || gt.includes("Notas do jogo"), url: ls[0] && ls[0].url, li: li.every((l) => String(l.j) === "9"),
+    eg: eg.map((c) => c.width + "x" + c.height).join(","), ei: ei.length, zip: zb[0] === 0x50 && zb[1] === 0x4b && zs.includes("Grupo/a.pdf") && zs.includes("Individuais/b.jpg"),
+    nome: nomeFichRel(G, alcunhaRel(G, "9")) }; });
+await pg.click("#a-jpdf"); await pg.waitForSelector("#rj-pv"); await pg.click("#rj-pv"); await pg.waitForSelector("#rp-v img", { timeout: 60000 });
+await pg.screenshot({ path: join(cap, "relatorio-jogadores-preview.png") });
+const [dZip] = await Promise.all([pg.waitForEvent("download", { timeout: 120000 }), (async () => { await pg.click("#rp-ok"); await pg.click("#rp-ok"); })()]);
+await pg.waitForTimeout(300);
+const rjx = await pg.evaluate(() => { const R = relJogDe(hist.Jtestearq); return R.exportado.map((x) => x.versao + ":" + (x.n > 2)).join(","); });
+if (rj.msg !== "• Pressão alta\n• Ataque à profundidade" || rj.ind !== "Boa pressão. Atenção às receções." || rj.lances < 1 || !rj.gMsg || rj.gInd || !rj.iInd || rj.iOutros || rj.iNotas || !/youtube\.com\/watch\?v=abcdefghijk&t=\d+s/.test(rj.url || "") || !rj.li
+  || !rj.eg.startsWith("1080x1920") || rj.ei < 1 || !rj.zip || !/_jogo|Arquivado_FC/.test(rj.nome) || !dZip.suggestedFilename().endsWith("_relatorio_jogadores.zip") || rjx !== "1:true")
+  erros.push("Relatório para jogadores: errado " + JSON.stringify({ rj, rjx, z: dZip.suggestedFilename() }));
 await pg.selectOption("#r-jogo", ""); await pg.waitForTimeout(100);
 const va = await pg.evaluate(() => ({ info: !$("r-arqinfo").hidden, limpar: $("a-limpar").hidden, jog: $("r-jog").textContent }));
 if (va.info || va.limpar || !va.jog.includes("Ainda sem registos")) erros.push("Arquivo: voltar ao jogo atual no Relatório falhou " + JSON.stringify(va));

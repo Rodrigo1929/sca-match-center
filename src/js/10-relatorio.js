@@ -112,7 +112,7 @@ async function exportaXlsx(F=fonteRel()){
 }
 $("a-xlsx").onclick=()=>exportaXlsx(fonteRel());
 $("a-rpdf").onclick=e=>{ const F=fonteRel(); guardaRelatorio(F.arq||jogoAtualRel(),e.currentTarget); };
-$("a-jpdf").onclick=()=>{ const F=fonteRel(); folhaPdfJogadores(F.arq||jogoAtualRel()); };
+$("a-jpdf").onclick=()=>{ const F=fonteRel(); folhaRelJog(F.arq||jogoAtualRel()); };
 $("r-jogo").onchange=e=>{ relArq=e.target.value; renderRelatorio(); };
 $("a-limpar").onclick=e=>{ if(fonteRel().arq) return; const b=e.currentTarget; if(b.dataset.c!=="1"){ b.dataset.c="1"; b.textContent="Confirmar: limpar tudo"; setTimeout(()=>{ b.dataset.c=""; b.textContent="Limpar análise"; },4000); return; }
   const prev=JSON.parse(JSON.stringify(an)); guardaAn({regs:[],ataque:an.ataque}); toast("Análise limpa",()=>guardaAn(prev)); };
@@ -155,7 +155,7 @@ $("h-arq").onclick=()=>{
     s.querySelector("#ar-ok").onclick=()=>{
       const id="J"+Date.now().toString(36);
       const J={id,...snapshotJogo(),resultado:{nos:s.querySelector("#ar-n").value.trim(),eles:s.querySelector("#ar-e").value.trim()},obs:s.querySelector("#ar-o").value.trim(),arquivadoEm:new Date().toISOString()};
-      hist[id]=J; guardaLocal(); gravaDoc("historico/"+id,J);
+      hist[id]=J; guardaLocal(); gravaDoc("historico/"+id,J); arquivaRelJog(id);   // v104: o relatório para jogadores preparado passa para o jogo arquivado
       if(s.querySelector("#ar-nv").checked){
         guardaEst({...est,linhas:est.linhas.filter(l=>l.pre),fase:"pre"});
         guardaNotas({itens:[]});
@@ -177,9 +177,10 @@ function folhaJogoArq(J){
     <h4>Adversário${J.adv&&J.adv.sistema?" · "+esc(J.adv.sistema):""}</h4>${lst(J.adv&&J.adv.onze.filter(o=>o.n),o=>`<li><b>${esc(o.n)}</b> ${esc(o.pos||"")} ${esc(o.nome||"")}</li>`)}
     <h4>Substituições do adversário</h4>${lst(J.adv&&J.adv.subs,x=>`<li><b>${esc(x.min||"–")}'</b> · sai ${esc(x.sai)} ${esc(x.nomeSai||"")} → entra <b>${esc(x.entra)}</b> ${esc(x.nomeEntra||"")}</li>`)}
     <h4>Notas</h4>${lst((J.notas||[]).slice().sort((a,b)=>seg(a.t)-seg(b.t)),n=>{ const lv=J.video?linkVideo(n,J.video):null; return `<li><b style="color:var(--red)">${esc(n.t||"–")}</b> ${esc(n.txt)} ${lv?`<a href="${lv}" target="_blank" rel="noopener">▶ vídeo</a>`:""}</li>`; })}
-    <div class="actions"><button class="btn danger l" id="aj-del">Apagar do histórico</button><button class="btn" id="aj-an">📊 Ver análise pós-jogo</button><button class="btn" id="aj-pdf">⬇ Relatório PDF</button><button class="btn" id="aj-fic">⬇ Ficha de jogo</button><button class="btn" data-close>Fechar</button><button class="btn primary" id="aj-ok">Guardar</button></div>`,(s,fecha)=>{
+    <div class="actions"><button class="btn danger l" id="aj-del">Apagar do histórico</button><button class="btn" id="aj-an">📊 Ver análise pós-jogo</button><button class="btn" id="aj-pdf">⬇ Relatório PDF</button><button class="btn" id="aj-rj">📣 Relatório para jogadores</button><button class="btn" id="aj-fic">⬇ Ficha de jogo</button><button class="btn" data-close>Fechar</button><button class="btn primary" id="aj-ok">Guardar</button></div>`,(s,fecha)=>{
     s.querySelector("#aj-n").value=J.resultado?.nos??""; s.querySelector("#aj-e").value=J.resultado?.eles??""; s.querySelector("#aj-o").value=J.obs||"";
     s.querySelector("#aj-an").onclick=()=>{ fecha(); relArq=J.id; anVista="rel"; setTab("a"); };
+    s.querySelector("#aj-rj").onclick=()=>{ fecha(); folhaRelJog(J); };
     s.querySelector("#aj-pdf").onclick=e=>guardaRelatorio(J,e.currentTarget);
     s.querySelector("#aj-fic").onclick=e=>guardaFicha(e.currentTarget,J);
     s.querySelector("#aj-ok").onclick=()=>{ const N={...J,resultado:{nos:s.querySelector("#aj-n").value.trim(),eles:s.querySelector("#aj-e").value.trim()},obs:s.querySelector("#aj-o").value.trim()}; hist[J.id]=N; guardaLocal(); gravaDoc("historico/"+J.id,N); fecha(); renderHist(); };

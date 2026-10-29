@@ -638,3 +638,8 @@ small.mc-e.fechado,.mc-e.fechado{color:var(--ink);font-weight:600}
 .lv-ex span{display:flex;flex-direction:column;min-width:0}.lv-ex small{color:var(--muted);font-size:12px}
 .lv-it{text-align:left;min-height:40px;width:100%}
 .xe-pub{white-space:nowrap}.xe-pub[aria-pressed="true"]{background:color-mix(in srgb,#1E9E3E 14%,var(--surface))}
+/* relatório para jogadores (v104) */
+.rj-la{border-bottom:1px solid var(--line)}.rj-la:last-child{border-bottom:0}.rj-la input[type=text]{margin:0 8px 8px 38px;width:calc(100% - 46px)}
+.rj-ind{display:flex;flex-direction:column;gap:6px;max-height:34vh;overflow:auto}
+.rp-v{display:flex;gap:10px;overflow-x:auto;padding:6px 2px;background:var(--surface-2);border-radius:10px;min-height:120px}
+.rp-v img{height:min(56vh,520px);width:auto;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.18);flex:none}

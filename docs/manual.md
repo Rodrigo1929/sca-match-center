@@ -105,6 +105,15 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
   - Os objetivos propostos pela IA só passam para o microciclo da Época quando os aprovas.
   - No PDF os rascunhos saem como texto normal; ao fechar, o painel avisa quantos textos IA faltam aprovar.
 
+## Relatório para jogadores (Pós-jogo › 📣 Relatório para jogadores, ou num jogo do Histórico) (v104)
+- **Preparar**: mensagem da equipa técnica (3–4 pontos); **lances em vídeo** — escolhe por tipo (Golos, Remates, Passes-chave e cruzamentos, Perdas e recuperações, Outras) e marca os que entram; podes escrever um título curto (sem título, fica a ação e o jogador); **mensagens individuais** (opcional). **Guardar** fica para mais tarde.
+- Os lances levam um **QR** para o momento no YouTube (o vídeo e o início das partes configuram-se no ⏱ › Vídeo); sem vídeo da parte, aparece «sem vídeo».
+- **👁 Pré-visualizar e exportar**: toca no Grupo e em cada jogador para veres os ecrãs (fica ✓). **✓ Aprovar e exportar** (2 toques) gera tudo e guarda um **.zip** com as pastas **Grupo** e **Individuais**: um PDF A4 e os ecrãs 1080×1920 (para o WhatsApp) de cada um. Nome: `data_adversario_alcunha`.
+- **Coletivo**: resultado, competição, data e marcadores; estatística da equipa por parte e total; perdas de bola por tipo; mapas de perdas, remates e passes-chave; mensagem; lances.
+- **Individual**: só o resultado e os dados do jogador (minutos, golos, cartões, ações por parte, mapa, os lances em que entra e a mensagem dele), com a foto. Nunca dados de colegas.
+- Nunca saem: quadros de bolas paradas, Modelo de Jogo, adversário, notas internas, estatísticas de treino.
+- A janela mostra a última exportação (versão e data).
+
 ## Livro de exercícios em PDF (Exercícios › 📕 Livro de exercícios) (v103)
 - **+ Novo livro**: nome (só na app), título da capa e versão:
   - **Interna**: ficha completa, autoria e todas as ligações.

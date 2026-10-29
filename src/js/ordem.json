@@ -14,6 +14,7 @@
   "js/11-gravacao.js",
   "js/12-exportar-pdf-dos-quadros.js",
   "js/13-relatorio-de-jogo-em-pdf.js",
+  "js/relatorio-jogadores.js",
   "js/14-ficha-de-jogo-modelo-do-clube.js",
   "js/15-copia-de-seguranca.js",
   "js/16-tv-apresentacao-automatica-e-video.js",
