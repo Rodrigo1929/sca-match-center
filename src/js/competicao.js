@@ -225,15 +225,15 @@ const ordemG=(a,b)=>gOrd.k?gOrd.d*((a[gOrd.k]-b[gOrd.k])||0)||a.med-b.med||a.nom
 const f1=v=>(Math.round(v*100)/100).toFixed(2).replace(".",",");
 function renderComp(){ const F=utsFiltro(), S=compStats(F); navFiltro(F,true);
   $("u-tit").textContent="Competição interna"; $("u-tag").hidden=true;
-  $("u-bar").innerHTML=`<button class="btn sm" id="cp-csv">⬇ CSV</button>`; $("cp-csv").onclick=()=>csvComp(F,S);
+  $("u-bar").innerHTML=`<button class="btn sm" id="cp-csv">⬇ CSV</button><button class="btn sm" id="cp-pdf">⬇ PDF</button><button class="btn sm" id="cp-cz">🏆 Cartaz</button>`; $("cp-csv").onclick=()=>csvComp(F,S); $("cp-pdf").onclick=e=>guardaPdfRankings(F,e.currentTarget); $("cp-cz").onclick=()=>folhaCartaz(F);
   const ls=Object.entries(S.P).sort((a,b)=>ordemC(a[1],b[1])), gr=Object.entries(S.GR).sort((a,b)=>ordemG(a[1],b[1])), seta=(o,k)=>o.k===k?(o.d>0?" ▲":" ▼"):"";
   $("u-corpo").innerHTML=`<p class="sub" style="margin:0 14px 8px">Liga e Champions somam na mesma classificação. Pontos 3-1-0 por jogador (o resultado da equipa em que jogou). Desempate: Pts, DG, GM, golos. Os GR não entram aqui: têm a tabela deles.${F.hist.some(h=>h.tipo==="comp")?" Inclui o histórico do Excel (antes da app): J, V, E, D, Pts e golos; GM, GS e DG só contam os jogos registados na app.":""}</p>
     ${ls.length?`<div class="tblwrap" style="margin:0 14px 14px"><table class="ttab cptab"><thead><tr><th>#</th><th>Atleta</th>${COLS_C.map(([k,n])=>`<th class="n"><button class="lnk" data-o="${k}">${n}${seta(cOrd,k)}</button></th>`).join("")}</tr></thead><tbody>
-      ${ls.map(([c,x],i)=>`<tr data-c="${esc(c)}"><td>${i+1}</td><td><b>${esc(x.nome)}</b></td>${COLS_C.map(([k])=>`<td class="n">${k==="PtsJ"?f1(x[k]):k==="Pts"?`<b>${x[k]}</b>`:x[k]}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`
+      ${ls.map(([c,x],i)=>`<tr data-c="${esc(c)}"><td>${i+1}</td><td><span class="nm-f">${fotoAv(fotoDeChaveT(c),x.nome,"p")}<b>${esc(x.nome)}</b></span></td>${COLS_C.map(([k])=>`<td class="n">${k==="PtsJ"?f1(x[k]):k==="Pts"?`<b>${x[k]}</b>`:x[k]}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`
       :`<div class="m-vazio"><b>Sem jogos terminados neste filtro.</b><span>Os jogos registam-se na UT, no botão 🏆 dos exercícios marcados como Liga ou Champions.</span></div>`}
     <h3 class="cp-h">Guarda-redes</h3>
     ${gr.length?`<div class="tblwrap" style="margin:0 14px 14px"><table class="ttab cptab"><thead><tr><th>GR</th>${COLS_G.map(([k,n])=>`<th class="n"><button class="lnk" data-og="${k}">${n}${seta(gOrd,k)}</button></th>`).join("")}</tr></thead><tbody>
-      ${gr.map(([c,y])=>`<tr data-g="${esc(c)}"><td><b>${esc(y.nome)}</b></td>${COLS_G.map(([k])=>`<td class="n">${k==="med"?`<b>${f1(y.med)}</b>`:k==="Pts"?`<b>${y.Pts}</b>`:y[k]}</td>`).join("")}</tr>`).join("")}</tbody></table></div><p class="sub" style="margin:0 14px 14px">Os GR não estão presos a uma equipa: em cada jogo contam pela equipa que defenderam (V/E/D e pontos desde a v98; o histórico do Excel só tem jogos e golos sofridos).</p>`
+      ${gr.map(([c,y])=>`<tr data-g="${esc(c)}"><td><span class="nm-f">${fotoAv(fotoDeChaveT(c),y.nome,"p")}<b>${esc(y.nome)}</b></span></td>${COLS_G.map(([k])=>`<td class="n">${k==="med"?`<b>${f1(y.med)}</b>`:k==="Pts"?`<b>${y.Pts}</b>`:y[k]}</td>`).join("")}</tr>`).join("")}</tbody></table></div><p class="sub" style="margin:0 14px 14px">Os GR não estão presos a uma equipa: em cada jogo contam pela equipa que defenderam (V/E/D e pontos desde a v98; o histórico do Excel só tem jogos e golos sofridos).</p>`
       :`<p class="sub" style="margin:0 14px 14px">Ainda sem GR indicados em jogos terminados.</p>`}`;
   $("u-corpo").querySelectorAll("[data-o]").forEach(b=>b.onclick=()=>{ const k=b.dataset.o; cOrd=cOrd.k===k?(cOrd.d<0?{k,d:1}:{k:"",d:-1}):{k,d:-1}; renderComp(); });
   $("u-corpo").querySelectorAll("[data-og]").forEach(b=>b.onclick=()=>{ const k=b.dataset.og; gOrd=gOrd.k===k?(gOrd.d>0?{k,d:-1}:{k:"",d:1}):{k,d:1}; renderComp(); });
@@ -266,11 +266,11 @@ function meinhoStats(F){ const R={"21":{},cueca:{}};
   return R; }
 function renderRank(){ const F=utsFiltro(), R=meinhoStats(F); navFiltro(F,false);
   $("u-tit").textContent="Rankings do Meinho"; $("u-tag").hidden=true;
-  $("u-bar").innerHTML=`<button class="btn sm" id="rk-csv">⬇ CSV</button>`; $("rk-csv").onclick=()=>csvRank(F,R);
+  $("u-bar").innerHTML=`<button class="btn sm" id="rk-csv">⬇ CSV</button><button class="btn sm" id="rk-pdf">⬇ PDF</button><button class="btn sm" id="rk-cz">🏆 Cartaz</button>`; $("rk-csv").onclick=()=>csvRank(F,R); $("rk-pdf").onclick=e=>guardaPdfRankings(F,e.currentTarget); $("rk-cz").onclick=()=>folhaCartaz(F);
   const quadro=(t,tit)=>{ const ls=Object.entries(R[t]).filter(([,x])=>x.tot||x.nUT).sort((a,b)=>b[1].tot-a[1].tot||b[1].med-a[1].med||a[1].nome.localeCompare(b[1].nome,"pt")), top=ls.length?ls[0][1].tot:0, reis=top?ls.filter(([,x])=>x.tot===top):[];
     return `<section class="rk"><h3 class="cp-h">${tit}</h3>${reis.length?`<div class="rk-rei">👑 <b>${esc(reis.map(([,x])=>x.nome).join(" · "))}</b><span>${top} ${t==="cueca"?(top===1?"cueca":"cuecas"):"× 21 passes"}${reis.length>1?" · partilham o título":""}</span></div>`:""}
       ${ls.length?`<div class="tblwrap" style="margin:0 14px 14px"><table class="ttab"><thead><tr><th>#</th><th>Atleta</th><th class="n">Total</th><th class="n">UT com meinho</th><th class="n">Média por UT</th></tr></thead><tbody>
-        ${ls.map(([c,x],i)=>`<tr data-t="${t}" data-c="${esc(c)}"><td>${top&&x.tot===top?"👑":i+1}</td><td><b>${esc(x.nome)}</b></td><td class="n"><b>${x.tot}</b></td><td class="n">${x.nUT}</td><td class="n">${f1(x.med)}</td></tr>`).join("")}</tbody></table></div>`
+        ${ls.map(([c,x],i)=>`<tr data-t="${t}" data-c="${esc(c)}"><td>${top&&x.tot===top?"👑":i+1}</td><td><span class="nm-f">${fotoAv(fotoDeChaveT(c),x.nome,"p")}<b>${esc(x.nome)}</b></span></td><td class="n"><b>${x.tot}</b></td><td class="n">${x.nUT}</td><td class="n">${f1(x.med)}</td></tr>`).join("")}</tbody></table></div>`
         :`<p class="sub" style="margin:0 14px 14px">Sem UT com meinho neste filtro.</p>`}</section>`; };
   $("u-corpo").innerHTML=`<p class="sub" style="margin:0 14px 8px">Cada registo vale 1 para cada atleta escolhido. Os GR entram como os outros. «UT com meinho» = UT com exercício de meinho em que o atleta esteve presente.</p>${quadro("21","Rei do Meinho (21 passes)")}${quadro("cueca","Rei das Cuecas")}`;
   $("u-corpo").querySelectorAll("tr[data-c]").forEach(tr=>tr.onclick=()=>{ const x=R[tr.dataset.t][tr.dataset.c]; if(!x) return;

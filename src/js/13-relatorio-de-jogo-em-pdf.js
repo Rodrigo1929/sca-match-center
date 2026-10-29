@@ -78,6 +78,7 @@ async function relatorioJogadoresPdf(G,n){
   T(`SC Angrense  ${G.resultado?.nos??"-"} - ${G.resultado?.eles??"-"}  ${G.adversario||"Adversário"}`,M,60,{b:1,s:22,c:[255,255,255]});
   T([C?.nome,G.data?new Date(G.data+"T12:00").toLocaleDateString("pt-PT"):""].filter(Boolean).join("  ·  "),M,80,{s:10,c:[255,225,225]});
   if(n) T(rotN(n),M,102,{b:1,s:13,c:[255,255,255]});
+  if(n){ const fj=await fotoCirculo(String(n),300,12,"#FFFFFF"); if(fj) doc.addImage(fj.toDataURL("image/png"),"PNG",PW-M-90,11,90,90); }   // v100: foto do atleta
   y=n?132:112;
   // resultado e estatística
   const ev=(G.eventos||[]).slice().sort((a,b)=>(minSeg(a.min)??0)-(minSeg(b.min)??0)), golos=ev.filter(e=>e.tipo==="golo"||e.tipo==="golo_adv"), minC=m=>m?String(m).split(":")[0]+"' ":"";

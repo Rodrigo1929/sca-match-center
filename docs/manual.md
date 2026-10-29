@@ -80,6 +80,23 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - **Treino › Rankings**: Rei do Meinho e Rei das Cuecas com 👑 (empate partilha o título); total, UT com meinho em que esteve presente, média por UT; toca num atleta para ver as ocorrências. Os GR entram como os outros. Filtros: época, mesociclo, microciclo. **⬇ CSV**.
 - **Histórico do Excel** (v97): os 21 passes e as cuecas do Excel (setembro e outubro de 2026) contam pela data de cada treino; «UT com meinho» conta quando o atleta estava presente (presenças do emjogo). Os registos de 23/10 ficaram na UT39 (21/10).
 
+## Fotos dos atletas (v100)
+- **Plantel**: toca na bolinha à esquerda do número. **Escolher foto** (no iPad abre a câmara ou as fotos). A app recorta a cara em círculo sozinha; se for preciso, **arrasta** a foto e usa o **zoom**. **Guardar** (precisa de internet). **Trocar foto** ou **Tirar foto** (2 toques, com Desfazer).
+- A foto segue o **número** do atleta: se mudar de número, põe a foto outra vez.
+- **Jogadores de fora do plantel**: na UT, toca no jogador de fora para abrir a folha dele e depois na bolinha da foto. Serve para todas as UT desse atleta.
+- Sem foto aparecem as **iniciais**.
+- Onde aparece: Plantel, Competição, Rankings, **PDF individual** do Pós-jogo (no cabeçalho), PDF dos rankings e cartaz do balneário.
+
+## Rankings para fora: PDF e cartaz do balneário (v100)
+- Em **Treino › Competição** ou **Treino › Rankings**, com o filtro que quiseres (época, meso, micro, Liga/Champions):
+  - **⬇ PDF**: A4 com a tabela completa (classificação, guarda-redes, Rei do Meinho e Rei das Cuecas), com fotos.
+  - **🏆 Cartaz**: A3 vertical para o balneário, com pré-visualização. **⬇ Imagem (JPG)** ou **⬇ PDF A3** (imprime também em A4).
+- O cartaz tem:
+  - **Homem-Champions**: top 5 em pontos (desempate: Pts, DG, GM, golos); os GR ficam de fora, como na tabela.
+  - **Homem-Golo**: top 5 em golos (sem auto-golos; desempate: golos por jogo).
+  - Quem empata no 5.º lugar também entra.
+  - **Trono da vergonha**: Rei do Meinho (21 passes) e Rei das Cuecas, com a ilustração e a foto do rei; se empatarem, partilham o trono. Por baixo, os dois seguintes «na corrida ao trono».
+
 ## Tempos de treino (Treino › Tempos) (v93)
 - **Minutos de cada atleta** = para cada exercício que conta, as séries em que a equipa dele está nesse exercício × o tempo de prática (sem pausas).
 - Só contam os **presentes** (Presente e Condicionado).

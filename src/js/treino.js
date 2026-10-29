@@ -170,6 +170,7 @@ function folhaExtraUT(id,eid){ const U=uts[id]; if(!U) return; const X=eid?U.ext
   const usados=Object.keys(ultimo).map(k=>({...ultimo[k],vezes:vezes[k]})).sort((a,b)=>b.vezes-a.vezes||a.nome.localeCompare(b.nome,"pt"));
   const jaNaUT=e=>U.extras.some(x=>chave(x)===chave(e));
   folha(`<h3>Jogador de fora do plantel</h3><p class="sub" style="margin:0">Para juniores, juvenis ou outros chamados a esta UT.</p>
+    ${X?`<div style="display:flex;align-items:center;gap:10px"><button class="fbtn" id="ux-ft" aria-label="Foto">${fotoAv(fotoChave({k:"e:"+X.id,nome:X.nome}),X.nome)}</button><span class="sub">Foto (toca para pôr ou trocar; serve para todas as UT deste atleta)</span></div>`:""}
     ${!X&&usados.length?`<h4 style="margin-bottom:0">Já treinaram connosco <span class="sub">(toca para adicionar)</span></h4><input type="search" id="ux-q" placeholder="Procurar nome ou escalão" aria-label="Procurar atleta">
     <div class="chips" id="ux-us" style="max-height:34vh;overflow:auto">${usados.map((e,i)=>`<button class="chip" data-i="${i}" data-q="${esc(semAcento(e.nome+" "+(e.escalao||"")+" "+(e.alc||"")))}"${jaNaUT(e)?' aria-pressed="true" disabled':""}><span></span>${e.escalao?`<em class="esc">${esc(e.escalao)}</em>`:""}</button>`).join("")}</div>
     <h4 style="margin-bottom:0">Ou outro atleta (novo)</h4>`:""}
@@ -178,6 +179,7 @@ function folhaExtraUT(id,eid){ const U=uts[id]; if(!U) return; const X=eid?U.ext
     <label class="f">Alcunhas (separadas por vírgulas; para ler os grupos escritos em texto)<input type="text" id="ux-a" value="${esc(X?X.alc||"":"")}" placeholder="Ex.: Guga"></label>
     <label class="f">Posição no campo do plantel<select id="ux-p"><option value="">—</option>${POS_UT.map(([k,n])=>`<option value="${k}"${X&&X.pos===k?" selected":""}>${k} · ${n}</option>`).join("")}</select></label>
     <div class="actions">${X?`<button class="btn danger l" id="ux-del">Tirar da UT</button>`:""}<button class="btn" data-close>Cancelar</button><button class="btn primary" id="ux-ok">${X?"Guardar":"Adicionar"}</button></div>`,(s,fecha)=>{
+    if(X) s.querySelector("#ux-ft").onclick=()=>folhaFoto(fotoChave({k:"e:"+X.id,nome:X.nome}),X.nome);
     const q=x=>s.querySelector(x), pinta=()=>s.querySelectorAll("#ux-e button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===escl)));
     s.querySelectorAll("#ux-e button").forEach(b=>b.onclick=()=>{ escl=b.dataset.k; pinta(); }); pinta();
     q("#ux-n").onchange=()=>{ const u=usados.find(e=>chave(e)===semAcento(q("#ux-n").value.trim())); if(u&&!X){ escl=u.escalao||"Outro"; q("#ux-p").value=u.pos||""; q("#ux-a").value=u.alc||""; pinta(); } };

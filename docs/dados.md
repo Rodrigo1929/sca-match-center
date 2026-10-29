@@ -23,6 +23,7 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
 | `uts/{id}` | coleção | Unidades de Treino (ver abaixo) |
 | `compJogos/{id}` | coleção | Jogos da competição interna (v95): `{ut, lid, serie, a, b (ids dos grupos), grA, grB (GR de cada equipa), semGR, fim, criadoEm, criadoPor}` |
 | `compGolos/{id}` | coleção | Golos da competição interna (v95): `{jogo, eq: "a"\|"b" (equipa que ganha o golo), k (quem marcou), ag (auto-golo: k é da outra equipa), em, por}` |
+| `fotos/{chave}` | coleção | Fotos dos atletas (v100): `{img: {id, w, h}, alteradoPor, alteradoEm}`; a imagem (600×600, já recortada em quadrado) fica no armazenamento do link (`assets`), mostrada em "/_blob/"+id. `chave` = nº do plantel; jogadores de fora = "x-" + nome sem acentos (o mesmo atleta em várias UT). A foto segue o número: se o atleta mudar de número, põe-se outra vez. A cópia de segurança guarda só o id |
 | `histTreino/{id}` | coleção | Histórico de antes da app, importado do Excel (v97), um documento por UT: `{tipo: "comp"\|"meinho", et, ut (nº), data, origem, linhas}`; comp: `{k, nome, gr, J, V, E, D, golos, GS}`; meinho: `{k, nome, m21, cuecas, presente}`; `k` = "n:<nº>" ou "x:<nome>". Só se lê; soma às tabelas pela data |
 | `meinho/{id}` | coleção | Registos do meinho (v95): `{ut, lid, tipo: "21"\|"cueca", ks: [1 a 3 atletas], em, por}` |
 | `semanas/{id}` | coleção | Planos semanais (id = segunda-feira da semana; ver abaixo) |

@@ -4,7 +4,7 @@
 //      npm run test:ipad → o mesmo no WebKit (motor do Safari) com ecrã e toque de iPad; capturas em tests/capturas/ipad/
 //      (precisa de: npx playwright install webkit)
 import { chromium, webkit, devices } from "playwright";
-import { mkdirSync, statSync } from "node:fs";
+import { mkdirSync, statSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -440,6 +440,28 @@ const hs = await pg.evaluate((ks) => { histTreino.h1 = normHist({ id: "h1", tipo
   const r = { pts: p && p.Pts, golos: p && p.golos, gr: g && [g.J, g.GS].join(","), fulano: S.P["x:fulano de tal"] && S.P["x:fulano de tal"].nome, m: M["21"]["n:" + ks[3]].tot, det: p && p.jogos.some((j) => j.hist) };
   delete histTreino.h1; delete histTreino.h2; return r; }, utA0.ks);
 if (hs.pts < 10 || hs.golos < 2 || hs.gr !== "5,6" || hs.fulano !== "Fulano Tal" || hs.m < 5 || !hs.det) erros.push("Histórico do Excel: não entrou nas tabelas " + JSON.stringify(hs));
+// fotos (v100): carregar e enquadrar no Plantel; aparecem nos Rankings; PDF da tabela completa e cartaz do balneário
+const kF = utA0.ks[3], iFt = await pg.evaluate((k) => est.plantel.findIndex((p) => p.n === k), kF);
+await pg.click("#tab-p"); await pg.waitForTimeout(150);
+await pg.click(`#ptb tr:has(#pn-${iFt}) .fbtn`); await pg.waitForSelector("#ft-esc:not([disabled])");
+await pg.setInputFiles("#ft-f", join(raiz, "assets/rankings/rei-das-cuecas-720.jpg")); await pg.waitForSelector("#ft-ok:not([hidden])");
+await pg.screenshot({ path: join(cap, "foto-enquadrar.png") });
+await pg.click("#ft-ok"); await pg.waitForTimeout(300);
+const ft = await pg.evaluate((k) => ({ f: fotos[k] && [fotos[k].img.w, fotos[k].img.h].join("x"), up: window.__up.slice(-1)[0], img: !!document.querySelector("#ptb .fbtn .fav img") }), kF);
+await pg.screenshot({ path: join(cap, "plantel-fotos.png") });
+await pg.click("#tab-u"); await pg.click(".u-modo button[data-m='rank']"); await pg.waitForSelector(".rk-rei");
+const ftR = await pg.evaluate(() => document.querySelectorAll("#u-corpo .fav img").length);
+const [dPdf] = await Promise.all([pg.waitForEvent("download", { timeout: 60000 }), pg.click("#rk-pdf")]);
+await dPdf.saveAs(join(cap, "rankings.pdf"));
+await pg.click("#rk-cz"); await pg.waitForSelector("#cz-p img", { timeout: 60000 }); await pg.screenshot({ path: join(cap, "cartaz-folha.png") });
+const [dCz] = await Promise.all([pg.waitForEvent("download", { timeout: 60000 }), pg.click("#cz-pdf")]);
+await pg.click("#sheet-root [data-close]"); await pg.waitForTimeout(100);
+const cz = await pg.evaluate(async (k) => { const cv = await cartazCanvas(utsFiltro()), L = rankListas(utsFiltro()), fc = await fotoCirculo(k, 100);
+  return { w: cv.width, h: cv.height, url: cv.toDataURL("image/jpeg", 0.85), reis: L.meinho.reis.length, fc: !!fc }; }, kF);
+writeFileSync(join(cap, "cartaz.jpg"), Buffer.from(cz.url.split(",")[1], "base64"));
+if (ft.f !== "600x600" || !ft.up || ft.up.type !== "image/jpeg" || !ft.img || !ftR || !dPdf.suggestedFilename().startsWith("Rankings_SCA_") || !dCz.suggestedFilename().startsWith("Cartaz_SCA_") || cz.w !== 2480 || cz.h !== 3508 || cz.reis !== 2 || !cz.fc)
+  erros.push("Fotos / PDF / cartaz: errado " + JSON.stringify({ ft, ftR, cz: { ...cz, url: undefined }, f: [dPdf.suggestedFilename(), dCz.suggestedFilename()] }));
+await pg.evaluate((k) => { delete fotos[k]; guardaFotosLocal(); }, kF);
 await pg.evaluate((pl0) => { Object.keys(compJogos).forEach((id) => tiraJogoInt(id)); Object.keys(meinhoRegs).forEach((id) => tiraMeinho(id)); delete exercicios.tL; guardaEst({ ...est, plantel: pl0 }, true); }, pl0B);
 await pg.evaluate((a) => { ["ta", "utlk"].forEach((id) => delete uts[id]); ["tP", "tC", "tI"].forEach((id) => delete exercicios[id]); uCur = a; renderUT(); }, utA0.ant);
 
