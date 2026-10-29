@@ -622,3 +622,8 @@ small.mc-e.fechado,.mc-e.fechado{color:var(--ink);font-weight:600}
 .mc-ops .chip{min-height:44px}
 .mc-pl{text-align:left;min-height:40px;width:100%}
 @media (max-width:900px){.mc-cab{grid-template-columns:repeat(2,minmax(0,1fr))}.mc-finais,.mc-objs{grid-template-columns:1fr}}
+/* rascunhos da IA no resumo do microciclo (v102) */
+.mc-iab{display:inline-block;font-style:normal;font-family:var(--f-display);font-weight:700;font-size:10px;letter-spacing:.6px;background:#7030A0;color:#fff;border-radius:4px;padding:1px 5px;margin-right:5px;vertical-align:1px}
+.mc-av.ia{background:color-mix(in srgb,#7030A0 12%,var(--surface));display:flex;gap:10px;align-items:center;justify-content:space-between}
+.mc-iad{float:right;border:1px solid var(--line);background:var(--surface);border-radius:8px;min-width:40px;min-height:36px;font-size:15px;cursor:pointer;margin:-4px -2px 0 4px}
+.mc-iad:disabled{opacity:.4;cursor:default}

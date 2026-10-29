@@ -534,6 +534,27 @@ await pg.click("#mc-fe"); await pg.click("#mc-fe"); await pg.waitForTimeout(100)
 mcUi.fechado = await pg.evaluate((seg) => [microResumo[seg] && microResumo[seg].estado, document.querySelectorAll(".mc-tab [data-e]").length].join(","), SEGM);
 await pg.click("#mc-re"); await pg.click("#mc-re"); await pg.waitForTimeout(100);
 mcUi.reaberto = await pg.evaluate((seg) => [microResumo[seg].estado, microResumo[seg].hist.length].join(","), SEGM);
+// IA (v102), simulada: rascunhos marcados IA, nunca por cima do texto escrito à mão, substituir, JSON inválido, aprovar, cancelar e sem IA
+const ia = await pg.evaluate(async (seg) => { const RESP = { objetivo_ut: "OBJ IA", parte_inicial: "PI IA", parte_fundamental: "PF IA", parte_final: "PFIN IA", objetivos_principais: "OP IA", objetivos_secundarios: "OS IA", pontos_positivos: "• bom", pontos_a_melhorar: "• mau" };
+  const pedidos = []; mcSample = { json: async (p, o) => { pedidos.push(p); return RESP; } };
+  const v = (c) => { const x = microCampo[seg + "~" + c]; return x ? x.v + (x.ia ? "*" : "") : "-"; }, r = {};
+  await geraMc(seg, { tipo: "semana" });
+  r.semana = ["2027-06-08.obj", "2027-06-08.pi", "2027-06-08.pf", "2027-06-08.pfin", "2027-06-10.obj", "2027-06-10.pi", "objPrin", "objSec"].map(v).join("|");
+  r.pedidos = pedidos.length; r.estilo = pedidos[0].includes("português de Portugal") && pedidos[0].includes("PRINCIPAL ESTÍMULO DA SEMANA");
+  r.nIA = semanaMicro(seg).nIA;
+  await geraMc(seg, { tipo: "campo", d: "2027-06-08", k: "pf", forcar: true }); r.subst = v("2027-06-08.pf");
+  const antes = JSON.stringify(microCampo); mcSample = { json: async () => { throw { code: "invalid_json", text: "xx" }; } };
+  await geraMc(seg, { tipo: "dia", d: "2027-06-08" }); r.invalido = JSON.stringify(microCampo) === antes && mcIA === null;
+  Object.values(microCampo).filter((c) => c.seg === seg && c.ia).forEach((c) => aprovaCampoMc(seg, c.campo, true));
+  const W = semanaMicro(seg); r.aprovado = [W.nIA, W.M && W.M.objPrin, v("objPrin"), v("2027-06-08.pi")].join("|");
+  mcSample = null; await geraMc(seg, { tipo: "semana" }); r.semIA = JSON.stringify(microCampo).length > 0 && mcIA === null;
+  return r; }, SEGM);
+await pg.evaluate(() => { mcSample = { json: (p, o) => new Promise((res, rej) => o.signal.addEventListener("abort", () => rej({ code: "cancelled" }))) }; window.__ia = geraMc(mcSeg, { tipo: "dia", d: "2027-06-08" }); });
+await pg.waitForSelector("#mc-ia-x"); await pg.screenshot({ path: join(cap, "treino-microciclo-ia.png") }); await pg.click("#mc-ia-x");
+ia.cancelado = await pg.evaluate(async () => { await window.__ia; return mcIA === null && !document.querySelector("#mc-ia-x"); });
+if (ia.semana !== "OBJ IA*|PI IA*|Jogo reduzido e finalização|PFIN IA*|OBJ IA*|-|OP IA*|OS IA*" || ia.pedidos !== 3 || !ia.estilo || ia.nIA !== 6 || ia.subst !== "PF IA*" || !ia.invalido
+  || ia.aprovado !== "0|OP IA|-|PI IA" || !ia.semIA || !ia.cancelado) erros.push("Microciclo (IA): errado " + JSON.stringify(ia));
+await pg.evaluate((seg) => { delete ciclos["micro-" + seg]; mcSample = undefined; }, SEGM);
 await pg.click("#mc-pad"); await pg.waitForSelector(".mc-pl"); mcUi.padrao = await pg.locator(".mc-pl").count(); await pg.click("#sheet-root [data-close]"); await pg.waitForTimeout(100);
 if (mc.md !== "MD-4,MD-3,MD+1,MD+2,MD" || mc.blocos !== "folga,,,jogo,,estagio,md" || mc.at !== "2,1" || mc.min !== 10 || mc.ut !== "UT 901" || mc.hora !== "19h30 - 21h00" || mc.n !== 77 || mc.pf !== "Texto escrito|true" || mc.repor || !mc.pdf
   || mcUi.blocos !== 4 || mcUi.campo !== "Jogo reduzido e finalização" || mcUi.fechado !== "fechado,0" || mcUi.reaberto !== "rascunho,2" || mcUi.padrao !== 9)

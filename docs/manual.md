@@ -93,7 +93,15 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - **🔒 Fechar microciclo** (2 toques): fica só de leitura, com data e histórico. **Reabrir** (2 toques). Se uma UT da semana mudar depois do fecho, aparece um aviso (o texto não muda sozinho).
 - **⬇ PDF**: A4 horizontal como o Excel do clube; os blocos finais vão para a 2.ª página.
 - **⚙ Padrão MD e regimes** (no Micro e em Treino › Ano): uma linha por MD (MD+1, MD+2, MD-6 a MD-1, MD) com regime, volume sugerido, folga, objetivo e textos das partes; **Regimes e cores**: nome, intensidade e cor de cada regime e as cores dos blocos.
-- Os textos pela IA ficam para a Entrega E2.
+- **IA** (v102):
+  - **✨ Gerar com IA** (no topo): escreve o objetivo e as 3 partes de cada dia com treino (no jogo-treino só o objetivo), os objetivos da semana (se estiverem vazios) e os pontos positivos / a melhorar (a partir do jogo anterior e da tua análise). **✨** na linha da UT refaz só esse dia; **✨ Regenerar** dentro de um campo refaz só esse campo.
+  - Na primeira vez, o claude.ai pede autorização. Cada pedido conta na conta Claude de quem toca no botão.
+  - O que a IA escreve aparece com a etiqueta **IA** (rascunho). Corrige e guarda, ou **✓ Aprovar** no campo, ou **✓ Aprovar todos os textos IA** no painel.
+  - A IA nunca escreve por cima do teu texto. Para trocar o teu texto pelo da IA: **✨ Substituir pela IA** (2 toques).
+  - Enquanto escreve: «A IA está a escrever… (2 de 6)» e **Cancelar**. Se a resposta vier estragada, não se grava nada.
+  - Sem IA (sem autorização, sem rede ou limite atingido), o resumo continua com os textos automáticos.
+  - Os objetivos propostos pela IA só passam para o microciclo da Época quando os aprovas.
+  - No PDF os rascunhos saem como texto normal; ao fechar, o painel avisa quantos textos IA faltam aprovar.
 
 ## Fotos dos atletas (v100)
 - **Plantel**: toca na bolinha à esquerda do número. **Escolher foto** (no iPad abre a câmara ou as fotos). A app recorta a cara em círculo sozinha; se for preciso, **arrasta** a foto e usa o **zoom**. **Guardar** (precisa de internet). **Trocar foto** ou **Tirar foto** (2 toques, com Desfazer).

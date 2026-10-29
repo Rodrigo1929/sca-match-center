@@ -22,19 +22,25 @@ function normMdP(d){ const s=v=>String(v??"").trim(); if(!MD_LINHAS.includes(s(d
 function normRegime(d){ const s=v=>String(v??"").trim(); if(!s(d.id)) throw new Error("regime");
   return {id:s(d.id),nome:s(d.nome),int:s(d.int),cor:corOk(d.cor)||"#D9D9D9",ordem:Math.round(+d.ordem)||0,bloco:BLOCOS_MC.some(b=>b[0]===s(d.id))||!!d.bloco,alteradoPor:s(d.alteradoPor),alteradoEm:s(d.alteradoEm)}; }
 function normMCampo(d){ const s=v=>String(v??"").trim(), id=s(d.id), i=id.indexOf("~"); if(i<10) throw new Error("campo");
-  return {id,seg:id.slice(0,i),campo:id.slice(i+1),v:String(d.v??"").replace(/\s+$/,""),alteradoPor:s(d.alteradoPor),alteradoEm:s(d.alteradoEm)}; }
+  return {id,seg:id.slice(0,i),campo:id.slice(i+1),v:String(d.v??"").replace(/\s+$/,""),ia:!!d.ia,alteradoPor:s(d.alteradoPor),alteradoEm:s(d.alteradoEm)}; }
 function normMResumo(d){ const s=v=>String(v??"").trim();
   return {id:s(d.id),estado:d.estado==="fechado"?"fechado":"rascunho",fechadoEm:s(d.fechadoEm),fechadoPor:s(d.fechadoPor),
     hist:(Array.isArray(d.hist)?d.hist:[]).filter(h=>h&&(h.acao==="fechar"||h.acao==="reabrir")).map(h=>({acao:h.acao,em:s(h.em),por:s(h.por)})).slice(-50)}; }
 [[mdPadrao,normMdP],[regimes,normRegime],[microCampo,normMCampo],[microResumo,normMResumo]].forEach(([o,f])=>Object.keys(o).forEach(id=>{ try{ o[id]=f({...o[id],id}); }catch(e){ delete o[id]; } }));
 function guardaMicroLocal(){ try{ localStorage.setItem(MC_LS,JSON.stringify({p:mdPadrao,r:regimes,c:microCampo,e:microResumo})); }catch(e){} }
 const autoria=()=>({alteradoPor:meuId||"",alteradoEm:new Date().toISOString()});
-/* um campo do resumo: v=null volta ao valor automático (apaga o documento) */
-function gravaCampoMc(seg,campo,v){ const id=seg+"~"+campo;
+/* um campo do resumo: v=null volta ao valor automático (apaga o documento); ia=true = rascunho da IA por aprovar (v102) */
+function gravaCampoMc(seg,campo,v,ia=false,semRender=false){ const id=seg+"~"+campo;
   if(v===null){ delete microCampo[id]; apagaDoc("microCampo/"+id); }
-  else { microCampo[id]=normMCampo({id,seg,campo,v,...autoria()}); gravaDoc("microCampo/"+id,microCampo[id]); }
-  guardaMicroLocal(); renderUT(); }
+  else { microCampo[id]=normMCampo({id,seg,campo,v,ia,...autoria()}); gravaDoc("microCampo/"+id,microCampo[id]); }
+  guardaMicroLocal(); if(!semRender) renderUT(); }
 const campoMc=(seg,campo)=>{ const x=microCampo[seg+"~"+campo]; return x?x.v:null; };
+const iaMc=(seg,campo)=>{ const x=microCampo[seg+"~"+campo]; return !!(x&&x.ia); };
+/* aprovar um rascunho da IA: fica como escrito à mão; os objetivos passam para o microciclo da Época */
+function aprovaCampoMc(seg,campo,semRender){ const x=microCampo[seg+"~"+campo]; if(!x||!x.ia) return;
+  if(campo==="objPrin"||campo==="objSec"){ const W_=semanaMicro(seg), M=W_.M||{tipo:"micro",inicio:seg,n:W_.n||0}; guardaCiclo({...M,[campo]:x.v}); gravaCampoMc(seg,campo,null,false,true); }
+  else gravaCampoMc(seg,campo,x.v,false,true);
+  if(!semRender) renderUT(); }
 const gravaMdP=P=>{ const N=normMdP({...P,...autoria()}); mdPadrao[N.id]=N; gravaDoc("mdPadrao/"+N.id,N); guardaMicroLocal(); return N; };
 const gravaRegime=R=>{ const N=normRegime({...R,...autoria()}); regimes[N.id]=N; gravaDoc("regimes/"+N.id,N); guardaMicroLocal(); return N; };
 const rotRegime=R=>R?`${R.nome}${R.int?` (${R.int})`:""}`:"";
@@ -62,15 +68,18 @@ function semanaMicro(seg){ const fim=diaMais(seg,6), hoje=isoDia(new Date()), S=
     const utTxt=us.length?us.map(U=>"UT "+U.numero).join(" + "):trs.some(x=>x.treino)?trs.filter(x=>x.treino).map(x=>"UT "+x.treino).join(" + "):(jJT&&!treina?"JOGO-TREINO":"");
     const objM=campoMc(seg,d+".obj"), obj=objM!==null?objM:(P?P.objetivo:"");
     const partes={}; PARTES_MC.forEach(([k,parte])=>{ const m=campoMc(seg,d+"."+k), exs=us.flatMap(U=>principaisUT(U).filter(l=>l.copia.parte===parte).map(l=>l.copia.nome));
-      partes[k]={v:m!==null?m:[P?P[k]:"",exs.map(n=>"• "+n).join("\n")].filter(Boolean).join("\n\n"),man:m!==null}; });
-    return {d,md,mdA,mdMan:mdM!==null,P,us,jOf,jJT,bloco,treina,regime,R:regimes[regime]||null,regMan:rgM!==null,nivel,nivMan:nvM!==null,min,hora,local,utTxt,obj,objMan:objM!==null,partes}; });
+      partes[k]={v:m!==null?m:[P?P[k]:"",exs.map(n=>"• "+n).join("\n")].filter(Boolean).join("\n\n"),man:m!==null,ia:iaMc(seg,d+"."+k)}; });
+    return {d,md,mdA,mdMan:mdM!==null,P,us,jOf,jJT,bloco,treina,regime,R:regimes[regime]||null,regMan:rgM!==null,nivel,nivMan:nvM!==null,min,hora,local,utTxt,obj,objMan:objM!==null,objIA:iaMc(seg,d+".obj"),partes}; });
   /* atletas: diferentes que treinaram (P, CO) pelo menos uma vez; GR pela posição no Plantel; L = marcados com lesão */
   const tr=new Map(), les=new Set(); uSem.forEach(U=>atletasUT(U).forEach(a=>{ const p=U.presencas[a.k]; if(p==="P"||p==="CO") tr.set(chaveT(a),a); if(p==="L") les.add(chaveT(a)); }));
   const gr=[...tr.values()].filter(ehGR).length;
   const fechado=E.estado==="fechado", pronto=!fechado&&uSem.length>0&&uSem.every(U=>U.data<hoje&&Object.keys(U.presencas||{}).length>0)&&!dias.some(x=>x.treina&&!x.us.length&&x.d>=hoje);   // sem treinos do plano ainda por dar
   const alteradas=fechado?uSem.filter(U=>(U.alteradoEm||"")>(E.fechadoEm||"")):[];
   const G=Object.values(hist).filter(J=>J.data&&J.data<seg&&J.comp!=="livre").sort((a,b)=>b.data.localeCompare(a.data))[0]||null;
-  return {seg,fim,S,M,Me,E,n:(M&&M.n)||(S&&S.numero)||0,nDif:!!(M&&S&&M.n&&S.numero&&M.n!==S.numero),dias,uSem,gr,jg:tr.size-gr,l:les.size,fechado,pronto,alteradas,G}; }
+  /* objetivos da semana: os do microciclo da Época; sem eles, o rascunho da IA */
+  const obj=Object.fromEntries(["objPrin","objSec"].map(k=>{ const c=M&&M[k], r=microCampo[seg+"~"+k]; return [k,c?{v:c,ia:false}:r?{v:r.v,ia:!!r.ia}:{v:"",ia:false}]; }));
+  const nIA=Object.values(microCampo).filter(c=>c.seg===seg&&c.ia).length;
+  return {obj,nIA,seg,fim,S,M,Me,E,n:(M&&M.n)||(S&&S.numero)||0,nDif:!!(M&&S&&M.n&&S.numero&&M.n!==S.numero),dias,uSem,gr,jg:tr.size-gr,l:les.size,fechado,pronto,alteradas,G}; }
 const nAtletasTxt=W_=>`${W_.gr}GR + ${W_.jg}JG (${W_.l}L)`;
 const volTxt=x=>[x.min?`${x.min}'M`:"",x.nivel?x.nivel.toUpperCase().replace("/"," / "):""].filter(Boolean).join(" | ");
 /* jogo anterior (último oficial do Histórico antes da semana): resumo automático */
@@ -93,17 +102,19 @@ function renderMicroNav(ls){ const nav=$("u-nav");
   nav.querySelectorAll("[data-seg]").forEach(b=>b.onclick=()=>{ mcSeg=b.dataset.seg; try{ localStorage.setItem("sca-micro-cur",mcSeg); }catch(e){} renderUT(); }); }
 function renderMicroCorpo(){ const W_=semanaMicro(mcSeg), bx=$("u-corpo"), tg=$("u-tag"), per=W_.Me?((PERIODOS.find(p=>p[0]===W_.Me.periodo)||[])[1]||"").replace("Período ",""):"";
   $("u-tit").textContent=`Microciclo ${W_.n||"?"} · ${dataCurta(W_.seg)} a ${dataCurta(W_.fim)}`; tg.hidden=false; tg.textContent=W_.fechado?"FECHADO":"MICRO"; tg.style.background=W_.fechado?"#1B1A17":"#C00000";
-  $("u-bar").innerHTML=`<button class="btn sm" id="mc-pdf">⬇ PDF</button>`; $("mc-pdf").onclick=e=>guardaPdfMicro(W_.seg,e.currentTarget);
-  const ed=!W_.fechado, cel=(d,c,html,cls="")=>`<td class="${cls}${ed?" mc-ed":""}"${ed?` data-e="${d}|${c}"`:""}>${html}</td>`, txt=(v,man)=>`<span class="${man?"":"mc-pad"}">${esc(v||"—").replace(/\n/g,"<br>")}</span>`;
+  const ed=!W_.fechado, cel=(d,c,html,cls="")=>`<td class="${cls}${ed?" mc-ed":""}"${ed?` data-e="${d}|${c}"`:""}>${html}</td>`, txt=(v,man,ia)=>`${ia?'<i class="mc-iab">IA</i>':""}<span class="${man?"":"mc-pad"}">${esc(v||"—").replace(/\n/g,"<br>")}</span>`;
+  $("u-bar").innerHTML=`${ed?`<button class="btn sm" id="mc-ia"${mcIA?" disabled":""}>✨ Gerar com IA</button>`:""}<button class="btn sm" id="mc-pdf">⬇ PDF</button>`; $("mc-pdf").onclick=e=>guardaPdfMicro(W_.seg,e.currentTarget);
+  if($("mc-ia")) $("mc-ia").onclick=()=>geraMc(W_.seg,{tipo:"semana"});
   const linhas=[["data","Data"],["hora","Hora"],["local","Local"],["regime","Regime"],["vol","Volume"],["ut","Unidade de Treino"],["obj","Objetivo principal da UT"],["pi","Parte inicial"],["pf","Parte fundamental"],["pfin","Parte final"]];
   const ini={hora:1,local:2,partes:7};
   let h="";
+  if(mcIA&&mcIA.seg===W_.seg) h+=`<p class="mc-av ia"><span id="mc-ia-t">${esc(mcIA.txt)}</span><button class="btn sm" id="mc-ia-x">Cancelar</button></p>`;
   if(W_.nDif) h+=`<p class="mc-av">⚠ O nº do microciclo na Época (${W_.M.n}) é diferente do nº do plano semanal (${W_.S.numero}). Acerta um deles.</p>`;
   if(W_.pronto) h+=`<p class="mc-av ok">✓ <b>Microciclo pronto a fechar</b>: a última UT já foi dada e todas têm presenças. Revê os textos e fecha no painel.</p>`;
   if(W_.alteradas.length) h+=`<p class="mc-av">⚠ <b>UT alterada depois do fecho</b>: ${W_.alteradas.map(U=>"UT "+U.numero).join(", ")}. O texto do resumo não mudou sozinho.</p>`;
   h+=`<div class="mc-cab"><div><small>Macrociclo</small><b>${esc(per||"—")}</b></div><div><small>Mesociclo</small><b>${W_.Me?esc(String(W_.Me.n).padStart(2,"0")+(W_.Me.nome?" | "+W_.Me.nome:"")):"—"}</b></div>
     <div><small>Microciclo</small><b>${W_.n?String(W_.n).padStart(2,"0"):"—"}</b></div><div><small>Duração</small><b>${esc(W_.seg.slice(8,10)+"/"+W_.seg.slice(5,7))} a ${esc(W_.fim.slice(8,10)+"/"+W_.fim.slice(5,7))}</b></div><div><small>Nº</small><b>${esc(nAtletasTxt(W_))}</b></div></div>
-    <div class="mc-objs"><button class="mc-ob"${ed?"":" disabled"} data-ob="objPrin"><small>Objetivos principais</small>${txt(W_.M&&W_.M.objPrin||"",!!(W_.M&&W_.M.objPrin))}</button><button class="mc-ob"${ed?"":" disabled"} data-ob="objSec"><small>Objetivos secundários</small>${txt(W_.M&&W_.M.objSec||"",!!(W_.M&&W_.M.objSec))}</button></div>`;
+    <div class="mc-objs"><button class="mc-ob"${ed?"":" disabled"} data-ob="objPrin"><small>Objetivos principais</small>${txt(W_.obj.objPrin.v,!!W_.obj.objPrin.v,W_.obj.objPrin.ia)}</button><button class="mc-ob"${ed?"":" disabled"} data-ob="objSec"><small>Objetivos secundários</small>${txt(W_.obj.objSec.v,!!W_.obj.objSec.v,W_.obj.objSec.ia)}</button></div>`;
   h+=`<div class="tblwrap mc-wrap"><table class="mc-tab"><thead><tr><th class="mc-lab">Dia</th>${W_.dias.map((x,i)=>{ const cor=x.bloco&&x.bloco.desde==="hora"?corBloco(x.bloco.k):x.R?x.R.cor:"#E9E3D6";
     return `<th><div class="mc-h"><span class="mc-dia">${DIAS_MC[i]}</span><button class="mc-md"${ed?` data-e="${x.d}|md"`:" disabled"} style="background:${cor};color:${tintaDe(cor)}" aria-label="Dia relativo ao jogo">${esc(x.md||"—")}${x.mdMan?"*":""}</button></div></th>`; }).join("")}</tr></thead><tbody>`;
   linhas.forEach(([k,n],r)=>{ h+=`<tr class="mc-r-${k}"><th class="mc-lab">${n}</th>`;
@@ -114,36 +125,44 @@ function renderMicroCorpo(){ const W_=semanaMicro(mcSeg), bx=$("u-corpo"), tg=$(
       if(k==="local"){ h+=`<td>${esc(x.local||"")}</td>`; return; }
       if(k==="regime"){ const cor=x.R?x.R.cor:""; h+=cel(x.d,"regime",x.R?`<span class="${x.regMan?"":"mc-pad"}">${esc(rotRegime(x.R))}</span>`:txt("",false),"mc-reg").replace("<td ",`<td style="${cor?`background:${cor};color:${tintaDe(cor)}`:""}" `); return; }
       if(k==="vol"){ h+=cel(x.d,"nivel",`<span class="${x.nivMan?"":"mc-pad"}">${esc(volTxt(x)||"—")}</span>`); return; }
-      if(k==="ut"){ h+=`<td class="mc-ut">${esc(x.utTxt)}</td>`; return; }
-      if(k==="obj"){ h+=cel(x.d,"obj",txt(x.obj,x.objMan),"mc-obj"); return; }
-      const p=x.partes[k]; h+=cel(x.d,k,txt(p.v,p.man),"mc-txt"); });
+      if(k==="ut"){ h+=`<td class="mc-ut">${esc(x.utTxt)}${ed&&diaIA(x)?`<button class="mc-iad" data-g="${x.d}" aria-label="Regenerar este dia com IA"${mcIA?" disabled":""}>✨</button>`:""}</td>`; return; }
+      if(k==="obj"){ h+=cel(x.d,"obj",txt(x.obj,x.objMan,x.objIA),"mc-obj"); return; }
+      const p=x.partes[k]; h+=cel(x.d,k,txt(p.v,p.man,p.ia),"mc-txt"); });
     h+=`</tr>`; });
-  h+=`</tbody></table></div><p class="sub" style="margin:4px 14px 12px">Toca numa célula para escrever. Em cinzento: texto automático (Padrão MD e exercícios das UT); o que escreves fica a preto. * = MD acertado à mão.</p>`;
+  h+=`</tbody></table></div><p class="sub" style="margin:4px 14px 12px">Toca numa célula para escrever. Em cinzento: texto automático (Padrão MD e exercícios das UT); o que escreves fica a preto; IA = rascunho da IA por aprovar. ✨ refaz esse dia com a IA. * = MD acertado à mão.</p>`;
   const G=W_.G, auto={analise:jogoAnteriorTxt(G),perf:G?"Jogaram: "+(jogaramTxt(G)||"—"):""};
   h+=`<div class="mc-finais">${FINAIS_MC.map(([k,n])=>{ const v=campoMc(W_.seg,k); return `<section><h4>${esc(n)}</h4>${auto[k]?`<p class="mc-auto">${esc(auto[k]).replace(/\n/g,"<br>")}</p>`:""}
-    <button class="mc-fin"${ed?"":" disabled"} data-f="${k}">${v?esc(v).replace(/\n/g,"<br>"):`<span class="mc-pad">${ed?"Toca para escrever":"—"}</span>`}</button></section>`; }).join("")}</div>`;
+    <button class="mc-fin"${ed?"":" disabled"} data-f="${k}">${iaMc(W_.seg,k)?'<i class="mc-iab">IA</i>':""}${v?esc(v).replace(/\n/g,"<br>"):`<span class="mc-pad">${ed?"Toca para escrever":"—"}</span>`}</button></section>`; }).join("")}</div>`;
   if(!W_.G) h+=`<p class="sub" style="margin:0 14px 14px">Sem jogo oficial arquivado no Histórico antes desta semana.</p>`;
   bx.innerHTML=h;
+  bx.querySelectorAll("[data-g]").forEach(b=>b.onclick=e=>{ e.stopPropagation(); geraMc(W_.seg,{tipo:"dia",d:b.dataset.g}); });
+  if($("mc-ia-x")) $("mc-ia-x").onclick=()=>{ if(mcIA) mcIA.ctrl.abort(); };
   bx.querySelectorAll("[data-e]").forEach(td=>td.onclick=()=>{ const [d,c]=td.dataset.e.split("|"); folhaCampoDia(W_.seg,d,c); });
   bx.querySelectorAll("[data-ob]").forEach(b=>b.onclick=()=>folhaObjMicro(W_.seg,b.dataset.ob));
-  bx.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>folhaTextoMc(W_.seg,b.dataset.f,(FINAIS_MC.find(f=>f[0]===b.dataset.f)||[])[1],campoMc(W_.seg,b.dataset.f)||"","")); }
+  bx.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>folhaTextoMc(W_.seg,b.dataset.f,(FINAIS_MC.find(f=>f[0]===b.dataset.f)||[])[1],campoMc(W_.seg,b.dataset.f)||"","",["positivos","melhorar"].includes(b.dataset.f)?{pontos:1}:null)); }
 function renderMicroPainel(){ const W_=semanaMicro(mcSeg), E=W_.E, pn=$("u-panel"), [k,t]=estadoMc(mcSeg);
   pn.innerHTML=`<header><h2>Estado</h2><p class="sub"><span class="mc-e ${k}">${esc(t)}</span>${W_.fechado&&E.fechadoEm?` · ${esc(dataHora(E.fechadoEm))}`:""}</p></header>
     <div class="add"><p class="sub" style="margin:0 0 8px">${W_.uSem.length} UT · ${esc(nAtletasTxt(W_))}${W_.S?"":" · sem plano semanal"}</p>
+      ${W_.nIA&&!W_.fechado?`<p class="mc-av ia" style="margin:0 0 8px">${W_.nIA} ${W_.nIA===1?"texto da IA por aprovar":"textos da IA por aprovar"}</p><button class="btn" id="mc-apr" style="margin-bottom:8px">✓ Aprovar todos os textos IA</button>`:""}
       ${W_.fechado?`<button class="btn" id="mc-re">Reabrir microciclo</button><p class="sub" style="margin:6px 0 0">Fechado: os campos ficam só de leitura.</p>`
-        :`<button class="btn primary" id="mc-fe">🔒 Fechar microciclo</button><p class="sub" style="margin:6px 0 0">${W_.pronto?"Pronto a fechar.":"Ainda há UT por dar ou sem presenças; podes fechar na mesma."}</p>`}
+        :`<button class="btn primary" id="mc-fe">🔒 Fechar microciclo</button><p class="sub" style="margin:6px 0 0">${W_.pronto?"Pronto a fechar.":"Ainda há UT por dar ou sem presenças; podes fechar na mesma."}${W_.nIA?` Há ${W_.nIA} textos da IA por aprovar.`:""}</p>`}
       ${E.hist.length?`<h3 style="margin-top:12px">Histórico</h3><ul class="uavisos">${E.hist.slice().reverse().map(x=>`<li>${x.acao==="fechar"?"Fechado":"Reaberto"} · ${esc(dataHora(x.em))}</li>`).join("")}</ul>`:""}</div>`;
+  if($("mc-apr")) confirma2($("mc-apr"),"Toca outra vez para aprovar todos",()=>{ Object.values(microCampo).filter(c=>c.seg===mcSeg&&c.ia).forEach(c=>aprovaCampoMc(mcSeg,c.campo,true)); renderUT(); toast("Textos da IA aprovados"); });
   const b=$("mc-fe")||$("mc-re"); confirma2(b,"Toca outra vez para confirmar",()=>mudaEstadoMc(mcSeg,W_.fechado?"reabrir":"fechar")); }
 function mudaEstadoMc(seg,acao){ const E=microResumo[seg]||normMResumo({id:seg}), em=new Date().toISOString();
   const N=normMResumo({...E,id:seg,estado:acao==="fechar"?"fechado":"rascunho",...(acao==="fechar"?{fechadoEm:em,fechadoPor:meuId||""}:{}),hist:[...E.hist,{acao,em,por:meuId||""}]});
   microResumo[seg]=N; gravaDoc("microResumo/"+seg,N); guardaMicroLocal(); renderUT(); toast(acao==="fechar"?"Microciclo fechado":"Microciclo reaberto"); }
 
 /* ---------- folhas de edição ---------- */
-function folhaTextoMc(seg,campo,titulo,v,auto){ const tem=campoMc(seg,campo)!==null;
-  folha(`<h3>${esc(titulo)}</h3>${auto?`<p class="sub" style="margin:0">Automático: ${esc(auto).replace(/\n/g,"<br>")}</p>`:""}
+function folhaTextoMc(seg,campo,titulo,v,auto,ctx){ const tem=campoMc(seg,campo)!==null, ia=iaMc(seg,campo), meu=tem&&!ia;
+  folha(`<h3>${esc(titulo)}${ia?' <i class="mc-iab">IA</i>':""}</h3>${auto?`<p class="sub" style="margin:0">Automático: ${esc(auto).replace(/\n/g,"<br>")}</p>`:""}
+    ${ia?`<p class="sub" style="margin:0">Rascunho da IA: revê, corrige se for preciso e aprova.</p>`:""}
     <textarea id="mt-v" rows="8">${esc(v)}</textarea>
-    <div class="actions">${tem?`<button class="btn l" id="mt-rp">↺ Automático</button>`:""}<button class="btn" data-close>Cancelar</button><button class="btn primary" id="mt-ok">Guardar</button></div>`,(s,fecha)=>{
+    <div class="actions">${tem?`<button class="btn l" id="mt-rp">↺ Automático</button>`:""}${ctx?`<button class="btn" id="mt-ia"${mcIA?" disabled":""}>✨ ${meu?"Substituir pela IA":"Regenerar"}</button>`:""}<button class="btn" data-close>Cancelar</button>${ia?`<button class="btn" id="mt-apr">✓ Aprovar</button>`:""}<button class="btn primary" id="mt-ok">Guardar</button></div>`,(s,fecha)=>{
     const q=x=>s.querySelector(x); setTimeout(()=>q("#mt-v").focus(),50);
+    if(q("#mt-apr")) q("#mt-apr").onclick=()=>{ fecha(); aprovaCampoMc(seg,campo); toast("Aprovado"); };
+    if(q("#mt-ia")){ const vai=()=>{ fecha(); geraMc(seg,ctx.pontos?{tipo:"pontos",forcar:meu?campo:""}:{tipo:"campo",d:ctx.d,k:ctx.k,forcar:meu}); };
+      if(meu) confirma2(q("#mt-ia"),"Toca outra vez: substitui o teu texto",vai); else q("#mt-ia").onclick=vai; }
     if(q("#mt-rp")) confirma2(q("#mt-rp"),"Toca outra vez: volta ao automático",()=>{ fecha(); gravaCampoMc(seg,campo,null); toast("Voltou ao automático"); });
     q("#mt-ok").onclick=()=>{ const antes=campoMc(seg,campo); fecha(); gravaCampoMc(seg,campo,q("#mt-v").value); toast("Guardado",()=>gravaCampoMc(seg,campo,antes)); }; }); }
 function folhaCampoDia(seg,d,c){ const W_=semanaMicro(seg); if(W_.fechado){ toast("Microciclo fechado: reabre para editar."); return; } const x=W_.dias.find(y=>y.d===d); if(!x) return;
@@ -155,12 +174,13 @@ function folhaCampoDia(seg,d,c){ const W_=semanaMicro(seg); if(W_.fechado){ toas
   if(c==="md") return escolha("Dia relativo ao jogo",[...MD_LINHAS.map(m=>[m,m]),["","Sem MD"]],x.md,`Automático (${x.mdA||"sem MD"})`);
   if(c==="regime") return escolha("Regime",listaRegimes().map(R=>[R.id,rotRegime(R),R.cor]),x.regime,"Como no Padrão MD");
   if(c==="nivel") return escolha(`Volume${x.min?` · ${x.min}' (soma das UT, sem complementares)`:""}`,NIVEIS_VOL.map(n=>[n,n]),x.nivel,"Como no Padrão MD");
-  if(c==="obj") return folhaTextoMc(seg,campo,"Objetivo principal da UT · "+dia,x.obj,x.P?x.P.objetivo:"");
-  const P=PARTES_MC.find(p=>p[0]===c); if(P) return folhaTextoMc(seg,campo,P[2]+" · "+dia,x.partes[c].v,""); }
-function folhaObjMicro(seg,k){ const W_=semanaMicro(seg); if(W_.fechado) return;
-  folha(`<h3>${k==="objPrin"?"Objetivos principais":"Objetivos secundários"} · microciclo ${W_.n||""}</h3><p class="sub" style="margin:0">Ficam no microciclo da Época (Treino › Ano).</p>
-    <textarea id="mo-v" rows="5">${esc(W_.M&&W_.M[k]||"")}</textarea><div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="mo-ok">Guardar</button></div>`,(s,fecha)=>{
-    s.querySelector("#mo-ok").onclick=()=>{ const M=W_.M||{tipo:"micro",inicio:seg,n:W_.n||(W_.S&&W_.S.numero)||0}; fecha(); guardaCiclo({...M,[k]:s.querySelector("#mo-v").value.trim()}); renderUT(); toast("Objetivos guardados"); }; }); }
+  if(c==="obj") return folhaTextoMc(seg,campo,"Objetivo principal da UT · "+dia,x.obj,x.P?x.P.objetivo:"",diaIA(x)?{d,k:"obj"}:null);
+  const P=PARTES_MC.find(p=>p[0]===c); if(P) return folhaTextoMc(seg,campo,P[2]+" · "+dia,x.partes[c].v,"",diaIA(x)?{d,k:c}:null); }
+function folhaObjMicro(seg,k){ const W_=semanaMicro(seg); if(W_.fechado) return; const O=W_.obj[k];
+  folha(`<h3>${k==="objPrin"?"Objetivos principais":"Objetivos secundários"} · microciclo ${W_.n||""}${O.ia?' <i class="mc-iab">IA</i>':""}</h3><p class="sub" style="margin:0">${O.ia?"Rascunho da IA: só passa para o microciclo da Época quando guardares ou aprovares.":"Ficam no microciclo da Época (Treino › Ano)."}</p>
+    <textarea id="mo-v" rows="5">${esc(O.v)}</textarea><div class="actions"><button class="btn" data-close>Cancelar</button>${O.ia?`<button class="btn" id="mo-apr">✓ Aprovar</button>`:""}<button class="btn primary" id="mo-ok">Guardar</button></div>`,(s,fecha)=>{
+    if(s.querySelector("#mo-apr")) s.querySelector("#mo-apr").onclick=()=>{ fecha(); aprovaCampoMc(seg,k); toast("Objetivos aprovados"); };
+    s.querySelector("#mo-ok").onclick=()=>{ const M=W_.M||{tipo:"micro",inicio:seg,n:W_.n||(W_.S&&W_.S.numero)||0}; fecha(); guardaCiclo({...M,[k]:s.querySelector("#mo-v").value.trim()}); if(microCampo[seg+"~"+k]) gravaCampoMc(seg,k,null,false,true); renderUT(); toast("Objetivos guardados"); }; }); }
 /* Padrão MD da Época: uma linha por dia relativo ao jogo; e os regimes com as cores */
 function folhaPadraoMD(){ folha(`<h3>Padrão MD</h3><p class="sub" style="margin:0">O que cada dia relativo ao jogo traz por defeito para o resumo do microciclo (regime, objetivo, textos das partes, volume sugerido). No resumo, tudo se pode mudar dia a dia.</p>
     <ul class="evl">${MD_LINHAS.map(m=>{ const P=mdPadrao[m], R=P&&regimes[P.regime]; return `<li><button class="lnk mc-pl" data-m="${m}"><b>${m}</b> · ${P?(P.folga?"FOLGA":esc(rotRegime(R)||"sem regime"))+(P.objetivo?" · "+esc(P.objetivo):""):'<span class="sub">vazio</span>'}</button></li>`; }).join("")}</ul>
@@ -192,6 +212,67 @@ function folhaRegimes(){ const rs=listaRegimes().map(R=>({...R})), novos=[];
       s.querySelectorAll("[data-b]").forEach(el=>{ const k=el.dataset.b; if(el.value.toUpperCase()!==corBloco(k)){ gravaRegime({...(regimes[k]||{id:k,nome:(BLOCOS_MC.find(b=>b[0]===k)||[])[1]}),cor:el.value,bloco:true}); n++; } });
       fecha(); renderUT(); toast(n?`${n} ${n===1?"regime guardado":"regimes guardados"}`:"Sem alterações"); }; }); }
 
+/* ---------- redação pela IA (v102, Entrega E2): capacidade sample do link; só quando se toca no botão ----------
+   Um pedido por dia (o progresso vê-se e um dia que falhe não estraga os outros), depois os objetivos da semana e os pontos.
+   O que vem entra como rascunho (ia: true); nunca escreve por cima de um texto escrito ou aprovado à mão, exceto em «Substituir pela IA». */
+let mcIA=null, mcSample;
+async function sampleMc(){ if(mcSample!==undefined) return mcSample; try{ mcSample=window.claude&&window.claude.use?await window.claude.use("sample"):null; }catch(e){ mcSample=null; } return mcSample; }
+const ERR_IA={not_granted:"Sem autorização para usar o Claude neste link.",sampling_disabled:"O Claude não está disponível nesta conta.",not_declared:"Esta versão do link não tem a IA ativa: recarrega a página.",
+  capability_disabled:"A IA não está disponível neste aparelho.",capability_removed:"A IA não está disponível nesta versão do claude.ai.",rate_limited:"Muitos pedidos ou limite de utilização atingido. Tenta mais tarde.",
+  session_expired:"Sessão expirada: entra outra vez no claude.ai.",invalid_json:"A IA respondeu num formato inválido: nesse pedido não se gravou nada. Tenta outra vez.",refused:"A IA recusou este pedido.",
+  empty_completion:"A IA não respondeu nada.",upstream_error:"Falha de ligação à IA. Tenta outra vez.",prompt_too_large:"Pedido demasiado grande para a IA."};
+const diaIA=x=>x.treina||!!(x.bloco&&x.bloco.k==="jogo");   // dias com textos para a IA (no jogo-treino só o objetivo)
+const camposIA=x=>x.bloco&&x.bloco.k==="jogo"?["obj"]:["obj","pi","pf","pfin"];
+const ESTILO_IA=`Escreve em português de Portugal (nunca do Brasil), com frases curtas e técnicas, como um adjunto escreve o documento do clube. 2 a 5 linhas por parte, sem enfeites.
+Usa só os exercícios e conteúdos que estão nos dados: não inventes exercícios, tempos nem conteúdos. Corrige gralhas.
+Se o dia for o estímulo principal da semana (o de maior carga e volume), começa a Parte Fundamental com "PRINCIPAL ESTÍMULO DA SEMANA:" em maiúsculas.
+Termina a Parte Final com "Registo de PSE" só quando algum exercício ou nota da UT falar em PSE.
+O objetivo principal da UT é uma frase curta em MAIÚSCULAS (ex.: "FORÇA-BASE + DUELOS").`;
+const txtLista=v=>Array.isArray(v)?v.filter(Boolean).join("; "):String(v||"");
+function exIA(l){ const E=l.copia, D=E.duracao||{};
+  return {parte:E.parte,nome:E.nome,classificacao:typeof catEx==="function"?catEx(E):"",tipo:typeof rotuloDe==="function"&&typeof TIPOS_EX!=="undefined"?rotuloDe(TIPOS_EX,E.tipo):E.tipo||"",
+    formato:E.formato||"",espaco:(E.espaco&&E.espaco.txt)||"",objetivos:txtLista(E.objetivos),
+    duracao:D.total?`${Math.round(D.total/60)}'`:D.series&&D.pratica?`${D.series} × ${Math.round(D.pratica/6)/10}'`:"",
+    complementar:!!l.pai,notas:[txtLista(E.variantes),txtLista(E.condicionantes)].filter(Boolean).join(" · ")}; }
+function pedidoDiaIA(W_,x){ const P=x.P||{};
+  const dados={dia:`${DIAS_MC_PDF[W_.dias.indexOf(x)]} ${dataPt_(x.d)}`,md:x.md||"sem MD",regime:rotRegime(x.R),volume:volTxt(x),
+    padrao_md:{objetivo:P.objetivo||"",parte_inicial:P.pi||"",parte_fundamental:P.pf||"",parte_final:P.pfin||""},
+    objetivos_microciclo:{principais:W_.obj.objPrin.v,secundarios:W_.obj.objSec.v},
+    semana:W_.dias.map(y=>({dia:dataPt_(y.d).slice(0,5),md:y.md,regime:rotRegime(y.R),minutos:y.min,bloco:y.bloco?y.bloco.txt:""})),
+    uts:x.us.map(U=>({ut:U.numero,exercicios:U.exercicios.map(exIA)})),jogo_treino:x.jJT?x.jJT.adversario||"sim":""};
+  return `${ESTILO_IA}\n\nEscreve o resumo deste dia do microciclo (Sport Club Angrense, equipa sénior).${x.us.length?"":" A UT ainda não existe: usa o Padrão MD e o regime."}\n\nDados:\n${JSON.stringify(dados)}\n\nResponde só com um objeto JSON: {"objetivo_ut": "...", "parte_inicial": "...", "parte_fundamental": "...", "parte_final": "..."}`; }
+function pedidoSemanaIA(W_){ const dados={microciclo:W_.n,mesociclo:W_.Me?{n:W_.Me.n,designacao:W_.Me.nome||"",periodo:W_.Me.periodo}:null,
+    dias:W_.dias.map(y=>({dia:dataPt_(y.d).slice(0,5),md:y.md,regime:rotRegime(y.R),objetivo:y.obj,bloco:y.bloco?y.bloco.txt:"",exercicios:y.us.flatMap(U=>principaisUT(U).map(l=>l.copia.nome))}))};
+  return `${ESTILO_IA}\n\nPropõe os objetivos deste microciclo para o documento do clube: 1 a 3 frases curtas cada.\n\nDados:\n${JSON.stringify(dados)}\n\nResponde só com um objeto JSON: {"objetivos_principais": "...", "objetivos_secundarios": "..."}`; }
+function pedidoPontosIA(W_){ const dados={jogo_anterior:jogoAnteriorTxt(W_.G),jogaram:jogaramTxt(W_.G),analise_escrita:campoMc(W_.seg,"analise")||"",performance_escrita:campoMc(W_.seg,"perf")||""};
+  return `${ESTILO_IA}\n\nA partir da análise do jogo anterior, propõe pontos positivos e pontos a melhorar (3 a 5 de cada, uma linha por ponto, começada por "• "). Usa só o que está nos dados.\n\nDados:\n${JSON.stringify(dados)}\n\nResponde só com um objeto JSON: {"pontos_positivos": "...", "pontos_a_melhorar": "..."}`; }
+/* grava um texto da IA como rascunho: nunca por cima do que foi escrito ou aprovado à mão, exceto quando se escolhe substituir */
+function aplicaIA(seg,campo,v,forcar){ if(typeof v!=="string"||!v.trim()) return 0; const x=microCampo[seg+"~"+campo]; if(x&&!x.ia&&!forcar) return 0; gravaCampoMc(seg,campo,v.trim(),true,true); return 1; }
+const objIA=r=>{ if(!r||typeof r!=="object"||Array.isArray(r)) throw {code:"invalid_json"}; return r; };
+function iaTexto(t){ if(mcIA) mcIA.txt=t; const el=$("mc-ia-t"); if(el) el.textContent=t; }
+async function geraMc(seg,alvo){ if(mcIA){ toast("A IA já está a escrever."); return; }
+  let W_=semanaMicro(seg); if(W_.fechado){ toast("Microciclo fechado: reabre para usar a IA."); return; }
+  const S=await sampleMc(); if(!S){ toast("A IA não está disponível aqui: o resumo continua com os textos automáticos."); return; }
+  const dias=alvo.tipo==="semana"?W_.dias.filter(diaIA):alvo.d?W_.dias.filter(x=>x.d===alvo.d):[];
+  const objs=alvo.tipo==="semana"&&["objPrin","objSec"].some(k=>!W_.obj[k].v||W_.obj[k].ia);
+  const pontos=alvo.tipo==="pontos"||(alvo.tipo==="semana"&&!!(W_.G||campoMc(seg,"analise")));
+  const total=dias.length+(objs?1:0)+(pontos?1:0); if(!total){ toast("Não há dias com treino para a IA escrever."); return; }
+  mcIA={seg,ctrl:new AbortController(),txt:"A IA está a escrever…"}; renderUT();
+  let n=0, passo=0, erro=null; const op={signal:mcIA.ctrl.signal,modelTier:"default",cache:false};
+  try{
+    for(const x of dias){ passo++; iaTexto(`A IA está a escrever… (${passo} de ${total}: ${DIAS_MC_PDF[W_.dias.indexOf(x)]})`);
+      const r=objIA(await S.json(pedidoDiaIA(W_,x),op)), m={obj:r.objetivo_ut,pi:r.parte_inicial,pf:r.parte_fundamental,pfin:r.parte_final};
+      (alvo.tipo==="campo"?[alvo.k]:camposIA(x)).forEach(k=>{ n+=aplicaIA(seg,x.d+"."+k,m[k],alvo.tipo==="campo"&&!!alvo.forcar); }); }
+    if(objs){ passo++; iaTexto(`A IA está a escrever… (${passo} de ${total}: objetivos da semana)`); W_=semanaMicro(seg);
+      const r=objIA(await S.json(pedidoSemanaIA(W_),op)); [["objPrin",r.objetivos_principais],["objSec",r.objetivos_secundarios]].forEach(([k,v])=>{ if(!(W_.M&&W_.M[k])) n+=aplicaIA(seg,k,v,false); }); }
+    if(pontos){ passo++; iaTexto(`A IA está a escrever… (${passo} de ${total}: pontos positivos e a melhorar)`);
+      const r=objIA(await S.json(pedidoPontosIA(W_),op)); n+=aplicaIA(seg,"positivos",r.pontos_positivos,alvo.forcar==="positivos"); n+=aplicaIA(seg,"melhorar",r.pontos_a_melhorar,alvo.forcar==="melhorar"); } }
+  catch(e){ erro=e||{}; }
+  mcIA=null; renderUT();
+  if(erro){ if(["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed"].includes(erro.code)) mcSample=null;
+    toast(erro.code==="cancelled"?`Cancelado${n?` · ${n} ${n===1?"texto gravado":"textos gravados"}`:""}`:(ERR_IA[erro.code]||"Não foi possível usar a IA ("+(erro.code||erro.message||"erro")+").")+(n?` ${n} textos já ficaram gravados.`:"")); return; }
+  toast(n?`IA: ${n} ${n===1?"texto em rascunho":"textos em rascunho"} para aprovar`:"Nada mudou: os textos escritos por ti ficaram como estavam."); }
+
 /* ---------- PDF A4 horizontal, no layout do Excel do clube ---------- */
 async function pdfMicro(seg){ await carregaJsPdf(false); const W_=semanaMicro(seg), doc=new window.jspdf.jsPDF({unit:"pt",format:"a4",orientation:"landscape"}), PW=841.89, PH=595.28, M=18;
   const rgb=h=>{ h=corOk(h)||"#FFFFFF"; return [1,3,5].map(i=>parseInt(h.slice(i,i+2),16)); }, RED=[192,0,0], INK=[27,26,23], MUT=[110,106,98], LIN=[150,146,138];
@@ -208,7 +289,7 @@ async function pdfMicro(seg){ await carregaJsPdf(false); const W_=semanaMicro(se
   const info=[["Macrociclo: ",per?per[0].toUpperCase()+per.slice(1):"—",150],["Mesociclo Nº: ",W_.Me?String(W_.Me.n).padStart(2,"0")+(W_.Me.nome?" | "+W_.Me.nome:""):"—",260],["Microciclo Nº: ",W_.n?String(W_.n).padStart(2,"0"):"—",110],
     ["Duração: ",`${W_.seg.slice(8,10)}/${W_.seg.slice(5,7)} a ${W_.fim.slice(8,10)}/${W_.fim.slice(5,7)}`,140],["Nº: ",nAtletasTxt(W_),0]];
   let x=M; info.forEach(([a,b,w],i)=>{ const ww=w||PW-M-x; caixa(x,y,ww,16); T(a,x+4,y+11,{b:1,s:8}); doc.setFont("helvetica","bold"); const aw=doc.getTextWidth(a); T(b,x+4+aw,y+11,{s:8}); x+=ww; });
-  y+=16; [["Objetivos Principais: ",W_.M&&W_.M.objPrin],["Objetivos Secundários: ",W_.M&&W_.M.objSec]].forEach(([a,b])=>{ doc.setFont("helvetica","normal"); doc.setFontSize(7.5);
+  y+=16; [["Objetivos Principais: ",W_.obj.objPrin.v],["Objetivos Secundários: ",W_.obj.objSec.v]].forEach(([a,b])=>{ doc.setFont("helvetica","normal"); doc.setFontSize(7.5);
     const ls=doc.splitTextToSize(a+(b||""),PW-2*M-8), h=Math.max(14,ls.length*9+5); caixa(M,y,PW-2*M,h); T(a,M+4,y+10,{b:1,s:7.5}); doc.setFont("helvetica","bold"); const aw=doc.getTextWidth(a);
     doc.setFont("helvetica","normal"); doc.splitTextToSize(b||"",PW-2*M-8-aw).forEach((l,i)=>T(l,M+4+aw,y+10+i*9,{s:7.5})); y+=h; });
   y+=6;
