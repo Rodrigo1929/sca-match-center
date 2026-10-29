@@ -435,11 +435,28 @@ table.ttab tfoot td{font-weight:700;border-top:2px solid var(--ink)}
 .cp-ac{display:flex;gap:8px;flex-wrap:wrap}.cp-ac .btn{min-height:44px}
 .cp-pick button.cp-ag{border-style:dashed}
 .cp-mais select{width:auto;min-width:80px}
+.cp-ini{display:flex;flex-direction:column;gap:10px;border:1px dashed var(--line);border-radius:12px;padding:12px}
+.cp-big{min-height:52px;font-size:17px;width:100%}
+.cp-atual{border:2px solid #C00000;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--surface)}
+.cp-atual.fim{border-color:#1E7A46}
+.cp-placar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:center}
+.cp-eq2{display:flex;flex-direction:column;gap:8px;align-items:stretch;text-align:center}
+.cp-eq2>b{font-family:var(--f-display);font-size:19px;line-height:1.15;overflow-wrap:anywhere}
+.cp-gol{min-height:64px;font-size:20px}
+.cp-atual .cp-pl{font-size:44px;min-width:110px}
+.cp-grd summary{cursor:pointer;min-height:40px;display:flex;align-items:center;font-size:14px;color:var(--muted)}
+.cp-fimliga{padding:12px;border-radius:12px;background:#E3F2E8;color:#1E7A46;font-weight:700}
+.cp-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.cp-lista li{display:flex;align-items:center;gap:10px;background:var(--surface-2);border-radius:8px;padding:6px 10px;min-height:44px}
+.cp-lista li.pend{opacity:.7}.cp-lista .cp-n{font-family:var(--f-display);font-weight:800;color:#C00000;min-width:22px}
+.cp-lista .cp-r{flex:1}.cp-lista .v{font-weight:800}
+.cp-eqtab td,.cp-eqtab th{padding:6px 8px}
 .mh-g{max-height:46vh}
 .cp-h{font-family:var(--f-display);font-size:18px;margin:6px 14px 8px}
 table.cptab th .lnk{text-decoration:none;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit}
 .rk-rei{margin:0 14px 10px;padding:12px 14px;border-radius:12px;background:#FFF2CC;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;font-size:18px}
 .rk-rei span{color:var(--muted);font-size:13.5px}
+.mp-tam{gap:8px;align-items:center}.mp-tam .btn{min-width:48px;font-size:20px}.mp-tam b{min-width:56px;text-align:center;font-family:var(--f-display);font-size:18px}
 .aviso-alc{margin:0 16px 10px;padding:8px 12px;border-radius:8px;background:#FFF2CC;color:#7A4B00;font-size:13px}
 /* ligações do exercício (só no repositório) */
 .xlinks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}

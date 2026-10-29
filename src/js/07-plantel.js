@@ -11,7 +11,7 @@ let pTimer=null;
 function avisoAlcunhas(){ const el_=$("p-alc"); if(!el_) return; const nA=t=>String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim(), m=new Map();
   est.plantel.forEach(p=>String(p.alc||"").split(/[,;]/).map(x=>x.trim()).filter(Boolean).forEach(a=>{ const k=nA(a); if(!m.has(k)) m.set(k,{a,ps:[]}); const x=m.get(k); if(!x.ps.includes(p)) x.ps.push(p); }));
   const rep=[...m.values()].filter(x=>x.ps.length>1);
-  el_.hidden=!rep.length; el_.innerHTML=rep.length?`⚠ <b>Alcunhas repetidas:</b> ${rep.map(x=>`«${esc(x.a)}» (${x.ps.map(p=>esc(`${p.n} · ${p.nome||"?"}`)).join(", ")})`).join("; ")}. Nos grupos de trabalho e nos tempos aparece a alcunha: muda uma delas.`:""; }
+  el_.hidden=!rep.length; el_.innerHTML=rep.length?`⚠ <b>Alcunhas repetidas:</b> ${rep.map(x=>`«${esc(x.a)}» (${x.ps.map(p=>esc(`${p.n} · ${p.nome||"?"}`)).join(", ")})`).join("; ")}. Nos grupos de trabalho do PDF da UT aparece a alcunha: muda uma delas.`:""; }
 function renderPlantel(){ avisoAlcunhas();
   const tb=$("ptb"); if(tb.contains(document.activeElement)) return;
   tb.innerHTML=""; const tit=new Set(titulares());

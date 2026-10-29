@@ -53,6 +53,7 @@ Coordenadas em metros num campo de 105×68; a equipa SCA ataca da esquerda para 
   objetivos, comportamentos: [], condicionantes: [], descricao, variantes: [], material: [],
   ligacoes: { modelo: [ids], lances: [ids] },
   links: [{ t, url }],          // v93: vídeos e artigos (só http/https), pela ordem; só no repositório — nunca na UT, no PDF da UT nem no plano semanal
+  objEsp: [texto],              // v99: objetivos específicos, um por linha (o campo «objetivos» passa a ser os objetivos gerais); não saem no PDF da UT
   contaTempo: true|false|null,  // v93: conta para a estatística de tempos; null = pela parte (só a fundamental conta)
   comp: "liga"|"champions"|"", meinho: true|false,   // v95: competição interna (a etiqueta só identifica e filtra; a classificação é a mesma) e meinho
   figura?: { quadro?: { …mesmo formato de um quadro do Modelo de Jogo, sem id/nome… },

@@ -51,6 +51,16 @@ await pg.click("#m-rot"); await pg.waitForTimeout(200);
 if ((await pg.evaluate(() => Object.values(modelos)[0].rot)) !== "nada") erros.push("Bolinhas: o segundo toque devia passar a sem texto");
 await pg.click("#m-rot"); await pg.waitForTimeout(200);
 if ((await pg.evaluate(() => Object.values(modelos)[0].rot)) !== "num") erros.push("Bolinhas: o terceiro toque devia voltar ao número");
+// editor (v99): tamanho por peça, texto só de uma bolinha, duplicar e apagar no botão direito
+const edt = await pg.evaluate(() => { mEdit = true; renderModelo(); const Q = qAtual(), pc = Q.pecas.find((p) => p.eq === "nos" && p.slot), n0 = Q.pecas.length;
+  editaQ((X) => { const p = X.pecas.find((x) => x.id === pc.id); p.tam = 1.5; p.lab = "pos"; });
+  const Q2 = qAtual(), p2 = Q2.pecas.find((x) => x.id === pc.id), alvo = document.querySelector(`#m-stage svg [data-p='${pc.id}']`);
+  alvo.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: 300, clientY: 300 }));
+  const menu = document.querySelector(".mmenu") ? document.querySelector(".mmenu").textContent : ""; const dup = [...document.querySelectorAll(".mmenu button")].find((b) => b.textContent.includes("Duplicar")); if (dup) dup.click();
+  const Q3 = qAtual(), novo = Q3.pecas.find((x) => !Q2.pecas.some((y) => y.id === x.id));
+  const r = { tam: p2.tam, lab: rotulo(Q2, p2, numerosQ(Q2)) === p2.pos && Q2.rot === "num", menu: menu.includes("Duplicar") && menu.includes("Apagar") && menu.includes("Aumentar"), n: Q3.pecas.length - n0, semSlot: novo && !novo.slot, perto: novo && Math.abs(Q3.passos[0].pos[novo.id].x - Q3.passos[0].pos[pc.id].x - 2) < .01 };
+  editaQ((X) => { X.pecas = X.pecas.filter((x) => !novo || x.id !== novo.id); const p = X.pecas.find((x) => x.id === pc.id); delete p.tam; delete p.lab; }); mEdit = false; renderModelo(); return r; });
+if (edt.tam !== 1.5 || !edt.lab || !edt.menu || edt.n !== 1 || !edt.semSlot || !edt.perto) erros.push("Editor: tamanho, texto da bolinha ou duplicar errados " + JSON.stringify(edt));
 // Apresentar (botão vermelho no separador Modelo de Jogo)
 await pg.click("#btn-present"); await pg.waitForSelector(".present #ma-pl");
 await pg.click("#ma-rot"); if ((await pg.evaluate(() => Object.values(modelos)[0].rot)) !== "pos") erros.push("Apresentar: Nº ⇄ Posição não mudou o quadro");
@@ -172,6 +182,11 @@ await pg.click("#x-img"); await pg.click("#xi-del"); await pg.click("#xi-del"); 
 const semImg = await pg.evaluate(() => { const E = exercicios[xCur]; return { im: !!E.figura.imagem, usa: E.figura.usa, q: !!E.figura.quadro }; });
 if (semImg.im || semImg.usa !== "quadro" || !semImg.q) erros.push("Imagem: tirar a imagem devia deixar só a figura desenhada " + JSON.stringify(semImg));
 
+// objetivos (v99): gerais + específicos; os específicos não saem no PDF da UT
+const ob = await pg.evaluate(async () => { const E = normEx({ id: "tOb", nome: "Teste objetivos", objetivos: "Geral do teste", objEsp: ["Específico um", "Específico dois"], duracao: { pratica: 60 } });
+  const html = fichaHtml(E, 1), U = normUT({ id: "tob", numero: 88, data: "2026-10-20", exercicios: [{ id: "l1", exId: "tOb", copia: E }] }), ut = (await pdfUT(U)).output();
+  return { esp: E.objEsp.length, html: html.includes("Específico dois") && html.includes("Objetivos específicos"), ut: ut.includes("Geral do teste") && !ut.includes("Espec") }; });
+if (ob.esp !== 2 || !ob.html || !ob.ut) erros.push("Objetivos: gerais/específicos errados " + JSON.stringify(ob));
 // Treino (UT): criar, cabeçalho, exercícios do repositório (cópias), ajustar só na UT, presenças, grupos, aviso de mudança e PDF
 await pg.click("#tab-u"); await pg.click("#u-nova2"); await pg.waitForSelector("#uc-n");
 await pg.fill("#uc-n", "39"); await pg.fill("#uc-d", "2026-10-21"); await pg.click("#uc-md [data-k='MD-3']"); await pg.fill("#uc-r", "Híbrido (+/-)");
@@ -353,35 +368,44 @@ if (!pdfC.c || !pdfC.r) erros.push("UT: PDF sem o complementar ou sem a grelha d
 // alcunhas nos grupos (sem números); sem alcunha, primeiro e último nome; alcunhas repetidas avisam no Plantel
 const alc = await pg.evaluate((ks) => { const pl0 = clone(est.plantel), i0 = est.plantel.findIndex((p) => p.n === ks[0]), i1 = est.plantel.findIndex((p) => p.n === ks[1]);
   const pl = clone(est.plantel); pl[i0] = { ...pl[i0], alc: "Mika, Miki" }; pl[i1] = { ...pl[i1], nome: "João Pedro Santos Silva", alc: "" }; guardaEst({ ...est, plantel: pl }, true); renderUT();
-  const txt = document.querySelector("#u-panel .evl").textContent, r = { a: nomeAtleta(uts.ta, ks[0]), b: nomeAtleta(uts.ta, ks[1]), num: txt.includes(ks[0] + " · "), txt: txt.slice(0, 80) };
+  const txt = document.querySelector("#u-panel .evl").textContent, r = { a: nomeAtleta(uts.ta, ks[0]), aPdf: nomeAtleta(uts.ta, ks[0], true), b: nomeAtleta(uts.ta, ks[1]), num: txt.includes(ks[0] + " · "), txt: txt.slice(0, 80), semAlc: !txt.includes("Mika") };
   const pl2 = clone(est.plantel); pl2[i1] = { ...pl2[i1], alc: "mika" }; guardaEst({ ...est, plantel: pl2 }, true); setTab("p"); renderPlantel(); r.aviso = !$("p-alc").hidden && $("p-alc").textContent.includes("Mika");
   guardaEst({ ...est, plantel: pl0 }, true); setTab("u"); return r; }, utA0.ks);
-if (alc.a !== "Mika" || alc.b !== "João Silva" || alc.num || !alc.aviso) erros.push("Alcunhas: grupos ou aviso de repetidas errados " + JSON.stringify(alc));
-// Entrega B (v95): marcação no repositório → ativa na UT com selo; jogos gerados da rotação; golos com marcador e auto-golo; GR; fim do jogo; anular com 2 toques; meinho e rankings
+// v99: na app primeiro e último nome; a alcunha só nos grupos do PDF da UT
+if (alc.a === "Mika" || alc.aPdf !== "Mika" || alc.b !== "João Silva" || alc.num || !alc.semAlc || !alc.aviso) erros.push("Nomes: app com nome, PDF dos grupos com alcunha, aviso de repetidas " + JSON.stringify(alc));
+// Entrega B (v95/v98): marcação no repositório → ativa na UT com selo; Liga por voltas e Champions (quem ganha fica); golos com marcador e auto-golo; GR; fim do jogo; anular com 2 toques; meinho e rankings
 const pl0B = await pg.evaluate((ks) => { const pl0 = clone(est.plantel), pl = clone(est.plantel); pl.forEach((p) => { if (ks.includes(p.n)) p.pos = p.n === ks[1] ? "1" : "2"; }); guardaEst({ ...est, plantel: pl }, true); return pl0; }, utA0.ks);
 await pg.evaluate(() => { exercicios.tL = normEx({ id: "tL", nome: "Liga 3 equipas teste", parte: "fundamental", duracao: { series: 4, pratica: 180, pausa: 60 } }); folhaEx("tL"); });
 await pg.click("#xe-cp [data-k='liga']"); await pg.click("#xe-mh [data-k='1']"); await pg.click("#xe-ok"); await pg.waitForTimeout(100);
 await pg.click("#tab-u"); await pg.evaluate(() => { uModo = "ut"; uCur = "ta"; renderUT(); });
 await pg.click("#u-add"); await pg.fill("#ua-q", "Liga 3 equipas teste"); await pg.check("#ua-l input[value='tL']"); await pg.click("#ua-ok"); await pg.waitForTimeout(150);
-const lidL = await pg.evaluate(() => { const l = uts.ta.exercicios.find((x) => x.exId === "tL"); editaUT((U) => { const x = U.exercicios.find((y) => y.id === l.id); x.grupos = ["g0", "g1", "g2"]; x.rot = { nEq: 3, nJogo: 2, modo: "rodar", equipas: ["g0", "g1", "g2"], grelha: propoeRot(3, 2, 4, []) }; }); return l.id; });
+const lidL = await pg.evaluate(() => { const l = uts.ta.exercicios.find((x) => x.exId === "tL"); editaUT((U) => { const x = U.exercicios.find((y) => y.id === l.id); x.grupos = ["g0", "g1", "g2"]; }); return l.id; });
 const selo = await pg.evaluate((lid) => ({ rep: exercicios.tL.comp + "/" + exercicios.tL.meinho, ut: compDe(uts.ta.exercicios.find((x) => x.id === lid)), tags: document.querySelector(`li[data-l='${lid}'] .utx-tags`).textContent }), lidL);
-await pg.click(`li[data-l='${lidL}'] [data-a='jg']`); await pg.waitForSelector("#cp-gera"); await pg.click("#cp-gera"); await pg.waitForTimeout(100);
-const jgs = await pg.evaluate((lid) => jogosDe("ta", lid).map((j) => `${j.serie}:${j.a}-${j.b}:${j.grA}`), lidL);
-// jogo 1: golo da equipa A (escolhe o marcador) e auto-golo de um jogador da A que conta para a B; GR da B escolhido à mão; fim
-await pg.click(".cp-j >> nth=0 >> [data-g='a']"); await pg.click(`.cp-pick [data-k='${utA0.ks[0]}']`); await pg.waitForTimeout(50);
-await pg.click(".cp-j >> nth=0 >> [data-g='b']"); await pg.click(".cp-pick [data-ag]"); await pg.click(`.cp-pick [data-k='${utA0.ks[0]}']`); await pg.waitForTimeout(50);
-await pg.selectOption(".cp-j >> nth=0 >> select[data-f='grB']", utA0.ks[2]); await pg.waitForTimeout(50);
-await pg.click(".cp-j >> nth=0 >> [data-fim]"); await pg.waitForTimeout(50);
-// jogo 2: sem GR, 0–0, fim; jogo 4: golo e tirar com 2 toques (fica por terminar, tal como o 3)
-await pg.click(".cp-j >> nth=1 >> [data-semgr]"); await pg.click(".cp-j >> nth=1 >> [data-fim]"); await pg.waitForTimeout(50);
-await pg.click(".cp-j >> nth=3 >> [data-g='a']"); await pg.click(`.cp-pick [data-k='${utA0.ks[1]}']`); await pg.waitForTimeout(50);
-await pg.click(".cp-j >> nth=3 >> [data-xg]"); await pg.click(".cp-j >> nth=3 >> [data-xg]"); await pg.waitForTimeout(50);
+// Liga: 1 volta de todos contra todos com 3 equipas = 3 jogos, em cada um descansa uma equipa
+await pg.click(`li[data-l='${lidL}'] [data-a='jg']`); await pg.waitForSelector("#cp-gera"); await pg.click("#cp-v [data-v='1']"); await pg.click("#cp-gera"); await pg.waitForTimeout(100);
+const jgs = await pg.evaluate((lid) => ({ j: jogosDe("ta", lid).map((j) => `${j.serie}:${j.a}-${j.b}:${j.grB}`), desc: document.querySelector(".cp-atual .cp-cab").textContent }), lidL);
+// jogo 1 (g1×g2): golo da A com marcador e auto-golo de um jogador da A que conta para a B; GR de outra equipa (o GR não está preso a uma equipa); fim
+await pg.click(".cp-atual [data-g='a']"); await pg.click(`.cp-pick [data-k='${utA0.ks[2]}']`); await pg.waitForTimeout(50);
+await pg.click(".cp-atual [data-g='b']"); await pg.click(".cp-pick [data-ag]"); await pg.click(`.cp-pick [data-k='${utA0.ks[2]}']`); await pg.waitForTimeout(50);
+await pg.selectOption(".cp-atual select[data-f='grA']", utA0.ks[1]); await pg.selectOption(".cp-atual select[data-f='grB']", utA0.ks[4]); await pg.waitForTimeout(50);
+await pg.click(".cp-atual [data-fim]"); await pg.waitForTimeout(50);
+// jogo 2: sem GR, 0–0, fim; jogo 3: golo e tirar com 2 toques (fica por jogar)
+await pg.evaluate(() => { document.querySelector(".cp-atual details").open = true; }); await pg.click(".cp-atual [data-semgr]"); await pg.click(".cp-atual [data-fim]"); await pg.waitForTimeout(50);
+await pg.click(".cp-atual [data-g='a']"); await pg.click(`.cp-pick [data-k='${utA0.ks[0]}']`); await pg.waitForTimeout(50);
+await pg.click(".cp-atual [data-xg]"); await pg.click(".cp-atual [data-xg]"); await pg.waitForTimeout(50);
 await pg.screenshot({ path: join(cap, "treino-competicao-registo.png") }); await pg.click("#sheet-root [data-close]"); await pg.waitForTimeout(100);
-const cs = await pg.evaluate((ks) => { cF = { ep: "26.27", me: "", mi: "", et: "" }; const F = utsFiltro(), S = compStats(F), p = (k) => S.P["n:" + k] || {};
-  return { a0: [p(ks[0]).J, p(ks[0]).E, p(ks[0]).Pts, p(ks[0]).golos, p(ks[0]).AG, p(ks[0]).GM, p(ks[0]).GS].join(","), gr1: !!S.P["n:" + ks[1]], grA: S.GR["n:" + ks[1]] && [S.GR["n:" + ks[1]].J, S.GR["n:" + ks[1]].GS].join(","),
-    grB: S.GR["n:" + ks[2]] && S.GR["n:" + ks[2]].J, pend: S.pend.length, av: S.aviso.length, golos: Object.values(compGolos).length }; }, utA0.ks);
-if (selo.rep !== "liga/true" || selo.ut !== "liga" || !selo.tags.includes("LIGA") || !selo.tags.includes("MEINHO") || jgs.length !== 4 || jgs[0] !== `1:g0-g1:${utA0.ks[1]}` ||
-  cs.a0 !== "2,2,2,1,1,1,1" || cs.gr1 || cs.grA !== "1,1" || cs.grB !== 1 || cs.pend !== 2 || cs.av || cs.golos !== 2) erros.push("Competição: jogos, golos, GR ou classificação errados " + JSON.stringify({ selo, jgs, cs }));
+const cs = await pg.evaluate((ks) => { cF = { ep: "26.27", me: "", mi: "", et: "" }; const F = utsFiltro(), S = compStats(F), p = (k) => S.P["n:" + k] || {}, g = (k) => S.GR["n:" + k];
+  return { a2: [p(ks[2]).J, p(ks[2]).E, p(ks[2]).Pts, p(ks[2]).golos, p(ks[2]).AG, p(ks[2]).GM, p(ks[2]).GS].join(","), gr1: !!S.P["n:" + ks[1]], g1: g(ks[1]) && [g(ks[1]).J, g(ks[1]).E, g(ks[1]).Pts, g(ks[1]).GS].join(","),
+    g4: g(ks[4]) && g(ks[4]).J, pend: S.pend.length, av: S.aviso.length, golos: Object.values(compGolos).length }; }, utA0.ks);
+if (selo.rep !== "liga/true" || selo.ut !== "liga" || !selo.tags.includes("LIGA") || !selo.tags.includes("MEINHO") || jgs.j.length !== 3 || jgs.j[0] !== "1:g1-g2:" || jgs.j[1] !== `2:g2-g0:${utA0.ks[1]}` || !jgs.desc.includes("descansa") ||
+  cs.a2 !== "1,1,1,1,1,1,1" || cs.gr1 || cs.g1 !== "1,1,1,1" || cs.g4 !== 1 || cs.pend !== 1 || cs.av || cs.golos !== 2) erros.push("Competição (Liga): jogos, golos, GR ou classificação errados " + JSON.stringify({ selo, jgs, cs }));
+// Champions: quem ganha fica; quem perde vai para o fim da fila; empate = sai quem estava na mesa
+const ch = await pg.evaluate(() => { const novoJ = (o) => gravaJogoInt({ id: uId("cj"), ut: "tmp", lid: "tmp", criadoEm: new Date().toISOString(), ...o }), golo = (j, eq) => gravaGolo({ id: uId("cg"), jogo: j.id, eq, k: "x", em: new Date().toISOString() });
+  const gs = ["A", "B", "C"], r = [JSON.stringify(proxChampions(gs, []))];
+  const j1 = novoJ({ serie: 1, a: "A", b: "B", fim: true }); golo(j1, "a"); golo(j1, "a"); golo(j1, "b"); r.push(JSON.stringify(proxChampions(gs, jogosDe("tmp", "tmp"))));
+  novoJ({ serie: 2, a: "A", b: "C", fim: true }); r.push(JSON.stringify(proxChampions(gs, jogosDe("tmp", "tmp"))));
+  jogosDe("tmp", "tmp").forEach((j) => tiraJogoInt(j.id)); return r; });
+if (ch[0] !== JSON.stringify({ a: "A", b: "B", fila: ["C"] }) || ch[1] !== JSON.stringify({ a: "A", b: "C", fila: ["B"] }) || ch[2] !== JSON.stringify({ a: "C", b: "B", fila: ["A"] })) erros.push("Competição (Champions): fila errada " + JSON.stringify(ch));
 // anular nesta UT com registos: 2 toques; os registos ficam e deixam de contar; reativar volta a contar
 await pg.click(`li[data-l='${lidL}'] [data-a='aj']`); await pg.click("#uj-c [data-k='-']"); await pg.click("#uj-ok"); await pg.waitForTimeout(50);
 const arm = await pg.evaluate(() => ({ aberta: !!document.querySelector("#uj-ok"), txt: document.querySelector("#uj-ok").textContent, av: document.querySelector("#uj-av").textContent }));
@@ -389,7 +413,7 @@ await pg.click("#uj-ok"); await pg.waitForTimeout(100);
 const anul = await pg.evaluate((lid) => ({ et: compDe(uts.ta.exercicios.find((x) => x.id === lid)), jogos: jogosDe("ta", lid).length, n: Object.keys(compStats(utsFiltro()).P).length }), lidL);
 await pg.evaluate((lid) => editaUT((U) => { delete U.exercicios.find((x) => x.id === lid).comp; }), lidL);
 const reat = await pg.evaluate(() => Object.keys(compStats(utsFiltro()).P).length);
-if (!arm.aberta || !arm.txt.includes("outra vez") || !arm.av.includes("deixam de contar") || anul.et !== "" || anul.jogos !== 4 || anul.n || !reat) erros.push("Competição: anular com registos errado " + JSON.stringify({ arm, anul, reat }));
+if (!arm.aberta || !arm.txt.includes("outra vez") || !arm.av.includes("deixam de contar") || anul.et !== "" || anul.jogos !== 3 || anul.n || !reat) erros.push("Competição: anular com registos errado " + JSON.stringify({ arm, anul, reat }));
 // meinho: 21 passes com 2 atletas, cueca com 1; desfazer o último com 2 toques; rei partilhado
 await pg.click(`li[data-l='${lidL}'] [data-a='mh']`); await pg.waitForSelector(".mh-g");
 await pg.click(`.mh-g [data-k='${utA0.ks[3]}']`); await pg.click(`.mh-g [data-k='${utA0.ks[4]}']`); await pg.click("#mh-ok"); await pg.waitForTimeout(50);

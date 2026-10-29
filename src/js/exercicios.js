@@ -37,7 +37,8 @@ function normEx(d){ const s=v=>String(v??"").trim(), L=v=>(Array.isArray(v)?v.ma
   const E={id:s(d.id)||xId(), nome:s(d.nome)||"Sem nome", parte:PARTES.some(p=>p[0]===d.parte)?d.parte:"fundamental", momento, sub, tipo,
     formato:s(d.formato), espaco:{txt:s(d.espaco&&d.espaco.txt)},
     duracao:{series:n(D.series),pratica:n(D.pratica),pausa:n(D.pausa),total:n(D.total)||null},
-    objetivos:s(d.objetivos), comportamentos:L(d.comportamentos), condicionantes:L(d.condicionantes), descricao:s(d.descricao), variantes:L(d.variantes), material:L(d.material),
+    objetivos:s(d.objetivos), objEsp:L(d.objEsp),   // v99: objetivos gerais (campo antigo) e específicos (um por linha; não saem no PDF da UT)
+    comportamentos:L(d.comportamentos), condicionantes:L(d.condicionantes), descricao:s(d.descricao), variantes:L(d.variantes), material:L(d.material),
     ligacoes:{modelo:L(d.ligacoes&&d.ligacoes.modelo), lances:L(d.ligacoes&&d.ligacoes.lances)},
     links:(Array.isArray(d.links)?d.links:[]).filter(x=>x&&urlOk(x.url)).map(x=>({t:s(x.t)||hostDe(x.url),url:s(x.url)})),
     contaTempo:typeof d.contaTempo==="boolean"?d.contaTempo:null,
@@ -118,7 +119,7 @@ function xPara(){ if(xPl&&xPl.playing) xPl.pause(); }
 /* ---------- lista, pesquisa e filtros ---------- */
 function exFiltrados(){ const q=xFiltro.q.trim().toLowerCase();
   return Object.values(exercicios).filter(E=>(!xFiltro.mom||E.momento===xFiltro.mom)&&(!xFiltro.tipo||E.tipo===xFiltro.tipo)
-    &&(!q||[E.nome,E.formato,E.espaco.txt,E.descricao,E.objetivos,rotuloDe(TIPOS_EX,E.tipo),catEx(E),...E.comportamentos,...E.variantes,...E.material].join(" ").toLowerCase().includes(q)))
+    &&(!q||[E.nome,E.formato,E.espaco.txt,E.descricao,E.objetivos,...E.objEsp,rotuloDe(TIPOS_EX,E.tipo),catEx(E),...E.comportamentos,...E.variantes,...E.material].join(" ").toLowerCase().includes(q)))
     .sort((a,b)=>a.nome.localeCompare(b.nome,"pt")); }
 function guardaFiltro(){ try{ localStorage.setItem("sca-ex-filtro",JSON.stringify(xFiltro)); }catch(e){} }
 function renderExFiltros(){ const bx=$("x-filtros"); if($("x-q")) return;
@@ -167,7 +168,7 @@ function fichaHtml(E,num){ const P=parteDe(E.parte), D=E.duracao, tot=totalEx(E)
         <div class="exf-2"><div class="exf-esp">${esc(E.espaco.txt||"–")}</div>
           <table class="exf-dur"><tr><th>TOTAL</th><td>${fmtTempo(tot)}</td></tr><tr><th>SÉRIES / REPS.</th><td>${D.series||"–"}</td></tr><tr><th>TEMPO PRÁTICA</th><td>${fmtTempo(D.pratica)}</td></tr><tr><th>PAUSA</th><td>${fmtTempo(D.pausa)}</td></tr></table></div>
         <div class="exf-h">OBJETIVOS E CONDICIONANTES</div>
-        <div class="exf-txt"><b class="exf-tit">${esc(tit)}</b>${E.objetivos?`<p>${esc(E.objetivos)}</p>`:""}${E.comportamentos.length?`<b>Comportamentos-chave:</b>${linhasHtml(E.comportamentos)}`:""}${E.condicionantes.length?`<b>Condicionantes:</b>${linhasHtml(E.condicionantes)}`:""}</div>
+        <div class="exf-txt"><b class="exf-tit">${esc(tit)}</b>${E.objetivos?`<p>${esc(E.objetivos)}</p>`:""}${E.objEsp.length?`<b>Objetivos específicos:</b>${linhasHtml(E.objEsp)}`:""}${E.comportamentos.length?`<b>Comportamentos-chave:</b>${linhasHtml(E.comportamentos)}`:""}${E.condicionantes.length?`<b>Condicionantes:</b>${linhasHtml(E.condicionantes)}`:""}</div>
       </div>
       <div>
         <div class="exf-h">DESCRIÇÃO</div><div class="exf-txt">${E.descricao?`<p>${esc(E.descricao)}</p>`:`<p class="sub">Sem descrição.</p>`}</div>
@@ -225,7 +226,8 @@ function folhaEx(id){ const E0=id?exercicios[id]:null, E=E0?clone(E0):normEx({id
     <h4>Duração</h4>
     <div class="xe-dur"><label class="f">Séries / reps.<input type="text" inputmode="numeric" id="xe-se" value="${D.series||""}"></label><label class="f">Tempo prática<input type="text" id="xe-pr" value="${tt(D.pratica)}" placeholder="Ex.: 3' ou 2'30"></label><label class="f">Pausa<input type="text" id="xe-pa" value="${tt(D.pausa)}" placeholder="Ex.: 1'30 ou 30 s"></label><label class="f">Total<input type="text" id="xe-to" value="${tt(D.total)}"></label></div>
     <p class="sub" id="xe-dt" style="margin:0"></p>
-    ${ta("xe-ob","Objetivos",E.objetivos,3)}
+    ${ta("xe-ob","Objetivos gerais",E.objetivos,3)}
+    ${ta("xe-oe","Objetivos específicos (um por linha; não saem no PDF da UT)",E.objEsp.join("\n"),4)}
     ${ta("xe-co","Comportamentos-chave (um por linha)",E.comportamentos.join("\n"),3)}
     ${ta("xe-cd","Condicionantes / regras (uma por linha)",E.condicionantes.join("\n"),2,"Ex.: Circulação a 1 toque")}
     ${ta("xe-de","Descrição",E.descricao,5)}
@@ -280,7 +282,7 @@ function folhaEx(id){ const E0=id?exercicios[id]:null, E=E0?clone(E0):normEx({id
         if(inp){ inp.classList.add("bad"); inp.focus(); } toast("Endereço da ligação inválido: tem de começar por http:// ou https://"); return; }
       const N={...E,contaTempo:conta,links:lks,comp,meinho:mh,nome,formato:q("#xe-fo").value,espaco:{...E.espaco,txt:q("#xe-es").value},parte,momento:mom,sub,tipo,
         duracao:{series:d.series,pratica:d.pratica,pausa:d.pausa,total:d.total||null},
-        objetivos:q("#xe-ob").value,comportamentos:q("#xe-co").value,condicionantes:q("#xe-cd").value,descricao:q("#xe-de").value,variantes:q("#xe-va").value,material:q("#xe-ma").value,
+        objetivos:q("#xe-ob").value,objEsp:q("#xe-oe").value,comportamentos:q("#xe-co").value,condicionantes:q("#xe-cd").value,descricao:q("#xe-de").value,variantes:q("#xe-va").value,material:q("#xe-ma").value,
         ligacoes:{modelo:[...s.querySelectorAll("#xe-lg input[data-m]:checked")].map(i=>i.dataset.m),lances:[...s.querySelectorAll("#xe-lg input[data-l]:checked")].map(i=>i.dataset.l)}};
       if(!E0){ N.criadoPor=meuId||""; N.criadoEm=new Date().toISOString(); }
       fecha(); const R=guardaEx(N,true); xCur=R.id; renderEx();
@@ -321,6 +323,7 @@ function fichaExPdf(doc,E,x0,y0,W,o={}){ const k=o.k||1, fim=o.hMax?y0+o.hMax:1e
   const L={y:yL}, bloco=coluna(x0,L);
   bloco(E.nome+(E.formato&&!E.nome.includes(E.formato)?" - "+E.formato:""),{b:1,s:10,c:RED});
   if(E.objetivos){ L.y+=2*k; bloco(E.objetivos); }
+  if(E.objEsp.length&&!o.semEsp){ L.y+=3*k; bloco("Objetivos específicos:",{b:1}); E.objEsp.forEach(c=>bloco("• "+c.replace(/^[-•]\s*/,""),{ind:4})); }
   if(E.comportamentos.length){ L.y+=3*k; bloco("Comportamentos-chave:",{b:1}); E.comportamentos.forEach(c=>bloco("• "+c,{ind:4})); }
   if(E.condicionantes.length){ L.y+=3*k; bloco("Condicionantes:",{b:1}); E.condicionantes.forEach(c=>bloco("• "+c,{ind:4})); }
   /* coluna direita: descrição e variantes */

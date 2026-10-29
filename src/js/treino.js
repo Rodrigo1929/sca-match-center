@@ -36,12 +36,14 @@ Object.keys(uts).forEach(id=>{ try{ uts[id]=normUT({...uts[id],id}); }catch(e){ 
 function atletasUT(U){ const pl=est.plantel.filter(p=>p.n).slice().sort((a,b)=>byNum(a.n,b.n)), at=p=>({k:p.n,n:p.n,nome:p.nome||"",pos:p.pos||"",esc:p.esc||"",form:!!p.esc,alc:p.alc||""});
   return [...pl.filter(p=>!p.esc).map(at),...pl.filter(p=>p.esc).map(at),
   ...U.extras.map(e=>({k:"e:"+e.id,n:"",nome:e.nome,pos:e.pos,esc:e.escalao||"Extra",alc:e.alc||""}))]; }
-/* nos grupos, no campo do plantel e nos tempos: a 1.ª alcunha; sem alcunha, primeiro e último nome (nunca o nome completo nem o número).
-   A ligação ao atleta continua pela chave (nº do plantel ou "e:<id>"); Quadro, ficha de jogo e Onze continuam com números */
-function nomeCurto(a){ const al=String(a&&a.alc||"").split(/[,;]/)[0].trim(); if(al) return al; const w=String(a&&a.nome||"").trim().split(/\s+/).filter(Boolean);
+/* na app (grupos, campo do plantel, tempos, competição): primeiro e último nome, nunca o nome completo nem o número.
+   A alcunha (a 1.ª) só nos grupos de trabalho do PDF da UT (v99). A ligação ao atleta continua pela chave (nº do plantel ou "e:<id>");
+   Quadro, ficha de jogo e Onze continuam com números */
+function nomeCurto(a){ const w=String(a&&a.nome||"").trim().split(/\s+/).filter(Boolean);
   return w.length>1?`${w[0]} ${w[w.length-1]}`:(w[0]||(a&&a.n?"nº "+a.n:"?")); }
-function nomeAtleta(U,k){ const a=atletasUT(U).find(x=>x.k===k); if(!a) return String(k).startsWith("e:")?"?":"nº "+k;
-  return nomeCurto(a)+(String(k).startsWith("e:")&&a.esc&&a.esc!=="Extra"?` (${a.esc})`:""); }
+const nomeAlc=a=>String(a&&a.alc||"").split(/[,;]/)[0].trim()||nomeCurto(a);
+function nomeAtleta(U,k,alc){ const a=atletasUT(U).find(x=>x.k===k); if(!a) return String(k).startsWith("e:")?"?":"nº "+k;
+  return (alc?nomeAlc(a):nomeCurto(a))+(String(k).startsWith("e:")&&a.esc&&a.esc!=="Extra"?` (${a.esc})`:""); }
 /* complementares não somam ao tempo da UT nem ao da parte */
 const principaisUT=U=>U.exercicios.filter(l=>!l.pai);
 const totalUT=U=>U.tempoTotal||principaisUT(U).reduce((a,l)=>a+totalEx(l.copia),0);
@@ -434,7 +436,7 @@ async function pdfUT(U){
   const gruposNoPdf=b=>{ const colW=(cw-24)/2, L=[];
     U.grupos.forEach(g=>{ doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.splitTextToSize(pdfTxt(g.nome||"Grupo"),colW).forEach((t,i)=>L.push({t,s:7,b:1,c:RED,h:8.5,tit:!i}));
       doc.setFont("helvetica","normal"); doc.setFontSize(6.3);
-      if(g.jogadores.length) doc.splitTextToSize(pdfTxt(g.jogadores.map(k=>nomeAtleta(U,k)).join(", ")),colW).forEach(t=>L.push({t,s:6.3,c:INK,h:7.6}));
+      if(g.jogadores.length) doc.splitTextToSize(pdfTxt(g.jogadores.map(k=>nomeAtleta(U,k,true)).join(", ")),colW).forEach(t=>L.push({t,s:6.3,c:INK,h:7.6}));
       doc.setFontSize(6); if(g.nota) g.nota.split(/\n/).forEach(p=>doc.splitTextToSize(pdfTxt(p)||" ",colW).forEach(t=>L.push({t,s:6,c:MUT,h:7.2})));
       L.push({gap:4}); });
     const area=(b,cont)=>{ const {x,y}=slot(b); caixa(x,y,cw,14,INK,cont?"GRUPOS DE TRABALHO (CONTINUAÇÃO)":"GRUPOS DE TRABALHO",{i:1,s:7.5});
@@ -453,7 +455,7 @@ async function pdfUT(U){
     const dono=P&&P.rot&&U.exercicios.filter(c=>c.pai===P.id).slice(-1)[0]===l?P:!l.pai&&l.rot&&!U.exercicios.some(c=>c.pai===l.id)?l:null;
     const eqs=!dono&&!l.pai&&!l.rot&&(l.grupos||[]).some(id=>U.grupos.some(g=>g.id===id)), gh=dono?Math.min(alturaRot(dono,bw),(ch-hf)*.62):eqs?14+linhasEq(l,bw).length*8:0;
     if(ind){ doc.setFillColor(...RED); doc.rect(x+2,y,4,ch,"F"); }
-    fichaExPdf(doc,E,bx,y,bw,{k:.6,hMax:hf,num:nums[l.id]+(l.pai?" · COMPLEMENTAR":"")+(compDe(l)?" · "+rotComp(compDe(l)).toUpperCase():"")+(meinhoDe(l)?" · MEINHO":"")});
+    fichaExPdf(doc,E,bx,y,bw,{k:.6,hMax:hf,semEsp:true,num:nums[l.id]+(l.pai?" · COMPLEMENTAR":"")+(compDe(l)?" · "+rotComp(compDe(l)).toUpperCase():"")+(meinhoDe(l)?" · MEINHO":"")});
     const fig=await figuraJpegEx(E), fy=y+hf+3, fh=ch-hf-3-(gh?gh+3:0);
     if(fig){ let w=bw, h=bw*fig.h/fig.w; if(h>fh){ h=fh; w=h*fig.w/fig.h; } figuraNoPdf(doc,fig,bx+(bw-w)/2,fy+(fh-h)/2,w,h); }
     doc.setDrawColor(...INK); doc.setLineWidth(.9); doc.rect(bx,fy,bw,fh);

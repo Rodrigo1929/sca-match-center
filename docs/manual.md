@@ -11,6 +11,10 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - No painel do exercício, tocar na ligação abre-a numa janela nova.
 - As ligações **ficam só no repositório**: não passam para as UT, nem para o PDF da UT, nem para o PDF do plano semanal.
 
+### Objetivos gerais e específicos (v99)
+- Na ficha há dois campos: **Objetivos gerais** (o texto principal) e **Objetivos específicos** (um por linha).
+- Os específicos aparecem na ficha e no PDF da ficha, mas **não saem no PDF da UT**.
+
 ### Conta para a estatística de tempos (v93)
 - Na ficha: **Pela parte** (só a parte fundamental conta; aquecimento e retorno à calma não), **Conta** ou **Não conta**.
 - Cada UT pode mudar, só para esse dia (ver «👥 Grupos» abaixo).
@@ -39,8 +43,9 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - Exercício com grupos e **sem rotação** (v96): na linha da UT e no PDF aparecem as equipas, ex.: «Equipa 1 (Vermelhos) vs. Equipa 2 (Brancos)» (apoios no fim). No PDF, grupos por período aparecem em lista por série.
 - **Sem complementar** (v94), em «Rotação por séries»: **Equipas rodam** (há quem descanse; ex.: Liga de 3, jogam 2 e descansa 1) ou **Grupos por período / parte** (em cada série só contam os grupos desse período). Até 20 grupos.
 
-### Nomes nos grupos (v93)
-- Nos grupos de trabalho, no campo do plantel, nos tempos e no PDF da UT aparece a **alcunha** do Plantel (a 1.ª, se houver várias). Sem alcunha, aparece o **primeiro e o último nome**. Nunca aparece o número.
+### Nomes nos grupos (v93, mudou na v99)
+- Na app (grupos, campo do plantel, tempos, competição, rankings) aparece o **primeiro e o último nome**. Nunca aparece o número.
+- No **PDF da UT**, os **grupos de trabalho** usam a **alcunha** do Plantel (a 1.ª, se houver várias; sem alcunha, primeiro e último nome). O campo do plantel do PDF fica com o nome.
 - O Quadro, a ficha de jogo e o Onze continuam com números.
 - No **Plantel**, um aviso amarelo mostra **alcunhas repetidas** (duas pessoas com a mesma alcunha confundem-se nos grupos).
 
@@ -48,7 +53,12 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - No repositório (✎ Editar ficha): **Competição interna** → Liga ou Champions. A etiqueta só identifica e filtra: as duas somam na **mesma** classificação.
 - Ao pôr o exercício numa UT vem ativo, com o selo 🏆 LIGA / 🏆 CHAMPIONS no exercício e no PDF da UT.
 - Em **Ajustar nesta UT** anula-se (ou ativa-se num exercício sem marcação) só nessa UT. Se já houver registos, guardar pede **2 toques**; os registos não se apagam e voltam a contar se reativares.
-- Botão **🏆 Jogos** na linha do exercício:
+- Botão **🏆 Jogos** na linha do exercício (v98):
+  - **Liga**: escolhe o nº de **voltas** (1 volta = todos contra todos; com 3 equipas: A×B descansa C, A×C descansa B, B×C descansa A) e «Gerar jogos». Todas as equipas jogam o mesmo nº de jogos.
+  - **Champions**: «▶ Começar» (as duas primeiras equipas de 👥 Grupos). No fim de cada jogo, **quem ganha fica**; quem perde vai para o fim da fila; num **empate sai quem já estava na mesa**. «▶ Próximo jogo» mostra quem entra; o nº de jogos é livre: quando acabar o tempo, é só fechar.
+  - O **jogo atual** aparece em grande: «+ golo» de cada equipa, «✓ Fim do jogo». Por baixo, a tabela das equipas neste exercício e a lista dos jogos, com **✎ Corrigir**.
+  - **GR**: não estão presos a uma equipa. Em cada jogo escolhe-se qualquer GR presente na UT (vem preenchido com o GR do grupo ou com o que defendeu essa equipa no jogo anterior). A tabela dos Guarda-redes mostra V, E, D, pontos e golos sofridos da equipa que defenderam.
+- (até à v97)
   - «Gerar jogos»: a partir das equipas (👥 Grupos) e da rotação por séries (ex.: série 1 A×B, série 2 A×C, série 3 B×C). Depois podes mudar as equipas, acrescentar (+ Jogo) ou tirar jogos.
   - **+ golo** pede logo o marcador (os jogadores dessa equipa) ou **Auto-golo** (escolhes o jogador adversário que o fez; conta para a equipa beneficiada e só aparece na coluna AG). Sem teclado.
   - Tirar um golo: ✕ com 2 toques.
@@ -80,3 +90,8 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - **⬇ CSV**: a tabela, o detalhe por exercício e os presentes sem grupo (abre no Excel).
 - **Minutos em conjunto** (v94): tocar num atleta mostra com quem esteve **na mesma equipa** (mesmo grupo, no mesmo exercício e na mesma série) e quantos minutos, do mais para o menos. O CSV leva a tabela completa atleta × atleta.
 - Tudo é calculado na hora a partir das UT: corrigir uma UT corrige os tempos.
+
+## Editor dos quadros e das figuras (Modelo de Jogo e exercícios) (v99)
+- **Tamanho**: toca numa peça (bolinha, bola, cone, baliza ou material) e usa − / + (50% a 250%).
+- **Texto desta bolinha**: só nessa bolinha, «Como o quadro», número, posição ou sem texto.
+- **Botão direito** numa peça (no iPad, manter o dedo sem mexer): ⧉ Duplicar (a cópia fica 2 m ao lado em todos os passos), ＋ Aumentar, － Diminuir, ✎ Editar e 🗑 Apagar (com Desfazer).

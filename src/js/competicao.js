@@ -1,7 +1,8 @@
 /* ---------- Competição interna (Liga / Champions) e Meinho (no separador Treino; junta-se ao 4.º <script>, depois de tempos.js) ---------- */
 /* Marcação no exercício do repositório (comp: "liga"|"champions"|"", meinho) e ajuste só numa UT na linha (l.comp / l.meinho; sem campo = como no repositório).
    Registos, um documento cada (dois aparelhos ao mesmo tempo):
-   compJogos/{id} = {id, ut, lid, serie, a, b (ids dos grupos), grA, grB (atleta GR de cada equipa), semGR, fim, criadoEm, criadoPor}
+   compJogos/{id} = {id, ut, lid, serie (ordem do jogo), volta?, jornada? (Liga), a, b (ids dos grupos; na Champions a = equipa na mesa), grA, grB (GR de cada lado:
+                    qualquer GR presente, não preso a uma equipa), semGR, fim, criadoEm, criadoPor}
    compGolos/{id} = {id, jogo, eq: "a"|"b" (equipa que ganha o golo), k (quem marcou), ag (auto-golo: k é da outra equipa), em, por}
    meinho/{id}    = {id, ut, lid, tipo: "21"|"cueca", ks: [1 a 3 atletas], em, por}
    histTreino/{id} = histórico de antes da app, importado do Excel (v97): um documento por UT {tipo: "comp"|"meinho", et, ut (nº), data, origem,
@@ -16,6 +17,7 @@ const CJ_LS="sca-comp-jogos-v1", CG_LS="sca-comp-golos-v1", MH_LS="sca-meinho-v1
 let compJogos={}, compGolos={}, meinhoRegs={}, histTreino={};
 try{ compJogos=JSON.parse(localStorage.getItem(CJ_LS)||"{}")||{}; compGolos=JSON.parse(localStorage.getItem(CG_LS)||"{}")||{}; meinhoRegs=JSON.parse(localStorage.getItem(MH_LS)||"{}")||{}; histTreino=JSON.parse(localStorage.getItem(HT_LS)||"{}")||{}; }catch(e){}
 function normJogoInt(d){ const s=v=>String(v??"").trim(); return {id:s(d.id)||uId("cj"),ut:s(d.ut),lid:s(d.lid),serie:Math.max(1,Math.round(+d.serie)||1),a:s(d.a),b:s(d.b),
+  ...(+d.volta>0?{volta:Math.round(+d.volta),jornada:Math.max(1,Math.round(+d.jornada)||1)}:{}),   // Liga (v98): volta e jornada do todos contra todos
   grA:s(d.grA),grB:s(d.grB),semGR:!!d.semGR,fim:!!d.fim,criadoEm:s(d.criadoEm),criadoPor:s(d.criadoPor)}; }
 function normGoloInt(d){ const s=v=>String(v??"").trim(); return {id:s(d.id)||uId("cg"),jogo:s(d.jogo),eq:d.eq==="b"?"b":"a",k:s(d.k),ag:!!d.ag,em:s(d.em),por:s(d.por)}; }
 function normHist(d){ const s=v=>String(v??"").trim(), n=v=>Math.max(0,Math.round(+v)||0), tipo=d.tipo==="meinho"?"meinho":"comp";
@@ -53,55 +55,90 @@ const ehGR=a=>a&&a.pos==="1";
 function atletasGrupo(U,gid){ const g=U.grupos.find(x=>x.id===gid); if(!g) return []; const at=atletasUT(U); return g.jogadores.filter(k=>presenteUT(U,k)).map(k=>at.find(a=>a.k===k)).filter(Boolean); }
 const nomeGrupoUT=(U,gid)=>{ const g=U.grupos.find(x=>x.id===gid); return g?(g.nome||"Grupo"):"(grupo apagado)"; };
 const nomeK=(U,k)=>{ const a=atletasUT(U).find(x=>x.k===k); return a?nomeCurto(a):"?"; };
-/* jogos propostos: com rotação, as equipas que estão no exercício em cada série jogam entre si (pela ordem); sem rotação, todos contra todos ao longo das séries */
-function propoeJogos(U,l){ const gs=(l.grupos||[]).filter(id=>U.grupos.some(g=>g.id===id)), S=seriesDe(l.copia), out=[];
-  if(l.rot) l.rot.grelha.forEach((r,s)=>{ const em=r.map((v,j)=>v==="p"?l.rot.equipas[j]:"").filter(Boolean); for(let i=0;i+1<em.length;i+=2) out.push({serie:s+1,a:em[i],b:em[i+1]}); });
-  else if(gs.length>=2){ const t=gs.length%2?[...gs,""]:gs.slice(), n=t.length, rondas=[];
-    for(let r=0;r<n-1;r++){ const ro=[]; for(let i=0;i<n/2;i++){ const a=t[i], b=t[n-1-i]; if(a&&b) ro.push([a,b]); } rondas.push(ro); t.splice(1,0,t.pop()); }
-    for(let s=0;s<S;s++) rondas[s%rondas.length].forEach(([a,b])=>out.push({serie:s+1,a,b})); }
-  return out; }
 const grDoGrupo=(U,gid)=>(atletasGrupo(U,gid).find(ehGR)||{}).k||"";
 const resultado=J=>{ const gs=golosDe(J.id); return {a:gs.filter(g=>g.eq==="a").length,b:gs.filter(g=>g.eq==="b").length}; };
 
-/* ---------- 🏆 registo dos jogos de um exercício da UT ---------- */
-function folhaCompUT(id,lid){ const U0=uts[id], l=U0&&U0.exercicios.find(x=>x.id===lid); if(!l) return; const et=compDe(l), num=numerosUT(U0)[lid];
-  let golo=null;   // {jid, eq, ag} enquanto se escolhe o marcador
-  folha(`<h3>🏆 ${esc(rotComp(et)||"Competição")} · ${num} ${esc(l.copia.nome)}</h3><p class="sub" style="margin:0">UT${U0.numero} · ${esc(dataPt_(U0.data))}. O resultado faz-se com «+ golo» e o marcador; o jogo só conta depois de «✓ Fim do jogo».</p>
+/* Liga: voltas de todos contra todos (método do círculo); com nº ímpar de equipas, em cada jornada descansa quem não joga */
+function jogosLiga(gs,voltas){ const t=gs.length%2?[...gs,""]:gs.slice(), n=t.length, jor=[];
+  for(let r=0;r<n-1;r++){ const ro=[]; for(let i=0;i<n/2;i++){ const a=t[i], b=t[n-1-i]; if(a&&b) ro.push(r%2?[b,a]:[a,b]); } jor.push(ro); t.splice(1,0,t.pop()); }
+  const out=[]; for(let v=1;v<=voltas;v++) jor.forEach((ro,j)=>ro.forEach(([a,b])=>out.push({volta:v,jornada:j+1,a,b}))); return out; }
+/* Champions (quem ganha fica): a = equipa na mesa, b = a que entra; quem perde vai para o fim da fila; empate = sai quem já estava na mesa (a) */
+function proxChampions(gs,js){ const fila=gs.slice(); let mesa=null;
+  for(const J of js){ if(!J.fim) return null; [J.a,J.b].forEach(x=>{ const i=fila.indexOf(x); if(i>=0) fila.splice(i,1); });
+    const r=resultado(J), fica=r.a>r.b?J.a:J.b; fila.push(fica===J.a?J.b:J.a); mesa=fica; }
+  if(!mesa) return gs.length>=2?{a:gs[0],b:gs[1],fila:gs.slice(2)}:null;
+  const b=fila.shift(); return b?{a:mesa,b,fila}:null; }
+/* GR de um lado do jogo: o GR do grupo; senão o que defendeu essa equipa no jogo anterior do mesmo exercício */
+function grPara(U,js,gid){ const g=grDoGrupo(U,gid); if(g) return g;
+  for(let i=js.length-1;i>=0;i--){ const J=js[i]; if(J.a===gid&&J.grA) return J.grA; if(J.b===gid&&J.grB) return J.grB; } return ""; }
+/* os GR não estão presos a uma equipa: podem defender qualquer equipa em cada jogo (todos os GR presentes na UT e os jogadores dessa equipa) */
+const opcoesGR=(U,gid)=>{ const at=atletasUT(U).filter(a=>presenteUT(U,a.k)), grs=at.filter(ehGR), eq=atletasGrupo(U,gid).filter(a=>!ehGR(a));
+  return [...grs,...eq]; };
+
+/* ---------- 🏆 registo dos jogos de um exercício da UT (Liga: voltas de todos contra todos; Champions: quem ganha fica) ---------- */
+function folhaCompUT(id,lid){ const U0=uts[id], l=U0&&U0.exercicios.find(x=>x.id===lid); if(!l) return; const et=compDe(l), liga=et==="liga", num=numerosUT(U0)[lid];
+  let golo=null, voltas=1, corrige="";   // golo = {jid, eq, ag} enquanto se escolhe o marcador; corrige = jogo terminado aberto para corrigir
+  folha(`<h3>🏆 ${esc(rotComp(et)||"Competição")} · ${num} ${esc(l.copia.nome)}</h3><p class="sub" style="margin:0">UT${U0.numero} · ${esc(dataPt_(U0.data))} · ${liga?"Liga: todos contra todos, todas as equipas fazem o mesmo nº de jogos.":"Champions: quem ganha fica; num empate sai quem já estava na mesa."}</p>
     <div id="cp-c"></div><div class="actions"><button class="btn primary" data-close>Fechar</button></div>`,(s,fecha)=>{
     const c=s.querySelector("#cp-c");
-    const desenha=()=>{ const U=uts[id]; if(!U){ fecha(); return; } const gs=(l.grupos||[]), js=jogosDe(id,lid);
-      if(golo){ const J=compJogos[golo.jid]; if(!J){ golo=null; desenha(); return; } const eqMarca=golo.ag?(golo.eq==="a"?"b":"a"):golo.eq, gid=J[eqMarca], at=atletasGrupo(U,gid).sort((a,b)=>nomeCurto(a).localeCompare(nomeCurto(b),"pt"));
-        c.innerHTML=`<h4>${golo.ag?`Auto-golo: quem de ${esc(nomeGrupoUT(U,gid))} o fez?`:`Golo de ${esc(nomeGrupoUT(U,J[golo.eq]))}: quem marcou?`}</h4>
-          <div class="pgrid cp-pick">${at.map(a=>`<button data-k="${esc(a.k)}"><b>${esc(nomeCurto(a))}</b><small>${ehGR(a)?"GR":""}</small></button>`).join("")||`<p class="sub">Ninguém presente neste grupo.</p>`}${golo.ag?"":`<button class="cp-ag" data-ag="1"><b>Auto-golo</b><small>de um adversário</small></button>`}</div>
+    const novo=(U,js,o)=>gravaJogoInt({id:uId("cj"),ut:id,lid,grA:grPara(U,js,o.a),grB:grPara(U,js,o.b),criadoEm:new Date().toISOString(),criadoPor:meuId||"",...o});
+    const desenha=()=>{ const U=uts[id]; if(!U){ fecha(); return; } const gs=(l.grupos||[]).filter(g=>U.grupos.some(x=>x.id===g)), js=jogosDe(id,lid), nm=g=>nomeGrupoUT(U,g);
+      if(golo){ const J=compJogos[golo.jid]; if(!J){ golo=null; desenha(); return; } const eqMarca=golo.ag?(golo.eq==="a"?"b":"a"):golo.eq, gid=J[eqMarca], grK=J["gr"+eqMarca.toUpperCase()];
+        const at=atletasGrupo(U,gid).sort((a,b)=>nomeCurto(a).localeCompare(nomeCurto(b),"pt")), gr=grK&&!at.some(a=>a.k===grK)?atletasUT(U).find(a=>a.k===grK):null;
+        c.innerHTML=`<h4>${golo.ag?`Auto-golo: quem de ${esc(nm(gid))} o fez?`:`Golo de ${esc(nm(J[golo.eq]))}: quem marcou?`}</h4>
+          <div class="pgrid cp-pick">${[...at,...(gr?[gr]:[])].map(a=>`<button data-k="${esc(a.k)}"><b>${esc(nomeCurto(a))}</b><small>${ehGR(a)?"GR":""}</small></button>`).join("")||`<p class="sub">Ninguém presente neste grupo.</p>`}${golo.ag?"":`<button class="cp-ag" data-ag="1"><b>Auto-golo</b><small>de um adversário</small></button>`}</div>
           <div class="actions"><button class="btn" id="cp-cx">Cancelar</button></div>`;
         c.querySelector("#cp-cx").onclick=()=>{ golo=null; desenha(); };
         c.querySelectorAll(".cp-pick [data-k]").forEach(b=>b.onclick=()=>{ gravaGolo({id:uId("cg"),jogo:J.id,eq:golo.eq,k:b.dataset.k,ag:golo.ag,em:new Date().toISOString(),por:meuId||""}); toast(golo.ag?"Auto-golo registado":"Golo registado"); golo=null; desenha(); });
         const ag=c.querySelector("[data-ag]"); if(ag) ag.onclick=()=>{ golo={...golo,ag:true}; desenha(); };
         return; }
       if(gs.length<2){ c.innerHTML=`<p class="sub" style="margin:0">Este exercício precisa de pelo menos 2 grupos (as equipas). Escolhe-os em 👥 Grupos.</p>`; return; }
-      const opG=sel=>gs.map(g=>`<option value="${esc(g)}"${g===sel?" selected":""}>${esc(nomeGrupoUT(U,g))}</option>`).join("");
-      const opGR=(gid,sel)=>`<option value="">— GR —</option>`+atletasGrupo(U,gid).map(a=>`<option value="${esc(a.k)}"${a.k===sel?" selected":""}>${esc(nomeCurto(a))}${ehGR(a)?" (GR)":""}</option>`).join("");
-      c.innerHTML=!js.length?`<div class="m-vazio" style="margin:0"><b>Ainda não há jogos.</b><span>A app propõe os jogos a partir das equipas${l.rot?" e da rotação por séries":" (todos contra todos ao longo das séries)"}; depois podes mudar.</span><button class="btn primary" id="cp-gera">Gerar jogos</button></div>`
-        :`<div class="cp-jogos">${js.map(J=>{ const r=resultado(J), gls=golosDe(J.id), falta=!J.semGR&&(!J.grA||!J.grB);
-          return `<div class="cp-j${J.fim?" fim":""}" data-j="${esc(J.id)}"><div class="cp-cab"><span class="cp-s">Série ${J.serie}</span>${J.fim?`<span class="chip rev">✓ Fim</span>`:`<span class="chip env">por terminar</span>`}${falta?`<span class="chip env">falta GR</span>`:""}</div>
-            <div class="cp-res"><div class="cp-eq"><select data-f="a" aria-label="Equipa A"${J.fim?" disabled":""}>${opG(J.a)}</select><button class="btn sm" data-g="a"${J.fim?" disabled":""}>+ golo</button></div>
-              <b class="cp-pl">${r.a} – ${r.b}</b><div class="cp-eq"><select data-f="b" aria-label="Equipa B"${J.fim?" disabled":""}>${opG(J.b)}</select><button class="btn sm" data-g="b"${J.fim?" disabled":""}>+ golo</button></div></div>
-            ${gls.length?`<ul class="cp-gl">${gls.map(g=>`<li><span>⚽ ${esc(nomeK(U,g.k))}${g.ag?" (AG)":""} · ${esc(nomeGrupoUT(U,J[g.eq]))}</span>${J.fim?"":`<button class="icon" data-xg="${esc(g.id)}" aria-label="Tirar golo">✕</button>`}</li>`).join("")}</ul>`:""}
-            <div class="cp-gr">${J.semGR?`<span class="sub">Sem GR neste jogo</span>`:`<label class="f">GR ${esc(nomeGrupoUT(U,J.a))}<select data-f="grA">${opGR(J.a,J.grA)}</select></label><label class="f">GR ${esc(nomeGrupoUT(U,J.b))}<select data-f="grB">${opGR(J.b,J.grB)}</select></label>`}
-              <button class="btn sm ghost" data-semgr>${J.semGR?"Pedir GR":"Sem GR"}</button></div>
-            <div class="cp-ac">${J.fim?`<button class="btn sm" data-reabre>Reabrir</button>`:`<button class="btn sm primary" data-fim>✓ Fim do jogo</button><button class="btn sm ghost danger" data-xj>Tirar jogo</button>`}</div></div>`; }).join("")}</div>
-          <div class="row cp-mais"><button class="btn sm" id="cp-mais">+ Jogo</button><span class="sub">na série</span><select id="cp-sm" aria-label="Série do jogo novo">${Array.from({length:seriesDe(l.copia)},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join("")}</select></div>`;
-      const g=c.querySelector("#cp-gera"); if(g) g.onclick=()=>{ const P=propoeJogos(U,l); if(!P.length){ toast("Sem equipas para jogar: vê a rotação em 👥 Grupos."); return; }
-        P.forEach(p=>gravaJogoInt({id:uId("cj"),ut:id,lid,serie:p.serie,a:p.a,b:p.b,grA:grDoGrupo(U,p.a),grB:grDoGrupo(U,p.b),criadoEm:new Date().toISOString(),criadoPor:meuId||""})); toast(`${P.length} jogos gerados`); desenha(); };
-      const m=c.querySelector("#cp-mais"); if(m) m.onclick=()=>{ gravaJogoInt({id:uId("cj"),ut:id,lid,serie:+c.querySelector("#cp-sm").value,a:gs[0],b:gs[1],grA:grDoGrupo(U,gs[0]),grB:grDoGrupo(U,gs[1]),criadoEm:new Date().toISOString(),criadoPor:meuId||""}); desenha(); };
-      c.querySelectorAll(".cp-j").forEach(el=>{ const J=compJogos[el.dataset.j], upd=o=>{ gravaJogoInt({...J,...o}); desenha(); };
-        el.querySelectorAll("select[data-f]").forEach(sel=>sel.onchange=()=>{ const f=sel.dataset.f, o={[f]:sel.value}; if(f==="a") o.grA=grDoGrupo(U,sel.value); if(f==="b") o.grB=grDoGrupo(U,sel.value); upd(o); });
+      const atual=js.find(J=>J.id===corrige)||js.find(J=>!J.fim)||null, feitos=js.filter(J=>J.fim);
+      const desc=J=>liga&&J.jornada?gs.filter(g=>!js.some(x=>x.volta===J.volta&&x.jornada===J.jornada&&(x.a===g||x.b===g))):[];
+      const opGR=(gid,sel)=>`<option value="">— escolher —</option>`+opcoesGR(U,gid).map(a=>`<option value="${esc(a.k)}"${a.k===sel?" selected":""}>${esc(nomeCurto(a))}${ehGR(a)?" (GR)":""}</option>`).join("");
+      let h="";
+      if(!js.length){
+        if(liga){ const P=jogosLiga(gs,voltas), porEq=P.filter(p=>p.a===gs[0]||p.b===gs[0]).length;
+          h+=`<div class="cp-ini"><p style="margin:0">Equipas: <b>${gs.map(g=>esc(nm(g))).join(", ")}</b></p><h4>Nº de voltas (todos contra todos)</h4>
+            <div class="seg" id="cp-v">${[1,2,3,4].map(v=>`<button data-v="${v}" aria-pressed="${v===voltas}">${v}</button>`).join("")}</div>
+            <p class="sub" style="margin:0">${P.length} jogos · cada equipa joga ${porEq}${gs.length%2?" · em cada jogo descansa uma equipa":""}.</p>
+            <button class="btn primary cp-big" id="cp-gera">Gerar ${P.length} jogos</button></div>`; }
+        else h+=`<div class="cp-ini"><p style="margin:0">Entram por esta ordem: <b>${gs.map(g=>esc(nm(g))).join(" → ")}</b> (a ordem dos grupos em 👥 Grupos).</p>
+            <button class="btn primary cp-big" id="cp-ini">▶ Começar: ${esc(nm(gs[0]))} × ${esc(nm(gs[1]))}</button></div>`; }
+      if(atual){ const J=atual, r=resultado(J), gls=golosDe(J.id), d=desc(J), falta=!J.semGR&&(!J.grA||!J.grB), n=js.indexOf(J)+1;
+        h+=`<div class="cp-atual${J.fim?" fim":""}" data-j="${esc(J.id)}"><div class="cp-cab"><span class="cp-s">Jogo ${n}${liga&&J.volta?` · ${J.volta}.ª volta`:""}</span>${d.length?`<span class="sub">descansa ${esc(d.map(nm).join(", "))}</span>`:""}${J.fim?`<span class="chip rev">a corrigir</span>`:""}</div>
+          <div class="cp-placar"><div class="cp-eq2"><b>${esc(nm(J.a))}</b><button class="btn primary cp-gol" data-g="a">+ golo</button></div><b class="cp-pl">${r.a} – ${r.b}</b><div class="cp-eq2"><b>${esc(nm(J.b))}</b><button class="btn primary cp-gol" data-g="b">+ golo</button></div></div>
+          ${gls.length?`<ul class="cp-gl">${gls.map(g=>`<li><span>⚽ ${esc(nomeK(U,g.k))}${g.ag?" (AG)":""} · ${esc(nm(J[g.eq]))}</span><button class="icon" data-xg="${esc(g.id)}" aria-label="Tirar golo">✕</button></li>`).join("")}</ul>`:""}
+          <details class="cp-grd"${falta?" open":""}><summary>GR: ${J.semGR?"sem GR neste jogo":`${esc(J.grA?nomeK(U,J.grA):"—")} (${esc(nm(J.a))}) · ${esc(J.grB?nomeK(U,J.grB):"—")} (${esc(nm(J.b))})`}${falta?" · ⚠ falta escolher":""}</summary>
+            <div class="cp-gr">${J.semGR?"":`<label class="f">GR ${esc(nm(J.a))}<select data-f="grA">${opGR(J.a,J.grA)}</select></label><label class="f">GR ${esc(nm(J.b))}<select data-f="grB">${opGR(J.b,J.grB)}</select></label>`}
+              <button class="btn sm ghost" data-semgr>${J.semGR?"Pedir GR":"Sem GR"}</button></div></details>
+          <div class="cp-ac">${J.fim?`<button class="btn primary cp-big" data-ok>✓ Correção feita</button>`:`<button class="btn primary cp-big" data-fim>✓ Fim do jogo · ${r.a}–${r.b}</button>${gls.length?"":`<button class="btn ghost danger" data-xj>Tirar jogo</button>`}`}</div>
+          ${J.fim&&!liga?`<p class="sub" style="margin:0">Na Champions, mudar este resultado não muda os jogos seguintes já feitos.</p>`:""}</div>`; }
+      else if(js.length){ if(liga) h+=`<div class="cp-fimliga">✓ Liga terminada: ${js.length} jogos.</div>`;
+        else { const P=proxChampions(gs,js), ult=js[js.length-1], ru=resultado(ult);
+          if(P) h+=`<div class="cp-ini"><p style="margin:0">Último: ${esc(nm(ult.a))} ${ru.a}–${ru.b} ${esc(nm(ult.b))} · fica <b>${esc(nm(P.a))}</b>${ru.a===ru.b?" (empate: sai quem estava na mesa)":""}.</p>
+            <button class="btn primary cp-big" id="cp-prox">▶ Próximo jogo: ${esc(nm(P.a))} × ${esc(nm(P.b))}</button><p class="sub" style="margin:0">Fila: ${esc(P.fila.map(nm).join(", ")||"—")}. Quando acabar o tempo, é só fechar.</p></div>`; } }
+      if(feitos.length){ const T={}; gs.forEach(g=>T[g]={J:0,V:0,E:0,D:0,GM:0,GS:0});
+        feitos.forEach(J=>{ const r=resultado(J); [["a","b"],["b","a"]].forEach(([e,o])=>{ const t=T[J[e]]; if(!t) return; t.J++; t.GM+=r[e]; t.GS+=r[o]; t[r[e]>r[o]?"V":r[e]<r[o]?"D":"E"]++; }); });
+        const ord=gs.slice().sort((a,b)=>(3*T[b].V+T[b].E)-(3*T[a].V+T[a].E)||(T[b].GM-T[b].GS)-(T[a].GM-T[a].GS)||T[b].GM-T[a].GM);
+        h+=`<h4>Equipas neste exercício</h4><div class="tblwrap"><table class="ttab cp-eqtab"><thead><tr><th>Equipa</th><th class="n">J</th><th class="n">V</th><th class="n">E</th><th class="n">D</th><th class="n">GM</th><th class="n">GS</th><th class="n">Pts</th></tr></thead><tbody>
+          ${ord.map(g=>{ const t=T[g]; return `<tr><td><b>${esc(nm(g))}</b></td><td class="n">${t.J}</td><td class="n">${t.V}</td><td class="n">${t.E}</td><td class="n">${t.D}</td><td class="n">${t.GM}</td><td class="n">${t.GS}</td><td class="n"><b>${3*t.V+t.E}</b></td></tr>`; }).join("")}</tbody></table></div>
+          <h4>Jogos</h4><ul class="cp-lista">${js.map((J,i)=>{ const r=resultado(J), va=r.a>r.b, vb=r.b>r.a;
+            return `<li class="${J.fim?"":"pend"}"><span class="cp-n">${i+1}</span><span class="cp-r"><span class="${va?"v":""}">${esc(nm(J.a))}</span> <b>${J.fim||J.id===atual?.id?`${r.a}–${r.b}`:"×"}</b> <span class="${vb?"v":""}">${esc(nm(J.b))}</span>${J.fim?"":` <small class="sub">${J.id===atual?.id?"a jogar":"por jogar"}</small>`}</span>${J.fim&&J.id!==corrige?`<button class="btn sm ghost" data-corr="${esc(J.id)}">✎ Corrigir</button>`:""}</li>`; }).join("")}</ul>`; }
+      c.innerHTML=h;
+      s.querySelectorAll("#cp-v button").forEach(b=>b.onclick=()=>{ voltas=+b.dataset.v; desenha(); });
+      const ge=c.querySelector("#cp-gera"); if(ge) ge.onclick=()=>{ const P=jogosLiga(gs,voltas); P.forEach((p,i)=>novo(U,jogosDe(id,lid),{serie:i+1,...p})); toast(`${P.length} jogos gerados`); desenha(); };
+      const ini=c.querySelector("#cp-ini"); if(ini) ini.onclick=()=>{ novo(U,[],{serie:1,a:gs[0],b:gs[1]}); desenha(); };
+      const px=c.querySelector("#cp-prox"); if(px) px.onclick=()=>{ const P=proxChampions(gs,js); if(P) novo(U,js,{serie:js.length+1,a:P.a,b:P.b}); desenha(); };
+      c.querySelectorAll("[data-corr]").forEach(b=>b.onclick=()=>{ corrige=b.dataset.corr; desenha(); });
+      const el=c.querySelector(".cp-atual"); if(el){ const J=compJogos[el.dataset.j], upd=o=>{ gravaJogoInt({...J,...o}); desenha(); };
+        el.querySelectorAll("select[data-f]").forEach(sel=>sel.onchange=()=>upd({[sel.dataset.f]:sel.value}));
         el.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>{ golo={jid:J.id,eq:b.dataset.g,ag:false}; desenha(); });
         el.querySelectorAll("[data-xg]").forEach(b=>confirma2(b,"Tirar?",()=>{ tiraGolo(b.dataset.xg); desenha(); }));
         const sg=el.querySelector("[data-semgr]"); if(sg) sg.onclick=()=>upd({semGR:!J.semGR});
-        const f=el.querySelector("[data-fim]"); if(f) f.onclick=()=>{ upd({fim:true}); toast(`Fim do jogo · ${resultado(J).a}–${resultado(J).b}`); };
-        const ra=el.querySelector("[data-reabre]"); if(ra) ra.onclick=()=>upd({fim:false});
-        const xj=el.querySelector("[data-xj]"); if(xj) confirma2(xj,golosDe(J.id).length?"Tira o jogo e os golos?":"Tirar?",()=>{ tiraJogoInt(J.id); desenha(); }); }); };
+        const f=el.querySelector("[data-fim]"); if(f) f.onclick=()=>{ const r=resultado(J); upd({fim:true}); toast(`Fim do jogo · ${r.a}–${r.b}`); };
+        const ok=el.querySelector("[data-ok]"); if(ok) ok.onclick=()=>{ corrige=""; desenha(); };
+        const xj=el.querySelector("[data-xj]"); if(xj) confirma2(xj,"Tirar?",()=>{ tiraJogoInt(J.id); desenha(); }); } };
     compRedesenha=desenha; desenha();
     const obs=new MutationObserver(()=>{ if(!$("sheet-root").innerHTML){ compRedesenha=null; obs.disconnect(); renderUT(); } }); obs.observe($("sheet-root"),{childList:true}); }); }
 
@@ -170,16 +207,17 @@ function compStats(F){ const P={}, GR={}, pend=[], aviso=[];
           atletasGrupo(U,J[e]).forEach(a=>{ if(ehGR(a)) return; const c=chaveT(a), x=P[c]||(P[c]={nome:nomeCurto(a),J:0,V:0,E:0,D:0,GM:0,GS:0,golos:0,AG:0,jogos:[]});
             x.J++; x[res]++; x.GM+=gm; x.GS+=gs; const meus=gls.filter(g=>g.k===a.k);
             x.jogos.push({U,num,eq:nomeGrupoUT(U,J[e]),res,gm,gs,golos:meus.filter(g=>!g.ag).length,ag:meus.filter(g=>g.ag).length}); });
-          const gk=J.semGR?"":J["gr"+e.toUpperCase()]; if(gk){ const a=aDe(gk); if(a){ const c=chaveT(a), y=GR[c]||(GR[c]={nome:nomeCurto(a),J:0,GS:0,zero:0,jogos:[]}); y.J++; y.GS+=gs; if(!gs) y.zero++; y.jogos.push({U,num,eq:nomeGrupoUT(U,J[e]),gs}); } } });
+          const gk=J.semGR?"":J["gr"+e.toUpperCase()]; if(gk){ const a=aDe(gk); if(a){ const c=chaveT(a), y=GR[c]||(GR[c]={nome:nomeCurto(a),J:0,V:0,E:0,D:0,GS:0,zero:0,jogos:[]}); y.J++; y[res]++; y.GS+=gs; if(!gs) y.zero++; y.jogos.push({U,num,eq:nomeGrupoUT(U,J[e]),res,gm,gs}); } } });
         gls.forEach(g=>{ const a=aDe(g.k); if(!a||ehGR(a)) return; const x=P[chaveT(a)]; if(!x) return; if(g.ag) x.AG++; else x.golos++; }); }); }); });
   /* histórico do Excel (antes da app): J, V, E, D e golos; nos GR, jogos e golos sofridos */
   (F.hist||[]).filter(h=>h.tipo==="comp"&&(!cF.et||cF.et===h.et)).forEach(h=>h.linhas.forEach(l=>{ const nome=nomeHist(l);
-    if(l.gr){ const y=GR[l.k]||(GR[l.k]={nome,J:0,GS:0,zero:0,jogos:[]}); y.J+=l.J; y.GS+=l.GS; y.jogos.push({hist:h,J:l.J,gs:l.GS}); return; }
+    if(l.gr){ const y=GR[l.k]||(GR[l.k]={nome,J:0,V:0,E:0,D:0,GS:0,zero:0,jogos:[]}); y.J+=l.J; y.GS+=l.GS; y.jogos.push({hist:h,J:l.J,gs:l.GS}); return; }
     const x=P[l.k]||(P[l.k]={nome,J:0,V:0,E:0,D:0,GM:0,GS:0,golos:0,AG:0,jogos:[]}); ["J","V","E","D","golos"].forEach(c=>x[c]+=l[c]); x.jogos.push({hist:h,...l}); }));
   [P,GR].forEach(o=>Object.values(o).forEach(x=>x.jogos.sort((a,b)=>(a.hist?a.hist.data:a.U.data).localeCompare(b.hist?b.hist.data:b.U.data))));
   Object.values(P).forEach(x=>{ x.Pts=3*x.V+x.E; x.PtsJ=x.J?x.Pts/x.J:0; x.DG=x.GM-x.GS; });
-  Object.values(GR).forEach(y=>{ y.med=y.J?y.GS/y.J:0; });
+  Object.values(GR).forEach(y=>{ y.med=y.J?y.GS/y.J:0; y.Pts=3*y.V+y.E; });
   return {P,GR,pend,aviso}; }
+const COLS_G=[["J","J"],["V","V"],["E","E"],["D","D"],["Pts","Pts"],["GS","Golos sofridos"],["med","Média GS"],["zero","Sem sofrer"]];
 const COLS_C=[["J","J"],["V","V"],["E","E"],["D","D"],["Pts","Pts"],["PtsJ","Pts/J"],["GM","GM"],["GS","GS"],["DG","DG"],["golos","Golos"],["AG","AG"]];
 const ordemC=(a,b)=>{ if(cOrd.k) return cOrd.d*((a[cOrd.k]-b[cOrd.k])||0)||b.Pts-a.Pts||b.DG-a.DG||b.GM-a.GM||b.golos-a.golos||a.nome.localeCompare(b.nome,"pt");
   return b.Pts-a.Pts||b.DG-a.DG||b.GM-a.GM||b.golos-a.golos||a.nome.localeCompare(b.nome,"pt"); };
@@ -194,8 +232,8 @@ function renderComp(){ const F=utsFiltro(), S=compStats(F); navFiltro(F,true);
       ${ls.map(([c,x],i)=>`<tr data-c="${esc(c)}"><td>${i+1}</td><td><b>${esc(x.nome)}</b></td>${COLS_C.map(([k])=>`<td class="n">${k==="PtsJ"?f1(x[k]):k==="Pts"?`<b>${x[k]}</b>`:x[k]}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`
       :`<div class="m-vazio"><b>Sem jogos terminados neste filtro.</b><span>Os jogos registam-se na UT, no botão 🏆 dos exercícios marcados como Liga ou Champions.</span></div>`}
     <h3 class="cp-h">Guarda-redes</h3>
-    ${gr.length?`<div class="tblwrap" style="margin:0 14px 14px"><table class="ttab cptab"><thead><tr><th>GR</th>${[["J","J"],["GS","Golos sofridos"],["med","Média GS"],["zero","Sem sofrer"]].map(([k,n])=>`<th class="n"><button class="lnk" data-og="${k}">${n}${seta(gOrd,k)}</button></th>`).join("")}</tr></thead><tbody>
-      ${gr.map(([c,y])=>`<tr data-g="${esc(c)}"><td><b>${esc(y.nome)}</b></td><td class="n">${y.J}</td><td class="n">${y.GS}</td><td class="n"><b>${f1(y.med)}</b></td><td class="n">${y.zero}</td></tr>`).join("")}</tbody></table></div>`
+    ${gr.length?`<div class="tblwrap" style="margin:0 14px 14px"><table class="ttab cptab"><thead><tr><th>GR</th>${COLS_G.map(([k,n])=>`<th class="n"><button class="lnk" data-og="${k}">${n}${seta(gOrd,k)}</button></th>`).join("")}</tr></thead><tbody>
+      ${gr.map(([c,y])=>`<tr data-g="${esc(c)}"><td><b>${esc(y.nome)}</b></td>${COLS_G.map(([k])=>`<td class="n">${k==="med"?`<b>${f1(y.med)}</b>`:k==="Pts"?`<b>${y.Pts}</b>`:y[k]}</td>`).join("")}</tr>`).join("")}</tbody></table></div><p class="sub" style="margin:0 14px 14px">Os GR não estão presos a uma equipa: em cada jogo contam pela equipa que defenderam (V/E/D e pontos desde a v98; o histórico do Excel só tem jogos e golos sofridos).</p>`
       :`<p class="sub" style="margin:0 14px 14px">Ainda sem GR indicados em jogos terminados.</p>`}`;
   $("u-corpo").querySelectorAll("[data-o]").forEach(b=>b.onclick=()=>{ const k=b.dataset.o; cOrd=cOrd.k===k?(cOrd.d<0?{k,d:1}:{k:"",d:-1}):{k,d:-1}; renderComp(); });
   $("u-corpo").querySelectorAll("[data-og]").forEach(b=>b.onclick=()=>{ const k=b.dataset.og; gOrd=gOrd.k===k?(gOrd.d>0?{k,d:-1}:{k:"",d:1}):{k,d:1}; renderComp(); });
@@ -206,14 +244,14 @@ function renderComp(){ const F=utsFiltro(), S=compStats(F); navFiltro(F,true);
     <div class="add"><h3>Jogos assinalados <span class="count">${lst.length}</span></h3>${lst.length?`<ul class="uavisos">${lst.map((x,i)=>`<li><button class="lnk" data-i="${i}">UT${x.U.numero}</button> ${esc(x.num)} · série ${x.J.serie}: ${esc(x.t)}</li>`).join("")}</ul><p class="sub" style="margin:0">Jogos sem resultado não contam.</p>`:`<p class="sub" style="margin:0">Todos os jogos estão terminados e com GR.</p>`}</div>`;
   $("u-panel").querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{ const x=lst[+b.dataset.i]; uModo="ut"; try{ localStorage.setItem("sca-u-modo","ut"); }catch(e){} uCur=x.U.id; renderUT(); }); }
 function folhaJogosAtleta(x,gr){ if(!x) return; const res={V:"Vitória",E:"Empate",D:"Derrota"};
-  folha(`<h3>${esc(x.nome)}${gr?" · GR":""}</h3><p class="sub" style="margin:0">${gr?`${x.J} jogos · ${x.GS} golos sofridos · ${x.zero} sem sofrer`:`${x.J} jogos · ${x.Pts} pts · ${x.golos} golos${x.AG?` · ${x.AG} AG`:""}`}</p>
+  folha(`<h3>${esc(x.nome)}${gr?" · GR":""}</h3><p class="sub" style="margin:0">${gr?`${x.J} jogos · ${x.Pts} pts · ${x.GS} golos sofridos · ${x.zero} sem sofrer`:`${x.J} jogos · ${x.Pts} pts · ${x.golos} golos${x.AG?` · ${x.AG} AG`:""}`}</p>
     <ul class="evl">${x.jogos.map(j=>j.hist?`<li><span style="flex:1"><b>${esc(dataPt_(j.hist.data).slice(0,5))}</b> · UT${j.hist.ut} · <i>Excel</i> · ${gr?`${j.J} ${j.J===1?"jogo":"jogos"} · sofreu ${j.gs}`:`${j.J} ${j.J===1?"jogo":"jogos"} · ${j.V}V ${j.E}E ${j.D}D${j.golos?` · ⚽ ${j.golos}`:""}`}</span></li>`
-      :`<li><span style="flex:1"><b>${esc(dataPt_(j.U.data).slice(0,5))}</b> · UT${j.U.numero} ${esc(j.num)} · ${esc(j.eq)} · ${gr?`sofreu ${j.gs}`:`${res[j.res]} ${j.gm}–${j.gs}${j.golos?` · ⚽ ${j.golos}`:""}${j.ag?` · AG ${j.ag}`:""}`}</span></li>`).join("")}</ul>
+      :`<li><span style="flex:1"><b>${esc(dataPt_(j.U.data).slice(0,5))}</b> · UT${j.U.numero} ${esc(j.num)} · ${esc(j.eq)} · ${gr?`${res[j.res]} ${j.gm}–${j.gs} · sofreu ${j.gs}`:`${res[j.res]} ${j.gm}–${j.gs}${j.golos?` · ⚽ ${j.golos}`:""}${j.ag?` · AG ${j.ag}`:""}`}</span></li>`).join("")}</ul>
     <div class="actions"><button class="btn primary" data-close>Fechar</button></div>`,()=>{}); }
 function csvComp(F,S){ const ls=Object.values(S.P).sort(ordemC), gr=Object.values(S.GR).sort(ordemG);
   guardaCsv(nomeCsv("Competicao",F),[["SCA Performance · Competição interna",filtroTxt(F)],[],["#","Atleta",...COLS_C.map(c=>c[1])],
-    ...ls.map((x,i)=>[i+1,x.nome,...COLS_C.map(([k])=>k==="PtsJ"?f1(x[k]):x[k])]),[],["Guarda-redes"],["GR","J","Golos sofridos","Média GS","Sem sofrer"],
-    ...gr.map(y=>[y.nome,y.J,y.GS,f1(y.med),y.zero]),[],["Jogos assinalados"],["UT","Exercício","Série","Motivo"],...S.pend.concat(S.aviso).map(x=>["UT"+x.U.numero,x.num,x.J.serie,x.t])]); }
+    ...ls.map((x,i)=>[i+1,x.nome,...COLS_C.map(([k])=>k==="PtsJ"?f1(x[k]):x[k])]),[],["Guarda-redes"],["GR",...COLS_G.map(c=>c[1])],
+    ...gr.map(y=>[y.nome,...COLS_G.map(([k])=>k==="med"?f1(y.med):y[k])]),[],["Jogos assinalados"],["UT","Exercício","Série","Motivo"],...S.pend.concat(S.aviso).map(x=>["UT"+x.U.numero,x.num,x.J.serie,x.t])]); }
 
 /* ---------- Rankings do Meinho: Rei do Meinho (21 passes) e Rei das Cuecas ---------- */
 function meinhoStats(F){ const R={"21":{},cueca:{}};

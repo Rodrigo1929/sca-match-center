@@ -91,7 +91,10 @@ function normQ(d){ const Q={...d}; Q.nome=String(Q.nome||"Sem nome"); if(!MOMENT
   Q.vel=+Q.vel||1.2; Q.pausa=+Q.pausa||1.2; Q.rot=ROT_M[Q.rot]?Q.rot:"pos"; Q.nomes=!!Q.nomes; Q.auto=Q.auto!==false; Q.ordem=+Q.ordem||0;
   Q.vista=VISTAS.some(v=>v[0]===Q.vista)?Q.vista:"inteiro"; Q.vw=mClamp(Math.round(+Q.vw||20),4,100); Q.vh=mClamp(Math.round(+Q.vh||20),4,68);
   Q.pecas=Array.isArray(Q.pecas)?Q.pecas.filter(p=>p&&p.id&&PECAS_EQ.includes(p.eq)&&(p.eq!=="mat"||MAT[p.tipo])).map(p=>{ const c={...p}; if(c.slot) c.slot=String(c.slot); else delete c.slot;
-    if(!COLETES.some(x=>x[0]===c.cor)) delete c.cor; if(c.ang!=null) c.ang=((Math.round(+c.ang/45)*45)%360+360)%360; return c; }):[];
+    if(!COLETES.some(x=>x[0]===c.cor)) delete c.cor; if(c.ang!=null) c.ang=((Math.round(+c.ang/45)*45)%360+360)%360;
+    if(c.tam!=null){ const t=Math.round(mClamp(+c.tam||1,.5,2.5)*4)/4; if(t===1) delete c.tam; else c.tam=t; }   // v99: tamanho da peça
+    if(c.lab!=null&&!ROT_M[c.lab]) delete c.lab;                                                              // v99: texto só desta bolinha
+    return c; }):[];
   Q.trocas=Array.isArray(Q.trocas)?Q.trocas.filter(t=>t&&t.sai&&t.entra).map(t=>({id:String(t.id||mId("t")),sai:String(t.sai),entra:String(t.entra)})):[];
   Q.passos=Array.isArray(Q.passos)&&Q.passos.length?Q.passos.map(P=>({id:P.id||mId("p"),nota:String(P.nota||""),pos:{...(P.pos||{})},setas:Array.isArray(P.setas)?P.setas:[],zonas:Array.isArray(P.zonas)?P.zonas:[]})):[{id:mId("p"),nota:"",pos:{},setas:[],zonas:[]}];
   Q.passos.forEach((P,i)=>Q.pecas.forEach(pc=>{ if(!P.pos[pc.id]) P.pos[pc.id]=i?{...Q.passos[i-1].pos[pc.id]}:{x:52.5,y:34}; }));
@@ -128,7 +131,8 @@ const MX=m=>MV.ox+m*MV.k, MY=m=>MV.oy+m*MV.k, MK=m=>m*MV.k;
 function numerosQ(Q){ const slots=[...new Set(Q.pecas.filter(p=>p.eq==="nos"&&p.slot).map(p=>p.slot))], v={}; slots.forEach(s=>v[s]=baseOf(s));
   Q.trocas.forEach(t=>{ if(!slots.some(s=>v[s]===t.sai)) return; slots.forEach(s=>{ if(v[s]===t.sai) v[s]=t.entra; else if(v[s]===t.entra) v[s]=t.sai; }); }); return v; }
 function numPeca(pc,v){ return pc.slot?(v[pc.slot]||""):String(pc.n||""); }
-function rotulo(Q,pc,v){ if(Q.rot==="nada") return ""; const n=numPeca(pc,v); return Q.rot==="num"&&n?n:(pc.pos||n||""); }
+function rotulo(Q,pc,v){ const m=pc.lab||Q.rot; if(m==="nada") return ""; const n=numPeca(pc,v); return m==="num"&&n?n:(pc.pos||n||""); }
+const tamPc=pc=>pc.tam||1;
 /* por baixo da bolinha só o nome, e só com "Nomes por baixo" ligado */
 function legendaPeca(Q,pc,v){ const n=numPeca(pc,v); return Q.nomes&&n?nome(n):""; }
 /* número ⇄ posição nas bolinhas de um quadro (fica guardado: TV e vídeo mostram o mesmo) */
@@ -205,21 +209,21 @@ function primsDinamicas(Q,t,ed){ const o=[], n=Q.passos.length; t=mClamp(t,0,n-1
   if(ed&&ed.tmpZ){ const z=ed.tmpZ; zona({x:Math.min(z.x1,z.x2),y:Math.min(z.y1,z.y2),w:Math.abs(z.x2-z.x1),h:Math.abs(z.y2-z.y1),cor:mZonaCor},1,null); }
   /* balizas e cones (por baixo dos jogadores) */
   const sel=ed&&ed.edit, toque=(cx,cy,rr,id)=>{ if(!ed) return; if(sel&&mSel===id) o.push({t:"circ",cx,cy,r:rr+Z(.5),fill:"none",stroke:"#F79646",sw:Z(.35)}); o.push({t:"circ",cx,cy,r:rr+Z(.8),fill:"rgba(0,0,0,0)",attr:{"data-p":id}}); };
-  Q.pecas.filter(p=>BALIZAS[p.eq]).forEach(pc=>{ const p=pos[pc.id], [W,D]=BALIZAS[pc.eq], a=(pc.ang==null?180:pc.ang)*Math.PI/180, ux=Math.cos(a), uy=Math.sin(a), vx=-uy, vy=ux;
+  Q.pecas.filter(p=>BALIZAS[p.eq]).forEach(pc=>{ const p=pos[pc.id], W=BALIZAS[pc.eq][0]*tamPc(pc), D=BALIZAS[pc.eq][1]*tamPc(pc), a=(pc.ang==null?180:pc.ang)*Math.PI/180, ux=Math.cos(a), uy=Math.sin(a), vx=-uy, vy=ux;
     const c=(s,d)=>V.P(p.x+vx*s*W/2-ux*d*D,p.y+vy*s*W/2-uy*d*D), fl=c(1,0), fr=c(-1,0), bl=c(1,1), br=c(-1,1), lw=Z(pc.eq==="baliza"?.3:.22);
     o.push({t:"poly",pts:[fl,bl,br,fr],fill:"#E9E7E2"});
     for(let i=1;i<4;i++){ const s=1-i/2; o.push({t:"line",x1:c(s,0)[0],y1:c(s,0)[1],x2:c(s,1)[0],y2:c(s,1)[1],stroke:"#A8A49A",sw:lw*.5}); }
     const cg=(COLETES.find(x=>x[0]===pc.cor)||[])[2]; /* mini-baliza de cor: aro da cor escolhida */
     [[fl,bl],[bl,br],[br,fr]].forEach(([p1,p2])=>o.push({t:"line",x1:p1[0],y1:p1[1],x2:p2[0],y2:p2[1],stroke:cg||"#1B1A17",sw:lw*(cg?1.3:1),cap:"round"}));
     [fl,fr].forEach(q=>o.push({t:"circ",cx:q[0],cy:q[1],r:lw*1.1,fill:cg||"#C00000",stroke:cg?"#1B1A17":null,sw:lw*.3}));
-    const [cx,cy]=V.P(p.x,p.y); toque(cx,cy,Z(1.2),pc.id); });
-  Q.pecas.filter(p=>p.eq==="cone").forEach(pc=>{ const p=pos[pc.id], [cx,cy]=V.P(p.x,p.y), c=(COLETES.find(x=>x[0]===pc.cor)||COLETES[4])[2], h=Z(.85);
+    const [cx,cy]=V.P(p.x,p.y); toque(cx,cy,Z(1.2*tamPc(pc)),pc.id); });
+  Q.pecas.filter(p=>p.eq==="cone").forEach(pc=>{ const p=pos[pc.id], [cx,cy]=V.P(p.x,p.y), c=(COLETES.find(x=>x[0]===pc.cor)||COLETES[4])[2], h=Z(.85*tamPc(pc));
     o.push({t:"poly",pts:[[cx,cy-h],[cx-h*.85,cy+h*.6],[cx+h*.85,cy+h*.6]],fill:c,stroke:"#1B1A17",sw:Z(.1)}); toque(cx,cy,h,pc.id); });
   /* material de treino por baixo dos jogadores; as marcas (certo, errado, número, treinador) vão por cima */
-  const marcaM=pc=>MAT[pc.tipo]&&MAT[pc.tipo][1]==="marca", pintaMat=pc=>{ const p=pos[pc.id]; desenhaMat(o,pc,p,V,Z); const [cx,cy]=V.P(p.x,p.y); toque(cx,cy,Z(MAT[pc.tipo][3]?1.6:1.2),pc.id); };
+  const marcaM=pc=>MAT[pc.tipo]&&MAT[pc.tipo][1]==="marca", pintaMat=pc=>{ const p=pos[pc.id], t=tamPc(pc); desenhaMat(o,pc,p,V,v=>Z(v*t)); const [cx,cy]=V.P(p.x,p.y); toque(cx,cy,Z((MAT[pc.tipo][3]?1.6:1.2)*t),pc.id); };
   Q.pecas.filter(p=>p.eq==="mat"&&!marcaM(p)).forEach(pintaMat);
   /* setas automáticas (movimento até ao passo seguinte); medidas do Onze Titular das bolas paradas (bolinha ~2,3 m, número ~2,2 m) */
-  const r=2.3, rb=1.25, joga=pc=>pc.eq==="nos"||pc.eq==="adv"||pc.eq==="neutro"||pc.eq==="bola";
+  const r0=2.3, r=r0, rb=1.25, joga=pc=>pc.eq==="nos"||pc.eq==="adv"||pc.eq==="neutro"||pc.eq==="bola";
   if(Q.auto&&opA>0&&k+1<n){ const C=Q.passos[k+1]; Q.pecas.forEach(pc=>{ if(!joga(pc)) return; const a=A.pos[pc.id], b=C.pos[pc.id]; if(!a||!b||Math.hypot(b.x-a.x,b.y-a.y)<1.4) return;
       const [ax,ay]=V.P(a.x,a.y), [bx,by]=V.P(b.x,b.y), d=Math.hypot(bx-ax,by-ay), ux=(bx-ax)/d, uy=(by-ay)/d, rr=Z(pc.eq==="bola"?rb:r), st=pc.eq==="bola"?SETA_T.passe:SETA_T.corrida;
       const cor=pc.eq==="adv"?"#0070C0":st[1]; seta(o,ax+ux*rr,ay+uy*rr,bx-ux*Z(.3),by-uy*Z(.3),cor,Z(st[2]),st[3]?st[3].map(Z):null,opA*.9,null,V.z); }); }
@@ -232,10 +236,11 @@ function primsDinamicas(Q,t,ed){ const o=[], n=Q.passos.length; t=mClamp(t,0,n-1
   const ordem=[...Q.pecas.filter(p=>p.eq==="adv"),...Q.pecas.filter(p=>p.eq==="neutro"),...Q.pecas.filter(p=>p.eq==="nos"),...Q.pecas.filter(p=>p.eq==="bola")];
   const v=numerosQ(Q);
   ordem.forEach(pc=>{ const p=pos[pc.id], [cx,cy]=V.P(p.x,p.y);
-    if(pc.eq==="bola"){ if(IMG_DATA["slides/bola.png"]) o.push({t:"img",href:IMG_DATA["slides/bola.png"],x:cx-Z(rb),y:cy-Z(rb),w:Z(2*rb),h:Z(2*rb)});
-      else { o.push({t:"circ",cx,cy,r:Z(rb),fill:"#FFFFFF",stroke:"#111",sw:Z(.16)}); o.push({t:"circ",cx,cy,r:Z(.3),fill:"#111"}); }
-      toque(cx,cy,Z(rb),pc.id); return; }
-    const S=estiloPeca(pc), lab=rotulo(Q,pc,v), fs=Z(lab.length<=2?2.15:lab.length===3?1.55:1.2);
+    const tk=tamPc(pc);
+    if(pc.eq==="bola"){ const rr=rb*tk; if(IMG_DATA["slides/bola.png"]) o.push({t:"img",href:IMG_DATA["slides/bola.png"],x:cx-Z(rr),y:cy-Z(rr),w:Z(2*rr),h:Z(2*rr)});
+      else { o.push({t:"circ",cx,cy,r:Z(rr),fill:"#FFFFFF",stroke:"#111",sw:Z(.16)}); o.push({t:"circ",cx,cy,r:Z(.3*tk),fill:"#111"}); }
+      toque(cx,cy,Z(rr),pc.id); return; }
+    const S=estiloPeca(pc), lab=rotulo(Q,pc,v), fs=Z((lab.length<=2?2.15:lab.length===3?1.55:1.2)*tk), r=r0*tk;
     o.push({t:"circ",cx,cy,r:Z(r),fill:S.fill,stroke:"#000000",sw:Z(.2)});
     if(lab) o.push({t:"text",x:cx,y:cy+fs*.35,txt:lab,fs,fill:S.txt,w:700,anchor:"middle"});
     const lg=pc.eq==="nos"?legendaPeca(Q,pc,v):""; if(lg){ const nfs=Z(1.3), nw=textW(lg,nfs,700)+Z(1.1); o.push({t:"rect",x:cx-nw/2,y:cy+Z(r+.3),w:nw,h:nfs*1.35,rx:Z(.5),fill:"rgba(27,26,23,.85)"}); o.push({t:"text",x:cx,y:cy+Z(r+.3)+nfs*1.02,txt:lg,fs:nfs,fill:"#fff",w:700,anchor:"middle"}); }
@@ -370,7 +375,9 @@ function ligaEdicao(svg){
   svg.addEventListener("pointerdown",e=>{ if(!mEdit||mPl.playing) return; const Q=qAtual(); if(!Q) return; const k=passoAtual(), m=mPt(e), alvo=e.target.closest("[data-p],[data-s],[data-z]");
     if(alvo&&alvo.dataset.p&&(mTool==="mover"||mTool==="seta")){ const pid=alvo.dataset.p, P=Q.passos[k].pos[pid];
       if(mTool==="seta"){ mDrag={tipo:"seta",x1:P.x,y1:P.y}; mTmp={tmpS:{x1:P.x,y1:P.y,x2:m.x,y2:m.y}}; }
-      else mDrag={tipo:"peca",pid,dx:P.x-m.x,dy:P.y-m.y,ox:P.x,oy:P.y,mov:false,q:clone(Q)};
+      else { mDrag={tipo:"peca",pid,dx:P.x-m.x,dy:P.y-m.y,ox:P.x,oy:P.y,mov:false,q:clone(Q)};
+        /* iPad: dedo pressionado sem mexer = o mesmo menu do botão direito */
+        if(e.pointerType!=="mouse"){ const ev={clientX:e.clientX,clientY:e.clientY,preventDefault(){}}; mDrag.lt=setTimeout(()=>{ if(mDrag&&mDrag.tipo==="peca"&&!mDrag.mov){ mDrag=null; menuPecaM(ev,pid); } },550); } }
     } else if(alvo&&alvo.dataset.s&&mTool==="mover"){ folhaSetaM(alvo.dataset.s); return; }
     else if(alvo&&alvo.dataset.z&&mTool==="mover"){ const z=Q.passos[k].zonas.find(z=>z.id===alvo.dataset.z); if(!z) return; mDrag={tipo:"zona",zid:z.id,dx:z.x-m.x,dy:z.y-m.y,ox:z.x,oy:z.y,mov:false,q:clone(Q)}; }
     else if(mTool==="seta"){ mDrag={tipo:"seta",x1:m.x,y1:m.y}; mTmp={tmpS:{x1:m.x,y1:m.y,x2:m.x,y2:m.y}}; }
@@ -382,12 +389,13 @@ function ligaEdicao(svg){
     else if(mDrag.tipo==="zona"){ const Q=mDrag.q, z=Q.passos[k].zonas.find(z=>z.id===mDrag.zid); z.x=mClamp(m.x+mDrag.dx,-5,105); z.y=mClamp(m.y+mDrag.dy,-5,68); if(Math.hypot(z.x-mDrag.ox,z.y-mDrag.oy)>.4) mDrag.mov=true; mPl.setQ(Q); mPl.set(k); }
     else if(mDrag.tipo==="seta"){ mTmp.tmpS.x2=m.x; mTmp.tmpS.y2=m.y; mPl.set(k); }
     else if(mDrag.tipo==="zonaN"){ mTmp.tmpZ.x2=m.x; mTmp.tmpZ.y2=m.y; mPl.set(k); } });
-  const fim=e=>{ if(!mDrag) return; const D=mDrag, T=mTmp; mDrag=null; mTmp=null; const k=passoAtual();
+  const fim=e=>{ if(!mDrag) return; const D=mDrag, T=mTmp; mDrag=null; mTmp=null; const k=passoAtual(); if(D.lt) clearTimeout(D.lt);
     if(D.tipo==="peca"){ if(D.mov){ const P=D.q.passos[k].pos[D.pid]; editaQ(Q=>{ Q.passos[k].pos[D.pid]={x:Math.round(P.x*10)/10,y:Math.round(P.y*10)/10}; }); } else { mSel=D.pid; mPl.set(k); folhaPecaM(D.pid); } }
     else if(D.tipo==="zona"){ if(D.mov){ const z=D.q.passos[k].zonas.find(z=>z.id===D.zid); editaQ(Q=>{ const t=Q.passos[k].zonas.find(x=>x.id===D.zid); if(t){ t.x=z.x; t.y=z.y; } }); } else folhaZonaM(D.zid); }
     else if(D.tipo==="seta"){ const s=T.tmpS; if(Math.hypot(s.x2-s.x1,s.y2-s.y1)>2) editaQ(Q=>Q.passos[k].setas.push({id:mId("s"),t:mSetaT,x1:s.x1,y1:s.y1,x2:s.x2,y2:s.y2})); else mPl.set(k); }
     else if(D.tipo==="zonaN"){ const z=T.tmpZ, w=Math.abs(z.x2-z.x1), h=Math.abs(z.y2-z.y1); if(w>2&&h>2) editaQ(Q=>Q.passos[k].zonas.push({id:mId("z"),x:Math.min(z.x1,z.x2),y:Math.min(z.y1,z.y2),w,h,cor:mZonaCor})); else mPl.set(k); } };
   svg.addEventListener("pointerup",fim); svg.addEventListener("pointercancel",fim);
+  svg.addEventListener("contextmenu",e=>{ if(!mEdit||mPl.playing) return; const alvo=e.target.closest("[data-p]"); if(!alvo) return; if(mDrag&&mDrag.lt) clearTimeout(mDrag.lt); mDrag=null; menuPecaM(e,alvo.dataset.p); });
   /* fora da edição: tocar num jogador SCA abre a troca, como nas bolas paradas */
   svg.addEventListener("click",e=>{ if(mEdit||mPl.playing) return; const alvo=e.target.closest("[data-p]"), Q=qAtual(); if(!alvo||!Q) return;
     const pc=Q.pecas.find(p=>p.id===alvo.dataset.p); if(pc&&pc.eq==="nos") folhaSubM(pc.id); }); }
@@ -414,20 +422,36 @@ function folhaSubM(pid){ const Q=qAtual(), pc=Q&&Q.pecas.find(p=>p.id===pid); if
 function confirma2(btn,txt,acao){ let arm=false, tt=null; const orig=btn.textContent; btn.onclick=()=>{ if(!arm){ arm=true; btn.textContent=txt; btn.style.background="#C00000"; btn.style.color="#fff"; tt=setTimeout(()=>{ arm=false; btn.textContent=orig; btn.style.background=""; btn.style.color=""; },3000); return; } clearTimeout(tt); acao(); }; }
 const NOME_EQ={nos:"Jogador SCA",adv:"Adversário",neutro:"Joker",bola:"Bola",cone:"Cone",minib:"Mini-baliza",baliza:"Baliza"};
 const nomePeca=pc=>pc.eq==="mat"?(MAT[pc.tipo]||["Material"])[0]:NOME_EQ[pc.eq];
+/* duplicar: a cópia fica 2 m ao lado em todos os passos (sem ligação ao onze, para não repetir o número) */
+function duplicaPeca(pid){ const Q0=qAtual(), pc=Q0&&Q0.pecas.find(p=>p.id===pid); if(!pc) return; const id=mId(pid.replace(/[^a-z]/gi,"").slice(0,1)||"n");
+  editaQ(Q=>{ const c={...clone(pc),id}; delete c.slot; Q.pecas.push(c); Q.passos.forEach(P=>{ const p=P.pos[pid]||{x:52.5,y:34}; P.pos[id]={x:mClamp(p.x+2,-3,108),y:mClamp(p.y+2,-2,70)}; }); });
+  mSel=id; renderModelo(); toast(`${nomePeca(pc)} duplicad${["bola","baliza","minib"].includes(pc.eq)?"a":"o"}`); }
+function menuPecaM(e,pid){ const Q=qAtual(), pc=Q&&Q.pecas.find(p=>p.id===pid); if(!pc) return; mSel=pid; mPl.set(passoAtual());
+  const tam=d=>editaQ(Q=>{ const p=Q.pecas.find(p=>p.id===pid); if(p) p.tam=mClamp(tamPc(p)+d,.5,2.5); });
+  menuContexto(e,[["⧉ Duplicar",()=>duplicaPeca(pid)],["＋ Aumentar",()=>tam(.25)],["－ Diminuir",()=>tam(-.25)],["✎ Editar…",()=>folhaPecaM(pid)],
+    [`🗑 Apagar ${pc.eq==="bola"?"bola":"peça"}`,()=>{ const antes=clone(qAtual()); mSel=null; editaQ(Q=>{ Q.pecas=Q.pecas.filter(p=>p.id!==pid); Q.passos.forEach(P=>delete P.pos[pid]); });
+      toast(`${nomePeca(pc)} apagad${["bola","baliza","minib"].includes(pc.eq)?"a":"o"}`,()=>{ guardaQ(antes); renderModelo(); }); },"perigo"]]); }
 function folhaPecaM(pid){ const Q=qAtual(), pc=Q&&Q.pecas.find(p=>p.id===pid); if(!pc) return;
   const jog=["nos","adv","neutro"].includes(pc.eq), bal=!!BALIZAS[pc.eq], M=pc.eq==="mat"?MAT[pc.tipo]:null, roda=M&&M[3];
   const temCor=jog||pc.eq==="cone"||pc.eq==="minib"||(M&&M[2]), corAt=pc.cor||(pc.eq==="cone"?"laranja":M?M[2]:"");
   folha(`<h3>${esc(nomePeca(pc))}</h3>${pc.eq==="bola"?`<p class="sub" style="margin:0">Arrasta a bola no quadro para a mudar de sítio em cada passo.</p>`:""}
     ${bal?`<p class="sub" style="margin:0">Arrasta para mudar de sítio. Roda 90° de cada vez para virar a abertura.</p><div class="actions" style="justify-content:flex-start"><button class="btn" id="mp-rod">↻ Rodar 90°</button></div>`:""}
     ${roda?`<p class="sub" style="margin:0">Arrasta para mudar de sítio. Roda 45° de cada vez.</p><div class="actions" style="justify-content:flex-start"><button class="btn" id="mp-rod">↻ Rodar 45°</button></div>`:""}
+    <h4>Tamanho</h4><div class="row mp-tam"><button class="btn" id="mp-menos" aria-label="Diminuir">−</button><b id="mp-tv">${Math.round(tamPc(pc)*100)}%</b><button class="btn" id="mp-mais" aria-label="Aumentar">+</button><button class="btn ghost" id="mp-t1">100%</button></div>
+    ${jog?`<h4>Texto desta bolinha</h4><div class="seg" id="mp-lb"><button data-k="">Como o quadro (${esc(ROT_M[Q.rot])})</button>${Object.entries(ROT_M).map(([k_,n])=>`<button data-k="${k_}">${n[0].toUpperCase()+n.slice(1)}</button>`).join("")}</div>`:""}
     ${pc.tipo==="numero"?`<label class="f">Número ou letra da etiqueta<input type="text" id="mp-et" maxlength="3" value="${esc(pc.n||"1")}"></label>`:""}
     ${temCor?`<h4>${jog?"Colete":"Cor"}</h4><div class="seg" id="mp-c">${jog?`<button data-c="">Cor da equipa</button>`:pc.eq==="minib"?`<button data-c="">Normal</button>`:""}${COLETES.map(([k,n,c])=>`<button data-c="${k}"><i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${c};border:1px solid #0005;vertical-align:-1px;margin-right:5px"></i>${n}</button>`).join("")}</div>`:""}
     ${!jog?"":`
     <div class="fields"><label class="f">Posição ou letra (texto da bolinha)<input type="text" id="mp-p" maxlength="4" value="${esc(pc.pos||"")}"></label>
     ${pc.eq==="nos"?`<label class="f">Lugar no onze (o número segue o separador Jogo)<select id="mp-s"><option value="">— Sem ligação ao onze —</option>${jogo.onze.map(o=>`<option value="${esc(o.slot)}"${o.slot===pc.slot?" selected":""}>${esc(rot(o.n))}${o.pos?" · "+esc(o.pos):""}</option>`).join("")}</select></label>
       <label class="f" id="mp-nl">Jogador do plantel (opcional)<select id="mp-n"><option value="">— Nenhum —</option>${est.plantel.slice().sort(byNum).map(p=>`<option value="${esc(p.n)}"${p.n===pc.n?" selected":""}>${esc(rot(p.n))}</option>`).join("")}</select></label>`:`<label class="f">Número (opcional)<input type="text" id="mp-n" maxlength="3" value="${esc(pc.n||"")}"></label>`}</div>`}
-    <div class="actions"><button class="btn danger l" id="mp-del">Apagar ${pc.eq==="bola"?"bola":"peça"}</button><button class="btn" data-close>Fechar</button>${jog?`<button class="btn primary" id="mp-ok">Guardar</button>`:""}</div>`,(s,fecha)=>{
+    <div class="actions"><button class="btn danger l" id="mp-del">Apagar ${pc.eq==="bola"?"bola":"peça"}</button><button class="btn" id="mp-dup">⧉ Duplicar</button><button class="btn" data-close>Fechar</button>${jog?`<button class="btn primary" id="mp-ok">Guardar</button>`:""}</div>`,(s,fecha)=>{
     confirma2(s.querySelector("#mp-del"),"Toca outra vez para apagar",()=>{ fecha(); mSel=null; editaQ(Q=>{ Q.pecas=Q.pecas.filter(p=>p.id!==pid); Q.passos.forEach(P=>delete P.pos[pid]); }); });
+    s.querySelector("#mp-dup").onclick=()=>{ fecha(); duplicaPeca(pid); };
+    const tam=d=>{ editaQ(Q=>{ const p=Q.pecas.find(p=>p.id===pid); if(p) p.tam=d?mClamp(tamPc(p)+d,.5,2.5):1; }); const p=qAtual().pecas.find(p=>p.id===pid); s.querySelector("#mp-tv").textContent=Math.round(tamPc(p||{})*100)+"%"; };
+    s.querySelector("#mp-menos").onclick=()=>tam(-.25); s.querySelector("#mp-mais").onclick=()=>tam(.25); s.querySelector("#mp-t1").onclick=()=>tam(0);
+    let lb=pc.lab||""; const pintaL=()=>s.querySelectorAll("#mp-lb button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===lb)));
+    s.querySelectorAll("#mp-lb button").forEach(b=>b.onclick=()=>{ lb=b.dataset.k; pintaL(); editaQ(Q=>{ const p=Q.pecas.find(p=>p.id===pid); if(!p) return; if(lb) p.lab=lb; else delete p.lab; }); }); pintaL();
     /* cor e rodar aplicam-se logo, como nas zonas */
     let cor=corAt; const pintaC=()=>s.querySelectorAll("#mp-c button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.c===cor)));
     s.querySelectorAll("#mp-c button").forEach(b=>b.onclick=()=>{ cor=b.dataset.c; pintaC(); editaQ(Q=>{ const p=Q.pecas.find(p=>p.id===pid); if(!p) return; if(cor) p.cor=cor; else delete p.cor; }); }); pintaC();
