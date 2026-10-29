@@ -14,7 +14,7 @@ const S_CAL="sca-calendario-v1", S_SEM="sca-semanas-v1";
 let calendario={}, semanas={};
 try{ calendario=JSON.parse(localStorage.getItem(S_CAL)||"{}")||{}; }catch(e){ calendario={}; }
 try{ semanas=JSON.parse(localStorage.getItem(S_SEM)||"{}")||{}; }catch(e){ semanas={}; }
-let uModo="ut"; try{ const m=localStorage.getItem("sca-u-modo"); uModo=["semana","ano","tempos","comp","rank"].includes(m)?m:"ut"; }catch(e){}
+let uModo="ut"; try{ const m=localStorage.getItem("sca-u-modo"); uModo=["semana","ano","micro","tempos","comp","rank"].includes(m)?m:"ut"; }catch(e){}
 let sCur=null; try{ sCur=localStorage.getItem("sca-sem-cur")||null; }catch(e){}
 
 /* ---------- datas ---------- */
@@ -129,7 +129,7 @@ const resumoAtividade=x=>[tituloAtividade(x),x.tipo!=="outro"?x.txt:"",x.conc?"c
 const htmlLinhasSem=L=>L.map(l=>l.gap?"<i></i>":`<span class="${l.tit?"t":l.b?"b":""}">${esc(l.t)}</span>`).join("");
 
 /* ---------- ecrã ---------- */
-function modoUTHtml(){ return `<div class="seg u-modo"><button data-m="ut" aria-pressed="${uModo==="ut"}">UT</button><button data-m="semana" aria-pressed="${uModo==="semana"}">Semana</button><button data-m="ano" aria-pressed="${uModo==="ano"}">Ano</button><button data-m="tempos" aria-pressed="${uModo==="tempos"}">Tempos</button><button data-m="comp" aria-pressed="${uModo==="comp"}">Competição</button><button data-m="rank" aria-pressed="${uModo==="rank"}">Rankings</button></div>`; }
+function modoUTHtml(){ return `<div class="seg u-modo"><button data-m="ut" aria-pressed="${uModo==="ut"}">UT</button><button data-m="semana" aria-pressed="${uModo==="semana"}">Semana</button><button data-m="ano" aria-pressed="${uModo==="ano"}">Ano</button><button data-m="micro" aria-pressed="${uModo==="micro"}">Micro</button><button data-m="tempos" aria-pressed="${uModo==="tempos"}">Tempos</button><button data-m="comp" aria-pressed="${uModo==="comp"}">Competição</button><button data-m="rank" aria-pressed="${uModo==="rank"}">Rankings</button></div>`; }
 function ligaModoUT(nav){ nav.querySelectorAll(".u-modo button").forEach(b=>b.onclick=()=>{ uModo=b.dataset.m; try{ localStorage.setItem("sca-u-modo",uModo); }catch(e){} renderUT(); }); }
 function renderSemana(){ const ls=listaSemanas(); let S=semanas[sCur]||ls.find(x=>x.inicio<=isoDia(new Date())&&diaMais(x.inicio,6)>=isoDia(new Date()))||ls[0]||null; sCur=S?S.id:null;
   try{ localStorage.setItem("sca-sem-cur",sCur||""); }catch(e){}

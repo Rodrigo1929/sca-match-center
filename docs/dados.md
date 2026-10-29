@@ -23,6 +23,10 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
 | `uts/{id}` | coleção | Unidades de Treino (ver abaixo) |
 | `compJogos/{id}` | coleção | Jogos da competição interna (v95): `{ut, lid, serie, a, b (ids dos grupos), grA, grB (GR de cada equipa), semGR, fim, criadoEm, criadoPor}` |
 | `compGolos/{id}` | coleção | Golos da competição interna (v95): `{jogo, eq: "a"\|"b" (equipa que ganha o golo), k (quem marcou), ag (auto-golo: k é da outra equipa), em, por}` |
+| `mdPadrao/{MD}` | coleção | Padrão MD da Época (v101): uma linha por dia relativo ao jogo (MD+1, MD+2, MD-6…MD-1, MD): `{regime (id em regimes), objetivo, pi, pf, pfin, nivel, folga}` |
+| `regimes/{id}` | coleção | Regimes do microciclo (v101): `{nome, int (símbolo de intensidade), cor, ordem, bloco}`; os ids `folga`, `jogo`, `md` e `estagio` guardam só a cor dos blocos |
+| `microCampo/{seg}~{campo}` | coleção | Campos do resumo do microciclo escritos ou acertados à mão (v101), um documento por campo: `{seg, campo, v}`; campo = `<dia>.md|regime|nivel|obj|pi|pf|pfin` ou `analise`, `perf`, `positivos`, `melhorar`. Sem documento = valor automático |
+| `microResumo/{seg}` | coleção | Estado do resumo do microciclo (v101): `{estado: "rascunho"|"fechado", fechadoEm, fechadoPor, hist: [{acao: "fechar"|"reabrir", em, por}]}` |
 | `fotos/{chave}` | coleção | Fotos dos atletas (v100): `{img: {id, w, h}, alteradoPor, alteradoEm}`; a imagem (600×600, já recortada em quadrado) fica no armazenamento do link (`assets`), mostrada em "/_blob/"+id. `chave` = nº do plantel; jogadores de fora = "x-" + nome sem acentos (o mesmo atleta em várias UT). A foto segue o número: se o atleta mudar de número, põe-se outra vez. A cópia de segurança guarda só o id |
 | `histTreino/{id}` | coleção | Histórico de antes da app, importado do Excel (v97), um documento por UT: `{tipo: "comp"\|"meinho", et, ut (nº), data, origem, linhas}`; comp: `{k, nome, gr, J, V, E, D, golos, GS}`; meinho: `{k, nome, m21, cuecas, presente}`; `k` = "n:<nº>" ou "x:<nome>". Só se lê; soma às tabelas pela data |
 | `meinho/{id}` | coleção | Registos do meinho (v95): `{ut, lid, tipo: "21"\|"cueca", ks: [1 a 3 atletas], em, por}` |
@@ -108,7 +112,7 @@ O jogo não se grava na semana: vem do calendário pela data (de manhã se for a
 ## Planeamento anual (`anual/{AAAA-MM-DD}` e `ciclos/{id}`)
 ```
 anual: { id = dia, tipo: "ut"|"folga"|"pausa"|"outro", ut (nº da UT), txt, alteradoPor, alteradoEm }   // dia sem documento = livre; jogos vêm do calendário
-ciclos: { id, tipo: "micro"|"meso", n, inicio, fim, periodo: "prep"|"comp"|"trans", alteradoPor, alteradoEm }
+ciclos: { id, tipo: "micro"|"meso", n, inicio, fim, periodo: "prep"|"comp"|"trans", nome (meso, v101: designação), objPrin, objSec (micro, v101: objetivos do resumo), alteradoPor, alteradoEm }
         // micro: id "micro-<segunda>", semana de segunda a domingo; o nº é o nº do plano semanal
 ```
 A semana nova do plano semanal usa o anual: UT nº → treino (de manhã na véspera de jogo de dia, senão à noite), folga ou interrupção → folga, outro → atividade com o texto. A UT nova vai buscar o nº ao anual e o Match Day ao calendário.

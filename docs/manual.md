@@ -80,6 +80,21 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - **Treino › Rankings**: Rei do Meinho e Rei das Cuecas com 👑 (empate partilha o título); total, UT com meinho em que esteve presente, média por UT; toca num atleta para ver as ocorrências. Os GR entram como os outros. Filtros: época, mesociclo, microciclo. **⬇ CSV**.
 - **Histórico do Excel** (v97): os 21 passes e as cuecas do Excel (setembro e outubro de 2026) contam pela data de cada treino; «UT com meinho» conta quando o atleta estava presente (presenças do emjogo). Os registos de 23/10 ficaram na UT39 (21/10).
 
+## Resumo do microciclo (Treino › Micro) (v101)
+- À esquerda, os microciclos da época com o estado: **Rascunho**, **Pronto a fechar** (a última UT já foi dada e todas têm presenças) ou **🔒 Fechado**. A semana atual abre sozinha.
+- **Cabeçalho**: macrociclo (período do mesociclo), mesociclo com a **designação** (escreve-a no mesociclo em Treino › Ano), microciclo, duração e «xGR + yJG (zL)» contado pelas presenças das UT da semana (L = marcados com Lesão).
+- **Objetivos principais e secundários**: toca para escrever; ficam no microciclo da Época.
+- **Grelha** de 2.ª a domingo:
+  - **MD** de cada dia (no cabeçalho do dia): automático pelo próximo jogo **oficial** (os jogos-treino não contam); toca para acertar à mão (fica com *).
+  - Hora e local vêm do plano semanal; UT, volume (minutos das UT, sem complementares) e exercícios vêm das UT.
+  - Regime, nível de volume, objetivo e as 3 partes vêm do **Padrão MD**; o texto das partes junta a lista dos exercícios da UT. Em cinzento = automático; toca para escrever (fica a preto). **↺ Automático** volta ao texto da app (2 toques).
+  - Dias sem treino aparecem em bloco: **FOLGA**, **JOGO-TREINO** (adversário e local), **ESTÁGIO / DESLOCAÇÃO** (viagem do plano semanal) e **MD** com o adversário.
+- **Blocos finais**: o jogo anterior (resultado, competição e números do jogo arquivado) e quem jogou com os minutos vêm do Histórico; por baixo escreves a análise. Pontos positivos e a melhorar.
+- **🔒 Fechar microciclo** (2 toques): fica só de leitura, com data e histórico. **Reabrir** (2 toques). Se uma UT da semana mudar depois do fecho, aparece um aviso (o texto não muda sozinho).
+- **⬇ PDF**: A4 horizontal como o Excel do clube; os blocos finais vão para a 2.ª página.
+- **⚙ Padrão MD e regimes** (no Micro e em Treino › Ano): uma linha por MD (MD+1, MD+2, MD-6 a MD-1, MD) com regime, volume sugerido, folga, objetivo e textos das partes; **Regimes e cores**: nome, intensidade e cor de cada regime e as cores dos blocos.
+- Os textos pela IA ficam para a Entrega E2.
+
 ## Fotos dos atletas (v100)
 - **Plantel**: toca na bolinha à esquerda do número. **Escolher foto** (no iPad abre a câmara ou as fotos). A app recorta a cara em círculo sozinha; se for preciso, **arrasta** a foto e usa o **zoom**. **Guardar** (precisa de internet). **Trocar foto** ou **Tirar foto** (2 toques, com Desfazer).
 - A foto segue o **número** do atleta: se mudar de número, põe a foto outra vez.

@@ -510,6 +510,36 @@ if (va.info || va.limpar || !va.jog.includes("Ainda sem registos")) erros.push("
 await pg.evaluate(() => { delete hist.Jtestearq; relArq = ""; anVista = "reg"; renderAnalise(); });
 
 // Planeamento anual: marcar UT e folga num dia, microciclo e mesociclo; a semana nova segue o anual (nº da UT, folga, nº do microciclo)
+// resumo do microciclo (v101): MD só pelos jogos oficiais, blocos, atletas, volume sem complementares, textos por campo, fechar/reabrir e PDF
+const SEGM = "2027-06-07";
+const mc = await pg.evaluate(async (seg) => { const ks = est.plantel.filter((p) => p.n).slice(0, 4).map((p) => String(p.n)), E = Object.values(exercicios)[0];
+  const cal = (id, data, adv, comp) => { calendario[id] = normJogoCal({ id, data, hora: "15:00", adversario: adv, casa: true, competicao: comp }); };
+  cal("tmcA", "2027-06-13", "Oficial FC", "Campeonato dos Açores"); cal("tmcJ", "2027-06-10", "Treino FC", "Jogo particular"); cal("tmcB", "2027-06-16", "Taça FC", "Taça AFAH");
+  const md = ["2027-06-09", "2027-06-10", "2027-06-14", "2027-06-15", "2027-06-16"].map(mdAuto).join(",");
+  semanas[seg] = normSemana({ id: seg, numero: 77, dias: { "2027-06-07": { folga: true }, "2027-06-08": { tarde: [{ tipo: "treino", ini: "19:30", fim: "21:00", local: LOCAL_CASA, treino: 901 }] }, "2027-06-12": { manha: [{ tipo: "viagem", txt: "TER - PDL", ini: "9:00", fim: "10:00" }] } } });
+  const lin = (id, pai) => ({ id, exId: E.id, copia: { ...clone(E), parte: "fundamental", duracao: { series: 1, pratica: 600, pausa: 0, total: null } }, ...(pai ? { pai } : {}) });
+  uts.tmc1 = normUT({ id: "tmc1", numero: 901, data: "2027-06-08", presencas: { [ks[0]]: "P", [ks[1]]: "CO", [ks[2]]: "L", [ks[3]]: "A" }, exercicios: [lin("l1"), lin("l2", "l1")] });
+  let W = semanaMicro(seg); const d2 = W.dias[1];
+  const r = { md, blocos: W.dias.map((x) => x.bloco ? x.bloco.k : "").join(","), at: [W.gr + W.jg, W.l].join(","), min: d2.min, ut: d2.utTxt, hora: d2.hora, n: W.n };
+  gravaCampoMc(seg, "2027-06-08.pf", "Texto escrito"); W = semanaMicro(seg); r.pf = W.dias[1].partes.pf.v + "|" + W.dias[1].partes.pf.man;
+  gravaCampoMc(seg, "2027-06-08.pf", null); W = semanaMicro(seg); r.repor = W.dias[1].partes.pf.man;
+  const txt = (await pdfMicro(seg)).output(); r.pdf = txt.includes("MICROCICLO DAS UNIDADES DE TREINO") && !txt.includes("TRIEINO") && txt.includes("FOLGA");
+  mcSeg = seg; uModo = "micro"; return r; }, SEGM);
+await pg.click("#tab-u"); await pg.waitForSelector(".mc-tab");
+const mcUi = { blocos: await pg.locator(".mc-tab .mc-bloco").count() };
+await pg.click(`.mc-tab td[data-e='2027-06-08|pf']`); await pg.waitForSelector("#mt-v"); await pg.fill("#mt-v", "Jogo reduzido e finalização"); await pg.click("#mt-ok"); await pg.waitForTimeout(100);
+mcUi.campo = await pg.evaluate((seg) => campoMc(seg, "2027-06-08.pf"), SEGM);
+await pg.screenshot({ path: join(cap, "treino-microciclo.png"), fullPage: true });
+await pg.click("#mc-fe"); await pg.click("#mc-fe"); await pg.waitForTimeout(100);
+mcUi.fechado = await pg.evaluate((seg) => [microResumo[seg] && microResumo[seg].estado, document.querySelectorAll(".mc-tab [data-e]").length].join(","), SEGM);
+await pg.click("#mc-re"); await pg.click("#mc-re"); await pg.waitForTimeout(100);
+mcUi.reaberto = await pg.evaluate((seg) => [microResumo[seg].estado, microResumo[seg].hist.length].join(","), SEGM);
+await pg.click("#mc-pad"); await pg.waitForSelector(".mc-pl"); mcUi.padrao = await pg.locator(".mc-pl").count(); await pg.click("#sheet-root [data-close]"); await pg.waitForTimeout(100);
+if (mc.md !== "MD-4,MD-3,MD+1,MD+2,MD" || mc.blocos !== "folga,,,jogo,,estagio,md" || mc.at !== "2,1" || mc.min !== 10 || mc.ut !== "UT 901" || mc.hora !== "19h30 - 21h00" || mc.n !== 77 || mc.pf !== "Texto escrito|true" || mc.repor || !mc.pdf
+  || mcUi.blocos !== 4 || mcUi.campo !== "Jogo reduzido e finalização" || mcUi.fechado !== "fechado,0" || mcUi.reaberto !== "rascunho,2" || mcUi.padrao !== 9)
+  erros.push("Microciclo: resumo errado " + JSON.stringify({ mc, mcUi }));
+await pg.evaluate((seg) => { ["tmcA", "tmcJ", "tmcB"].forEach((id) => delete calendario[id]); delete semanas[seg]; delete uts.tmc1;
+  Object.keys(microCampo).filter((k) => k.startsWith(seg)).forEach((k) => delete microCampo[k]); delete microResumo[seg]; uModo = "ut"; }, SEGM);
 await pg.click("#tab-u"); await pg.click(".u-modo button[data-m='ano']"); await pg.waitForSelector(".pan");
 const iniA = await pg.evaluate(() => { const h = segundaDe(isoDia(new Date())); return diaMais(h, 14); }), dA = await pg.evaluate((i) => diasDaSemana(i), iniA);
 await pg.evaluate((d) => { aEpoca = +d.slice(0, 4) - (+d.slice(5, 7) < 7 ? 1 : 0); renderUT(); }, dA[0]);

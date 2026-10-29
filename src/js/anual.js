@@ -20,7 +20,9 @@ function normDiaAnual(d){ const s=v=>String(v??"").trim(), n=Math.round(+d.ut);
 function normCiclo(d){ const s=v=>String(v??"").trim(), n=Math.round(+d.n), tipo=d.tipo==="meso"?"meso":"micro", ini=diaValido(d.inicio)?s(d.inicio):isoDia(new Date());
   const I=tipo==="micro"?segundaDe(ini):ini;
   return {id:s(d.id)||(tipo==="micro"?"micro-"+I:uId("meso")),tipo,n:isFinite(n)&&n>0?n:0,inicio:I,fim:tipo==="micro"?diaMais(I,6):(diaValido(d.fim)&&s(d.fim)>=I?s(d.fim):I),
-    periodo:PERIODOS.some(p=>p[0]===d.periodo)?d.periodo:"comp",alteradoPor:s(d.alteradoPor),alteradoEm:s(d.alteradoEm)}; }
+    periodo:PERIODOS.some(p=>p[0]===d.periodo)?d.periodo:"comp",
+    ...(tipo==="meso"?{nome:s(d.nome)}:{objPrin:s(d.objPrin),objSec:s(d.objSec)}),   // v101: designação do mesociclo; objetivos do microciclo (resumo do microciclo)
+    alteradoPor:s(d.alteradoPor),alteradoEm:s(d.alteradoEm)}; }
 Object.keys(anual).forEach(id=>{ try{ anual[id]=normDiaAnual({...anual[id],id}); }catch(e){ delete anual[id]; } });
 Object.keys(ciclos).forEach(id=>{ try{ ciclos[id]=normCiclo({...ciclos[id],id}); }catch(e){ delete ciclos[id]; } });
 
@@ -34,8 +36,10 @@ function siglaJogo(j){ const c=semAcento(j.competicao);
   return /afah/.test(c)&&/super/.test(c)?"ST":/afah/.test(c)?"TAT":/campeonato/.test(c)?"CFA":/ilha/.test(c)?"TIT":/portugal/.test(c)?"TP":/particular|treino/.test(c)?"JT":(j.competicao||"J").split(/\s+/).map(w=>w[0]).join("").slice(0,3).toUpperCase(); }
 /* último nº de UT antes de um dia (UT feitas e planeadas no anual) */
 const ultimaUTAnual=d=>Math.max(0,...Object.values(uts).filter(U=>U.data&&U.data<d).map(U=>U.numero),...Object.values(anual).filter(a=>a.id<d&&a.ut).map(a=>a.ut));
-/* Match Day pelo calendário: dia de jogo = MD; até 2 dias depois de um jogo = MD+n; até 6 dias antes do jogo seguinte = MD-n */
-function mdAuto(d){ if(!diaValido(d)) return ""; const js=listaJogosCal(); if(js.some(j=>j.data===d)) return "MD";
+/* Match Day pelo calendário: dia de jogo = MD; até 2 dias depois de um jogo = MD+n; até 6 dias antes do jogo seguinte = MD-n.
+   Só os jogos oficiais contam (v101): os jogos-treino não reiniciam a contagem */
+const jogoOficial=j=>siglaJogo(j)!=="JT";
+function mdAuto(d){ if(!diaValido(d)) return ""; const js=listaJogosCal().filter(jogoOficial); if(js.some(j=>j.data===d)) return "MD";
   const dif=(a,b)=>Math.round((new Date(a+"T12:00")-new Date(b+"T12:00"))/864e5);
   const ant=js.filter(j=>j.data<d).pop(), prox=js.find(j=>j.data>d);
   if(ant&&dif(d,ant.data)<=2) return "MD+"+dif(d,ant.data);
@@ -72,7 +76,7 @@ function renderAnualNav(){ const nav=$("u-nav"), ms=listaMesos().filter(c=>c.fim
   ligaModoUT(nav); $("a-ep-ant").onclick=()=>{ aEpoca--; renderUT(); }; $("a-ep-seg").onclick=()=>{ aEpoca++; renderUT(); };
   $("a-meso-n").onclick=()=>folhaMeso(null); nav.querySelectorAll("[data-meso]").forEach(b=>b.onclick=()=>folhaMeso(b.dataset.meso)); }
 function renderAnualCorpo(){ const bx=$("u-corpo"), bar=$("u-bar"), tg=$("u-tag"), hoje=isoDia(new Date());
-  $("u-tit").textContent=`Planeamento anual ${aEpoca}/${aEpoca+1}`; tg.hidden=false; tg.textContent="ANO"; tg.style.background="#C00000"; bar.innerHTML=`<button class="btn sm" id="a-jogo">+ Jogo</button>`;
+  $("u-tit").textContent=`Planeamento anual ${aEpoca}/${aEpoca+1}`; tg.hidden=false; tg.textContent="ANO"; tg.style.background="#C00000"; bar.innerHTML=`<button class="btn sm" id="a-jogo">+ Jogo</button><button class="btn sm" id="a-pmd">⚙ Padrão MD</button>`; $("a-pmd").onclick=()=>folhaPadraoMD();
   $("a-jogo").onclick=()=>folhaJogoCal(null,hoje);
   let h=`<div class="pan-wrap"><table class="pan"><thead><tr><th class="pan-mes"></th>${Array.from({length:31},(_,i)=>`<th>${i+1}</th>`).join("")}</tr></thead><tbody>`;
   mesesEpoca().forEach(({a,m,dias})=>{ const ds=Array.from({length:31},(_,i)=>i<dias?isoAMD(a,m,i+1):null);
@@ -113,18 +117,21 @@ function folhaDiaAnual(d){ const A=anual[d], js=jogosDoDia(d), M=microDe(d), Me=
 function folhaMicro(seg){ const M=Object.values(ciclos).find(c=>c.tipo==="micro"&&c.inicio===seg)||null, ant=Object.values(ciclos).filter(c=>c.tipo==="micro"&&c.inicio<seg).sort((a,b)=>b.inicio.localeCompare(a.inicio))[0];
   folha(`<h3>Microciclo · semana de ${esc(dataCurta(seg))} a ${esc(dataCurta(diaMais(seg,6)))}</h3>
     <label class="f">Nº do microciclo (= nº do plano semanal)<input type="text" id="am-n" inputmode="numeric" value="${M?M.n:(ant?ant.n+1:1)}"></label>
-    <p class="sub" style="margin:0">"Renumerar a seguir" põe os microciclos seguintes desta época por ordem (+1 por semana).</p>
+    <label class="f">Objetivos principais<textarea id="am-op" rows="2" class="ta">${esc(M?M.objPrin||"":"")}</textarea></label>
+    <label class="f">Objetivos secundários<textarea id="am-os" rows="2" class="ta">${esc(M?M.objSec||"":"")}</textarea></label>
+    <p class="sub" style="margin:0">"Renumerar a seguir" põe os microciclos seguintes desta época por ordem (+1 por semana). Os objetivos aparecem no resumo do microciclo.</p>
     <div class="actions">${M?`<button class="btn danger l" id="am-del">Apagar</button>`:""}<button class="btn" id="am-ren">Guardar e renumerar a seguir</button><button class="btn" data-close>Cancelar</button><button class="btn primary" id="am-ok">Guardar</button></div>`,(s,fecha)=>{
     const q=y=>s.querySelector(y), n=()=>Math.round(+q("#am-n").value);
     if(q("#am-del")) confirma2(q("#am-del"),"Toca outra vez",()=>{ fecha(); apagaCiclo(M.id); });
-    q("#am-ok").onclick=()=>{ if(!(n()>0)){ toast("Escreve o nº."); return; } fecha(); guardaCiclo({...(M||{}),tipo:"micro",inicio:seg,n:n()}); renderUT(); toast(`Microciclo ${n()}`); };
+    q("#am-ok").onclick=()=>{ if(!(n()>0)){ toast("Escreve o nº."); return; } fecha(); guardaCiclo({...(M||{}),tipo:"micro",inicio:seg,n:n(),objPrin:q("#am-op").value.trim(),objSec:q("#am-os").value.trim()}); renderUT(); toast(`Microciclo ${n()}`); };
     q("#am-ren").onclick=()=>{ if(!(n()>0)){ toast("Escreve o nº."); return; } fecha(); const fimEp=`${aEpoca+1}-06-30`;
-      guardaCiclo({...(M||{}),tipo:"micro",inicio:seg,n:n()});
+      guardaCiclo({...(M||{}),tipo:"micro",inicio:seg,n:n(),objPrin:q("#am-op").value.trim(),objSec:q("#am-os").value.trim()});
       Object.values(ciclos).filter(c=>c.tipo==="micro"&&c.inicio>seg&&c.inicio<=fimEp).sort((a,b)=>a.inicio.localeCompare(b.inicio)).forEach((c,i)=>{ if(c.n!==n()+i+1) guardaCiclo({...c,n:n()+i+1}); });
       renderUT(); toast(`Microciclos renumerados a partir do ${n()}`); }; }); }
 function folhaMeso(id){ const C=id?ciclos[id]:null; let per=C?C.periodo:"comp"; const ult=listaMesos().pop();
   folha(`<h3>${C?"Mesociclo "+C.n:"Novo mesociclo"}</h3>
     <div class="fields"><label class="f">Nº<input type="text" id="ae-n" inputmode="numeric" value="${C?C.n:(ult?ult.n+1:1)}"></label><label class="f">De<input type="date" id="ae-i" value="${esc(C?C.inicio:(ult?diaMais(ult.fim,1):isoDia(new Date())))}"></label><label class="f">Até<input type="date" id="ae-f" value="${esc(C?C.fim:"")}"></label></div>
+    <label class="f">Designação<input type="text" id="ae-d" value="${esc(C?C.nome||"":"")}" placeholder="Ex.: ACUMULAÇÃO + COMPETITIVO"></label>
     <h4>Período</h4><div class="seg" id="ae-p">${PERIODOS.map(([k,n])=>`<button data-k="${k}">${n.replace("Período ","")}</button>`).join("")}</div>
     <div class="actions">${C?`<button class="btn danger l" id="ae-del">Apagar</button>`:""}<button class="btn" data-close>Cancelar</button><button class="btn primary" id="ae-ok">Guardar</button></div>`,(s,fecha)=>{
     const q=y=>s.querySelector(y), pinta=()=>s.querySelectorAll("#ae-p button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===per)));
@@ -132,7 +139,7 @@ function folhaMeso(id){ const C=id?ciclos[id]:null; let per=C?C.periodo:"comp"; 
     if(q("#ae-del")) confirma2(q("#ae-del"),"Toca outra vez",()=>{ fecha(); apagaCiclo(id); });
     q("#ae-ok").onclick=()=>{ const n=Math.round(+q("#ae-n").value), i=q("#ae-i").value, f=q("#ae-f").value;
       if(!(n>0)||!diaValido(i)||!diaValido(f)||f<i){ toast("Preenche o nº e as datas (até ≥ de)."); return; } fecha();
-      guardaCiclo({...(C||{}),tipo:"meso",n,inicio:i,fim:f,periodo:per}); renderUT(); toast(`Mesociclo ${n} guardado`); }; }); }
+      guardaCiclo({...(C||{}),tipo:"meso",n,inicio:i,fim:f,periodo:per,nome:q("#ae-d").value.trim()}); renderUT(); toast(`Mesociclo ${n} guardado`); }; }); }
 
 /* ---------- sincronização ---------- */
 function ligaAnualDb(){ if(!db) return;

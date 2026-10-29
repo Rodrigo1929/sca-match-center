@@ -70,7 +70,7 @@ function duplicaUT(id){ const U=uts[id]; if(!U) return; const num=Math.max(0,...
 function repoeUTs(X){ Object.keys(uts).forEach(id=>{ if(!X[id]) apagaDoc("uts/"+id); }); uts={}; Object.entries(X||{}).forEach(([id,U])=>{ uts[id]=normUT({...U,id}); gravaDoc("uts/"+id,uts[id]); }); guardaUTLocal(); renderUT(); }
 
 /* ---------- ecrã ---------- */
-function renderUT(){ const v=$("view-u"); if(!v||v.hidden) return; if(uModo==="semana"){ renderSemana(); return; } if(uModo==="ano"){ renderAnual(); return; } if(uModo==="tempos"){ renderTempos(); return; } if(uModo==="comp"){ renderComp(); return; } if(uModo==="rank"){ renderRank(); return; } const ls=listaUTs(); let U=uts[uCur]||ls[0]||null; uCur=U?U.id:null;
+function renderUT(){ const v=$("view-u"); if(!v||v.hidden) return; if(uModo==="semana"){ renderSemana(); return; } if(uModo==="ano"){ renderAnual(); return; } if(uModo==="micro"){ renderMicro(); return; } if(uModo==="tempos"){ renderTempos(); return; } if(uModo==="comp"){ renderComp(); return; } if(uModo==="rank"){ renderRank(); return; } const ls=listaUTs(); let U=uts[uCur]||ls[0]||null; uCur=U?U.id:null;
   try{ localStorage.setItem("sca-ut-cur",uCur||""); }catch(e){}
   renderUTNav(ls,U); renderUTCorpo(U); renderUTPainel(U); }
 function renderUTNav(ls,U){ const nav=$("u-nav");
