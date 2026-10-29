@@ -91,9 +91,9 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - Em **Treino › Competição** ou **Treino › Rankings**, com o filtro que quiseres (época, meso, micro, Liga/Champions):
   - **⬇ PDF**: A4 com a tabela completa (classificação, guarda-redes, Rei do Meinho e Rei das Cuecas), com fotos.
   - **🏆 Cartaz**: A3 vertical para o balneário, com pré-visualização. **⬇ Imagem (JPG)** ou **⬇ PDF A3** (imprime também em A4).
-- O cartaz tem:
+- O cartaz tem, por baixo do título, a época e o último dia com dados («até ao dia …»):
   - **Homem-Champions**: top 5 em pontos (desempate: Pts, DG, GM, golos); os GR ficam de fora, como na tabela.
-  - **Homem-Golo**: top 5 em golos (sem auto-golos; desempate: golos por jogo).
+  - **Bota de Ouro**: top 5 em golos (sem auto-golos; desempate: golos por jogo).
   - Quem empata no 5.º lugar também entra.
   - **Trono da vergonha**: Rei do Meinho (21 passes) e Rei das Cuecas, com a ilustração e a foto do rei; se empatarem, partilham o trono. Por baixo, os dois seguintes «na corrida ao trono».
 

@@ -14,11 +14,11 @@ const ordMh=(a,b)=>b.tot-a.tot||b.med-a.med||a.nome.localeCompare(b.nome,"pt");
 function rankListas(F){ const S=compStats(F), R=meinhoStats(F), lst=o=>Object.entries(o).map(([c,x])=>({...x,c}));
   const P=lst(S.P), top=(ls,ord,val,igual)=>{ const s=ls.filter(x=>val(x)>0).sort(ord); return s.length<=5?s:s.filter((x,i)=>i<5||igual(x,s[4])); };
   const rei=t=>{ const ls=lst(R[t]).filter(x=>x.tot>0).sort(ordMh), m=ls.length?ls[0].tot:0; return {reis:ls.filter(x=>x.tot===m),corrida:ls.filter(x=>x.tot<m).slice(0,2),m}; };
-  const ult=F.ls.filter(U=>U.data).sort((a,b)=>a.data.localeCompare(b.data)).pop();
+  const ult=[...F.ls.map(U=>U.data),...(F.hist||[]).map(h=>h.data)].filter(Boolean).sort().pop();   // último dia com dados (UT ou histórico)
   return {S,R,P:P.slice().sort(ordPts),GR:lst(S.GR).sort(ordGR),M21:lst(R["21"]).filter(x=>x.tot||x.nUT).sort(ordMh),MC:lst(R.cueca).filter(x=>x.tot||x.nUT).sort(ordMh),
     champions:top(P,ordPts,x=>x.Pts,(a,b)=>a.Pts===b.Pts&&a.DG===b.DG&&a.GM===b.GM&&a.golos===b.golos),
     golo:top(P,ordGol,x=>x.golos,(a,b)=>a.golos===b.golos&&golJ(a)===golJ(b)),
-    meinho:rei("21"),cueca:rei("cueca"),filtro:filtroTxt(F),ate:ult?`até à UT${ult.numero} (${dataPt_(ult.data).slice(0,5)})`:""}; }
+    meinho:rei("21"),cueca:rei("cueca"),filtro:filtroTxt(F),ate:ult?`até ao dia ${dataPt_(ult)}`:""}; }
 /* fotos em círculo para várias chaves de uma vez (PNG; sem foto = null) */
 async function fotosCirc(cs,px,borda,cor){ const m={}; await Promise.all([...new Set(cs)].map(async c=>{ m[c]=await fotoCirculo(fotoDeChaveT(c),px,borda,cor); })); return m; }
 const nomeFich=(base,F)=>nomeCsv(base,F).replace(/\.csv$/,"");
@@ -67,7 +67,7 @@ async function cartazCanvas(F){ const L=rankListas(F), W=CZ.W, H=CZ.H, cv=docume
   const txt=(t,x,y,px,cor,al="left",b=true,maxW=0)=>{ let s=px; c.font=fnt(s,b); while(maxW&&s>12&&c.measureText(t).width>maxW){ s-=2; c.font=fnt(s,b); } c.fillStyle=cor; c.textAlign=al; c.textBaseline="alphabetic"; c.fillText(t,x,y); };
   const roda=(x,y,r,cor)=>{ c.fillStyle=cor; c.beginPath(); c.arc(x,y,r,0,Math.PI*2); c.fill(); };
   const caixa=(x,y,w,h,r,cor)=>{ c.fillStyle=cor; c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); c.fill(); };
-  const imgs={}; await Promise.all(["slides/logo.png","rankings/rei-dos-meinhos-720.jpg","rankings/rei-das-cuecas-720.jpg"].filter(k=>IMG_DATA[k]).map(async k=>{ try{ imgs[k]=await imgDeUrl(IMG_DATA[k]); }catch(e){} }));
+  const imgs={}; await Promise.all(["slides/logo.png","rankings/champions.png","rankings/bota-de-ouro.png","rankings/rei-dos-meinhos-720.jpg","rankings/rei-das-cuecas-720.jpg"].filter(k=>IMG_DATA[k]).map(async k=>{ try{ imgs[k]=await imgDeUrl(IMG_DATA[k]); }catch(e){} }));
   const fc=await fotosCirc([...L.champions,...L.golo,...L.meinho.reis,...L.cueca.reis].map(x=>x.c),600);
   /* bolinha do atleta: anel, foto (ou iniciais) e o lugar num emblema dourado */
   const atleta=(x,cx,cy,d,anel,pos)=>{ roda(cx,cy,d/2,anel); const f=fc[x.c], r=d/2-Math.max(8,d*.035);
@@ -76,11 +76,13 @@ async function cartazCanvas(F){ const L=rankListas(F), W=CZ.W, H=CZ.H, cv=docume
   c.fillStyle=CZ.cream; c.fillRect(0,0,W,H);
   /* cabeçalho */
   c.fillStyle=CZ.red; c.fillRect(0,0,W,470); c.fillStyle=CZ.gold; c.fillRect(0,470,W,14);
-  txt("SC ANGRENSE  ·  BALNEÁRIO",150,130,58,CZ.pale); txt("QUADRO DE HONRA",150,310,200,"#FFFFFF","left",true,1720);
+  txt("SC ANGRENSE",150,130,58,CZ.pale); txt("QUADRO DE HONRA",150,310,200,"#FFFFFF","left",true,1720);
   txt([L.filtro,L.ate].filter(Boolean).join("  ·  "),150,400,60,CZ.pale,"left",false,1720);
   if(imgs["slides/logo.png"]){ roda(W-300,235,175,"#FFFFFF"); const im=imgs["slides/logo.png"], k=250/Math.max(im.naturalWidth,im.naturalHeight); c.drawImage(im,W-300-im.naturalWidth*k/2,235-im.naturalHeight*k/2,im.naturalWidth*k,im.naturalHeight*k); }
   /* top 5: o 1.º grande à esquerda, os outros em fila à direita */
-  const secao=(y0,tit,sub,ls,val,vazio)=>{ txt(tit,150,y0+96,104,CZ.dred); txt(sub,W-150,y0+96,54,CZ.mut,"right",false); c.fillStyle=CZ.red; c.fillRect(150,y0+124,W-300,8);
+  /* cada secção com o seu símbolo à esquerda do título (logo da Champions, Bota de Ouro) */
+  const secao=(y0,tit,ik,ls,val,vazio,ih=170)=>{ const im=imgs[ik], iw=im?im.naturalWidth*ih/im.naturalHeight:0, iy=y0+150-ih; if(im) c.drawImage(im,150,iy,iw,ih);
+    txt(tit,150+(iw?iw+40:0),y0+104,104,CZ.dred); c.fillStyle=CZ.red; c.fillRect(150,y0+152,W-300,8);
     if(!ls.length){ txt(vazio,W/2,y0+460,64,CZ.mut,"center",false); return; }
     const [p,...rs]=ls, cx=480, cy=y0+180+260; atleta(p,cx,cy,520,CZ.gold,1);
     txt(p.nome,cx,y0+800,80,CZ.ink,"center",true,640); txt(val(p),cx,y0+880,72,CZ.red,"center");
@@ -88,11 +90,11 @@ async function cartazCanvas(F){ const L=rankListas(F), W=CZ.W, H=CZ.H, cv=docume
     rs.forEach((x,i)=>{ const sx=x0+sw*(i+.5), sy=y0+250+d/2, pos=ls.findIndex(z=>z===x)+1, w=String(x.nome).split(/\s+/);
       atleta(x,sx,sy,d,CZ.red,pos); txt(w[0]||"",sx,sy+d/2+80,56,CZ.ink,"center",true,sw-24); txt(w.slice(1).join(" "),sx,sy+d/2+142,56,CZ.ink,"center",true,sw-24);
       txt(val(x),sx,sy+d/2+214,56,CZ.red,"center"); }); };
-  secao(530,"HOMEM-CHAMPIONS","quem soma mais pontos",L.champions,x=>`${x.Pts} ${x.Pts===1?"PT":"PTS"}`,"Ainda sem jogos terminados neste período");
-  secao(1460,"HOMEM-GOLO","quem marca mais golos",L.golo,x=>`${x.golos} ${x.golos===1?"GOLO":"GOLOS"}`,"Ainda sem golos neste período");
+  secao(530,"HOMEM-CHAMPIONS","rankings/champions.png",L.champions,x=>`${x.Pts} ${x.Pts===1?"PT":"PTS"}`,"Ainda sem jogos terminados neste período");
+  secao(1480,"BOTA DE OURO","rankings/bota-de-ouro.png",L.golo,x=>`${x.golos} ${x.golos===1?"GOLO":"GOLOS"}`,"Ainda sem golos neste período",250);
   /* trono da vergonha: a ilustração com a foto do rei num medalhão */
-  txt("·  TRONO DA VERGONHA  ·",W/2,2470,84,CZ.dred,"center");
-  const trono=(x0,tit,k,rei,un)=>{ const w=1060, y0=2520, h=880; caixa(x0,y0,w,h,36,CZ.dred);
+  txt("·  TRONO DA VERGONHA  ·",W/2,2500,84,CZ.dred,"center");
+  const trono=(x0,tit,k,rei,un)=>{ const w=1060, y0=2550, h=880; caixa(x0,y0,w,h,36,CZ.dred);
     const im=imgs[k]; caixa(x0+30,y0+30,560,h-60,24,"#FFFFFF"); if(im){ const s=Math.min(540/im.naturalWidth,(h-80)/im.naturalHeight), iw=im.naturalWidth*s, ih=im.naturalHeight*s; c.drawImage(im,x0+30+(560-iw)/2,y0+30+(h-60-ih)/2,iw,ih); }
     const rx=x0+590+(w-590)/2; txt(tit,rx,y0+110,62,CZ.gold,"center",true,w-640);
     if(!rei.reis.length){ txt("Trono vazio",rx,y0+440,64,CZ.card,"center",false); return; }
@@ -103,13 +105,9 @@ async function cartazCanvas(F){ const L=rankListas(F), W=CZ.W, H=CZ.H, cv=docume
     if(rei.corrida.length){ txt("Na corrida ao trono:",rx,ny+150,44,CZ.gold,"center",false,w-640); rei.corrida.forEach((x,i)=>txt(`${x.nome} · ${x.tot}`,rx,ny+206+i*56,46,CZ.card,"center",false,w-640)); } };
   trono(150,"REI DO MEINHO","rankings/rei-dos-meinhos-720.jpg",L.meinho,["× 21 passes","× 21 passes"]);
   trono(W-150-1060,"REI DAS CUECAS","rankings/rei-das-cuecas-720.jpg",L.cueca,["cueca","cuecas"]);
-  /* rodapé */
-  c.fillStyle=CZ.ink; c.fillRect(0,H-90,W,90);
-  txt("Só contam jogos com «Fim do jogo» · GR fora dos pontos e dos golos · atualizado a "+new Date().toLocaleDateString("pt-PT"),150,H-32,40,"#B9B2A3","left",false,1800);
-  txt("SCA Performance",W-150,H-32,40,"#B9B2A3","right");
   return cv; }
 function folhaCartaz(F){ let cv=null;
-  folha(`<h3>Cartaz do balneário</h3><p class="sub" style="margin:0">${esc(filtroTxt(F))} · Homem-Champions, Homem-Golo, Rei do Meinho e Rei das Cuecas. A3 vertical (também imprime em A4). Usa o filtro escolhido.</p>
+  folha(`<h3>Cartaz do balneário</h3><p class="sub" style="margin:0">${esc(filtroTxt(F))} · Homem-Champions, Bota de Ouro, Rei do Meinho e Rei das Cuecas. A3 vertical (também imprime em A4). Usa o filtro escolhido.</p>
     <div class="cz-prev" id="cz-p"><p class="sub">A preparar o cartaz…</p></div>
     <div class="actions"><button class="btn" data-close>Fechar</button><button class="btn" id="cz-j" disabled>⬇ Imagem (JPG)</button><button class="btn primary" id="cz-pdf" disabled>⬇ PDF A3</button></div>`,async(s)=>{
     const q=x=>s.querySelector(x);
