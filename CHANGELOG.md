@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| 107.3 | Quadro: **setas grandes ◀ ▶ ao lado do título** para passar ao lance anterior ou seguinte, com «3 / 17» a dizer em qual estás (já não é preciso descer à lista). No PC também com as teclas ← →. Sem dados novos. |
 | 107.2 | Correção: o botão «Pôr quem está a jogar e tirar repetidos» não fazia nada quando o lance tinha repetidos (o aviso apagava a ligação do clique). |
 | 107.1 | Quadro: o botão «Pôr quem está a jogar e tirar repetidos (todos os lances)» aparece também com **jogadores repetidos**. O repetido fica na tarefa escolhida para ele no lance; a outra tarefa vai para o colega com quem trocou de lugar no onze (senão o dono da posição, senão um titular livre). |
 | 107 | **Bolas paradas acompanham as substituições.** No separador Jogo, pôr um jogador no lugar de um titular passa-lhe as tarefas desse titular em todos os lances (se já tinha outra tarefa, essa vai para o titular livre); trocar dois titulares de lugar não mexe nas bolas paradas. No Quadro › Trocas no jogo prepara-se a troca antes de acontecer (quem vem do banco fica com as tarefas de quem sai; dois em campo trocam de tarefas). As substituições do Ao vivo entram sozinhas em todos os quadros, a dourado; a troca preparada fica «✓ feita no Ao vivo» ou «não aconteceu». Aviso «⚠ O 4 não está a jogar» com «Pôr quem está a jogar (todos os lances)». Muda a regra antiga «as substituições do Ao vivo não mexem nos quadros». |

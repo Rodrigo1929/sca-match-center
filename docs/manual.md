@@ -82,6 +82,9 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - **Treino › Rankings**: Rei do Meinho e Rei das Cuecas com 👑 (empate partilha o título); total, UT com meinho em que esteve presente, média por UT; toca num atleta para ver as ocorrências. Os GR entram como os outros. Filtros: época, mesociclo, microciclo. **⬇ CSV**.
 - **Histórico do Excel** (v97): os 21 passes e as cuecas do Excel (setembro e outubro de 2026) contam pela data de cada treino; «UT com meinho» conta quando o atleta estava presente (presenças do emjogo). Os registos de 23/10 ficaram na UT39 (21/10).
 
+## Quadro: passar de lance (v107.3)
+- **◀ ▶** ao lado do título passam para o lance anterior ou seguinte (o «3 / 17» diz em qual estás; do último volta ao primeiro). No PC também com as teclas **← →**.
+
 ## Bolas paradas e substituições (v107)
 - **Pré-jogo (separador Jogo):** pôr um jogador no lugar de um titular passa-lhe as tarefas desse titular em **todos os lances** (aviso com Desfazer). Se já tinha outra tarefa nesse lance, essa vai para o titular livre. **Trocar dois titulares de lugar** (ex.: centrais) não mexe nas bolas paradas.
 - **Durante o jogo (Quadro › Jogo › Trocas no jogo):** prepara a troca antes de acontecer, para explicar ao jogador que vai entrar: «Adicionar troca», quem sai, quem entra, «Todos». Quem vem do banco fica com as tarefas de quem sai; depois podes acertar trocando dois que já estão em campo (ex.: 19 ↔ 21), que trocam de tarefas.

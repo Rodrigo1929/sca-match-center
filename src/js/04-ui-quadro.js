@@ -42,6 +42,8 @@ function renderBoard(){
   curId=L.id;
   $("b-tag").className="tag "+L.tipo; $("b-tag").textContent=L.tipo;
   $("b-title").textContent=L.nome;
+  { const all=lances(), i=all.findIndex(l=>l.id===L.id), nm=d=>all[(i+d+all.length)%all.length].nome;
+    $("b-pos").textContent=`${i+1} / ${all.length}`; $("prev").title="Anterior: "+nm(-1); $("next").title="Seguinte: "+nm(1); }
   $("btn-edit").textContent=editing?"✓ Concluir":"✎ Editar lance";
   $("btn-nomes").setAttribute("aria-pressed",String(nomesOn)); $("btn-nomes").textContent=nomesOn?"✓ Nomes":"Nomes";
   $("editbar").hidden=!editing;
@@ -154,6 +156,10 @@ $("f-add").onclick=()=>{
 ["este","todos","esc"].forEach(k=>$("sc-"+k).onclick=()=>{scope=k;renderForm();});
 function passo(d){ const all=lances(); const i=all.findIndex(l=>l.id===lanceAtual().id); curId=all[(i+d+all.length)%all.length].id; render(); }
 $("prev").onclick=()=>passo(-1); $("next").onclick=()=>passo(1);
+/* ← → no teclado passam de lance (fora de campos de texto e de folhas abertas) */
+document.addEventListener("keydown",e=>{ if($("view-q").hidden||presentOpen||$("sheet-root").innerHTML||e.ctrlKey||e.metaKey||e.altKey) return;
+  const tg=e.target, tag=(tg&&tg.tagName)||""; if(/INPUT|TEXTAREA|SELECT/.test(tag)||(tg&&tg.isContentEditable)) return;
+  if(e.key==="ArrowRight"||e.key==="ArrowLeft"){ e.preventDefault(); passo(e.key==="ArrowRight"?1:-1); } });
 $("btn-rel").onclick=folhaRelogio;
 $("btn-nota").onclick=()=>folhaNota(null);
 setInterval(()=>{ const t=tempoJogo(); $("rel-t").textContent=t==null?"0:00":fmt(t); $("btn-rel").classList.toggle("dark",!!(jogo.relogio&&jogo.relogio.correr)); },1000);

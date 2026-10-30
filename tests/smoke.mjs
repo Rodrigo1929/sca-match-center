@@ -23,6 +23,14 @@ for (const t of ["q", "j", "d", "p", "m", "x", "v", "a", "h"]) {
   await pg.click("#tab-" + t); await pg.waitForTimeout(250);
   await pg.screenshot({ path: join(cap, `separador-${t}.png`) });
 }
+// Quadro: setas ◀ ▶ e teclas ← → passam de lance (com volta ao início)
+await pg.click("#tab-q"); await pg.waitForTimeout(150);
+const setas = await (async () => { const t = () => pg.evaluate(() => $("b-title").textContent + "|" + $("b-pos").textContent);
+  const a = await t(); await pg.click("#next"); const b = await t(); await pg.keyboard.press("ArrowLeft"); const c = await t(); await pg.click("#prev"); const d = await t();
+  const tot = await pg.evaluate(() => lances().length); return { a, b, c, d, tot }; })();
+if (setas.a !== setas.c || setas.a === setas.b || !setas.b.endsWith("2 / " + setas.tot) || !setas.d.endsWith(setas.tot + " / " + setas.tot))
+  erros.push("Quadro: as setas ◀ ▶ (e as teclas) não passam bem de lance " + JSON.stringify(setas));
+await pg.click("#next"); await pg.waitForTimeout(100);
 // Modelo de Jogo: criar quadro (começa no onze do separador Jogo), novo passo, arrastar um jogador, animar
 await pg.click("#tab-m"); await pg.click("#m-novo2"); await pg.fill("#mn-n", "Teste"); await pg.click("#mn-ok");
 const onze = await pg.evaluate(() => { const Q = Object.values(modelos)[0]; return { slots: Q.pecas.filter((p) => p.eq === "nos" && p.slot).length, v: numerosQ(Q), base: Object.fromEntries(jogo.onze.map((o) => [o.slot, o.n])) }; });
