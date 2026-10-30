@@ -8,7 +8,7 @@ Estas regras foram decididas ao longo do desenvolvimento e estão implementadas.
 | Minutos | 23:10 conta como minuto 24' |
 | Golos | Um golo conta também como remate (e à baliza) |
 | Cantos | O contador +1 do Ao vivo cria também a ficha do canto, com escolha do tipo de canto usado (fonte única) |
-| Substituições Ao vivo | Não passam para os quadros de bolas paradas; os quadros só mudam com trocas do Banco. Podem ser editadas depois (minuto, quem sai, quem entra); ficam por ordem de minuto e as que deixem de ser válidas aparecem como "não conta" |
+| Substituições Ao vivo | Desde a v107 passam sozinhas para os quadros de bolas paradas (ver «Bolas paradas e substituições» no fim). Podem ser editadas depois (minuto, quem sai, quem entra); ficam por ordem de minuto e as que deixem de ser válidas aparecem como "não conta" |
 | Cartões | Podem ser dados a quem está em campo, no banco ou já saiu (e ao resto do plantel) |
 | Jogadores repetidos | Um jogador não pode aparecer duas vezes num lance, exceto como alternativa (branca com contorno laranja) |
 | Estatística | Quando existe análise de vídeo, substitui a do Ao vivo estatística a estatística. Faltas: marcam-se só do nosso lado (cometida ou sofrida por um jogador nosso); a falta sofrida conta como falta cometida do adversário |
@@ -27,3 +27,6 @@ Estas regras foram decididas ao longo do desenvolvimento e estão implementadas.
 | Calendário | Jogos oficiais importados do zerozero; jogos-treino acrescentados à mão. Emblema do adversário opcional |
 | Exercícios | Repositório para as UT com os campos da ficha de UT do clube. Organizado por parte da UT, com filtros por momento e tipo. Figura desenhada com o editor do Modelo de Jogo (imagem carregada vem na Fase 1c). Toda a equipa técnica cria e edita; guarda-se quem criou e quem alterou. Duração total = séries × prática + pausas entre séries, mas pode ser escrita à mão |
 | Apresentar | No separador Modelo de Jogo, ▶ Apresentar mostra os quadros do Modelo (avança-se à mão, toque anima) |
+
+## Bolas paradas e substituições (v107)
+Bolas paradas e substituições (v107, decidido pelo Rodrigo em 30/10/2026; substitui a regra antiga «as substituições do Ao vivo não mexem nos quadros»): quem vem de fora fica com as tarefas de quem sai, em todos os lances; se já tinha outra tarefa no lance, essa passa para o titular livre (de preferência o dono dessa posição no onze; nunca o GR). Dois jogadores que já estão em campo trocam de tarefas. Trocar dois titulares de lugar no onze (Jogo) não mexe nos lances. As substituições do Ao vivo (as que contam) entram sozinhas nos quadros como trocas no jogo, sem gravar nada nos lances; a troca preparada no Quadro com o mesmo jogador a sair fica «feita» ou «não aconteceu» e conta o que aconteceu no Ao vivo. Aviso «não está a jogar» e «Pôr quem está a jogar» corrigem os lances com jogadores fixos fora do onze.

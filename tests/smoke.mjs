@@ -614,6 +614,28 @@ if (mc.md !== "MD-4,MD-3,MD+1,MD+2,MD" || mc.blocos !== "folga,,,jogo,,estagio,m
   || mcUi.blocos !== 4 || mcUi.campo !== "Jogo reduzido e finalização" || mcUi.fechado !== "fechado,0" || mcUi.reaberto !== "rascunho,2" || mcUi.padrao !== 9)
   erros.push("Microciclo: resumo errado " + JSON.stringify({ mc, mcUi }));
 const jogoAntes = await pg.evaluate(() => JSON.stringify(jogo));
+// v107: bolas paradas acompanham o onze e as substituições (lance de teste com tarefas fixas)
+const bp = await pg.evaluate(() => { const J0 = clone(jogo), E0 = clone(est), D0 = clone(lancesDb);
+  jogo.onze = [["1", "1", "GR"], ["2", "2", "DD"], ["3", "3", "DC"], ["4", "4", "DC"], ["5", "5", "DE"], ["6", "6", "MC"], ["7", "7", "ED"], ["8", "8", "MC"], ["9", "9", "PL"], ["10", "10", "MO"], ["11", "11", "EE"]].map(([slot, n, pos], i) => ({ slot, n, pos, x: 1000 * i, y: 1000 }));
+  jogo.subs = []; est.linhas = []; est.fase = "pre";
+  const bolas = ["2", "3", "4", "5", "7"].map((s, i) => ({ slot: s, x: 100 * i, y: 100 })), legs = [];
+  lancesDb.tbp = { id: "tbp", nome: "Teste BP", tipo: "OF", bolas, legs, fixo: { "2": "4", "4": "9" } };
+  const v = () => { const L = lances().find((l) => l.id === "tbp"), x = calcula(L).v; return ["2", "3", "4", "5", "7"].map((s) => x[s]).join(","); };
+  const r = { ini: v() };
+  // troca de lugar entre titulares (3 <-> 5 no onze): o lance não muda
+  const antesB = Object.fromEntries(jogo.onze.map((o) => [o.slot, o.n])); jogo.onze[2].n = "5"; jogo.onze[4].n = "3"; fixaLances(["3", "5"], antesB); r.lugar = v();
+  // o 4 sai do onze e entra o 19 (o 19 fica com as tarefas do 4)
+  jogo.onze[3].n = "19"; passaNosLances("4", "19", false); r.sai = v();
+  // aviso de quem não está a jogar e correção
+  lancesDb.tbp.fixo["7"] = "70"; r.aus = ausentesDe(lances().find((l) => l.id === "tbp")).join(","); corrigeAusentes(); r.corr = v();
+  // Ao vivo: sai o 9, entra o 20; troca planeada 20 <-> 2 (os dois em campo)
+  jogo.subs = [{ id: "s9", sai: "9", entra: "20", min: "60:00", c: 1 }]; r.vivo = v();
+  est.linhas = [{ id: "p1", sai: "20", entra: "2", modo: "todos" }]; r.troca = v();
+  // planeada 7 -> 21 mas no Ao vivo entrou o 22: conta o que aconteceu
+  est.linhas = [{ id: "p2", sai: "7", entra: "21", modo: "todos" }]; jogo.subs.push({ id: "s7", sai: "7", entra: "22", min: "70:00", c: 2 }); r.real = v();
+  jogo = J0; est = E0; lancesDb = D0; return r; });
+if (JSON.stringify(bp) !== JSON.stringify({ ini: "4,3,9,5,7", lugar: "4,3,9,5,7", sai: "19,3,9,5,7", aus: "70", corr: "19,3,9,5,7", vivo: "19,3,20,5,7", troca: "19,3,2,5,7", real: "19,3,20,5,22" }))
+  erros.push("Bolas paradas e substituições: " + JSON.stringify(bp));
 await pg.click("#tab-j"); await pg.click("#j-cal"); await pg.waitForSelector('[data-cal="tmcA"]'); await pg.click('[data-cal="tmcA"]');
 if (await pg.locator('[data-cal="tmcA"]').count()) await pg.click('[data-cal="tmcA"]'); await pg.waitForTimeout(150);
 const jc = await pg.evaluate(() => [jogo.calId, jogo.adversario, jogo.data, jogo.comp, jogo.casa, $("j-adv").value].join("|"));

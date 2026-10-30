@@ -59,6 +59,7 @@ function renderBoard(){
   $("hint").innerHTML=din?`<span><b>Arrasta</b> as peças ou <b>toca</b> numa para mudar o titular ou a posição. É o mesmo quadro do separador Jogo.</span>`
     :!editing?`<span><b>Arrasta</b> as bolas e as legendas para as mover. <b>Toca</b> numa legenda para a editar e numa bola para ${est.fase==="pre"?"definir quem faz essa tarefa":"substituir"}.</span><span class="legend-chip"><i></i>trocado durante o jogo</span>`:editing?`<span><b>Arrasta</b> para mover. <b>Toca</b> numa bolinha para mudar o estilo ou a posição do onze; numa legenda para escrever a tarefa.</span>`
     :`<span><b>Toca numa bolinha</b> para trocar o jogador.</span><span class="legend-chip"><i></i>trocado durante o jogo</span>`;
+  { const L_=lanceAtual(); if(!L_.dinamico&&L_.bolas&&L_.bolas.length){ const au=ausentesDe(L_); if(au.length){ $("hint").innerHTML=`<span style="color:#B45F00"><b>⚠ ${au.map(n=>"O "+esc(n)).join(", ")} não ${au.length>1?"estão":"está"} a jogar</b> e ${au.length>1?"têm":"tem"} tarefas neste lance.</span><button class="btn sm" id="q-aus">Pôr quem está a jogar (todos os lances)</button>`+$("hint").innerHTML; $("q-aus").onclick=corrigeAusentes; } } }
   { const L_=lanceAtual(); if(!L_.dinamico){ const d=calcula(L_).dups||[]; if(d.length) $("hint").innerHTML=`<span style="color:#B45F00"><b>⚠ ${d.map(n=>"Nº "+esc(n)).join(", ")} repetido neste lance</b> (anel laranja). Toca numa dessas bolinhas e escolhe quem faz essa tarefa. Para mostrar o mesmo jogador noutro sítio de propósito, usa o estilo <b>Alternativa</b> (bola branca).</span>`+$("hint").innerHTML; } }
 }
 function renderRows(){
@@ -66,23 +67,28 @@ function renderRows(){
   $("fz-pre").setAttribute("aria-pressed",String(pre)); $("fz-jogo").setAttribute("aria-pressed",String(!pre));
   $("p-tit").firstChild.textContent=pre?"Definições pré-jogo ":"Trocas no jogo ";
   $("p-sub").textContent=pre?"A equipa de cada lance para este jogo. Não conta como troca nem fica realçado. Aplicam-se por ordem; se quem entra já está no lance, os dois trocam."
-    :"Só o que muda durante o jogo. Fica realçado a dourado face à equipa definida no pré-jogo. Aplicam-se por ordem; se quem entra já está no lance, os dois trocam.";
+    :"Prepara aqui a troca antes de acontecer: quem vem do banco fica com as tarefas de quem sai; dois que já estão em campo trocam de tarefas. As substituições do Ao vivo entram sozinhas. Fica realçado a dourado.";
   $("f-add").textContent=pre?"Definir":"Adicionar troca";
   const vis=est.linhas.map((l,i)=>[l,i]).filter(([l])=>!!l.pre===pre);
   $("btn-limpa").hidden=pre||!vis.length;
   $("btn-gpre").hidden=!pre||!vis.length;
-  const ol=$("rows"); ol.innerHTML=""; $("cnt").textContent=vis.length;
+  const ol=$("rows"); ol.innerHTML=""; const sv=pre?[]:subsReais().lista.filter(s=>!vis.some(([l])=>l.modo==="todos"&&l.sai===s.sai)); $("cnt").textContent=vis.length+sv.length;
+  /* substituições do Ao vivo que não foram preparadas aqui (só leitura: mudam-se no Ao vivo) */
+  sv.forEach(s=>{ const li=document.createElement("li"); li.className="here";
+    li.innerHTML=`<span class="ix">✓</span><div><div class="swap"><span class="out"></span><span class="arr">→</span><span class="in"></span></div><div class="meta">Todos os lances · Ao vivo · ${esc(s.int?"intervalo":s.min||"sem minuto")}</div></div>`;
+    li.querySelector(".out").textContent=rot(s.sai); li.querySelector(".in").textContent=rot(s.entra); ol.appendChild(li); });
+  if(!vis.length&&sv.length) return;
   if(!vis.length){ ol.innerHTML=pre?`<li class="empty" style="display:block"><b>Sem definições.</b> Toca numa bolinha para escolher quem faz cada tarefa neste jogo.</li>`
     :`<li class="empty" style="display:block"><b>Sem trocas.</b> Os lances mostram a equipa definida no pré-jogo.</li>`; return; }
   const L=lanceAtual();
   vis.forEach(([l,i],k)=>{
     const li=document.createElement("li"); li.className=aplica(l,L.id)?"here":"";
     const onde=l.modo==="todos"?"Todos os lances":(l.lances||[]).map(lanceNome).join(", ");
-    const se=semEfeito(i);
+    const sr=subVivoDe(l), se=!sr&&semEfeito(i);
     li.innerHTML=`<span class="ix">${k+1}</span><div><div class="swap"><span class="out"></span><span class="arr">→</span><span class="in"></span></div>
       <div class="meta"><span class="onde"></span>${se?' · <span class="warn">sem efeito: o '+esc(l.sai)+' não está em campo aí</span>':''}</div></div>
       <div class="rowbtns"><button class="icon" aria-label="Subir" ${k===0?"disabled":""}>▲</button><button class="icon" aria-label="Descer" ${k===vis.length-1?"disabled":""}>▼</button><button class="icon" aria-label="Apagar">✕</button></div>`;
-    li.querySelector(".out").textContent=rot(l.sai); li.querySelector(".in").textContent=rot(l.entra); li.querySelector(".onde").textContent=onde+(l.pre?"":(l.min?" · aos "+l.min:" · sem minuto"));
+    li.querySelector(".out").textContent=rot(l.sai); li.querySelector(".in").textContent=rot(l.entra); li.querySelector(".onde").textContent=onde+(l.pre?"":sr?(sr.entra===l.entra?` · ✓ feita no Ao vivo (${sr.int?"intervalo":sr.min||"sem minuto"})`:` · não aconteceu: no Ao vivo entrou o ${sr.entra}`):(l.min?" · aos "+l.min:" · por fazer"));
     if(!l.pre){ const md=li.querySelector(".meta"); md.style.cursor="pointer"; md.title="Toca para mudar o minuto"; md.onclick=()=>folhaMin(i); }
     const [up,down,del]=li.querySelectorAll(".rowbtns button");
     up.onclick=()=>mexe(i,-1); down.onclick=()=>mexe(i,1);

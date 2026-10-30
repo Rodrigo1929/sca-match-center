@@ -23,20 +23,66 @@ function aplica(l,id){ return l.modo==="todos"||(l.lances||[]).includes(id); }
 function calcula(L){
   const slots=[...new Set([...L.bolas,...L.legs].map(x=>x.slot))];
   const v={}; slots.forEach(s=>v[s]=(L.fixo&&L.fixo[s])||baseOf(s));
-  const usadas=new Set(); let base=null;
-  const ordem=est.linhas.map((l,i)=>[l,i]).sort((a,b)=>(a[0].pre?0:1)-(b[0].pre?0:1)||a[1]-b[1]);
+  const usadas=new Set(); let base=null; const campo=new Set(titulares());
+  /* v107: definições pré-jogo; depois as substituições do Ao vivo (feitas); depois as trocas do Quadro ainda por fazer */
+  const ordem=[...est.linhas.map((l,i)=>[l,i]).filter(([l])=>l.pre),...trocasVivo(),...est.linhas.map((l,i)=>[l,i]).filter(([l])=>!l.pre&&!subVivoDe(l))];
+  const entraNoCampo=l=>{ if(!l.pre&&l.modo==="todos"&&campo.has(l.sai)&&!campo.has(l.entra)){ campo.delete(l.sai); campo.add(l.entra); } };
   ordem.forEach(([l,i])=>{
     if(!l.pre&&!base) base={...v};
-    if(!aplica(l,L.id)) return;
+    if(!aplica(l,L.id)){ entraNoCampo(l); return; }
     if(l.slot&&slots.includes(l.slot)&&l.modo!=="todos"){ if(v[l.slot]!==l.sai) return; usadas.add(i);
       slots.forEach(s=>{ if(s!==l.slot&&v[s]===l.entra) v[s]=l.sai; }); v[l.slot]=l.entra; return; }
-    if(!slots.some(s=>v[s]===l.sai)) return;
+    if(!slots.some(s=>v[s]===l.sai)){ entraNoCampo(l); return; }
     usadas.add(i);
-    slots.forEach(s=>{ if(v[s]===l.sai) v[s]=l.entra; else if(v[s]===l.entra) v[s]=l.sai; });
+    /* no jogo, quem vem de fora fica com as tarefas de quem sai; dois que já estão em campo trocam de tarefas */
+    if(!l.pre&&!campo.has(l.entra)) passaTarefas(v,slots,l.sai,l.entra,campo);
+    else slots.forEach(s=>{ if(v[s]===l.sai) v[s]=l.entra; else if(v[s]===l.entra) v[s]=l.sai; });
+    entraNoCampo(l);
   });
   if(!base) base={...v};
   return {v,usadas,base,dups:repetidos(L,v)};
 }
+/* v107: quem entra fica com as tarefas de quem sai; se já tinha outra tarefa no lance, essa passa para um titular livre
+   (de preferência o dono dessa posição no onze; nunca o guarda-redes). Sem titular livre, os dois trocam, como antes */
+const ehGRn=n=>jogo.onze.some(o=>o.n===n&&o.pos==="GR")||est.plantel.some(p=>p.n===n&&p.pos==="GR");
+function passaTarefas(v,slots,sai,entra,campo){ const ss=slots.filter(s=>v[s]===sai); if(!ss.length) return false;
+  const ja=slots.filter(s=>v[s]===entra); ss.forEach(s=>v[s]=entra);
+  ja.forEach(s=>{ const usados=new Set(slots.map(x=>v[x])), livres=[...campo].filter(n=>n!==sai&&n!==entra&&!usados.has(n)&&!ehGRn(n)), pref=baseOf(s);
+    v[s]=livres.includes(pref)?pref:(livres[0]||sai); });
+  return true; }
+/* substituições do Ao vivo (as que contam) como trocas em todos os lances; a troca planeada no Quadro com o mesmo «sai» dá lugar à real */
+function trocasVivo(){ return subsReais().lista.map(s=>[{id:"vivo-"+s.id,sai:s.sai,entra:s.entra,modo:"todos",vivo:true,min:s.int?"Int.":s.min},"v:"+s.id]); }
+const subVivoDe=l=>!l.pre&&l.modo==="todos"?subsReais().lista.find(s=>s.sai===l.sai)||null:null;
+/* ajustes aos lances quando o onze muda no separador Jogo (v107) */
+const lancesAjustaveis=()=>lances().filter(L=>L.bolas&&L.bolas.length&&!L.dinamico);
+const slotsDe=L=>[...new Set([...L.bolas,...L.legs].map(x=>x.slot))];
+const vDoLance=L=>Object.fromEntries(slotsDe(L).map(s=>[s,(L.fixo&&L.fixo[s])||baseOf(s)]));
+function gravaLances(novos,msg){ if(!novos.length) return 0; const antes=novos.map(([A])=>A);
+  novos.forEach(([,C])=>{ lancesDb[C.id]=C; gravaDoc("lances/"+C.id,C); }); guardaLocal(); render();
+  if(msg) toast(msg,()=>{ antes.forEach(A=>{ lancesDb[A.id]=A; gravaDoc("lances/"+A.id,A); }); guardaLocal(); render(); });
+  return novos.length; }
+const copiaLance=L=>{ const C=clone(L); delete C.original; return C; };
+/* troca de lugar entre titulares: os lances ficam iguais (fixa quem lá estava nas tarefas que seguiam o onze) */
+function fixaLances(slotsTroca,antesB){ const novos=[];
+  lancesAjustaveis().forEach(L=>{ const ss=slotsDe(L).filter(s=>slotsTroca.includes(s)&&!(L.fixo&&L.fixo[s])); if(!ss.length) return;
+    const A=copiaLance(L), C=copiaLance(L); C.fixo={...(C.fixo||{})}; ss.forEach(s=>C.fixo[s]=antesB[s]); novos.push([A,C]); });
+  gravaLances(novos); }
+/* um jogador sai do onze: quem entra fica com as tarefas dele em todos os lances */
+function passaNosLances(sai,entra,msg){ const novos=[], campo=new Set(titulares());
+  lancesAjustaveis().forEach(L=>{ const ss=slotsDe(L), v=vDoLance(L), v0={...v}; if(!passaTarefas(v,ss,sai,entra,campo)) return;
+    const A=copiaLance(L), C=copiaLance(L); C.fixo={...(C.fixo||{})}; ss.forEach(s=>{ if(v[s]!==v0[s]) C.fixo[s]=v[s]; }); novos.push([A,C]); });
+  return gravaLances(novos,msg!==false&&novos.length?`Bolas paradas: ${entra} fica com as tarefas do ${sai} em ${novos.length} lance${novos.length>1?"s":""}`:null); }
+/* jogadores fixos num lance que não estão no onze (ex.: o nº 4 já não joga mas continua a bater o canto) */
+const ausentesDe=L=>{ const tit=new Set(titulares()); return [...new Set(Object.values(L.fixo||{}).filter(n=>n&&!tit.has(n)))].filter(n=>slotsDe(L).some(s=>L.fixo[s]===n)); };
+/* corrige todos os lances: quem está agora no lugar dele no onze (posição com o nº dele) ou, se não houver, um titular livre */
+function corrigeAusentes(){ const novos=[], campo=new Set(titulares());
+  lancesAjustaveis().forEach(L=>{ const aus=ausentesDe(L); if(!aus.length) return; const ss=slotsDe(L), v=vDoLance(L), v0={...v};
+    aus.forEach(x=>{ const o=jogo.onze.find(o=>o.slot===x); let y=o&&o.n!==x?o.n:null;
+      if(!y){ const usados=new Set(ss.map(s=>v[s])), livre=n=>n&&campo.has(n)&&!usados.has(n)&&!ehGRn(n), s0=ss.find(s=>v[s]===x);
+        y=livre(baseOf(s0))?baseOf(s0):[...campo].find(livre)||null; }
+      if(y) passaTarefas(v,ss,x,y,campo); });
+    if(ss.some(s=>v[s]!==v0[s])){ const A=copiaLance(L), C=copiaLance(L); C.fixo={...(C.fixo||{})}; ss.forEach(s=>{ if(v[s]!==v0[s]) C.fixo[s]=v[s]; }); novos.push([A,C]); } });
+  gravaLances(novos,novos.length?`Bolas paradas corrigidas em ${novos.length} lance${novos.length>1?"s":""}`:"Nada a corrigir"); }
 function eAlternativa(B){ return (B.fill||"").toUpperCase()==="#FFFFFF"&&(B.stroke||"").toUpperCase()==="#F79646"; }
 /* repetidos = o mesmo jogador em bolinhas de posições (slots) diferentes, sem ser alternativa */
 function repetidos(L,v){ const porN={}; [...new Set(L.bolas.filter(b=>!eAlternativa(b)).map(b=>b.slot))].forEach(s=>{ const n=v[s]; if(n==null) return; (porN[n]=porN[n]||new Set()).add(s); });

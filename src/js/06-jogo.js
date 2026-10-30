@@ -164,11 +164,13 @@ function folhaOnze(i){
       n=>{ const j=jogo.onze.findIndex(x=>x.n===n); return [j>=0&&j!==i?"titular · troca":jogo.suplentes.includes(n)?"suplente":"",escalaoDe(n)].filter(Boolean).join(" · "); });
     grid.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.querySelector("b").textContent===o.n)));
     s.querySelector("#o-ok").onclick=()=>{
-      const J=clone(jogo); const j=J.onze.findIndex(x=>x.n===esc_);
+      const J=clone(jogo); const j=J.onze.findIndex(x=>x.n===esc_), sai=o.n, antesB=Object.fromEntries(jogo.onze.map(x=>[x.slot,x.n]));
       if(j>=0&&j!==i) J.onze[j].n=o.n;          // troca entre titulares
       J.onze[i].n=esc_; J.onze[i].pos=inp.value.trim().toUpperCase();
       J.suplentes=J.suplentes.filter(n=>n!==esc_);
-      guardaJogo(J); fecha(); };
+      guardaJogo(J); fecha();
+      /* v107: trocar dois titulares de lugar não mexe nas bolas paradas; quem entra no onze fica com as tarefas de quem sai */
+      if(esc_!==sai){ if(j>=0&&j!==i) fixaLances([J.onze[i].slot,J.onze[j].slot],antesB); else passaNosLances(sai,esc_); } };
   });
 }
 function avisoSup(){ const C=COMPS[jogo.comp]||COMPS.taca, el_=$("j-nsup"); if(!el_) return; el_.style.background=C.sup&&jogo.suplentes.length>C.sup?"#E00000":""; el_.title=C.sup?`${C.nome}: máximo ${C.sup} suplentes`:""; }
