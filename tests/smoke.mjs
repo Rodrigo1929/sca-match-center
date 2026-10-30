@@ -50,6 +50,16 @@ const lig = await pg.evaluate(() => { const g = (id) => lances().find((l) => l.i
   return r; });
 if (JSON.stringify(lig) !== JSON.stringify({ base: "8", soltas: lig.soltas, iguais: true, hint: true, segue: true, seta: true, desfaz: true, solto: true, naoSegue: true, volta: true, lista: true }))
   erros.push("Quadro: posição inicial ligada não funcionou " + JSON.stringify(lig));
+// v108.1: trocar o jogador de uma bolinha no slide inicial faz a mesma troca nos lances que o seguem
+const tj = await pg.evaluate(() => { const L = lances().find((l) => l.id === "8"), i = L.bolas.findIndex((b) => !eAlternativa(b)), atual = calcula(L).v[L.bolas[i].slot];
+  const novo = est.plantel.map((p) => p.n).find((n) => n && n !== atual && !Object.values(vDoLance(L)).includes(n));
+  const antesF = Object.entries(vDoLance(lances().find((l) => l.id === "10"))).filter(([, x]) => x === atual).map(([s]) => s); folhaBola(L, i); return { atual, novo, antesF }; });
+await pg.selectOption("#s-jog", tj.novo); await pg.waitForTimeout(150);
+const tj2 = await pg.evaluate((tj) => { const F = lances().find((l) => l.id === "10"), v = vDoLance(F); return { base: calcula(lances().find((l) => l.id === "8")).v, f: tj.antesF.every((s) => v[s] === tj.novo), semAtual: !Object.values(v).includes(tj.atual) }; }, tj);
+if (!tj.antesF.length || !tj2.f || !tj2.semAtual) erros.push("Quadro: a troca de jogador no slide inicial não passou para o lance ligado " + JSON.stringify({ tj, tj2 }));
+await pg.evaluate(() => { desfazQuadro(); });
+const tj3 = await pg.evaluate((tj) => tj.antesF.every((s) => vDoLance(lances().find((l) => l.id === "10"))[s] === tj.atual), tj);
+if (!tj3) erros.push("Quadro: desfazer a troca de jogador no slide inicial não repôs o lance ligado");
 await pg.evaluate(() => { editing = false; curId = lances()[0].id; render(); });
 // Modelo de Jogo: criar quadro (começa no onze do separador Jogo), novo passo, arrastar um jogador, animar
 await pg.click("#tab-m"); await pg.click("#m-novo2"); await pg.fill("#mn-n", "Teste"); await pg.click("#mn-ok");

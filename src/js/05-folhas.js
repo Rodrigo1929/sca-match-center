@@ -58,7 +58,8 @@ function miniBola(st){ return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" 
 /* editar bolinha */
 function folhaBola(L,i){
   const B=L.bolas[i], LB=baseDe(L), solta=LB&&!eAlternativa(B)&&soltasDe(L).includes(B.slot);
-  folha(`<h3>Bolinha</h3><label class="f">Jogador nesta bolinha (neste lance)<select id="s-jog"></select></label>
+  const nSeg=eAlternativa(B)?0:seguidoresDe(L.id).length;
+  folha(`<h3>Bolinha</h3><label class="f">Jogador nesta bolinha (${nSeg?`neste lance e nos ${nSeg} que o seguem`:"neste lance"})<select id="s-jog"></select></label>
     <label class="f">Posição no onze base que representa <span class="sub">(avançado)</span><select id="s-slot"></select></label>
     ${LB&&!eAlternativa(B)?`<p class="sub" style="margin:0">${solta?`Posição própria neste lance (não segue o «${esc(LB.nome)}»).`:`Segue a posição do «${esc(LB.nome)}». Arrastá-la aqui deixa-a no seu sítio só neste lance.`}</p>${solta?`<button class="btn" id="s-segue">↺ Voltar a seguir o «${esc(LB.nome)}»</button>`:""}`:""}
     <h4>Estilo</h4><div class="styles" id="s-est"></div>
@@ -71,7 +72,12 @@ function folhaBola(L,i){
       sj.innerHTML=lista.map(n=>{ const onde=Object.entries(v).find(([sl,x])=>x===n&&sl!==B.slot&&L.bolas.some(b=>b.slot===sl&&!eAlternativa(b))); return `<option value="${esc(n)}">${esc(n)}${nome(n)?" · "+esc(nome(n)):""}${onde?" — já está neste lance (troca)":""}</option>`; }).join(""); sj.value=atual;
       sj.onchange=()=>{ const novo=sj.value; if(novo===atual) return; const C=clone(L); C.fixo={...(C.fixo||{})};
         if(!eAlternativa(B)) Object.entries(v).forEach(([sl,x])=>{ if(x===novo&&sl!==B.slot) C.fixo[sl]=atual; });
-        C.fixo[B.slot]=novo; guardaLance(C); fecha(); toast(`Bolinha passa a ${novo}${nome(novo)?" · "+nome(novo):""} neste lance`); }; }
+        C.fixo[B.slot]=novo;
+        /* v108.1: no slide inicial, a mesma troca passa aos lances que o seguem (quem era o `atual` passa a `novo`; se o `novo` lá estava, trocam) */
+        const junto=[]; if(!eAlternativa(B)) seguidoresDe(L.id).forEach(F=>{ const vf=vDoLance(F), D=copiaLance(F); D.fixo={...(D.fixo||{})}; let m=false;
+          Object.entries(vf).forEach(([sl,x])=>{ if(x===atual){ D.fixo[sl]=novo; m=true; } else if(x===novo){ D.fixo[sl]=atual; m=true; } }); if(m) junto.push(D); });
+        const quem=`${novo}${nome(novo)?" · "+nome(novo):""}`;
+        guardaLance(C,{junto,msg:junto.length?`${atual} → ${quem} neste lance e em ${junto.length} lance${junto.length>1?"s":""} que o seguem (${junto.map(x=>x.nome).join(", ")})`:`Bolinha passa a ${quem} neste lance`}); fecha(); }; }
     s.querySelector("#s-slot").onchange=e=>{ const C=clone(L), novo=e.target.value, velho=C.bolas[i].slot;
       if(!eAlternativa(C.bolas[i])&&C.bolas.some((b,k)=>k!==i&&b.slot===novo&&!eAlternativa(b))){ C.bolas.forEach((b,k)=>{ if(k!==i&&b.slot===novo) b.slot=velho; }); C.bolas[i].slot=novo; guardaLance(C); toast("Esse jogador já estava neste lance: as duas bolinhas trocaram de jogador."); return; }
       C.bolas[i].slot=novo; guardaLance(C); };

@@ -86,6 +86,7 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - Em **✎ Editar lance › Propriedades › Posição inicial igual a**, escolhe o slide inicial (ex.: o «Canto Esq. Aberto» segue o «Canto Esq. Fechado I»). As bolinhas, a bola e os adversários seguem esse lance; as setas, as tarefas e os textos ficam de cada um.
 - Mexer no **slide inicial** muda os outros (aviso com os nomes; «↶ Desfazer» volta tudo atrás). As setas que saem de um jogador passam a sair do sítio novo.
 - Arrastar uma bolinha num lance ligado deixa-a **no seu sítio só nesse lance** (ex.: o homem que sai do pé do GR no Canto Aberto). Toca nela para «↺ Voltar a seguir»; nas Propriedades há «Voltar a seguir todas».
+- No slide inicial, **trocar o jogador** de uma bolinha (ex.: o 8 passa a 40) faz a mesma troca nos lances que o seguem; se o 40 já lá estava, os dois trocam (v108.1).
 - Na lista, os **slides iniciais** estão sombreados com barra dourada; os que os seguem têm ↳.
 
 ## Quadro: passar de lance (v107.3)

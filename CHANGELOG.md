@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| 108.1 | Quadro: **trocar o jogador de uma bolinha no slide inicial faz a mesma troca nos lances que o seguem** (quem lá estava passa a ser o novo; se o novo já estava no lance, os dois trocam). Cada variante mantém os seus jogadores; «Desfazer» volta todos atrás. Sem dados novos. |
 | 108 | Quadro: **posição inicial ligada**. Em Editar lance › Propriedades › «Posição inicial igual a» um lance segue as bolinhas, a bola e os adversários de outro (o slide inicial); setas, tarefas e textos continuam de cada lance. Mexer no slide inicial muda os outros (as setas saem do sítio novo; Desfazer volta tudo); arrastar uma bolinha num lance ligado deixa-a no seu sítio só nesse lance, com «Voltar a seguir». Na lista, os slides iniciais ficam sombreados e os que os seguem levam ↳. Dados: campos `base` e `soltas` nos lances. |
 | 107.3 | Quadro: **setas grandes ◀ ▶ ao lado do título** para passar ao lance anterior ou seguinte, com «3 / 17» a dizer em qual estás (já não é preciso descer à lista). No PC também com as teclas ← →. Sem dados novos. |
 | 107.2 | Correção: o botão «Pôr quem está a jogar e tirar repetidos» não fazia nada quando o lance tinha repetidos (o aviso apagava a ligação do clique). |
