@@ -82,6 +82,12 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - **Treino › Rankings**: Rei do Meinho e Rei das Cuecas com 👑 (empate partilha o título); total, UT com meinho em que esteve presente, média por UT; toca num atleta para ver as ocorrências. Os GR entram como os outros. Filtros: época, mesociclo, microciclo. **⬇ CSV**.
 - **Histórico do Excel** (v97): os 21 passes e as cuecas do Excel (setembro e outubro de 2026) contam pela data de cada treino; «UT com meinho» conta quando o atleta estava presente (presenças do emjogo). Os registos de 23/10 ficaram na UT39 (21/10).
 
+## Quadro: posição inicial ligada (v108)
+- Em **✎ Editar lance › Propriedades › Posição inicial igual a**, escolhe o slide inicial (ex.: o «Canto Esq. Aberto» segue o «Canto Esq. Fechado I»). As bolinhas, a bola e os adversários seguem esse lance; as setas, as tarefas e os textos ficam de cada um.
+- Mexer no **slide inicial** muda os outros (aviso com os nomes; «↶ Desfazer» volta tudo atrás). As setas que saem de um jogador passam a sair do sítio novo.
+- Arrastar uma bolinha num lance ligado deixa-a **no seu sítio só nesse lance** (ex.: o homem que sai do pé do GR no Canto Aberto). Toca nela para «↺ Voltar a seguir»; nas Propriedades há «Voltar a seguir todas».
+- Na lista, os **slides iniciais** estão sombreados com barra dourada; os que os seguem têm ↳.
+
 ## Quadro: passar de lance (v107.3)
 - **◀ ▶** ao lado do título passam para o lance anterior ou seguinte (o «3 / 17» diz em qual estás; do último volta ao primeiro). No PC também com as teclas **← →**.
 

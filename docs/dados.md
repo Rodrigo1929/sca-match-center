@@ -17,7 +17,7 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
 | `adversarios/{id}` | coleção | Plantel de cada equipa adversária (id = nome sem acentos, ex.: `sc-barreiro`), para todos os jogos contra ela (ver abaixo) |
 | `regs/{id}` | coleção | Ações registadas no Pós-jogo |
 | `historico/{id}` | coleção | Jogos arquivados |
-| `lances/{id}` | coleção | Lances de bolas paradas editados (os de origem estão em `src/data/lances-base.json`) |
+| `lances/{id}` | coleção | Lances de bolas paradas editados (os de origem estão em `src/data/lances-base.json`). Desde a v108: `base` (id do lance cujas posições segue) e `soltas` (chaves das peças que ficam no seu sítio: posição no onze, `bj0`… da bola, `a0`… dos adversários) |
 | `modelo/{id}` | coleção | Quadros do Modelo de Jogo |
 | `exercicios/{id}` | coleção | Repositório de exercícios para as UT (ver abaixo) |
 | `uts/{id}` | coleção | Unidades de Treino (ver abaixo) |

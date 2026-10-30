@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| 108 | Quadro: **posição inicial ligada**. Em Editar lance › Propriedades › «Posição inicial igual a» um lance segue as bolinhas, a bola e os adversários de outro (o slide inicial); setas, tarefas e textos continuam de cada lance. Mexer no slide inicial muda os outros (as setas saem do sítio novo; Desfazer volta tudo); arrastar uma bolinha num lance ligado deixa-a no seu sítio só nesse lance, com «Voltar a seguir». Na lista, os slides iniciais ficam sombreados e os que os seguem levam ↳. Dados: campos `base` e `soltas` nos lances. |
 | 107.3 | Quadro: **setas grandes ◀ ▶ ao lado do título** para passar ao lance anterior ou seguinte, com «3 / 17» a dizer em qual estás (já não é preciso descer à lista). No PC também com as teclas ← →. Sem dados novos. |
 | 107.2 | Correção: o botão «Pôr quem está a jogar e tirar repetidos» não fazia nada quando o lance tinha repetidos (o aviso apagava a ligação do clique). |
 | 107.1 | Quadro: o botão «Pôr quem está a jogar e tirar repetidos (todos os lances)» aparece também com **jogadores repetidos**. O repetido fica na tarefa escolhida para ele no lance; a outra tarefa vai para o colega com quem trocou de lugar no onze (senão o dono da posição, senão um titular livre). |

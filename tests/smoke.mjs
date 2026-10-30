@@ -31,6 +31,26 @@ const setas = await (async () => { const t = () => pg.evaluate(() => $("b-title"
 if (setas.a !== setas.c || setas.a === setas.b || !setas.b.endsWith("2 / " + setas.tot) || !setas.d.endsWith(setas.tot + " / " + setas.tot))
   erros.push("Quadro: as setas ◀ ▶ (e as teclas) não passam bem de lance " + JSON.stringify(setas));
 await pg.click("#next"); await pg.waitForTimeout(100);
+// v108: posição inicial ligada — o «Canto Esq. Comb. 3» (10) passa a seguir o «Canto Esq. Fechado» (8) pela folha do lance
+await pg.evaluate(() => { curId = "10"; editing = true; render(); }); await pg.click("#e-props"); await pg.selectOption("#pp-b", "8"); await pg.click("#pp-ok"); await pg.waitForTimeout(150);
+const lig = await pg.evaluate(() => { const g = (id) => lances().find((l) => l.id === id), P = (L) => pecasPos(L), B = g("8"), F = g("10");
+  const r = { base: F.base, soltas: soltasDe(F).join(","), iguais: Object.keys(P(F)).filter((k) => P(B)[k] && !soltasDe(F).includes(k)).every((k) => P(F)[k].cx === P(B)[k].cx && P(F)[k].cy === P(B)[k].cy), hint: $("hint").textContent.includes("Posição inicial do") };
+  /* mexer no slide inicial: o 7 vai 3000 para a direita; no 10 a bolinha e a seta que sai dela acompanham (o destino fica) */
+  const f7 = P(F)["7"], s0 = (F.setas || []).findIndex((s) => Math.hypot(s.x1 - f7.cx, s.y1 - f7.cy) <= (f7.r || 1450) * 1.6), x2 = s0 >= 0 ? F.setas[s0].x2 : null;
+  if (s0 < 0) { const C = copiaLance(F); C.setas = [...(C.setas || []), { x1: f7.cx, y1: f7.cy, x2: f7.cx + 5000, y2: f7.cy, c: "#000", w: 120 }]; guardaLance(C, { segue: true }); }
+  const F1 = g("10"), si = s0 >= 0 ? s0 : F1.setas.length - 1, X2 = F1.setas[si].x2;
+  const C = copiaLance(B); pecasPos(C)["7"].cx += 3000; guardaLance(C);
+  const F2 = g("10"); r.segue = P(F2)["7"].cx === P(g("8"))["7"].cx; r.seta = F2.setas[si].x1 === F1.setas[si].x1 + 3000 && F2.setas[si].x2 === X2;
+  desfazQuadro(); r.desfaz = P(g("8"))["7"].cx === P(B)["7"].cx && P(g("10"))["7"].cx === P(F1)["7"].cx;
+  /* mexer no 7 do lance ligado: fica solto e já não segue */
+  const D = copiaLance(g("10")); pecasPos(D)["7"].cy += 2000; guardaLance(D); r.solto = soltasDe(g("10")).includes("7");
+  const E = copiaLance(g("8")); pecasPos(E)["7"].cx += 1000; guardaLance(E); r.naoSegue = P(g("10"))["7"].cx !== P(g("8"))["7"].cx;
+  voltaSeguir(g("10"), "7"); r.volta = !soltasDe(g("10")).includes("7") && P(g("10"))["7"].cx === P(g("8"))["7"].cx;
+  const bt = (id) => document.querySelector(`#nav li[data-id="${id}"] button`); r.lista = bt("8").classList.contains("ini") && bt("10").classList.contains("segue");
+  return r; });
+if (JSON.stringify(lig) !== JSON.stringify({ base: "8", soltas: lig.soltas, iguais: true, hint: true, segue: true, seta: true, desfaz: true, solto: true, naoSegue: true, volta: true, lista: true }))
+  erros.push("Quadro: posição inicial ligada não funcionou " + JSON.stringify(lig));
+await pg.evaluate(() => { editing = false; curId = lances()[0].id; render(); });
 // Modelo de Jogo: criar quadro (começa no onze do separador Jogo), novo passo, arrastar um jogador, animar
 await pg.click("#tab-m"); await pg.click("#m-novo2"); await pg.fill("#mn-n", "Teste"); await pg.click("#mn-ok");
 const onze = await pg.evaluate(() => { const Q = Object.values(modelos)[0]; return { slots: Q.pecas.filter((p) => p.eq === "nos" && p.slot).length, v: numerosQ(Q), base: Object.fromEntries(jogo.onze.map((o) => [o.slot, o.n])) }; });

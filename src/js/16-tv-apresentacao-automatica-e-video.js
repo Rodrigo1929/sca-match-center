@@ -236,7 +236,14 @@ function desfazQuadro(){ const it=undoQ.pop(); if(!it){ toast("Nada para desfaze
   try{ if(it.tipo==="onze") guardaJogo({...jogo,onze:it.antes});
     else if(it.tipo==="encaixe") guardaJogo({...jogo,encaixe:it.antes},true);
     else if(it.tipo==="advonze") guardaAdvJogo({...advJ(),onze:it.antes});
+    else if(it.tipo==="grupo"){ it.itens.forEach(x=>{ if(x.antes){ lancesDb[x.id]=x.antes; gravaDoc("lances/"+x.id,x.antes); } else { delete lancesDb[x.id]; apagaDoc("lances/"+x.id); } }); guardaLocal(); render(); }
     else if(it.antes) guardaLance(it.antes);
     else { delete lancesDb[it.id]; apagaDoc("lances/"+it.id); guardaLocal(); render(); } }
   finally{ aDesfazer=false; } atualizaUndo(); if(presentOpen) renderPresent(); toast("Alteração desfeita"); }
-function guardaLance(L){ pushUndo({tipo:"lance",id:L.id,antes:lancesDb[L.id]?clone(lancesDb[L.id]):null}); const C=clone(L); delete C.original; lancesDb[C.id]=C; guardaLocal(); render(); gravaDoc("lances/"+C.id,C); }
+function guardaLance(L,op={}){ const antesDe=id=>lancesDb[id]?clone(lancesDb[id]):null, C=clone(L); delete C.original;
+  /* v108: posição inicial ligada — mexer num lance ligado solta a peça; mexer no slide inicial leva os que o seguem */
+  const velho=aDesfazer?null:lances().find(x=>x.id===C.id), soltou=op.segue?[]:soltaMexidas(velho,C), segue=acompanhaBase(velho,C);
+  pushUndo(segue.length?{tipo:"grupo",itens:[{id:C.id,antes:antesDe(C.id)},...segue.map(([,F])=>({id:F.id,antes:antesDe(F.id)}))]}:{tipo:"lance",id:C.id,antes:antesDe(C.id)});
+  lancesDb[C.id]=C; segue.forEach(([,F])=>{ lancesDb[F.id]=F; gravaDoc("lances/"+F.id,F); }); guardaLocal(); render(); gravaDoc("lances/"+C.id,C);
+  if(segue.length) toast(`Posição inicial: muda também em ${segue.length} lance${segue.length>1?"s":""} (${segue.map(([,F])=>F.nome).join(", ")})`);
+  else if(soltou.length){ const B=baseDe(C); toast(`${soltou.map(k=>nomePecaL(C,k)).join(", ").replace(/^./,c=>c.toUpperCase())} fica${soltou.length>1?"m":""} no seu sítio neste lance (deixa${soltou.length>1?"m":""} de seguir o «${B?B.nome:"slide inicial"}»)`); } }

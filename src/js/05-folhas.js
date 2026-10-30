@@ -57,13 +57,15 @@ function opcSlots(sel,atual,L){ const v=L?calcula(L).v:{};
 function miniBola(st){ return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="${st.fill}" stroke="${st.stroke}" stroke-width="${Math.max(1,st.sw/90)}"/></svg>`; }
 /* editar bolinha */
 function folhaBola(L,i){
-  const B=L.bolas[i];
+  const B=L.bolas[i], LB=baseDe(L), solta=LB&&!eAlternativa(B)&&soltasDe(L).includes(B.slot);
   folha(`<h3>Bolinha</h3><label class="f">Jogador nesta bolinha (neste lance)<select id="s-jog"></select></label>
     <label class="f">Posição no onze base que representa <span class="sub">(avançado)</span><select id="s-slot"></select></label>
+    ${LB&&!eAlternativa(B)?`<p class="sub" style="margin:0">${solta?`Posição própria neste lance (não segue o «${esc(LB.nome)}»).`:`Segue a posição do «${esc(LB.nome)}». Arrastá-la aqui deixa-a no seu sítio só neste lance.`}</p>${solta?`<button class="btn" id="s-segue">↺ Voltar a seguir o «${esc(LB.nome)}»</button>`:""}`:""}
     <h4>Estilo</h4><div class="styles" id="s-est"></div>
     <h4>Destaque (luz)</h4><div id="s-luz"></div>
     <div class="actions"><button class="btn danger l" id="s-rem">Remover bolinha</button><button class="btn" id="s-dup">Duplicar</button><button class="btn dark" data-close>Fechar</button></div>`,(s,fecha)=>{
     opcSlots(s.querySelector("#s-slot"),B.slot,L);
+    { const sg=s.querySelector("#s-segue"); if(sg) sg.onclick=()=>{ fecha(); voltaSeguir(L,B.slot); }; }
     { const sj=s.querySelector("#s-jog"), v=calcula(L).v, atual=v[B.slot];
       const lista=[...new Set([...est.plantel.map(p=>p.n).filter(Boolean),atual])].sort(byNum);
       sj.innerHTML=lista.map(n=>{ const onde=Object.entries(v).find(([sl,x])=>x===n&&sl!==B.slot&&L.bolas.some(b=>b.slot===sl&&!eAlternativa(b))); return `<option value="${esc(n)}">${esc(n)}${nome(n)?" · "+esc(nome(n)):""}${onde?" — já está neste lance (troca)":""}</option>`; }).join(""); sj.value=atual;
@@ -149,11 +151,25 @@ function folhaProps(L){
   folha(`<h3>Lance</h3><label class="f">Nome<input type="text" id="pp-n"></label>
     <div class="seg" role="group" aria-label="Tipo"><button data-t="DEF">Defensivo</button><button data-t="OF">Ofensivo</button><button data-t="REF">Referência</button></div>
     ${L.titulo?"":'<p class="sub" style="margin:0">O título dentro do esquema faz parte do desenho original; o nome muda na lista e no cabeçalho.</p>'}
+    <h4>Posição inicial</h4><div id="pp-base"></div>
     <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="pp-ok">Guardar</button></div>`,(s,fecha)=>{
     const inp=s.querySelector("#pp-n"); inp.value=L.nome;
     const segs=s.querySelectorAll(".seg button"); const upd=()=>segs.forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.t===tipo)));
     segs.forEach(b=>b.onclick=()=>{tipo=b.dataset.t;upd();}); upd();
-    s.querySelector("#pp-ok").onclick=()=>{ const C=clone(L); C.nome=inp.value.trim()||L.nome; C.tipo=tipo; guardaLance(C); fecha(); };
+    /* v108: posição inicial igual à de outro lance (o slide inicial) */
+    const pb=s.querySelector("#pp-base"), segs_=seguidoresDe(L.id), so=soltasDe(L);
+    if(segs_.length) pb.innerHTML=`<p class="sub" style="margin:0">É o <b>slide inicial</b> de: ${segs_.map(x=>esc(x.nome)).join(", ")}. Mexer aqui nas bolinhas, na bola ou nos adversários muda-os também.</p>`;
+    else { const opc=lances().filter(x=>x.id!==L.id&&!x.base&&!x.dinamico&&x.bolas&&x.bolas.length);
+      pb.innerHTML=`<label class="f">Posição inicial igual a<select id="pp-b"><option value="">— própria deste lance —</option>${opc.map(x=>`<option value="${esc(x.id)}">${esc(x.nome)}</option>`).join("")}</select></label>
+        <p class="sub" style="margin:0">As bolinhas, a bola e os adversários seguem esse lance; as setas, as tarefas e os textos ficam deste.${L.base&&so.length?` Soltas neste lance: ${so.map(k=>esc(nomePecaL(L,k))).join(", ")}.`:""}</p>${L.base&&so.length?`<button class="btn" id="pp-todas">↺ Voltar a seguir todas</button>`:""}`;
+      s.querySelector("#pp-b").value=L.base&&opc.some(x=>x.id===L.base)?L.base:"";
+      const td=s.querySelector("#pp-todas"); if(td) td.onclick=()=>{ const B=baseDe(L); if(!B) return; const C=copiaLance(L), PB=pecasPos(B), PC=pecasPos(C);
+        Object.keys(PC).forEach(k=>{ if(PB[k]) poePeca(C,PC[k],PB[k].cx,PB[k].cy); }); C.soltas=[]; guardaLance(C,{segue:true}); fecha(); toast(`Tudo volta a seguir o «${B.nome}»`); }; }
+    s.querySelector("#pp-ok").onclick=()=>{ const C=clone(L); C.nome=inp.value.trim()||L.nome; C.tipo=tipo;
+      const sb=s.querySelector("#pp-b"), nb=sb?sb.value:L.base||""; let msg=null;
+      if(sb&&nb!==(L.base||"")){ if(!nb){ desligaBase(C); msg="Este lance passa a ter a sua posição inicial"; }
+        else { const B=lances().find(x=>x.id===nb); const sl=ligaBase(C,B); msg=`Posição inicial igual ao «${B.nome}»${sl.length?` · ficam no seu sítio: ${sl.map(k=>nomePecaL(C,k)).join(", ")}`:""}`; } }
+      guardaLance(C,{segue:true}); fecha(); if(msg) toast(msg); };
   });
 }
 function folhaNovo(){
