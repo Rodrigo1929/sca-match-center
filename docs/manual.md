@@ -45,6 +45,12 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - Exercício com grupos e **sem rotação** (v96): na linha da UT e no PDF aparecem as equipas, ex.: «Equipa 1 (Vermelhos) vs. Equipa 2 (Brancos)» (apoios no fim). No PDF, grupos por período aparecem em lista por série.
 - **Sem complementar** (v94), em «Rotação por séries»: **Equipas rodam** (há quem descanse; ex.: Liga de 3, jogam 2 e descansa 1) ou **Grupos por período / parte** (em cada série só contam os grupos desse período). Até 20 grupos.
 
+### Grupos de trabalho (v109)
+- A folha do grupo é larga e os jogadores aparecem em botões compactos: todos os presentes (P e CO) cabem à vista, com a contagem «24 no treino · 8 no grupo». Os botões Guardar / Cancelar ficam sempre visíveis no fundo.
+- **Estrutura (opcional)**: escolhe-se o sistema do grupo pelo nº de jogadores de campo (ex.: 8 com GR → GR + 3-3-1, 3-2-2, 2-3-2, 3-1-3) ou «Pelas posições do Plantel». Cada jogador vai para o lugar mais perto da sua posição no Plantel; o GR do grupo vai à baliza. Arrasta-se uma bolinha para a mudar de lugar e larga-se em cima de outra para trocarem; «↺ Repor pelo sistema» volta ao início. Fica gravado no grupo.
+- As bolinhas têm a cor do nome do grupo (Vermelhos, Brancos, Azuis, Amarelos, Verdes, Laranjas, Pretos; sem cor no nome, vermelho) e o GR a amarelo.
+- Na lista dos grupos aparece o campo pequeno (toque abre o grupo). No **PDF da UT**, o grupo com estrutura mostra o nome e o campo (com as alcunhas) em vez da lista de nomes; cabem dois por bloco e a nota continua por baixo.
+
 ### Nomes nos grupos (v93, mudou na v99)
 - Na app (grupos, campo do plantel, tempos, competição, rankings) aparece o **primeiro e o último nome**. Nunca aparece o número.
 - No **PDF da UT**, os **grupos de trabalho** usam a **alcunha** do Plantel (a 1.ª, se houver várias; sem alcunha, primeiro e último nome). O campo do plantel do PDF fica com o nome.

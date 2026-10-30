@@ -80,7 +80,8 @@ As imagens ficam no armazenamento de ficheiros do link (capacidade `assets`), n�
   tempoTotal (s; null = soma dos exercícios), staff (rodapé; por defeito a equipa técnica do separador Jogo),
   presencas: { [nº ou "e:<id>"]: "P"|"L"|"A"|"C"|"CO" },
   extras: [{ id, nome, escalao: "Sub19"…, pos, alc? }],   // alc = alcunhas separadas por vírgulas                 // jogadores de fora do plantel chamados a esta UT
-  grupos: [{ id, nome, jogadores: [nº], nota }],   // só entra quem tem presença P ou CO (v90); outra marcação tira-o dos grupos
+  grupos: [{ id, nome, jogadores: [nº], nota,     // só entra quem tem presença P ou CO (v90); outra marcação tira-o dos grupos
+     estr? }],    // v109, opcional: estrutura no campo { sis: "3-3-1"|…|"pos" (pelas posições do Plantel), pos: { chave: [x, y] } } em fração do meio campo (baliza em cima); o GR do grupo vai à baliza; quem não tem pos vai para o lugar livre mais perto da posição do Plantel
   exercicios: [{ id, exId, copia: { …exercício completo como estava no dia, com os ajustes desta UT, sem links… },   // pela ordem da UT
      pai?,        // v93: complementar — id da linha do exercício principal; vem logo a seguir a ele (3.1, 3.2…) e não soma ao tempo da UT nem ao da parte
      conta?,      // v93: true|false = conta para os tempos só nesta UT; sem campo = como no repositório (contaTempo)

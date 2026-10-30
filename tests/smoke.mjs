@@ -295,6 +295,27 @@ await pg.fill("#ux-q", "guga"); const visG = await pg.evaluate(() => [...documen
 await pg.fill("#ux-q", ""); await pg.click("#ux-us .chip:has-text('Santiago C.')"); await pg.waitForTimeout(150);
 const ux = await pg.evaluate(() => { const e = uts.utx2.extras.find((x) => x.nome === "Santiago C."); return { e: e && [e.escalao, e.pos].join("/"), dis: document.querySelector("#ux-us .chip[disabled]")?.textContent }; });
 await pg.click("#sheet-root [data-close]"); await pg.evaluate((a) => { delete uts.utx2; uCur = a; }, utA);
+// grupos (v109): todos os presentes à vista sem rolar a folha; estrutura opcional por grupo (sistema, arrastar e trocar, gravada) no ecrã e no PDF
+await pg.evaluate(() => { const pres = {}; est.plantel.filter((p) => p.n).forEach((p) => { pres[p.n] = "P"; });
+  uts.ugt = normUT({ id: "ugt", numero: 96, data: "2026-10-30", presencas: pres, extras: Array.from({ length: 6 }, (_, i) => ({ id: "x" + i, nome: "Extra Teste" + i, escalao: "Sub17", pos: "" })) });
+  Object.keys(uts.ugt.extras).forEach((i) => { uts.ugt.presencas["e:x" + i] = "P"; }); uCur = "ugt"; renderUT(); folhaGrupoUT("ugt", null); });
+const gv = await pg.evaluate(() => { const sh = document.querySelector(".sheet").getBoundingClientRect(), bs = [...document.querySelectorAll("#ug-j button")];
+  return { n: bs.length, pres: atletasUT(uts.ugt).filter((a) => presenteUT(uts.ugt, a.k)).length, vis: bs.filter((b) => b.getBoundingClientRect().bottom <= sh.bottom).length }; });
+if (gv.n !== gv.pres || gv.vis !== gv.n) erros.push("Grupos: nem todos os presentes aparecem à vista na folha " + JSON.stringify(gv));
+await pg.fill("#ug-n", "Vermelhos"); for (const k of await pg.$$eval("#ug-j button", (bs) => bs.slice(0, 8).map((b) => b.dataset.k))) await pg.click(`#ug-j button[data-k="${k}"]`);
+const sisB = await pg.$$eval("#ug-s button", (bs) => bs.map((b) => b.textContent)); await pg.click("#ug-s button:nth-child(2)"); await pg.waitForTimeout(100);
+await pg.evaluate(() => document.querySelector(".ug-campo").scrollIntoView({ block: "start" })); await pg.waitForTimeout(100);
+const bol = await pg.$$eval(".ug-campo g[data-k]", (gs) => gs.map((g) => { const r = g.querySelector("circle").getBoundingClientRect(); return { k: g.dataset.k, x: r.x + r.width / 2, y: r.y + r.height / 2, cx: g.querySelector("circle").getAttribute("cx") }; }));
+if (bol.length > 2) { await pg.mouse.move(bol[1].x, bol[1].y); await pg.mouse.down(); await pg.mouse.move(bol[2].x, bol[2].y, { steps: 6 }); await pg.mouse.up(); await pg.waitForTimeout(100); }
+const cxDe = (k) => pg.evaluate((k) => document.querySelector(`.ug-campo g[data-k="${k}"] circle`)?.getAttribute("cx"), k);
+const troca = bol.length > 2 && (await cxDe(bol[1].k)) === bol[2].cx && (await cxDe(bol[2].k)) === bol[1].cx;
+await pg.click("#ug-ok"); await pg.waitForTimeout(200);
+const ge = await pg.evaluate(async () => { const U = uts.ugt, g = U.grupos[0], N = normUT({ ...clone(U), grupos: [...clone(U.grupos), { id: "z", nome: "Lixo", jogadores: ["1"], estr: { sis: "", pos: { 1: ["a", 2] } } }] });
+  const sem = clone(U); sem.grupos.forEach((x) => delete x.estr); const n0 = (await pdfUT(sem)).output().length, n1 = (await pdfUT(U)).output().length;
+  return { sis: g.estr && g.estr.sis, nPos: g.estr && Object.keys(g.estr.pos).length, nJ: g.jogadores.length, mini: !!document.querySelector(".ug-mini svg"), norm: !!N.grupos[0].estr && !N.grupos[1].estr, pdf: n1 > n0 }; });
+if (!sisB.some((t) => /^GR \+ \d/.test(t) || /^\d-\d/.test(t)) || ge.sis !== sisB[1].replace("GR + ", "") || ge.nPos !== ge.nJ || ge.nJ !== 8 || bol.length !== 8 || !troca || !ge.mini || !ge.norm || !ge.pdf)
+  erros.push("Grupos: estrutura do grupo falhou " + JSON.stringify({ sisB, ge, n: bol.length, troca }));
+await pg.evaluate((a) => { delete uts.ugt; uCur = a; renderUT(); }, utA);
 if (!lista.some((t) => t.includes("Santiago C.")) || !lista.some((t) => t.includes("Gustavo Rocha")) || visG !== 1 || ux.e !== "Sub19/2" || !String(ux.dis).includes("Santiago C.")) erros.push("UT: lista dos jogadores de fora que já treinaram falhou " + JSON.stringify({ lista, visG, ux }));
 // muitos grupos no PDF: continuam num bloco/página seguinte em vez de ficarem cortados
 const pgs = await pg.evaluate(async () => { const U = clone(uts[uCur]), n0 = (await pdfUT(U)).getNumberOfPages();

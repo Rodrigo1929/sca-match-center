@@ -575,6 +575,20 @@ table.cptab th .lnk{text-decoration:none;color:inherit;font:inherit;letter-spaci
 input[type=search]{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 10px;min-height:42px;width:100%;min-width:0}
 .ga-q{margin-bottom:8px}
 .pgrid [hidden],.dp-row[hidden]{display:none!important}
+/* grupos de trabalho (v109): folha larga e botões compactos para caberem todos os presentes; estrutura no campo */
+.sheet.larga{width:min(980px,100%)}
+.pgrid.ug-j{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px}
+.pgrid.ug-j button{min-height:44px;padding:6px 8px;gap:1px}
+.pgrid.ug-j button b{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pgrid.ug-j button small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ug-sis button{flex:0 1 auto;padding:8px 12px}
+.ug-e{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.ug-campo{width:100%;max-width:640px}
+.ug-campo svg,.ug-mini svg{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:8px}
+.ug-campo svg{touch-action:none;user-select:none;-webkit-user-select:none}
+.ug-campo g[data-k]{cursor:grab}
+.ug-mini{display:block;margin-top:6px;max-width:340px;cursor:pointer}
+.sheet .actions.ug-act{position:sticky;bottom:calc(-16px - env(safe-area-inset-bottom,0px));margin-bottom:calc(-16px - env(safe-area-inset-bottom,0px));padding:8px 0 calc(16px + env(safe-area-inset-bottom,0px));background:var(--surface);z-index:1}
 .chips [hidden]{display:none!important}
 /* fotos dos atletas (v100) */
 .fav{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:none;width:32px;height:32px;border-radius:50%;overflow:hidden;background:#E9E3D6;vertical-align:middle}

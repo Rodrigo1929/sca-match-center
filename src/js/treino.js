@@ -17,7 +17,7 @@ const uId=p=>(p||"u")+Date.now().toString(36)+Math.random().toString(36).slice(2
 function staffPadrao(){ const S=est.staff||{}; return ["treinador","adjunto","trgr","prepfis"].map(k=>S[k]).filter(Boolean).join(" | ").toUpperCase(); }
 function normUT(d){ const s=v=>String(v??"").trim(), L=v=>(Array.isArray(v)?v.map(s):s(v).split(/\n/).map(x=>x.trim())).filter(Boolean), n=v=>{ const x=Math.round(+v); return isFinite(x)&&x>0?x:0; };
   const pres={}; Object.entries(d.presencas||{}).forEach(([k,v])=>{ if(PRESENCAS.some(p=>p[0]===v)) pres[String(k)]=v; });
-  const grupos=(Array.isArray(d.grupos)?d.grupos:[]).filter(g=>g&&(g.nome||(g.jogadores||[]).length)).map(g=>({id:s(g.id)||uId("g"),nome:s(g.nome),jogadores:L(g.jogadores),nota:s(g.nota)}));
+  const grupos=(Array.isArray(d.grupos)?d.grupos:[]).filter(g=>g&&(g.nome||(g.jogadores||[]).length)).map(g=>{ const e=normEstrutura(g.estr); return {id:s(g.id)||uId("g"),nome:s(g.nome),jogadores:L(g.jogadores),nota:s(g.nota),...(e?{estr:e}:{})}; });
   return {id:s(d.id)||uId(), numero:n(d.numero), data:/^\d{4}-\d{2}-\d{2}$/.test(s(d.data))?s(d.data):"", matchDay:s(d.matchDay), regime:s(d.regime),
     objetivos:L(d.objetivos), material:L(d.material), tempoTotal:n(d.tempoTotal)||null, presencas:pres, staff:s(d.staff),
     /* jogadores chamados de fora do plantel (juniores, juvenis…): só nesta UT; nas presenças e grupos são "e:<id>" */
@@ -143,7 +143,7 @@ function renderUTPainel(U){ const pn=$("u-panel");
       <p class="sub" style="margin:0"><b>Toque</b>: Presente (<b style="color:${corPres("P")}">P</b>). <b>Botão direito</b> (no iPad, manter o dedo): ${PRESENCAS.filter(p=>p[0]!=="P").map(p=>`<b style="color:${p[2]}">${p[1]}</b>`).join(", ")}.</p>
       <div class="upres">${atl.map(a=>{ const k=U.presencas[a.k]||""; return `<button data-k="${esc(a.k)}" style="${k?`border-color:${corPres(k)};color:${corPres(k)}`:""}"><b>${esc(a.n||a.esc)}</b><span>${esc(a.nome)}</span>${a.n&&a.esc?`<small class="esc">${esc(a.esc)}</small>`:""}${k?`<i style="background:${corPres(k)}">${k}</i>`:""}</button>`; }).join("")||`<p class="sub">Sem jogadores no Plantel.</p>`}</div>
       <button class="btn sm" id="u-xn">+ Jogador de fora do plantel</button></div>
-    <div class="add"><h3>Grupos de trabalho</h3>${U.grupos.length?`<ul class="evl">${U.grupos.map(g=>`<li><span style="flex:1"><b>${esc(g.nome||"Grupo")}</b> · ${esc(g.jogadores.map(k=>nomeAtleta(U,k)+(presenteUT(U,k)?"":" (⚠ não presente)")).join(", ")||"sem jogadores")}${g.nota?`<br><small class="sub ug-nota">${esc(g.nota)}</small>`:""}</span>${g.nota?`<button class="btn sm ghost" data-lg="${esc(g.id)}" title="Procurar no texto os jogadores do Plantel">👥 Ler</button>`:""}<button class="btn sm ghost" data-g="${esc(g.id)}">✎</button></li>`).join("")}</ul>`:`<p class="sub" style="margin:0">Sem grupos (ex.: GR, condicionados, reforço).</p>`}
+    <div class="add"><h3>Grupos de trabalho</h3>${U.grupos.length?`<ul class="evl">${U.grupos.map(g=>`<li><span style="flex:1"><b>${esc(g.nome||"Grupo")}</b> · ${esc(g.jogadores.map(k=>nomeAtleta(U,k)+(presenteUT(U,k)?"":" (⚠ não presente)")).join(", ")||"sem jogadores")}${g.nota?`<br><small class="sub ug-nota">${esc(g.nota)}</small>`:""}${g.estr&&g.jogadores.length?`<span class="ug-mini" data-ge="${esc(g.id)}" title="Abrir o grupo"></span>`:""}</span>${g.nota?`<button class="btn sm ghost" data-lg="${esc(g.id)}" title="Procurar no texto os jogadores do Plantel">👥 Ler</button>`:""}<button class="btn sm ghost" data-g="${esc(g.id)}">✎</button></li>`).join("")}</ul>`:`<p class="sub" style="margin:0">Sem grupos (ex.: GR, condicionados, reforço).</p>`}
       <button class="btn sm" id="u-gn">+ Grupo</button></div>
     <div class="add"><h3>Campo do plantel</h3><div class="ucampo"></div><p class="sub" style="margin:0">Cada atleta na sua posição (definida no separador Plantel), com a cor da presença; indisponíveis (lesão ou ausente) à parte. Entra no PDF.</p></div>`;
   pn.querySelectorAll(".upres button").forEach(b=>{ const k=b.dataset.k;
@@ -151,6 +151,7 @@ function renderUTPainel(U){ const pn=$("u-panel");
     b.oncontextmenu=e=>menuPres(e,k); premirLongo(b,e=>menuPres(e,k)); });
   $("u-xn").onclick=()=>folhaExtraUT(U.id,null);
   pn.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>folhaGrupoUT(U.id,b.dataset.g)); pn.querySelectorAll("[data-lg]").forEach(b=>b.onclick=()=>folhaLerGrupos(U.id,b.dataset.lg)); $("u-gn").onclick=()=>folhaGrupoUT(U.id,null);
+  pn.querySelectorAll("[data-ge]").forEach(d=>{ const g=U.grupos.find(x=>x.id===d.dataset.ge); if(!g) return; d.appendChild(estruturaSvg(U,g)); d.onclick=()=>folhaGrupoUT(U.id,g.id); });
   pn.querySelector(".ucampo").appendChild(plantelSvg(U)); }
 
 /* ---------- presenças: toque = Presente; botão direito / dedo pressionado = escolher ---------- */
@@ -194,16 +195,17 @@ function folhaExtraUT(id,eid){ const U=uts[id]; if(!U) return; const X=eid?U.ext
 
 /* ---------- campo do plantel como na ficha do clube: meio campo, baliza em cima, nomes por posição ---------- */
 const PLV={W:1680,H:1060};
-function plantelSvg(U){ const {W:VW,H:VH}=PLV, svg=el("svg",{viewBox:`0 0 ${VW} ${VH}`,role:"img","aria-label":"Plantel por posição e disponibilidade"});
-  el("rect",{x:0,y:0,width:VW,height:VH,fill:"#fff"},svg);
-  /* meio campo (68 m de largo), baliza que defendemos em cima */
-  const fx=40, fy=80, fw=VW-80, fh=930, kx=fw/68, ky=fh/52.5, cx=fx+fw/2, L={fill:"none",stroke:"#111","stroke-width":5};
+/* meio campo (68 m de largo), baliza que defendemos em cima; também na estrutura dos grupos */
+function meioCampoSvg(svg,fx,fy,fw,fh){ const kx=fw/68, ky=fh/52.5, cx=fx+fw/2, L={fill:"none",stroke:"#111","stroke-width":5};
   for(let i=0;i<10;i++) el("rect",{x:fx,y:fy+i*fh/10,width:fw,height:fh/10,fill:i%2?"#F1F1F1":"#FAFAFA"},svg);
   el("rect",{x:cx-3.66*kx,y:fy-2.2*ky,width:7.32*kx,height:2.2*ky,fill:"#D9D9D9",stroke:"#111","stroke-width":4},svg);
   el("rect",{x:fx,y:fy,width:fw,height:fh,...L,"stroke-width":7},svg);
   el("rect",{x:cx-20.16*kx,y:fy,width:40.32*kx,height:16.5*ky,...L},svg); el("rect",{x:cx-9.16*kx,y:fy,width:18.32*kx,height:5.5*ky,...L},svg);
   el("path",{d:`M ${cx-7.31*kx} ${fy+16.5*ky} A ${9.15*kx} ${9.15*ky} 0 0 0 ${cx+7.31*kx} ${fy+16.5*ky}`,...L},svg);
-  el("path",{d:`M ${cx-9.15*kx} ${fy+fh} A ${9.15*kx} ${9.15*ky} 0 0 1 ${cx+9.15*kx} ${fy+fh}`,...L},svg);
+  el("path",{d:`M ${cx-9.15*kx} ${fy+fh} A ${9.15*kx} ${9.15*ky} 0 0 1 ${cx+9.15*kx} ${fy+fh}`,...L},svg); }
+function plantelSvg(U){ const {W:VW,H:VH}=PLV, svg=el("svg",{viewBox:`0 0 ${VW} ${VH}`,role:"img","aria-label":"Plantel por posição e disponibilidade"});
+  el("rect",{x:0,y:0,width:VW,height:VH,fill:"#fff"},svg);
+  const fx=40, fy=80, fw=VW-80, fh=930; meioCampoSvg(svg,fx,fy,fw,fh);
   /* indisponíveis (lesão ou ausente) saem do campo e ficam à parte */
   const atl=atletasUT(U), pres=a=>U.presencas[a.k]||"", indisp=a=>pres(a)==="L"||pres(a)==="A", les=atl.filter(indisp), resto=atl.filter(a=>!indisp(a)&&!(a.form&&!pres(a)));
   /* caixa de nome com a borda na cor da presença (sem marcação: cinzento escuro) */
@@ -295,14 +297,32 @@ function folhaAjusteUT(id,lid){ const U=uts[id], l=U&&U.exercicios.find(x=>x.id=
       if(["pratica","pausa","total"].some(k=>isNaN(d[k]))){ toast("Corrige os tempos da duração."); return; } fecha();
       editaUT(U=>{ const x=U.exercicios.find(y=>y.id===lid); x.copia={...x.copia,parte,espaco:{...x.copia.espaco,txt:q("#uj-e").value},duracao:{...d,total:d.total||null},variantes:q("#uj-v").value};
         if(cp==="") delete x.comp; else x.comp=cp==="-"?"":cp; if(mh==="") delete x.meinho; else x.meinho=mh==="1"; },"Ajustado nesta UT"); }; }); }
-function folhaGrupoUT(id,gid){ const U=uts[id]; if(!U) return; const G=gid?U.grupos.find(g=>g.id===gid):null, sel=new Set(G?G.jogadores:[]);
+/* folha larga e botões compactos: com 24+ presentes, a grelha antiga (4 colunas, nomes em 2 linhas) deixava os últimos escondidos por baixo (v109) */
+function folhaGrupoUT(id,gid){ const U=uts[id]; if(!U) return; const G=gid?U.grupos.find(g=>g.id===gid):null, sel=new Set(G?G.jogadores:[]); let estr=G&&G.estr?clone(G.estr):null;
   folha(`<h3>${G?"Grupo de trabalho":"Novo grupo de trabalho"}</h3>
     <label class="f">Nome<input type="text" id="ug-n" value="${esc(G?G.nome:"")}" placeholder="Ex.: Guarda-redes, Condicionados, Reforço"></label>
-    <h4>Jogadores <span class="sub">(só quem está presente ou condicionado)</span></h4><div class="pgrid" id="ug-j"></div><p class="sub" id="ug-fora" style="margin:0" hidden></p>
+    <h4>Jogadores <span class="sub">(só quem está presente ou condicionado)</span> <span class="sub" id="ug-c"></span></h4><div class="pgrid ug-j" id="ug-j"></div><p class="sub" id="ug-fora" style="margin:0" hidden></p>
+    <h4>Estrutura <span class="sub">(opcional: os jogadores no campo, por posições)</span></h4><div class="seg ug-sis" id="ug-s"></div><div class="ug-e" id="ug-e"></div>
     <label class="f">Nota (opcional)<textarea id="ug-o" rows="3" placeholder="Ex.: trabalho específico com o treinador de GR">${esc(G?G.nota:"")}</textarea></label>
-    <div class="actions">${G?`<button class="btn danger l" id="ug-del">Apagar grupo</button>`:""}<button class="btn" data-close>Cancelar</button><button class="btn primary" id="ug-ok">Guardar</button></div>`,(s,fecha)=>{
-    const q=x=>s.querySelector(x), g=q("#ug-j");
-    const atl=atletasUT(U).filter(a=>presenteUT(U,a.k)), fora=[...sel].filter(k=>!presenteUT(U,k));
+    <div class="actions ug-act">${G?`<button class="btn danger l" id="ug-del">Apagar grupo</button>`:""}<button class="btn" data-close>Cancelar</button><button class="btn primary" id="ug-ok">Guardar</button></div>`,(s,fecha)=>{
+    s.classList.add("larga"); const q=x=>s.querySelector(x), g=q("#ug-j");
+    const atl=atletasUT(U).filter(a=>presenteUT(U,a.k)), fora=[...sel].filter(k=>!presenteUT(U,k)), escolhidos=()=>atl.filter(a=>sel.has(a.k));
+    const conta=()=>{ q("#ug-c").textContent=atl.length?`· ${atl.length} no treino · ${escolhidos().length} no grupo`:""; };
+    /* estrutura: sistema pelo nº de jogadores de campo; arrastar muda de lugar e largar em cima de outro troca os dois */
+    const pintaE=()=>{ const js=escolhidos(), ops=sisPara(js), gr=grDe(js)?"GR + ":"", box=q("#ug-e"), sv=estr?estr.sis:"";
+      const ls=[["","Sem estrutura"],...ops.map(x=>[x,gr+x]),...(sv&&sv!=="pos"&&!ops.includes(sv)?[[sv,gr+sv]]:[]),["pos","Pelas posições do Plantel"]];
+      q("#ug-s").innerHTML=ls.map(([k,n])=>`<button data-k="${esc(k)}" aria-pressed="${sv===k}">${esc(n)}</button>`).join("");
+      q("#ug-s").querySelectorAll("button").forEach(b=>b.onclick=()=>{ estr=b.dataset.k?{sis:b.dataset.k,pos:{}}:null; pintaE(); });
+      if(!estr){ box.innerHTML=""; return; }
+      if(!js.length){ box.innerHTML=`<p class="sub" style="margin:0">Escolhe primeiro os jogadores do grupo.</p>`; return; }
+      const nC=js.length-(grDe(js)?1:0), soma=sv==="pos"?0:sv.split("-").reduce((a,n)=>a+(parseInt(n)||0),0);
+      box.innerHTML=`<p class="sub" style="margin:0">${soma&&soma!==nC?`<b style="color:var(--red)">O ${esc(sv)} é para ${soma} jogadores de campo; o grupo tem ${nC}.</b> `:""}Arrasta um jogador para o mudar de lugar; larga-o em cima de outro para trocarem.</p><div class="ug-campo"></div><button class="btn sm" id="ug-rp">↺ Repor pelo sistema</button>`;
+      const svg=estruturaSvg(U,{nome:q("#ug-n").value,jogadores:js.map(a=>a.k)},{estr}); box.querySelector(".ug-campo").appendChild(svg);
+      arrastaEstr(svg,(k,dx,dy)=>{ const P=posEstr(js,estr), [x0,y0]=P[k], cl=v=>Math.round(Math.min(.97,Math.max(.03,v))*1000)/1000, nx=cl(x0+dx/EGV.fw), ny=cl(y0+dy/EGV.fh);
+        const o=js.find(a=>a.k!==k&&Math.hypot((P[a.k][0]-nx)*EGV.fw,(P[a.k][1]-ny)*EGV.fh)<55);
+        estr.pos={...P}; if(o){ estr.pos[k]=P[o.k]; estr.pos[o.k]=[x0,y0]; } else estr.pos[k]=[nx,ny]; pintaE(); });
+      q("#ug-rp").onclick=()=>{ estr.pos={}; pintaE(); }; };
+    q("#ug-n").addEventListener("change",pintaE);
     if(fora.length){ const f=q("#ug-fora"); f.hidden=false; f.innerHTML=`<b>Saem do grupo ao guardar</b> (não estão presentes): ${esc(fora.map(k=>nomeAtleta(U,k)).join(", "))}.`; }
     if(!atl.length) g.outerHTML=`<p class="sub" style="margin:0">Ainda ninguém está marcado como presente. Marca primeiro as presenças desta UT.</p>`;
     /* por posição (GR, centrais, alas, médios, avançados; sem posição no fim); quem já está noutro grupo continua escolhível, mas vai para o fim e diz em que grupo está */
@@ -310,11 +330,55 @@ function folhaGrupoUT(id,gid){ const U=uts[id]; if(!U) return; const G=gid?U.gru
       const ord=atl.map((a,i)=>({a,i,o:noutros(a.k)})).sort((x,y)=>(x.o.length>0)-(y.o.length>0)||iPos(x.a)-iPos(y.a)||x.i-y.i);
       g.innerHTML=ord.map(({a,o})=>`<button data-k="${esc(a.k)}"><b>${esc(nomeCurto(a))}</b><small>${esc([nomePos(a),U.presencas[a.k]==="CO"?"Condicionado":"",o.length?"já no grupo "+o.map(n=>"«"+n+"»").join(", "):""].filter(Boolean).join(" · "))}</small></button>`).join(""); }
     const pintaG=()=>s.querySelectorAll("#ug-j button").forEach(b=>b.setAttribute("aria-pressed",String(sel.has(b.dataset.k))));
-    s.querySelectorAll("#ug-j button").forEach(b=>b.onclick=()=>{ sel.has(b.dataset.k)?sel.delete(b.dataset.k):sel.add(b.dataset.k); pintaG(); }); pintaG();
+    s.querySelectorAll("#ug-j button").forEach(b=>b.onclick=()=>{ sel.has(b.dataset.k)?sel.delete(b.dataset.k):sel.add(b.dataset.k); pintaG(); conta(); pintaE(); }); pintaG(); conta(); pintaE();
     if(q("#ug-del")) confirma2(q("#ug-del"),"Toca outra vez",()=>{ fecha(); editaUT(U=>{ U.grupos=U.grupos.filter(x=>x.id!==gid); },"Grupo apagado"); });
-    q("#ug-ok").onclick=()=>{ const nm=q("#ug-n").value.trim(); if(!nm&&!sel.size){ toast("Dá um nome ou escolhe jogadores."); return; } fecha();
-      const ng={id:gid||uId("g"),nome:nm,jogadores:atl.map(a=>a.k).filter(k=>sel.has(k)),nota:q("#ug-o").value.trim()};
+    q("#ug-ok").onclick=()=>{ const nm=q("#ug-n").value.trim(); if(!nm&&!sel.size){ toast("Dá um nome ou escolhe jogadores."); return; } fecha(); const js=escolhidos();
+      const ng={id:gid||uId("g"),nome:nm,jogadores:js.map(a=>a.k),nota:q("#ug-o").value.trim(),...(estr&&js.length?{estr:{sis:estr.sis,pos:posEstr(js,estr)}}:{})};
       editaUT(U=>{ if(gid) U.grupos=U.grupos.map(x=>x.id===gid?ng:x); else U.grupos.push(ng); }); }; }); }
+/* ---------- estrutura de um grupo (opcional, v109): os jogadores no meio campo, por sistema; g.estr = {sis, pos: {chave: [x, y]}} em fração do campo ---------- */
+/* sistemas pelo nº de jogadores de campo (o GR do grupo vai à baliza); «pos» = cada um na sua posição do Plantel */
+const SIS_GRUPO={3:["2-1","1-2"],4:["2-2","1-2-1","3-1"],5:["2-2-1","3-1-1","2-1-2","3-2"],6:["3-2-1","2-3-1","3-1-2","2-2-2"],7:["3-3-1","3-2-2","2-3-2","3-1-3"],
+  8:["3-4-1","3-3-2","4-3-1","3-2-3"],9:["3-4-2","4-3-2","3-3-3","4-4-1"],10:["3-4-3","4-3-3","4-4-2","3-5-2","4-2-3-1"],11:["4-4-3","3-5-3","4-3-4"]};
+const EGV={W:1680,H:1070,fx:40,fy:70,fw:1600,fh:930};
+const COR_GRUPO=[["verm","vermelho"],["branc","branco"],["azu","azul"],["amarel","amarelo"],["verde","verde"],["laranj","laranja"],["pret","preto"]];
+function normEstrutura(e){ if(!e||typeof e!=="object") return null; const sis=String(e.sis||"").trim(); if(!sis) return null; const pos={}, f=v=>Math.round(Math.min(1,Math.max(0,+v))*1000)/1000;
+  Object.entries(e.pos&&typeof e.pos==="object"?e.pos:{}).forEach(([k,v])=>{ if(Array.isArray(v)&&v.length===2&&v.every(n=>typeof n==="number"&&isFinite(n))) pos[String(k)]=[f(v[0]),f(v[1])]; });
+  return {sis,pos}; }
+const grDe=js=>js.find(a=>a.pos==="1")||null;
+const sisPara=js=>SIS_GRUPO[js.length-(grDe(js)?1:0)]||[];
+const prefPos=a=>{ const p=POS_UT.find(x=>x[0]===a.pos); return p?[p[2],p[3]]:[.5,.6]; };
+/* cor das bolinhas pelo nome do grupo (Vermelhos, Brancos, Azuis…); sem cor no nome, vermelho */
+function corGrupo(g){ const n=semAcento(g.nome), c=(COR_GRUPO.find(([t])=>n.includes(t))||[0,"vermelho"])[1]; return COLETES.find(x=>x[0]===c)||COLETES[0]; }
+/* lugares do sistema (linhas da defesa ao ataque, como no campo do plantel) e cada jogador sem lugar fixo no livre mais perto da sua posição no Plantel; quem sobra fica numa fila por baixo */
+function autoEstr(sis,js,fixos){ const out={}, ocup=Object.values(fixos), gr=grDe(js), resto=js.filter(a=>!fixos[a.k]); let lug=[];
+  if(sis==="pos"){ const n={}; resto.forEach(a=>{ if(!a.pos) return; const [x,y]=prefPos(a), i=n[a.pos]=(n[a.pos]||0)+1; lug.push([Math.min(.95,Math.max(.05,x+(i-1)*.12*(x>.5?-1:1))),y+(i-1)*.045]); }); }
+  else { const ls=sis.split("-").map(n=>parseInt(n)||0).filter(n=>n>0), k=ls.length; if(gr) lug.push([.5,.06]);
+    ls.forEach((m,i)=>{ const y=k===1?.55:.34+i*.45/(k-1), st=Math.min(.22,.84/m); for(let j=0;j<m;j++) lug.push([.5+(j-(m-1)/2)*st,y]); }); }
+  lug=lug.filter(([x,y])=>!ocup.some(([a,b])=>Math.hypot(a-x,b-y)<.05));
+  const pares=[]; resto.forEach(a=>{ const [px,py]=a===gr?[.5,0]:prefPos(a); lug.forEach((l,i)=>pares.push({a,i,d:Math.hypot(px-l[0],(py-l[1])*1.2)})); });
+  const usado=new Set(); pares.sort((x,y)=>x.d-y.d).forEach(p=>{ if(usado.has(p.i)||out[p.a.k]) return; usado.add(p.i); out[p.a.k]=lug[p.i].map(v=>Math.round(v*1000)/1000); });
+  const sobra=resto.filter(a=>!out[a.k]); sobra.forEach((a,i)=>{ out[a.k]=[sobra.length===1?.5:Math.round((.12+i*.76/(sobra.length-1))*1000)/1000,.95]; });
+  return out; }
+function posEstr(js,E){ const fix={}; js.forEach(a=>{ if(E.pos[a.k]) fix[a.k]=E.pos[a.k]; }); return {...fix,...autoEstr(E.sis,js,fix)}; }
+/* desenho: GR a amarelo, os outros na cor do grupo; nome por baixo (no PDF da UT, a 1.ª alcunha, como na lista dos grupos) */
+function estruturaSvg(U,g,o={}){ const {W,H,fx,fy,fw,fh}=EGV, E=o.estr||g.estr, at=atletasUT(U), js=g.jogadores.map(k=>at.find(a=>a.k===k)).filter(Boolean), P=posEstr(js,E), C=corGrupo(g), gr=grDe(js);
+  const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":`Estrutura ${g.nome||"do grupo"}`,class:"uestr"});
+  el("rect",{x:0,y:0,width:W,height:H,fill:"#fff"},svg); meioCampoSvg(svg,fx,fy,fw,fh);
+  el("text",{x:fx,y:fy-24,"font-size":34,"font-weight":800,fill:"#6B675E",class:"lbl"},svg).textContent=E.sis==="pos"?"Pelas posições do Plantel":(gr?"GR + ":"")+E.sis;
+  js.forEach(a=>{ const [px,py]=P[a.k], x=fx+px*fw, y=fy+py*fh, G=el("g",{"data-k":a.k},svg), t=o.alc?nomeAlc(a):nomeCurto(a), fs=40, w=Math.min(270,textW(t,fs,700)+24);
+    el("circle",{cx:x,cy:y,r:34,fill:a===gr?"#FFFF00":C[2],stroke:"#1B1A17","stroke-width":4},G);
+    el("rect",{x:x-w/2,y:y+40,width:w,height:52,rx:6,fill:"#fff",stroke:"#1B1A17","stroke-width":2},G);
+    const tx=el("text",{x,y:y+79,"text-anchor":"middle","font-size":fs,"font-weight":700,fill:"#1B1A17",class:"lbl"},G); tx.textContent=t;
+    if(textW(t,fs,700)>w-16){ tx.setAttribute("textLength",w-16); tx.setAttribute("lengthAdjust","spacingAndGlyphs"); } });
+  return svg; }
+/* arrastar uma bolinha (rato ou dedo): fn(chave, dx, dy) em unidades do desenho */
+function arrastaEstr(svg,fn){ let cur=null; const pt=e=>new DOMPoint(e.clientX,e.clientY).matrixTransform(svg.getScreenCTM().inverse());
+  svg.querySelectorAll("g[data-k]").forEach(G=>{
+    G.addEventListener("pointerdown",e=>{ e.preventDefault(); const p=pt(e); cur={G,x0:p.x,y0:p.y}; try{ G.setPointerCapture(e.pointerId); }catch(x){} });
+    G.addEventListener("pointermove",e=>{ if(!cur||cur.G!==G) return; const p=pt(e); G.setAttribute("transform",`translate(${p.x-cur.x0} ${p.y-cur.y0})`); });
+    G.addEventListener("pointerup",e=>{ if(!cur||cur.G!==G) return; const p=pt(e), c=cur; cur=null; if(Math.hypot(p.x-c.x0,p.y-c.y0)<4){ G.removeAttribute("transform"); return; } fn(G.dataset.k,p.x-c.x0,p.y-c.y0); });
+    G.addEventListener("pointercancel",()=>{ cur=null; G.removeAttribute("transform"); }); }); }
+
 /* ---------- grupos escritos em texto (ex.: vindos do PDF da UT) → grupos com jogadores ---------- */
 const semAcento=t=>String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/\s+/g," ").trim();
 /* nome escrito → atleta: as alcunhas (do Plantel ou do jogador de fora) valem sempre que só sejam de um atleta; nome completo, primeiro e último nome,
@@ -386,6 +450,7 @@ async function pdfUT(U){
   const T=(txt,x,y,s,o={})=>{ doc.setFont("helvetica",o.b?(o.i?"bolditalic":"bold"):(o.i?"italic":"normal")); doc.setFontSize(s); doc.setTextColor(...(o.c||INK)); doc.text(pdfTxt(txt),x,y,o.al?{align:o.al}:undefined); };
   const caixa=(x,y,w,h,cor,txt,o={})=>{ doc.setFillColor(...cor); doc.rect(x,y,w,h,"F"); if(txt) T(txt,x+w/2,y+h*.7,o.s||7,{b:1,c:o.c||BR,al:"center",i:o.i}); };
   const css=await cssFontes(); try{ await document.fonts.ready; }catch(e){}
+  const estJpg={}; for(const g of U.grupos) if(g.estr&&g.jogadores.length) estJpg[g.id]=await svgParaJpeg(estruturaSvg(U,g,{alc:true}),css,EGV.W,EGV.H);
   const campoJpg=await svgParaJpeg(plantelSvg(U),css,PLV.W,PLV.H), hw=(PW-2*M-G)/2, HC=150, tot=totalUT(U), mat=materialUT(U);
   const cabecalho=()=>{ const x=M, y=M; caixa(x,y,hw,14,INK,"COMPROMISSO | RESILIÊNCIA | UNIÃO | ATITUDE | PAIXÃO | ALEGRIA",{i:1,s:7});
     const wc=hw*.3, xr=x+wc, wr=hw-wc; caixa(x,y+18,wc,84,RED); if(IMG_DATA["slides/logo-pdf.png"]) try{ doc.addImage(IMG_DATA["slides/logo-pdf.png"],"PNG",x+wc/2-28,y+22,56,50); }catch(e){}
@@ -435,19 +500,24 @@ async function pdfUT(U){
     doc.setDrawColor(...LN); doc.setLineWidth(.4); doc.rect(x,y,w,h); };
   const slot=b=>({x:M+(b%4%2)*(cw+G), y:y0+Math.floor(b%4/2)*(ch+G)});
   /* grupos de trabalho em 2 colunas; se não couberem no bloco, continuam nos blocos seguintes (e em páginas novas, com o cabeçalho) */
-  const gruposNoPdf=b=>{ const colW=(cw-24)/2, L=[];
-    U.grupos.forEach(g=>{ doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.splitTextToSize(pdfTxt(g.nome||"Grupo"),colW).forEach((t,i)=>L.push({t,s:7,b:1,c:RED,h:8.5,tit:!i}));
-      doc.setFont("helvetica","normal"); doc.setFontSize(6.3);
-      if(g.jogadores.length) doc.splitTextToSize(pdfTxt(g.jogadores.map(k=>nomeAtleta(U,k,true)).join(", ")),colW).forEach(t=>L.push({t,s:6.3,c:INK,h:7.6}));
-      doc.setFontSize(6); if(g.nota) g.nota.split(/\n/).forEach(p=>doc.splitTextToSize(pdfTxt(p)||" ",colW).forEach(t=>L.push({t,s:6,c:MUT,h:7.2})));
+  /* grupos com estrutura (v109): nome e campo na largura do bloco, em vez da lista de nomes; o texto que vem a seguir continua por baixo */
+  const gruposNoPdf=b=>{ const colW=(cw-24)/2, wE=cw-16, L=[];
+    U.grupos.forEach(g=>{ if(estJpg[g.id]){ L.push({est:estJpg[g.id],t:g.nome||"Grupo",h:Math.min(12+wE*EGV.H/EGV.W,(ch-30)/2-2)}); }
+      else { doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.splitTextToSize(pdfTxt(g.nome||"Grupo"),colW).forEach((t,i)=>L.push({t,s:7,b:1,c:RED,h:8.5,tit:!i}));
+        doc.setFont("helvetica","normal"); doc.setFontSize(6.3);
+        if(g.jogadores.length) doc.splitTextToSize(pdfTxt(g.jogadores.map(k=>nomeAtleta(U,k,true)).join(", ")),colW).forEach(t=>L.push({t,s:6.3,c:INK,h:7.6})); }
+      doc.setFont("helvetica","normal"); doc.setFontSize(6); if(g.nota) g.nota.split(/\n/).forEach(p=>doc.splitTextToSize(pdfTxt(p)||" ",colW).forEach(t=>L.push({t,s:6,c:MUT,h:7.2})));
       L.push({gap:4}); });
     const area=(b,cont)=>{ const {x,y}=slot(b); caixa(x,y,cw,14,INK,cont?"GRUPOS DE TRABALHO (CONTINUAÇÃO)":"GRUPOS DE TRABALHO",{i:1,s:7.5});
       doc.setDrawColor(...INK); doc.setLineWidth(.9); doc.rect(x,y,cw,ch); return [0,1].map(i=>({x:x+8+i*(colW+8),y0:y+25,y1:y+ch-5})); };
-    let cols=area(b,false), ci=0, yy=cols[0].y0;
+    let cols=area(b,false), ci=0, yy=cols[0].y0, topo=yy;
+    const novoBloco=()=>{ b++; if(b%4===0){ doc.addPage(); cabecalho(); } cols=area(b,true); ci=0; yy=topo=cols[0].y0; };
     if(!U.grupos.length){ T("Sem grupos de trabalho.",cols[0].x,yy,7,{c:MUT}); return; }
     L.forEach((l,i)=>{ if(l.gap){ if(yy>cols[ci].y0) yy+=l.gap; return; }
+      if(l.est){ if(ci>0||yy+l.h>cols[0].y1&&yy>cols[0].y0) novoBloco(); const h=Math.min(l.h,cols[0].y1-yy), w=(h-12)*EGV.W/EGV.H, x=cols[0].x+(wE-w)/2;
+        T(l.t,cols[0].x,yy,7,{b:1,c:RED}); doc.addImage(l.est,"JPEG",x,yy+3,w,h-12,undefined,"FAST"); yy+=h; topo=yy; return; }
       const prec=l.tit&&L[i+1]&&!L[i+1].gap?L[i+1].h:0;           // o nome do grupo não fica sozinho no fundo da coluna
-      if(yy+l.h+prec>cols[ci].y1){ ci++; if(ci>1){ b++; if(b%4===0){ doc.addPage(); cabecalho(); } cols=area(b,true); ci=0; } yy=cols[ci].y0; }
+      if(yy+l.h+prec>cols[ci].y1){ ci++; if(ci>1) novoBloco(); else yy=topo; }
       T(l.t,cols[ci].x,yy,l.s,{b:l.b,c:l.c}); yy+=l.h; }); };
   for(let b=0;b<blocos.length;b++){ const pos=b%4; if(pos===0){ if(b) doc.addPage(); cabecalho(); }
     const {x,y}=slot(b), B=blocos[b];
