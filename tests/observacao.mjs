@@ -49,6 +49,9 @@ for (const [nome, opc] of ecras) {
   await pg.click("#voltar2"); await pg.waitForTimeout(150); // botão fixo em baixo
   await pg.click('[data-novo="Lusitânia"]'); await pg.click('nav.secs button[data-s="plantel"]'); await pg.waitForTimeout(300);
   await pg.screenshot({ path: join(cap, `${nome}-plantel.png`), fullPage: true });
+  // Obs. 27: mostra o nome oficial («SC Lusitânia»), mas grava a chave de sempre («Lusitânia»)
+  const nm = await pg.evaluate(() => ({ h2: (document.querySelector("#main h2") || {}).textContent || "", chaves: Object.values(rels).map((x) => x.adversario).join("|") }));
+  confirma(/SC Lusitânia/.test(nm.h2) && !/SC |FC /.test(nm.chaves), `${nome}: nomes oficiais errados (${JSON.stringify(nm)})`);
   const lus = await pg.evaluate(() => { const R = Object.values(rels).find((x) => x.adversario === "Lusitânia"); return { n: R.plantel.length, cor: R.cores.cam, tr: R.treinador, fonte: R.plantelFonte }; });
   confirma(lus.n > 15 && lus.cor === "#118C3E" && lus.tr === "Treinador Base" && /^Plantel base/.test(lus.fonte), `${nome}: plantel ou cores do Lusitânia em falta (${JSON.stringify(lus)})`);
   // todos os adversários têm cores; relatório já gravado sem camisola recebe as do clube, cor escolhida pelo observador fica

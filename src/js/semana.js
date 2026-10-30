@@ -43,7 +43,7 @@ function normSemana(d){ const s=v=>String(v??"").trim(), ini=/^\d{4}-\d{2}-\d{2}
     criadoPor:s(d.criadoPor),criadoEm:s(d.criadoEm),alteradoPor:s(d.alteradoPor),alteradoEm:s(d.alteradoEm)}; }
 function normJogoCal(d){ const s=v=>String(v??"").trim(), im=d.emblema, casa=d.casa!==false;
   return {id:s(d.id)||uId("j"),data:/^\d{4}-\d{2}-\d{2}$/.test(s(d.data))?s(d.data):isoDia(new Date()),hora:horaOk(d.hora),adversario:s(d.adversario),casa,
-    competicao:s(d.competicao),jornada:s(d.jornada),local:s(d.local),nota:s(d.nota),
+    competicao:s(d.competicao),jornada:s(d.jornada),local:s(d.local),localidade:s(d.localidade),ilha:ILHAS.includes(s(d.ilha))?s(d.ilha):"",nota:s(d.nota),
     deslocacao:!casa&&!!d.deslocacao, destino:s(d.destino),     // jogo fora da ilha (viagem de ida na véspera e regresso depois do jogo)
     ...(im&&/^[\w-]{8,64}$/.test(String(im.id||""))?{emblema:{id:String(im.id),w:Math.round(+im.w)||200,h:Math.round(+im.h)||200}}:{}),
     criadoPor:s(d.criadoPor),criadoEm:s(d.criadoEm),alteradoPor:s(d.alteradoPor),alteradoEm:s(d.alteradoEm)}; }
@@ -62,6 +62,13 @@ const listaJogosCal=()=>Object.values(calendario).sort((a,b)=>(a.data+a.hora).lo
 const jogosDoDia=d=>listaJogosCal().filter(j=>j.data===d);
 const turnoDoJogo=j=>j.hora&&+j.hora.split(":")[0]<13?"manha":"tarde";
 const jogoDoTurno=(d,t)=>jogosDoDia(d).find(j=>turnoDoJogo(j)===t)||null;
+/* local do jogo (v106): campo (local) + localidade + ilha; "Campo - Localidade (Ilha X)" no calendário, no PDF do ano e no Jogo */
+const ILHAS=["Terceira","São Miguel","Pico","Faial","São Jorge","Graciosa","Santa Maria","Flores","Corvo","Madeira","Continente"];
+const ilhaTxt=i=>!i?"":["Madeira","Continente"].includes(i)?i:"Ilha "+i;
+const campoLocal=j=>[j.local,j.localidade].filter(Boolean).join(" - ");
+const localJogo=j=>{ const c=campoLocal(j); return c&&j.ilha?`${c} (${ilhaTxt(j.ilha)})`:c||ilhaTxt(j.ilha); };
+/* o campo do último jogo com esse adversário (fora) ou do último jogo em casa */
+function ultimoLocal(adv,casa,semId){ const k=chaveEq(adv); return listaJogosCal().filter(j=>j.id!==semId&&j.casa===casa&&(j.local||j.localidade||j.ilha)&&(casa||chaveEq(j.adversario)===k)).pop()||null; }
 const localCurto=l=>String(l||"").replace(/Angra do Hero[ií]smo/i,"A.H.");
 const atividades=S=>Object.entries(S.dias).flatMap(([d,z])=>[...z.manha,...z.tarde].map(x=>({d,x})));
 /* UT do mesmo número de treino (o plano costuma ser feito antes de a UT existir) */
@@ -164,7 +171,7 @@ function renderSemCorpo(S){ const bx=$("u-corpo"), bar=$("u-bar"), tg=$("u-tag")
     return `<td class="ps-ses" ${at}>${xs.map(x=>{ const U=x.tipo==="treino"?utDoTreino(x.treino):null;
       const Jl=ativJogo(x)?jogoLigado(d):null;
       return `<div class="ps-it${x.tipo==="folga"?" folga":""}${Jl?" ps-jg":""}"${Jl?` style="background:${corJogo(Jl)}"`:""}>${htmlLinhasSem(linhasAtividade(x))}${U&&U.data===d?`<small class="ps-ut" title="A UT deste treino já está feita">UT${U.numero} ✓</small>`:""}</div>`; }).join("")}</td>`; };
-  const locais=(d,t)=>{ const j=jogoDoTurno(d,t); if(j) return [j.local||(j.casa?LOCAL_CASA:j.destino)].filter(Boolean);
+  const locais=(d,t)=>{ const j=jogoDoTurno(d,t); if(j) return [campoLocal(j)||(j.casa?LOCAL_CASA:j.destino)].filter(Boolean);
     return [...new Set(S.dias[d][t].filter(x=>x.tipo!=="folga"&&x.local).map(x=>x.local))]; };
   const loc=(d,t)=>{ const l=locais(d,t).join(" · "); return `<td class="ps-loc${l?"":" vazio"}">${esc(l.toUpperCase())}</td>`; };
   let h=`<div class="psem-wrap"><table class="psem"><thead><tr><th>PLANO SEMANAL</th>${DIAS_SEM.map(x=>`<th>${x}</th>`).join("")}</tr>
@@ -179,7 +186,7 @@ function renderSemCorpo(S){ const bx=$("u-corpo"), bar=$("u-bar"), tg=$("u-tag")
   bx.querySelectorAll("td[data-d]").forEach(td=>{ td.onclick=()=>folhaTurno(S.id,td.dataset.d,td.dataset.t); });
   $("s-obs").onclick=()=>folhaCabSemana(S.id); }
 function renderSemPainel(S){ const pn=$("u-panel"), hoje=isoDia(new Date()), prox=listaJogosCal().filter(j=>j.data>=(S?S.inicio:hoje)).slice(0,8), ant=listaJogosCal().filter(j=>j.data<(S?S.inicio:hoje)).slice(-3);
-  const li=j=>`<li><span style="flex:1"><b>${esc(dataPt_(j.data).slice(0,5))}${j.hora?" · "+esc(j.hora):""}</b> · ${j.casa?"vs":"@"} ${esc(j.adversario||"?")}${j.deslocacao?" ✈":""}<br><small class="sub">${esc([j.competicao,j.jornada,j.deslocacao&&j.destino].filter(Boolean).join(" · "))}</small></span><button class="btn sm ghost" data-jc="${esc(j.id)}">✎</button></li>`;
+  const li=j=>`<li><span style="flex:1"><b>${esc(dataPt_(j.data).slice(0,5))}${j.hora?" · "+esc(j.hora):""}</b> · ${j.casa?"vs":"@"} ${esc(j.adversario||"?")}${j.deslocacao?" ✈":""}<br><small class="sub">${esc([j.competicao,j.jornada,localJogo(j)||(j.deslocacao&&j.destino)].filter(Boolean).join(" · "))}</small></span><button class="btn sm ghost" data-jc="${esc(j.id)}">✎</button></li>`;
   pn.innerHTML=`<header><h2>Calendário de jogos</h2><p class="sub">Oficiais e jogos-treino. Entram no plano no dia do jogo; ✈ = fora da ilha (viagem na véspera e regresso depois do jogo).</p></header>
     <div class="add"><h3>Próximos jogos</h3>${prox.length?`<ul class="evl">${prox.map(li).join("")}</ul>`:`<p class="sub" style="margin:0">Sem jogos marcados.</p>`}<button class="btn sm" id="s-jn">+ Jogo</button></div>
     ${ant.length?`<div class="add"><h3>Últimos jogos</h3><ul class="evl">${ant.reverse().map(li).join("")}</ul></div>`:""}`;
@@ -252,19 +259,26 @@ function folhaJogoCal(id,dataSug){ const J=id?calendario[id]:null; let casa=J?J.
       <label class="f" id="jc-db">Destino<input type="text" id="jc-de" value="${esc(J?J.destino:"")}" placeholder="Ex.: S. Miguel, Pico, Lisboa"></label></div>
     <div class="fields"><label class="f">Competição<input type="text" id="jc-p" list="jc-pl" value="${esc(J?J.competicao:"")}"><datalist id="jc-pl">${comps.map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label>
       <label class="f">Jornada / fase<input type="text" id="jc-j" value="${esc(J?J.jornada:"")}" placeholder="Ex.: 3ª Jornada"></label></div>
-    <label class="f">Local do jogo<input type="text" id="jc-l" value="${esc(J?J.local:"")}" placeholder="${esc(LOCAL_CASA)}"></label>
+    <h4>Local do jogo</h4><div class="fields"><label class="f">Campo<input type="text" id="jc-l" value="${esc(J?J.local:"")}" placeholder="Ex.: Estádio João Paulo II"></label>
+      <label class="f">Localidade<input type="text" id="jc-lo" value="${esc(J?J.localidade:"")}" placeholder="Ex.: Angra do Heroísmo"></label>
+      <label class="f">Ilha<select id="jc-il"><option value="">—</option>${ILHAS.map(i=>`<option${J&&J.ilha===i?" selected":""}>${esc(i)}</option>`).join("")}</select></label></div>
     <h4>Emblema do adversário (opcional)</h4><div class="jc-emb">${J&&J.emblema?`<img alt="Emblema">`:`<span class="sub">Sem emblema</span>`}<button class="btn sm" id="jc-e" disabled>Carregar emblema</button><input type="file" id="jc-ef" accept="image/*" hidden></div><p class="sub" id="jc-st" style="margin:0"></p>
     <div class="actions">${J?`<button class="btn danger l" id="jc-del">Apagar jogo</button>`:""}<button class="btn" data-close>Cancelar</button><button class="btn primary" id="jc-ok">Guardar</button></div>`,async(s,fecha)=>{
     const q=y=>s.querySelector(y), st=q("#jc-st"); let emb=J&&J.emblema?J.emblema:null;
     const pinta=()=>{ s.querySelectorAll("#jc-c button").forEach(b=>b.setAttribute("aria-pressed",String(!!b.dataset.k===casa))); s.querySelectorAll("#jc-v button").forEach(b=>b.setAttribute("aria-pressed",String(!!b.dataset.k===desl)));
       q("#jc-fora").hidden=casa; q("#jc-db").hidden=!desl; };
-    s.querySelectorAll("#jc-c button").forEach(b=>b.onclick=()=>{ casa=!!b.dataset.k; pinta(); }); s.querySelectorAll("#jc-v button").forEach(b=>b.onclick=()=>{ desl=!!b.dataset.k; pinta(); }); pinta();
+    /* campo vazio: vem do último jogo com o adversário (fora) ou do último em casa; ilha fora da Terceira = viagem */
+    const sugere=()=>{ if(q("#jc-l").value.trim()||q("#jc-lo").value.trim()) return; const U=ultimoLocal(q("#jc-a").value,casa,id); if(!U) return;
+      q("#jc-l").value=U.local; q("#jc-lo").value=U.localidade; q("#jc-il").value=U.ilha; ilhaMuda(); };
+    const ilhaMuda=()=>{ const i=q("#jc-il").value; if(casa||!i) return; desl=i!=="Terceira"; const de=q("#jc-de"); if(desl&&(!de.value.trim()||ILHAS.includes(de.value.trim()))) de.value=i; pinta(); };
+    s.querySelectorAll("#jc-c button").forEach(b=>b.onclick=()=>{ casa=!!b.dataset.k; pinta(); sugere(); }); s.querySelectorAll("#jc-v button").forEach(b=>b.onclick=()=>{ desl=!!b.dataset.k; pinta(); }); pinta();
+    q("#jc-a").addEventListener("change",sugere); q("#jc-il").addEventListener("change",ilhaMuda); if(!J) sugere();
     const img=q(".jc-emb img"); if(img){ img.src=srcImagem(emb); img.onerror=()=>{ img.replaceWith(Object.assign(document.createElement("span"),{className:"sub",textContent:"Emblema guardado (sem rede para o mostrar)."})); }; }
     if(q("#jc-del")) confirma2(q("#jc-del"),"Toca outra vez",()=>{ fecha(); apagaJogoCal(id); });
     q("#jc-ok").onclick=()=>{ const d=q("#jc-d").value, h=q("#jc-h").value.trim(), a=q("#jc-a").value.trim();
       if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){ toast("Escolhe a data do jogo."); return; } if(h&&!horaOk(h)){ toast("Hora que não percebo. Usa por exemplo 15:00."); return; } if(!a){ toast("Escreve o adversário."); return; }
       fecha(); guardaJogoCal({...(J||{criadoPor:meuId||"",criadoEm:new Date().toISOString()}),id:id||uId("j"),data:d,hora:h,adversario:a,casa,deslocacao:!casa&&desl,destino:q("#jc-de").value.trim(),
-        competicao:q("#jc-p").value.trim(),jornada:q("#jc-j").value.trim(),local:q("#jc-l").value.trim(),emblema:emb||undefined});
+        competicao:q("#jc-p").value.trim(),jornada:q("#jc-j").value.trim(),local:q("#jc-l").value.trim(),localidade:q("#jc-lo").value.trim(),ilha:q("#jc-il").value,emblema:emb||undefined});
       toast(J?"Jogo guardado":`Jogo com ${a} no calendário`); };
     const A=await assetsEx(); if(!A){ st.textContent="Para carregar o emblema é preciso acesso de edição ao link no claude.ai."; return; }
     const be=q("#jc-e"); be.disabled=false; be.onclick=()=>q("#jc-ef").click();
@@ -318,7 +332,7 @@ async function pdfSemana(S){
       if(j){ box(x,yy,cw,hM,rgbHex(corJogo(j))); let top=yy+8; if(emb[j.id]){ const e=j.emblema, r=e.w/e.h, eh=32, ew=Math.min(cw-20,eh*r); try{ doc.addImage(emb[j.id],/png/i.test(emb[j.id].slice(0,30))?"PNG":"JPEG",x+cw/2-ew/2,top,ew,eh); }catch(_){} top+=eh+4; }
         const L=quebra([...linhasJogo(j,D.jogo),...xs.flatMap(z=>[{gap:5},...linhasAtividade(z)])]), disp=yy+hM-top-6, k=Math.min(1,disp/altura(L));
         blocoTxt(L,x+cw/2,top,disp,BR,k);
-        localPdf(j.local||(j.casa?LOCAL_CASA:j.destino),x,yl); return; }
+        localPdf(campoLocal(j)||(j.casa?LOCAL_CASA:j.destino),x,yl); return; }
       if(!xs.length){ box(x,yy,cw,hM,CINZ); box(x,yl,cw,hL,ESC); return; }
       /* cada atividade na sua faixa (a folga a amarelo) */
       const LS=xs.map(z=>quebra(linhasAtividade(z))), hs=xs.map((z,n)=>z.tipo==="folga"?30:altura(LS[n])+14), tot=hs.reduce((a,b)=>a+b,0), k=Math.min(1,hM/tot); let yA=yy;

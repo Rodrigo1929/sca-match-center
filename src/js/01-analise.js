@@ -180,7 +180,7 @@ function linkVideo(n,V){ return linkVideoModo(n,V,modoVideo); }
 const CATS={of:["Ofensivo","#C00000"],def:["Defensivo","#1F497D"],bp:["Bola parada","#B8963F"],out:["Outro","#6B675E"]};
 function seg(t){ const m=String(t||"").match(/^(\d{1,3})(?::(\d{1,2}))?$/); return m?(+m[1])*60+(+(m[2]||0)):1e9; }
 function fmt(sec){ sec=Math.max(0,Math.floor(sec)); return Math.floor(sec/60)+":"+String(sec%60).padStart(2,"0"); }
-const COMPS={taca:{nome:"Taça AFAH",subs:9,paragens:3,sup:null},camp:{nome:"Campeonato dos Açores",subs:5,paragens:3,sup:7},livre:{nome:"Outra / amigável",subs:99,paragens:99,sup:null}};
+const COMPS={taca:{nome:"Taça AFAH",subs:9,paragens:3,sup:null},camp:{nome:"Campeonato dos Açores",subs:5,paragens:3,sup:7},tit:{nome:"Taça Ilha Terceira",subs:7,paragens:3,sup:7},tp:{nome:"Taça de Portugal",subs:5,paragens:3,sup:9},livre:{nome:"Outra / amigável",subs:99,paragens:99,sup:null}};
 const STAFF=[["diretor","Diretor"],["treinador","Treinador"],["adjunto","Tr. Adjunto"],["trgr","Tr. Guarda-Redes"],["prepfis","Preparador Físico"],["psicologa","Psicóloga"],["saude","Técnico de Saúde"],["cap1","Capitão"],["cap2","Sub Capitão"],["cap3","3º Capitão"]];
 const GOLO_COD=[["DA","Dentro da área"],["FA","Fora da área"],["L","Livre"],["C","Canto"],["P","Penálti"],["AG","Autogolo"],["CB","Cabeça"],["JI","Jogada individual"]];
 const CANTO_Z=[["1º","1º poste"],["2º","2º poste"],["PA","Pequena-área"]], CANTO_R=[["C","Corte"],["FB","Finalização à baliza"],["FF","Finalização fora"]];

@@ -18,6 +18,8 @@ const SIS_OBS={
   "5-4-1":[["GR","1",.5,.035],["ALD","2",.10,.30],["DCD","3",.31,.22],["DC","4",.5,.30],["DCE","6",.69,.22],["ALE","5",.90,.30],["MD","7",.10,.60],["MCD","8",.31,.55],["MCE","10",.69,.55],["ME","11",.90,.60],["PL","9",.5,.80]]};
 /* [código, u, v]: u = distância à baliza deles (0) até à nossa (1), v = de cima (0) para baixo (1) */
 const SIS_ADV=Object.fromEntries(Object.entries(SIS_OBS).map(([k,L])=>[k,L.map(([c,,x,y])=>[c,+(y*.68).toFixed(3),x])]));
+/* equipa sem o prefixo do clube (SC, FC, CD, GD, C…), para reconhecer «SC Barreiro» e «Barreiro» como a mesma (v106) */
+const chaveEq=n=>slugEq(String(n||"").replace(/^\s*(?:[A-Z]{1,4}\.?\s+)+(?=\S)/,""));
 function slugEq(s){ return String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,60); }
 function normCoresAdv(c){ const h=v=>/^#[0-9a-f]{6}$/i.test(String(v||""))?String(v).toUpperCase():null; return {cam:h(c?.cam)||CORES_ADV_DEF.cam,cam2:h(c?.cam2)||CORES_ADV_DEF.cam2,num:h(c?.num)||CORES_ADV_DEF.num,gr:h(c?.gr)||CORES_ADV_DEF.gr}; }
 function normOnzeObs(o){ return o&&typeof o==="object"?{sis:String(o.sis||""),pos:Object.fromEntries(Object.entries(o.pos||{}).map(([k,v])=>[String(k),String(v)]))}:null; }
@@ -169,7 +171,7 @@ function escolheEquipa(id){ const T=advs[id]; if(!T) return; const A=clone(advJ(
   if(!A.onze.length){ A.sistema=T.sistema||"4-4-2"; A.onze=posSisAdv(A.sistema).map(p=>({...p,n:""})); }
   guardaAdvJogo(A); }
 function criaEquipa(nome_){ nome_=String(nome_||"").trim(); if(!nome_){ toast("Escreve o nome da equipa."); return; }
-  const id=slugEq(nome_)||"eq-"+Date.now().toString(36);
+  const id=chaveEq(nome_)||"eq-"+Date.now().toString(36);
   if(!advs[id]) guardaEquipa({id,nome:nome_,plantel:[],sistema:"",cores:CORES_ADV_DEF,origem:"manual",versaoImportada:null},true);
   escolheEquipa(id); }
 function folhaNovaEquipa(){ folha(`<h3>Nova equipa adversária</h3><label class="f">Nome<input type="text" id="ne-n" maxlength="60" placeholder="Ex.: SC Barreiro"></label>
@@ -180,7 +182,7 @@ let dPlT=null;
 function lePlantelAdv(T){ const box=$("d-pl"); if(!box) return T; const rows=[...box.querySelectorAll("[data-pid]")];
   return {...T,plantel:T.plantel.map(p=>{ const r=rows.find(x=>x.dataset.pid===p.id); return r?{...p,n:r.querySelector(".dp-n").value.trim(),nome:r.querySelector(".dp-nome").value,pos:r.querySelector(".dp-pos").value.trim().toUpperCase()}:p; })}; }
 function renderAdv(){ const v=$("view-d"); if(!v||v.hidden) return; if(dragging) return;
-  const A=advJ(), T=eqAdv(), lst=Object.values(advs).sort((a,b)=>a.nome.localeCompare(b.nome,"pt")), sug=slugEq(jogo.adversario);
+  const A=advJ(), T=eqAdv(), lst=Object.values(advs).sort((a,b)=>a.nome.localeCompare(b.nome,"pt")), sug=chaveEq(jogo.adversario);
   $("d-tit").textContent=jogo.adversario?"vs "+jogo.adversario:"Adversário do jogo";
   const st=$("dstage"); st.innerHTML="";
   if(A.onze.length) st.appendChild(desenhaAdvOnze());

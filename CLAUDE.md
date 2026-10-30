@@ -85,7 +85,7 @@ Capacidades desde a Obs. 23: `db` (6 regras; `base` escreve `interact` desde a O
 
 ## Regras de negócio (decididas, não mudar sem o Rodrigo)
 Ver `docs/regras.md`. As principais:
-- Taça AFAH: até 9 substituições em 3 paragens. Campeonato dos Açores: 7 suplentes, 5 substituições em 3 paragens. O intervalo não conta como paragem.
+- Taça AFAH: até 9 substituições em 3 paragens. Campeonato dos Açores: 7 suplentes, 5 substituições em 3 paragens. Taça Ilha Terceira: 7 suplentes, 7 substituições em 3 paragens. Taça de Portugal: 9 suplentes, 5 substituições em 3 paragens. O intervalo não conta como paragem.
 - Minutos: 23:10 conta como 24'.
 - Um golo conta também como remate e como remate à baliza.
 - Cantos: o +1 do Ao vivo é a fonte única e cria a ficha do canto (com tipo).
@@ -102,6 +102,8 @@ Ver `docs/regras.md`. As principais:
 - Relatório para jogadores (v104): `relJog/{jogo}` guarda só o que se escreve e escolhe (mensagens, lances `{rid, titulo}`, exportações); tudo o resto vem do jogo arquivado (ou do jogo em curso, `relJog/atual`, que passa para o id ao arquivar). As ações do Pós-jogo já têm jogador (`j`). O individual nunca leva dados de colegas (nem marcadores); nunca saem quadros, Modelo de Jogo, adversário, notas nem treino. QR dos lances = `linkVideoModo(...,"web")` com o vídeo do jogo; sem vídeo, «sem vídeo». ZIP próprio (`zipFicheiros`, sem compressão).
 
 - Cores dos jogos (v105, do plano do clube): em casa `#F28E86`, fora `#B3CEFB` (`corJogo`, blocos `casa`/`fora` em `regimes`), no plano semanal, no Micro e no Ano (no Ano, v105.2: fundo pela prova em `PROVAS_ANUAL`, letra casa `LETRA_CASA` / fora `LETRA_FORA`; nº da UT a vermelho; período transitório cor-de-rosa); estágio e viagem com a cor do jogo ligado (`jogoLigado`) e texto branco. PDF do planeamento anual (`pdfAnual`): grelha + calendário de jogos, data = última alteração da época.
+
+- Calendário e Jogo (v106): local = `local` (campo) + `localidade` + `ilha` (`localJogo`); campo sugerido do último jogo com o adversário (`ultimoLocal`). «📅 Do calendário» no Jogo preenche os dados e `calId`; competição pela sigla (`compDeCal`: CFA camp, TAT/ST taca, TIT tit, TP tp, resto livre). Nomes oficiais dos clubes (SC Barreiro, SC Lusitânia, FC Madalena, SC Praiense, CD Rabo de Peixe, CD Santo António, GD São Roque, C União Micaelense, FC Vale Formoso, SC Angrense); equipas comparam-se por `chaveEq` (sem SC/FC/CD/GD). Na Observação o nome mostrado vem de `nomeEq`; a chave (`EQUIPAS[i][0]`, `R.adversario`, `base/<slug>`, `J.vs`) nunca muda.
 
 ## Forma de trabalhar
 - Antes de uma mudança grande, perguntar o objetivo e quem usa (escolha múltipla quando fizer sentido).

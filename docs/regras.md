@@ -4,7 +4,7 @@ Estas regras foram decididas ao longo do desenvolvimento e estão implementadas.
 
 | Tema | Decisão |
 |---|---|
-| Competições | Taça AFAH: até 9 substituições em 3 paragens. Campeonato dos Açores: 7 suplentes, 5 substituições em 3 paragens. O intervalo não conta como paragem |
+| Competições | Taça AFAH: até 9 substituições em 3 paragens. Campeonato dos Açores: 7 suplentes, 5 substituições em 3 paragens. Taça Ilha Terceira: 7 suplentes, 7 substituições em 3 paragens. Taça de Portugal: 9 suplentes, 5 substituições em 3 paragens (v106). O intervalo não conta como paragem |
 | Minutos | 23:10 conta como minuto 24' |
 | Golos | Um golo conta também como remate (e à baliza) |
 | Cantos | O contador +1 do Ao vivo cria também a ficha do canto, com escolha do tipo de canto usado (fonte única) |

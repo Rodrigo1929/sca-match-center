@@ -60,8 +60,8 @@ function semanaMicro(seg){ const fim=diaMais(seg,6), hoje=isoDia(new Date()), S=
     const z=S?S.dias[d]:null, ses=z?[...z.manha,...z.tarde]:[], trs=ses.filter(x=>x.tipo==="treino"), via=ses.find(x=>x.tipo==="viagem"), A=anual[d];
     const mdM=campoMc(seg,d+".md"), mdA=mdAuto(d), md=mdM!==null?mdM:mdA, treina=us.length>0||trs.length>0, P=(treina||jJT||!z)?mdPadrao[md]||null:null;   // dia sem treino no plano: sem textos do Padrão MD
     let bloco=null;
-    if(jOf) bloco={k:"md",cor:corJogo(jOf),txt:`MD · ${jOf.adversario||"JOGO"}`.toUpperCase(),sub:[jOf.hora?hhMc(jOf.hora):"",jOf.casa?localCurto(jOf.local||LOCAL_CASA):(jOf.local||jOf.destino||"")].filter(Boolean).join(" · "),desde:"hora"};
-    else if(!treina&&jJT) bloco={k:"jogo",cor:corJogo(jJT),txt:`JOGO-TREINO · ${jJT.adversario||""}`.toUpperCase(),sub:[jJT.hora?hhMc(jJT.hora):"",jJT.casa?localCurto(jJT.local||LOCAL_CASA):(jJT.local||"")].filter(Boolean).join(" · "),desde:"partes"};
+    if(jOf) bloco={k:"md",cor:corJogo(jOf),txt:`MD · ${jOf.adversario||"JOGO"}`.toUpperCase(),sub:[jOf.hora?hhMc(jOf.hora):"",jOf.casa?localCurto(campoLocal(jOf)||LOCAL_CASA):(campoLocal(jOf)||jOf.destino||"")].filter(Boolean).join(" · "),desde:"hora"};
+    else if(!treina&&jJT) bloco={k:"jogo",cor:corJogo(jJT),txt:`JOGO-TREINO · ${jJT.adversario||""}`.toUpperCase(),sub:[jJT.hora?hhMc(jJT.hora):"",jJT.casa?localCurto(campoLocal(jJT)||LOCAL_CASA):(campoLocal(jJT)||"")].filter(Boolean).join(" · "),desde:"partes"};
     else if(!treina&&via) bloco={k:"estagio",cor:corJogo(jogoLigado(d)),txt:"ESTÁGIO / DESLOCAÇÃO",sub:via.txt||via.local||"",desde:"local"};
     else if(!treina&&((z&&z.folga)||(A&&A.tipo==="folga")||(!z&&P&&P.folga))) bloco={k:"folga",txt:"FOLGA",sub:"",desde:"hora"};
     const rgM=campoMc(seg,d+".regime"), regime=rgM!==null?rgM:(P?P.regime:""), nvM=campoMc(seg,d+".nivel"), nivel=nvM!==null?nvM:(P?P.nivel:"");

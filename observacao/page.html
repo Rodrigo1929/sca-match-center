@@ -192,7 +192,9 @@ textarea{resize:vertical;min-height:70px;line-height:1.45}
 /* ======================= GUIÃO DE OBSERVAÇÃO ======================= */
 const COMP="Campeonato de Futebol dos Açores", EPOCA="2026/27";
 /* equipas do CFA 2026/27 (Açoriano Oriental, 02/09/2026); o SC Angrense não entra na lista de adversários */
-const EQUIPAS=[["Barreiro","Terceira"],["Lusitânia","Terceira"],["Madalena","Pico"],["Praiense","Terceira"],["Rabo de Peixe","São Miguel"],["Santo António","São Miguel"],["São Roque","São Miguel"],["União Micaelense","São Miguel"],["Vale Formoso","São Miguel"]];
+const EQUIPAS=[["Barreiro","Terceira","SC Barreiro"],["Lusitânia","Terceira","SC Lusitânia"],["Madalena","Pico","FC Madalena"],["Praiense","Terceira","SC Praiense"],["Rabo de Peixe","São Miguel","CD Rabo de Peixe"],["Santo António","São Miguel","CD Santo António"],["São Roque","São Miguel","GD São Roque"],["União Micaelense","São Miguel","C União Micaelense"],["Vale Formoso","São Miguel","FC Vale Formoso"]];
+/* nome a mostrar (Obs. 27, nomes dados pelo Rodrigo): a chave (1.º elemento) continua a ligar relatórios, planteis base e jogos; só o que se vê muda */
+const nomeEq=k=>k==="Angrense"?"SC Angrense":(EQUIPAS.find(e=>e[0]===k)||[])[2]||k;
 const PLANTEIS={{PLANTEIS}};
 /* campo do plantel do adversário (estilo do plantel da SCA Performance). Cada sistema tem as suas 11 posições:
    [código, número, nome, x, y] em frações do meio-campo (baliza em cima; a direita do adversário fica à esquerda do ecrã).
@@ -404,7 +406,7 @@ function novoRel(adv){ const B=bases[slugEq(adv)], P=B?null:plantelZZ(adv);
 const dataJogo=R=>String((R.jogos[0]&&R.jogos[0].data)||String(R.criadoEm||"").slice(0,10));
 const jogosDe=adv=>Object.values(rels).filter(R=>R.adversario===adv).sort((a,b)=>dataJogo(a).localeCompare(dataJogo(b))||String(a.criadoEm).localeCompare(String(b.criadoEm)));
 function ultimoDe(adv){ const ls=jogosDe(adv), meus=ls.filter(R=>R.autor===meId); return (meus.length?meus:ls).slice(-1)[0]||null; }
-const tituloJogo=R=>{ const J=R.jogos[0]; return J&&(J.vs||J.data)?`${J.vs?"vs "+J.vs:"Jogo"}${J.data?" · "+dataPt(J.data):""}`:"Jogo por preencher"; };
+const tituloJogo=R=>{ const J=R.jogos[0]; return J&&(J.vs||J.data)?`${J.vs?"vs "+nomeEq(J.vs):"Jogo"}${J.data?" · "+dataPt(J.data):""}`:"Jogo por preencher"; };
 const COPIA_JOGO=["plantel","plantelFonte","treinador","adjunto","trGR","sistema","capitao","plantelNotas","cores","plXY","plNom","onzes","onze","chk","bp","refs","sint"];
 function novoRelJogo(adv){ const R=novoRel(adv); R.jogos=[{id:nid("j"),vs:"",data:"",local:"",res:"",como:"",video:"",ctx:"",onze:[],acont:[]}];
   const A=adv&&ultimoDe(adv); if(!A) return R;
@@ -573,7 +575,7 @@ function respTexto(R,q){ const C=R.chk[q.id]; if(!C) return ""; const m=new Map(
 function renderHist(adv){ const ls=jogosDe(adv); if(!ls.length){ vista={tipo:"lista",id:null,sec:"ficha"}; renderLista(); return; }
   const cel=(t,mud)=>`<td${mud?' class="mud"':""}>${t?esc(t):'<span class="hint">—</span>'}</td>`;
   const linha=(rot,fn)=>{ let ant=null; return `<tr><th>${rot}</th>${ls.map(R=>{ const t=fn(R), m=ant!==null&&ant!==""&&t!==ant; ant=t; return cel(t,m); }).join("")}</tr>`; };
-  let h=`${bannerAcesso()}<div class="rhead"><button class="btn sm ghost" id="voltar">← Relatórios</button><h2>${esc(adv)}</h2><span class="chip rasc">Histórico · ${ls.length} jogos</span></div>
+  let h=`${bannerAcesso()}<div class="rhead"><button class="btn sm ghost" id="voltar">← Relatórios</button><h2>${esc(nomeEq(adv))}</h2><span class="chip rasc">Histórico · ${ls.length} jogos</span></div>
     <p class="hint" style="margin:-4px 0 12px;max-width:72ch">Cada resposta jogo a jogo, do mais antigo para o mais recente. A laranja: mudou em relação ao jogo anterior.</p>
     <div class="card" style="padding:0;overflow:auto"><table class="htab"><thead><tr><th></th>${ls.map(R=>`<th><button type="button" class="btn sm ghost" data-id="${esc(R.id)}">${esc(tituloJogo(R))}</button>${R.jogos[0]&&R.jogos[0].res?`<br><span class="hint">${esc(R.jogos[0].res)}</span>`:""}</th>`).join("")}</tr></thead><tbody>
     <tr class="g"><th colspan="${ls.length+1}">Equipa</th></tr>${linha("Sistema habitual",R=>R.sistema||"")}${linha("Treinador",R=>R.treinador||"")}`;
@@ -613,7 +615,7 @@ function plantelParaMC(B){ const adv=B.adversario, U=jogosDe(adv).slice(-1)[0]||
     const k=pl.find(p=>j.nome&&p.nome&&slugEq(p.nome)===slugEq(j.nome))||pl.find(p=>j.n&&p.n===String(j.n)); if(k) return k.id;
     pl.push({id:j.id,n:String(j.n||""),nome:j.nome||"",pos:j.slot||""}); return j.id; };
   const onze=o=>{ const ps=Object.entries((o&&o.pos)||{}).map(([c,rid])=>[c,acha(rid)]).filter(([,v])=>v); return ps.length?{sis:(o.sis||U.sistema||B.sistema||""),pos:Object.fromEntries(ps)}:null; };
-  return {app:"SCA Observação",tipo:"plantel-adversario",versao:1,exportadoEm:new Date().toISOString(),equipa:{id:slugEq(adv),nome:adv},
+  return {app:"SCA Observação",tipo:"plantel-adversario",versao:1,exportadoEm:new Date().toISOString(),equipa:{id:slugEq(adv),nome:nomeEq(adv)},
     plantel:pl,sistema:B.sistema||"",cores:clone(B.cores||{}),onzeProv:U?onze(U.onzes.prov):null,onzeAlt:U?onze(U.onzes.alt):null,
     fonte:`plantel base${B.atualizadoEm?" de "+quando(B.atualizadoEm):""}${U?" · onzes do relatório "+tituloJogo(U):" · sem relatório de jogo"}`}; }
 function exportaMC(B){ const P=plantelParaMC(B); entregaFicheiro(`Plantel_${P.equipa.id}_${P.exportadoEm.slice(0,10)}.json`,new Blob([JSON.stringify(P)],{type:"application/json"})); }
@@ -628,7 +630,7 @@ async function geraPdf(R){ await carregaLib("pdf"); const {jsPDF}=window.jspdf, 
   const tit=t=>{ cabe(14); y+=3; d.setFillColor(192,0,0); d.rect(M,y,LW,7,"F"); d.setFont("helvetica","bold"); d.setFontSize(11); d.setTextColor(255,255,255); d.text(t.toUpperCase(),M+2,y+5); y+=10; };
   const img=async(svg,w)=>{ try{ const P=await svgPng(svg,true), h=w*P.h/P.w; cabe(h+2); d.addImage(P.url,"JPEG",M,y,w,h); y+=h+3; }catch(e){} };
   const J=R.jogos[0]||{acont:[],onze:[]}, nm=id=>{ const j=R.plantel.find(x=>x.id===id); return j?(j.n?j.n+" ":"")+j.nome:""; };
-  d.setFillColor(27,26,23); d.rect(0,0,W,26,"F"); d.setFont("helvetica","bold"); d.setFontSize(18); d.setTextColor(255,255,255); d.text(`${R.adversario||"Adversário"} ${J.vs?"vs "+J.vs:""}`,M,12);
+  d.setFillColor(27,26,23); d.rect(0,0,W,26,"F"); d.setFont("helvetica","bold"); d.setFontSize(18); d.setTextColor(255,255,255); d.text(`${nomeEq(R.adversario)||"Adversário"} ${J.vs?"vs "+nomeEq(J.vs):""}`,M,12);
   d.setFontSize(10); d.setFont("helvetica","normal"); d.text([`SC Angrense · Observação de adversários`,[J.data?dataPt(J.data):"",J.local==="casa"?"Em casa":J.local==="fora"?"Fora":"",J.res?"Resultado "+J.res:"",R.autor!==meId&&nomes[R.autor]?"Observador: "+nomes[R.autor]:""].filter(Boolean).join(" · ")].join("   "),M,20); y=32;
   tit("Ficha do jogo"); txt([R.competicao,J.como?"Observado: "+({vivo:"ao vivo",video:"vídeo",ambos:"ao vivo e vídeo"}[J.como]||J.como):"",J.video?"Vídeo: "+J.video:""].filter(Boolean).join(" · "));
   if(J.onze.length) txt("Onze inicial: "+J.onze.map(nm).filter(Boolean).join(", "));
@@ -648,7 +650,7 @@ async function geraPdf(R){ await carregaLib("pdf"); const {jsPDF}=window.jspdf, 
     R.evid.filter(e=>e.q==="jogd:"+x.id).forEach(e=>txt(`• Dificuldade: ${minEv(e)?minEv(e)+" · ":""}${e.txt||""}`,{t:9.5})); }); }
   const S=R.sint; if(S.estrutura||S.ameacas.some(Boolean)||S.oport.some(Boolean)||S.bpref){ tit("Síntese"); if(S.estrutura) txt(S.estrutura);
     S.ameacas.forEach((a,i)=>a&&txt(`Ameaça ${i+1}: ${a}`)); S.oport.forEach((a,i)=>a&&txt(`Oportunidade ${i+1}: ${a}`)); if(S.bpref) txt("Bolas paradas e jogadores: "+S.bpref); }
-  const n=d.getNumberOfPages(); for(let i=1;i<=n;i++){ d.setPage(i); d.setFont("helvetica","normal"); d.setFontSize(8); d.setTextColor(140,140,140); d.text(`${R.adversario} · ${tituloJogo(R)} · ${i}/${n}`,W-M,292,{align:"right"}); }
+  const n=d.getNumberOfPages(); for(let i=1;i<=n;i++){ d.setPage(i); d.setFont("helvetica","normal"); d.setFontSize(8); d.setTextColor(140,140,140); d.text(`${nomeEq(R.adversario)} · ${tituloJogo(R)} · ${i}/${n}`,W-M,292,{align:"right"}); }
   return d.output("blob"); }
 async function exportaPdf(R,btn){ const o=btn&&btn.textContent; if(btn){ btn.disabled=true; btn.textContent="A preparar…"; }
   try{ await entregaFicheiro(nomeFicheiro(R,"pdf"),await geraPdf(R)); }catch(e){ toast(e.message||"Não foi possível gerar o PDF"); } finally{ if(btn){ btn.disabled=false; btn.textContent=o; } } }
@@ -668,17 +670,17 @@ function folhaApresentacao(R){ const P=pontosApresentacao(R); if(!P.length){ toa
     s_.querySelectorAll("#ap-l [data-k]").forEach(b=>b.onclick=()=>{ const k=b.dataset.k; sel.has(k)?sel.delete(k):sel.add(k); pinta(); });
     s_.querySelector("#ap-todos").onclick=()=>{ P.forEach(x=>sel.add(x.k)); pinta(); };
     s_.querySelector("#ap-ok").onclick=async()=>{ const b=s_.querySelector("#ap-ok"); b.disabled=true; b.textContent="A preparar…"; try{ const blob=await geraPptx(R,P.filter(x=>sel.has(x.k)).map(x=>x.k)); fecha(); await entregaFicheiro(nomeFicheiro(R,"pptx"),blob); }catch(e){ b.disabled=false; pinta(); toast(e.message||"Não foi possível gerar o PowerPoint"); } }; }); }
-async function geraPptx(R,chaves){ await carregaLib("ppt"); const pp=new window.PptxGenJS(); pp.layout="LAYOUT_WIDE"; pp.title=`${R.adversario} · ${tituloJogo(R)}`;
+async function geraPptx(R,chaves){ await carregaLib("ppt"); const pp=new window.PptxGenJS(); pp.layout="LAYOUT_WIDE"; pp.title=`${nomeEq(R.adversario)} · ${tituloJogo(R)}`;
   const J=R.jogos[0]||{}, F="Arial", logo=(document.querySelector(".brand img")||{}).src||"", sem=u=>u.replace(/^data:/,"");
   const cab=(sl,a,b)=>{ sl.background={color:"FFFFFF"}; sl.addText([{text:a,options:{color:"1B1A17",bold:true}},{text:b?"  "+b:"",options:{color:"C00000",bold:true}}],{x:.5,y:.3,w:11.3,h:.8,fontFace:F,fontSize:24,valign:"middle",isTextBox:true,margin:0,fit:"shrink"});
     sl.addShape(pp.ShapeType.rect,{x:.5,y:1.12,w:11.3,h:.06,fill:{color:"C9B26B"},line:{color:"C9B26B"}}); if(logo) sl.addImage({data:sem(logo),x:12.25,y:.25,w:.75,h:.7}); };
   const lista=(sl,linhas,x,y,w,h)=>{ const runs=[]; linhas.forEach(([t,o],i)=>runs.push({text:t,options:{...o,breakLine:i<linhas.length-1}})); if(runs.length) sl.addText(runs,{x,y,w,h,fontFace:F,fontSize:16,color:"1B1A17",valign:"top",isTextBox:true,margin:0,paraSpaceAfter:6,fit:"shrink"}); };
   const clip=(grupo,titulo,e)=>{ const sl=pp.addSlide(); sl.background={color:"FFFFFF"}; sl.addText(`Clip · ${grupo}`,{x:.5,y:.3,w:12.3,h:.5,fontFace:F,fontSize:16,bold:true,color:"C00000",isTextBox:true,margin:0});
-    sl.addText(`${titulo}  ·  ${J.vs?"vs "+J.vs+" · ":""}${minEv(e)?"minuto "+minEv(e):"minuto por indicar"}`,{x:.5,y:.8,w:12.3,h:.45,fontFace:F,fontSize:13,color:"6B675E",isTextBox:true,margin:0,fit:"shrink"});
+    sl.addText(`${titulo}  ·  ${J.vs?"vs "+nomeEq(J.vs)+" · ":""}${minEv(e)?"minuto "+minEv(e):"minuto por indicar"}`,{x:.5,y:.8,w:12.3,h:.45,fontFace:F,fontSize:13,color:"6B675E",isTextBox:true,margin:0,fit:"shrink"});
     sl.addShape(pp.ShapeType.rect,{x:.5,y:1.45,w:12.33,h:5.75,fill:{color:"F3F1EC"},line:{color:"C9C4B8",dashType:"dash",width:1}}); };
   const capa=pp.addSlide(); capa.background={color:"1B1A17"}; if(logo) capa.addImage({data:sem(logo),x:.7,y:.6,w:1.3,h:1.2});
-  capa.addText(R.adversario||"Adversário",{x:.7,y:2.4,w:11.9,h:1.2,fontFace:F,fontSize:44,bold:true,color:"FFFFFF",isTextBox:true,margin:0});
-  capa.addText([J.vs?"vs "+J.vs:"",J.data?dataPt(J.data):"",J.res||""].filter(Boolean).join("  ·  "),{x:.7,y:3.6,w:11.9,h:.6,fontFace:F,fontSize:20,color:"C9B26B",isTextBox:true,margin:0});
+  capa.addText(nomeEq(R.adversario)||"Adversário",{x:.7,y:2.4,w:11.9,h:1.2,fontFace:F,fontSize:44,bold:true,color:"FFFFFF",isTextBox:true,margin:0});
+  capa.addText([J.vs?"vs "+nomeEq(J.vs):"",J.data?dataPt(J.data):"",J.res||""].filter(Boolean).join("  ·  "),{x:.7,y:3.6,w:11.9,h:.6,fontFace:F,fontSize:20,color:"C9B26B",isTextBox:true,margin:0});
   capa.addText("SC Angrense · Observação de adversários",{x:.7,y:6.6,w:11.9,h:.4,fontFace:F,fontSize:12,color:"A39E93",isTextBox:true,margin:0});
   const m=new Map(R.plantel.map(j=>[j.id,j]));
   for(const k of chaves){
@@ -741,7 +743,7 @@ function render0(){ if(vista.tipo==="base"&&!bases[vista.id]){ const eq=EQUIPAS.
   const sy=scrollY; vista.tipo==="rel"?renderRel(relAtual()):vista.tipo==="base"?renderBase(relAtual()):vista.tipo==="hist"?renderHist(vista.id):renderLista(); if(render.mesma) scrollTo(0,sy); render.mesma=false; }
 /* plantel base de uma equipa: só a secção Plantel, sem relatório */
 function renderBase(R){ const ed=podeEditar(R);
-  $("main").innerHTML=`${bannerAcesso()}<div class="rhead"><button class="btn sm ghost" id="voltar" aria-label="Voltar aos relatórios">← Relatórios</button><h2>${esc(R.adversario)}</h2><span class="chip rasc">Plantel base</span>${souDono||semDb?`<button class="btn sm" id="b-mc" style="margin-left:auto" title="Ficheiro para importar no separador Adversário da SCA Performance">⬇ Exportar para a SCA Performance</button>`:""}</div>
+  $("main").innerHTML=`${bannerAcesso()}<div class="rhead"><button class="btn sm ghost" id="voltar" aria-label="Voltar aos relatórios">← Relatórios</button><h2>${esc(nomeEq(R.adversario))}</h2><span class="chip rasc">Plantel base</span>${souDono||semDb?`<button class="btn sm" id="b-mc" style="margin-left:auto" title="Ficheiro para importar no separador Adversário da SCA Performance">⬇ Exportar para a SCA Performance</button>`:""}</div>
     <p class="hint" style="margin:-4px 0 12px;max-width:72ch">${ed?"O plantel de partida dos relatórios novos desta equipa. Quem observa pode mudá-lo; os relatórios já começados não mudam.":"Plantel base (só leitura). Os relatórios novos desta equipa começam com ele."}</p>
     <section class="sec" id="sec"></section>
     <button class="btn dark fab" id="voltar2">⌂ Voltar à página inicial</button>`;
@@ -759,7 +761,7 @@ function renderLista(){ const ls=Object.values(rels).sort((a,b)=>String(b.atuali
       const ul=Object.values(logs).filter(l=>l.relId===R.id).sort((a,b)=>String(b.em).localeCompare(String(a.em)))[0], up=ul?ul.por:R.ultPor, ue=ul?ul.em:R.atualizadoEm;
       return `<button class="ev" data-id="${esc(R.id)}" style="grid-template-columns:minmax(0,1fr) auto;align-items:center"><span class="tx"><b>${esc(tituloJogo(R))}</b><br><span class="hint">${up&&ue?`Última alteração: ${esc(nomeDe(up,ul&&ul.nome))}, ${esc(new Date(ue).toLocaleString("pt-PT",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}))}<br>`:""}${c.resp}/${c.tot} perguntas · ${c.ev} evidências${np?` · <span style="color:var(--warn)">⚠ ${np} por confirmar</span>`:""}${R.autor!==meId?" · "+esc(nomes[R.autor]||"Observador"):""}</span></span><span class="chip ${e[0]}">${e[1]}</span></button>`; };
   const cartaoEq=(n,ilha,rs)=>`<div class="rcard"${rs.length?"":' style="box-shadow:none;background:var(--surface-2);border-style:dashed"'}><div class="row" style="justify-content:space-between;width:100%"><span class="hint">${esc(ilha||"")}</span>${rs.length>1?`<button type="button" class="btn sm ghost" data-hist="${esc(n)}">📈 Histórico</button>`:""}</div>
-      <h3>${esc(n||"Adversário por definir")}</h3>${rs.length?`<div class="evs">${rs.slice().reverse().map(linhaJogo).join("")}</div>`:`<div class="meta">Ainda sem jogos observados</div>`}
+      <h3>${esc(nomeEq(n)||"Adversário por definir")}</h3>${rs.length?`<div class="evs">${rs.slice().reverse().map(linhaJogo).join("")}</div>`:`<div class="meta">Ainda sem jogos observados</div>`}
       ${!soLeitura&&n?`<button type="button" class="btn sm${rs.length?"":" primary"}" data-novo="${esc(n)}" style="align-self:flex-start">+ ${rs.length?"Novo jogo":"Começar observação"}</button>`:""}</div>`;
   const feitas=EQUIPAS.filter(([n])=>ls.some(R=>R.adversario===n)).length;
   h+=`<div class="row" style="justify-content:space-between;margin:0 0 10px"><h3 style="font-size:19px">${COMP} ${EPOCA}</h3><span class="hint"><b style="color:var(--ink)">${feitas}/${EQUIPAS.length}</b> adversários com relatório</span></div><div class="cards" style="margin-bottom:22px">`;
@@ -767,7 +769,7 @@ function renderLista(){ const ls=Object.values(rels).sort((a,b)=>String(b.atuali
   h+=`</div>`;
   /* planteis base: mexer no plantel de cada equipa sem começar um relatório */
   h+=`<div class="row" style="justify-content:space-between;margin:0 0 10px"><h3 style="font-size:19px">Planteis base</h3><span class="hint">${!soLeitura?"Mexe no plantel de cada equipa sem começar um relatório; os relatórios novos partem dele.":"Planteis de partida dos relatórios novos."}</span></div>
-    <div class="row" style="margin-bottom:22px">${EQUIPAS.map(([n])=>{ const B=bases[slugEq(n)]; return `<button class="btn" data-base="${slugEq(n)}">${esc(n)}${B&&B.atualizadoEm?`<span class="hint" style="font-weight:400"> · ${B.plantel.length}</span>`:""}</button>`; }).join("")}</div>`;
+    <div class="row" style="margin-bottom:22px">${EQUIPAS.map(([n])=>{ const B=bases[slugEq(n)]; return `<button class="btn" data-base="${slugEq(n)}">${esc(nomeEq(n))}${B&&B.atualizadoEm?`<span class="hint" style="font-weight:400"> · ${B.plantel.length}</span>`:""}</button>`; }).join("")}</div>`;
   const outros=ls.filter(R=>!EQUIPAS.some(([n])=>n===R.adversario));
   if(outros.length){ h+=`<h3 style="font-size:19px;margin:0 0 10px">Outros adversários</h3><div class="cards">`; [...new Set(outros.map(R=>R.adversario))].forEach(n=>h+=cartaoEq(n,"",jogosDe(n))); h+=`</div>`; }
   if(false) h+=`<div class="empty"><b>Ainda não há relatórios.</b><span>Cria um relatório por adversário. Dentro dele tens o guião de perguntas, o campo para a estrutura, as bolas paradas, os jogadores de referência e a síntese final. No estádio, usa o botão <b>+ Nota</b> para registar depressa e arrumar depois.</span>${!soLeitura?`<button class="btn primary" id="novo2">+ Criar o primeiro relatório</button>`:""}</div>`;
@@ -785,7 +787,7 @@ function renderRel(R){ const ed=podeEditar(R), c=contagens(R), rv=revs[R.id]; if
   const cont=s=>{ if(s.q){ const qs=GUIAO[s.k]; return `${qs.filter(q=>respondida(R,q.id)).length}/${qs.length}`; } if(s.lado) return R.bp.filter(b=>b.lado===s.lado).length||""; if(s.k==="jog") return R.refs.length||""; if(s.k==="ficha") return R.jogos.length||""; if(s.k==="plantel") return R.plantel.length||""; if(s.k==="notas") return c.soltas||""; if(s.k==="hlog") return Object.values(logs).filter(l=>l.relId===R.id).length||""; return ""; };
   let nav="", g=""; SECS.forEach(s=>{ if(s.g!==g){ g=s.g; nav+=`<div class="grp">${esc(g)}</div>`; } const np=nPendSec(R,s); nav+=`<button data-s="${s.k}" aria-current="${s.k===vista.sec}">${esc(s.t)}<span class="c"${s.k==="notas"&&c.soltas?' style="color:var(--warn)"':""}>${np?`<span style="color:var(--warn)">⚠${np}</span> `:""}${cont(s)}</span></button>`; });
   const est=rv&&rv.revisto?`<span class="chip rev">Revisto</span>`:R.estado==="env"?`<span class="chip env">Submetido</span>`:`<span class="chip rasc">Em curso</span>`;
-  $("main").innerHTML=`${bannerAcesso()}<div class="rhead"><button class="btn sm ghost" id="voltar" aria-label="Voltar aos relatórios">← Relatórios</button><h2>${esc(R.adversario||"Adversário por definir")} <span class="hint" style="font-family:var(--f-body);font-size:16px;font-weight:600">${esc(tituloJogo(R))}</span></h2>${est}<div class="sp">${souDono&&R.autor!==meId?`<span class="hint">Observador: ${esc(nomes[R.autor]||"—")}</span>`:""}<button type="button" class="btn sm" id="ex-pdf">📄 PDF</button><button type="button" class="btn sm" id="ex-ppt">📽 Apresentação</button></div></div>
+  $("main").innerHTML=`${bannerAcesso()}<div class="rhead"><button class="btn sm ghost" id="voltar" aria-label="Voltar aos relatórios">← Relatórios</button><h2>${esc(nomeEq(R.adversario)||"Adversário por definir")} <span class="hint" style="font-family:var(--f-body);font-size:16px;font-weight:600">${esc(tituloJogo(R))}</span></h2>${est}<div class="sp">${souDono&&R.autor!==meId?`<span class="hint">Observador: ${esc(nomes[R.autor]||"—")}</span>`:""}<button type="button" class="btn sm" id="ex-pdf">📄 PDF</button><button type="button" class="btn sm" id="ex-ppt">📽 Apresentação</button></div></div>
     ${rv&&rv.texto&&vista.sec!=="sint"?`<div class="banner info" style="margin-bottom:12px"><span>💬</span><span><b>Revisão da equipa técnica:</b> ${esc(rv.texto).slice(0,240)}${rv.texto.length>240?"…":""} <a href="#" id="verrev">Ver na Síntese</a></span></div>`:""}
     ${nPendR(R)&&ed?`<div class="banner pendb" style="margin-bottom:12px"><span>⚠</span><span style="flex:1"><b>${nPendR(R)} ${nPendR(R)===1?"ponto vem":"pontos vêm"} do jogo anterior${esc(vemDe(R))}</b> e ${nPendR(R)===1?"está":"estão"} por confirmar (a laranja). Confirma o que se mantém e muda o que for diferente.</span><button type="button" class="btn sm" id="pend-tudo">Confirmar tudo</button></div>`:""}
     <div class="rgrid"><nav class="secs" aria-label="Secções do relatório">${nav}</nav><section class="sec" id="sec"></section></div>`;
@@ -815,7 +817,7 @@ function liga(box,R,ed){ box.querySelectorAll("[data-b]").forEach(el=>{ const v=
 
 /* ---------- evidências ---------- */
 function jogoDe(R,id){ return R.jogos.find(j=>j.id===id); }
-function jogoCurto(J){ return J?(J.vs?"vs "+J.vs:"Jogo")+(J.data?" · "+dataPt(J.data):""):""; }
+function jogoCurto(J){ return J?(J.vs?"vs "+nomeEq(J.vs):"Jogo")+(J.data?" · "+dataPt(J.data):""):""; }
 function listaEv(R,q,ed){ const es=R.evid.filter(e=>e.q===q).sort((a,b)=>R.jogos.findIndex(j=>j.id===a.jogo)-R.jogos.findIndex(j=>j.id===b.jogo)||(minSeg(a.min)??1e9)-(minSeg(b.min)??1e9));
   return `<div class="evs">${es.map(e=>{ const J=jogoDe(R,e.jogo), lk=linkVideo(J,e.min); return `<button class="ev" data-ev="${esc(e.id)}"><span class="tm">${esc(e.min||"—")}</span><span class="tx">${esc(e.txt||"(sem texto)")}</span>
     <span class="tags"><span class="fq ${e.freq||"conf"}">${FREQ[e.freq||"conf"]}</span>${e.sit?`<span>${esc(SIT[e.sit]||"")}</span>`:""}${J?`<span>${esc(jogoCurto(J))}</span>`:""}${e.ctx?`<span>${CTX[e.ctx]}</span>`:""}${e.clip?"<span>🎬 clip</span>":""}${lk?`<a href="${esc(lk)}" target="_blank" rel="noopener" data-lk>▶ vídeo</a>`:""}</span></button>`; }).join("")}</div>
@@ -892,10 +894,10 @@ function folhaJogQ(q){ const R=relAtual(); if(!R) return; const C=R.chk[q.id]||{
 let qqModo="mover", qqSeta="corrida";
 function quadroQ(el,R,q,ed){ const meio=q.quadro==="meio", Lm=meio?36:105, C=corEq(R);
   el.innerHTML=`${ed?`<div class="row"><div class="seg" id="qq-m"></div><div class="seg" id="qq-s"></div></div>
-      <div class="row"><button type="button" class="btn sm" data-qadd="adv">+ ${esc(R.adversario||"Adversário")}</button><button type="button" class="btn sm" data-qadd="${q.sca?"sca":"out"}">+ ${q.sca?"SC Angrense":"Outra equipa"}</button><button type="button" class="btn sm" data-qadd="bola">+ Bola</button>
-        ${meio?"":`<button type="button" class="btn sm" id="qq-11">Pôr os 11 do ${esc(R.adversario||"adversário")}</button>${q.sca?`<button type="button" class="btn sm" id="qq-sca">Pôr o nosso 3-4-3</button>`:""}`}<button type="button" class="btn sm ghost" id="qq-lim">Limpar</button></div>`:""}
+      <div class="row"><button type="button" class="btn sm" data-qadd="adv">+ ${esc(nomeEq(R.adversario)||"Adversário")}</button><button type="button" class="btn sm" data-qadd="${q.sca?"sca":"out"}">+ ${q.sca?"SC Angrense":"Outra equipa"}</button><button type="button" class="btn sm" data-qadd="bola">+ Bola</button>
+        ${meio?"":`<button type="button" class="btn sm" id="qq-11">Pôr os 11 do ${esc(nomeEq(R.adversario)||"adversário")}</button>${q.sca?`<button type="button" class="btn sm" id="qq-sca">Pôr o nosso 3-4-3</button>`:""}`}<button type="button" class="btn sm ghost" id="qq-lim">Limpar</button></div>`:""}
     <div class="pitch${meio?" half":""}" id="qq-p" style="${meio?"":"max-width:420px"}"></div>
-    <div class="leg"><span><i style="background:${C.cam}"></i>${esc(R.adversario||"Adversário")}${meio?"":" (ataca para cima)"}</span>${q.sca?`<span><i style="background:${COR.sca}"></i>SC Angrense</span>`:`<span><i style="background:${COR.out}"></i>Outra equipa</span>`}<span>━ corrida</span><span>╍ bola</span>${meio?"<span>Baliza em cima</span>":""}</div>`;
+    <div class="leg"><span><i style="background:${C.cam}"></i>${esc(nomeEq(R.adversario)||"Adversário")}${meio?"":" (ataca para cima)"}</span>${q.sca?`<span><i style="background:${COR.sca}"></i>SC Angrense</span>`:`<span><i style="background:${COR.out}"></i>Outra equipa</span>`}<span>━ corrida</span><span>╍ bola</span>${meio?"<span>Baliza em cima</span>":""}</div>`;
   const editaQ=fn=>editaRel(R=>fn(chkDe(R,q.id).quadro),true);
   if(ed){ seg($("qq-m"),[["mover","✥ Mover"],["seta","↗ Seta"]],qqModo,v=>{ qqModo=v; $("qq-s").hidden=v!=="seta"; }); seg($("qq-s"),[["corrida","Corrida"],["bola","Trajetória da bola"]],qqSeta,v=>qqSeta=v); $("qq-s").hidden=qqModo!=="seta";
     el.querySelectorAll("[data-qadd]").forEach(b=>b.onclick=()=>{ const eq=b.dataset.qadd; editaQ(Q=>{ if(eq==="bola"&&Q.pecas.some(p=>p.eq==="bola")) return; const n=Q.pecas.filter(p=>p.eq===eq).length; Q.pecas.push({id:nid("k"),eq,x:eq==="bola"?34:14+(n%8)*6,y:eq==="bola"?Lm/2:eq==="adv"?Lm*.55:Lm*.4,n:""}); }); desenha(); });
@@ -918,7 +920,7 @@ function quadroQ(el,R,q,ed){ const meio=q.quadro==="meio", Lm=meio?36:105, C=cor
         if(a.sid){ folha(`<h3>Seta</h3><div class="actions"><button class="btn danger l" id="qs-del">Apagar seta</button><button class="btn primary" data-close>Fechar</button></div>`,(s,fecha)=>{ s.querySelector("#qs-del").onclick=()=>{ fecha(); editaQ(Q=>{ Q.setas=Q.setas.filter(x=>x.id!==a.sid); }); desenha(); }; }); return; }
         if(a.mov){ editaQ(Q=>{ const p=Q.pecas.find(p=>p.id===a.k); p.x=Math.round(a.x*10)/10; p.y=Math.round(a.y*10)/10; }); desenha(); return; }
         const P=Q.pecas.find(p=>p.id===a.k); if(!P) return;
-        folha(`<h3>${P.eq==="bola"?"Bola":P.eq==="adv"?esc(relAtual().adversario||"Adversário"):P.eq==="sca"?"SC Angrense":"Outra equipa"}</h3>${P.eq!=="bola"?`<label class="f">Número ou posição<input type="text" id="qp-n" maxlength="4" value="${esc(P.n)}"></label>`:""}
+        folha(`<h3>${P.eq==="bola"?"Bola":P.eq==="adv"?esc(nomeEq(relAtual().adversario)||"Adversário"):P.eq==="sca"?"SC Angrense":"Outra equipa"}</h3>${P.eq!=="bola"?`<label class="f">Número ou posição<input type="text" id="qp-n" maxlength="4" value="${esc(P.n)}"></label>`:""}
           <div class="actions"><button class="btn danger l" id="qp-del">Apagar</button><button class="btn" data-close>Fechar</button>${P.eq!=="bola"?`<button class="btn primary" id="qp-ok">Guardar</button>`:""}</div>`,(s,fecha)=>{
           confirma2(s.querySelector("#qp-del"),"Toca outra vez",()=>{ fecha(); editaQ(Q=>{ Q.pecas=Q.pecas.filter(p=>p.id!==a.k); }); desenha(); });
           const ok=s.querySelector("#qp-ok"); if(ok) ok.onclick=()=>{ const n=s.querySelector("#qp-n").value.trim().toUpperCase(); fecha(); editaQ(Q=>{ Q.pecas.find(p=>p.id===a.k).n=n; }); desenha(); }; }); }}); };
@@ -927,7 +929,7 @@ function quadroQ(el,R,q,ed){ const meio=q.quadro==="meio", Lm=meio?36:105, C=cor
 /* ficha do jogo observado: onze inicial da equipa observada e acontecimentos (golos, substituições, cartões) com o minuto */
 const ACONT={golo:["⚽","Golo"],sub:["⇄","Substituição"],am:["🟨","Amarelo"],verm:["🟥","Vermelho"]};
 const nomeJ=(R,id)=>{ const j=R.plantel.find(x=>x.id===id); return j?(j.n?j.n+" ":"")+j.nome:""; };
-function fichaJogoHtml(R,J,ed){ const eq=R.adversario||"Equipa observada", contra=J.vs||"Adversário", ord=J.acont.slice().sort((a,b)=>(parseInt(a.min)||0)-(parseInt(b.min)||0));
+function fichaJogoHtml(R,J,ed){ const eq=nomeEq(R.adversario)||"Equipa observada", contra=nomeEq(J.vs)||"Adversário", ord=J.acont.slice().sort((a,b)=>(parseInt(a.min)||0)-(parseInt(b.min)||0));
   const txt=a=>a.t==="golo"?(a.eq==="contra"?`Golo do ${contra}`:`Golo · ${nomeJ(R,a.jog)||eq}`):a.t==="sub"?`Sai ${nomeJ(R,a.jog)||"?"} · entra ${nomeJ(R,a.jog2)||"?"}`:`${ACONT[a.t][1]} · ${nomeJ(R,a.jog)||"?"}`;
   return `<div class="fj" style="border-top:1px dashed var(--line);padding-top:10px;display:flex;flex-direction:column;gap:8px"><h4>Ficha do jogo · ${esc(eq)}</h4>${ed&&J.acont.length?`<p class="hint" style="margin:0">Toca num golo, substituição ou cartão para o corrigir.</p>`:""}
     <div class="row"><b>Onze inicial</b><span class="hint">${J.onze.length}/11</span>${ed?`<button type="button" class="btn sm" data-fjo="${esc(J.id)}">${J.onze.length?"Mudar o onze":"Escolher o onze"}</button>`:""}</div>
@@ -937,7 +939,7 @@ function fichaJogoHtml(R,J,ed){ const eq=R.adversario||"Equipa observada", contr
 function opJog(R,sel,filtro){ const sis=R.sistema||"4-3-3"; return `<option value="">Escolher jogador</option>`+R.plantel.slice().sort((a,b)=>ordPl(R,a)-ordPl(R,b)||(parseInt(a.n)||999)-(parseInt(b.n)||999)).filter(j=>!filtro||filtro(j)).map(j=>`<option value="${esc(j.id)}"${j.id===sel?" selected":""}>${esc((posNoSis(j.slot,sis)?posNoSis(j.slot,sis)+" · ":"")+(j.n?j.n+" ":"")+j.nome)}</option>`).join(""); }
 function folhaOnzeJogo(jid){ const R=relAtual(), J=R&&R.jogos.find(j=>j.id===jid); if(!J) return; if(!R.plantel.length){ toast("Primeiro preenche o plantel."); return; }
   const sel=new Set(J.onze), sis=R.sistema||"4-3-3", ls=R.plantel.slice().sort((a,b)=>ordPl(R,a)-ordPl(R,b)||(parseInt(a.n)||999)-(parseInt(b.n)||999));
-  folha(`<h3>Onze inicial · ${esc(R.adversario||"")}</h3><p class="hint" style="margin:0" id="oj-n"></p><div class="pgrid" id="oj-l">${ls.map(j=>`<button type="button" data-k="${esc(j.id)}" aria-pressed="${sel.has(j.id)}"><b>${esc(j.n||"–")}</b><span>${esc(j.nome)}</span><small>${esc(posNoSis(j.slot,sis)||"")}</small></button>`).join("")}</div>
+  folha(`<h3>Onze inicial · ${esc(nomeEq(R.adversario)||"")}</h3><p class="hint" style="margin:0" id="oj-n"></p><div class="pgrid" id="oj-l">${ls.map(j=>`<button type="button" data-k="${esc(j.id)}" aria-pressed="${sel.has(j.id)}"><b>${esc(j.n||"–")}</b><span>${esc(j.nome)}</span><small>${esc(posNoSis(j.slot,sis)||"")}</small></button>`).join("")}</div>
     <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="oj-ok">Guardar</button></div>`,(s_,fecha)=>{
     const conta=()=>s_.querySelector("#oj-n").textContent=`${sel.size}/11 escolhidos`; conta();
     s_.querySelectorAll("#oj-l button").forEach(b=>b.onclick=()=>{ const k=b.dataset.k; if(sel.has(k)) sel.delete(k); else { if(sel.size>=11){ toast("Já tens 11. Tira um primeiro."); return; } sel.add(k); } b.setAttribute("aria-pressed",String(sel.has(k))); conta(); });
@@ -949,7 +951,7 @@ function folhaAcont(jid,t,aid){ const R=relAtual(), J=R&&R.jogos.find(j=>j.id===
   const temOnze=J.onze.length>0, fEm=temOnze?j=>emCampo.has(j.id)||(A&&j.id===A.jog):null, fFora=temOnze?j=>!emCampo.has(j.id)||(A&&j.id===A.jog2):null, eq0=A?A.eq:"nos";
   folha(`<h3>${ACONT[t][0]} ${A?"Editar · ":""}${ACONT[t][1]}</h3>
     <label class="f">Minuto<input type="text" id="ac-min" inputmode="numeric" maxlength="6" placeholder="Ex.: 23 ou 45+2" value="${esc(A?A.min:"")}"></label>
-    ${t==="golo"?`<div class="seg" id="ac-eq"><button type="button" data-k="nos" aria-pressed="${eq0==="nos"}">${esc(R.adversario||"Equipa observada")}</button><button type="button" data-k="contra" aria-pressed="${eq0==="contra"}">${esc(J.vs||"Adversário")}</button></div>`:""}
+    ${t==="golo"?`<div class="seg" id="ac-eq"><button type="button" data-k="nos" aria-pressed="${eq0==="nos"}">${esc(nomeEq(R.adversario)||"Equipa observada")}</button><button type="button" data-k="contra" aria-pressed="${eq0==="contra"}">${esc(J.vs||"Adversário")}</button></div>`:""}
     <label class="f" id="ac-jl"${eq0==="contra"?" hidden":""}>${t==="sub"?"Sai":t==="golo"?"Marcador (opcional)":"Jogador"}<select id="ac-j">${opJog(R,A?A.jog:"",t==="golo"?null:fEm)}</select></label>
     ${t==="sub"?`<label class="f">Entra<select id="ac-j2">${opJog(R,A?A.jog2:"",fFora)}</select></label>`:""}
     <div class="actions">${A?`<button class="btn danger l" id="ac-del">Apagar</button>`:""}<button class="btn" data-close>Cancelar</button><button class="btn primary" id="ac-ok">Guardar</button></div>`,(s_,fecha)=>{
@@ -960,10 +962,10 @@ function folhaAcont(jid,t,aid){ const R=relAtual(), J=R&&R.jogos.find(j=>j.id===
       fecha(); editaRel(R=>{ const X=R.jogos.find(j=>j.id===jid); if(!X) return; const k=X.acont.findIndex(x=>x.id===a.id); if(k>=0) X.acont[k]=a; else X.acont.push(a); }); }; }); }
 const vsOutra=new Set(); /* jogos em que se escolheu "Outra equipa…" e ainda não se escreveu o nome */
 function secFicha(R,box,ed){ box.innerHTML=`<header><h3>Ficha do jogo</h3><p>Um relatório por jogo. Para outro jogo desta equipa, volta à página inicial e toca em «+ Novo jogo»: vem preenchido com o último jogo, para confirmares ou mudares.</p></header>
-  <div class="card"><div class="fields"><label class="f">Adversário<select data-b="adversario" data-rr><option value="">Escolher equipa</option>${EQUIPAS.map(([n,i])=>`<option value="${esc(n)}">${esc(n)} (${esc(i)})</option>`).join("")}${R.adversario&&!EQUIPAS.some(([n])=>n===R.adversario)?`<option value="${esc(R.adversario)}">${esc(R.adversario)}</option>`:""}</select></label><label class="f">Competição<input type="text" data-b="competicao"></label></div></div>
+  <div class="card"><div class="fields"><label class="f">Adversário<select data-b="adversario" data-rr><option value="">Escolher equipa</option>${EQUIPAS.map(([n,i])=>`<option value="${esc(n)}">${esc(nomeEq(n))} (${esc(i)})</option>`).join("")}${R.adversario&&!EQUIPAS.some(([n])=>n===R.adversario)?`<option value="${esc(nomeEq(R.adversario))}">${esc(nomeEq(R.adversario))}</option>`:""}</select></label><label class="f">Competição<input type="text" data-b="competicao"></label></div></div>
   <div class="card"><div class="row" style="justify-content:space-between"><h4>Jogo observado</h4>${ed&&!R.jogos.length?`<button class="btn sm" id="j-add">+ Jogo</button>`:""}</div>${R.jogos.length>1?`<div class="banner"><span>⚠</span><span style="flex:1">Este relatório tem <b>${R.jogos.length} jogos</b>. Agora cada relatório é de um só jogo.</span>${ed?`<button type="button" class="btn sm" id="j-sep">Separar em relatórios por jogo</button>`:""}</div>`:""}
     ${R.jogos.length?R.jogos.map(J=>`<div class="card" style="background:var(--surface-2)"><div class="row" style="justify-content:space-between"><b style="font-family:var(--f-display);font-size:17px">${esc(jogoCurto(J))}${J.res?" · "+esc(J.res):""}</b>${ed?`<button class="btn sm ghost" data-jdel="${esc(J.id)}">Apagar</button>`:""}</div>
-      <div class="fields"><label class="f">Contra (equipa que defrontaram)<select data-jvs="${esc(J.id)}" ${ed?"":"disabled"}><option value="">Escolher equipa</option>${TODAS.filter(n=>n!==R.adversario).map(n=>`<option value="${esc(n)}"${n===J.vs?" selected":""}>${esc(n)}</option>`).join("")}<option value="__outra"${J.vs&&!TODAS.includes(J.vs)||vsOutra.has(J.id)?" selected":""}>Outra equipa…</option></select></label>
+      <div class="fields"><label class="f">Contra (equipa que defrontaram)<select data-jvs="${esc(J.id)}" ${ed?"":"disabled"}><option value="">Escolher equipa</option>${TODAS.filter(n=>n!==R.adversario).map(n=>`<option value="${esc(n)}"${n===J.vs?" selected":""}>${esc(nomeEq(n))}</option>`).join("")}<option value="__outra"${J.vs&&!TODAS.includes(J.vs)||vsOutra.has(J.id)?" selected":""}>Outra equipa…</option></select></label>
       ${J.vs&&!TODAS.includes(J.vs)||vsOutra.has(J.id)?`<label class="f">Nome da outra equipa<input type="text" data-b="jogos.${J.id}.vs" data-rr placeholder="Ex.: Sporting Ideal"></label>`:""}<label class="f">Data<input type="date" data-b="jogos.${J.id}.data" data-rr></label>
       <label class="f">Local<select data-b="jogos.${J.id}.local"><option value="">—</option><option value="casa">Em casa</option><option value="fora">Fora</option></select></label><label class="f">Resultado final<input type="text" data-b="jogos.${J.id}.res" data-rr placeholder="2-1"></label>
       <label class="f">Como observaste<select data-b="jogos.${J.id}.como"><option value="">—</option><option value="vivo">Ao vivo</option><option value="video">Vídeo</option><option value="ambos">Ao vivo e vídeo</option></select></label>
@@ -1010,7 +1012,7 @@ function plantelSvgStr(R,modo){ const {VW,fx,fy,fw,fh,bw}=PLF, kx=fw/68, ky=fh/5
   const ord=(a,b)=>(a.conf===b.conf?0:a.conf?-1:1)||(parseInt(a.n)||999)-(parseInt(b.n)||999);
   const cont={}; lay.forEach(([c])=>cont[c]=O?1:grupos[c].length); const {P:PX,fh:fh2}=posicoesPx(lay,cont,O?O.xy:R.plXY[sis]);
   const linhas=semPos.length?Math.ceil(semPos.length/6):0, base=fy+fh2+30, VH=Math.max(base+(linhas?44+linhas*46:0),...Object.values(nl).map(q=>fy+q.y*fh+60));
-  let h=`<svg viewBox="0 0 ${VW} ${VH}" role="img" aria-label="${O?(modo==="prov"?"Onze provável":"Onze alternativo"):"Plantel"} de ${esc(R.adversario)} em ${sis}"><rect x="0" y="0" width="${VW}" height="${VH}" fill="#fff"/>`;
+  let h=`<svg viewBox="0 0 ${VW} ${VH}" role="img" aria-label="${O?(modo==="prov"?"Onze provável":"Onze alternativo"):"Plantel"} de ${esc(nomeEq(R.adversario))} em ${sis}"><rect x="0" y="0" width="${VW}" height="${VH}" fill="#fff"/>`;
   const nf=Math.round(fh2/(fh/10)); for(let i=0;i<nf;i++) h+=`<rect x="${fx}" y="${fy+i*fh2/nf}" width="${fw}" height="${fh2/nf}" fill="${i%2?"#F1F1F1":"#FAFAFA"}"/>`;
   h+=`<rect x="${cx-3.66*kx}" y="${fy-2.2*ky}" width="${7.32*kx}" height="${2.2*ky}" fill="#D9D9D9" stroke="#111" stroke-width="4"/><rect x="${fx}" y="${fy}" width="${fw}" height="${fh2}" fill="none" stroke="#111" stroke-width="7"/>`;
   h+=`<rect x="${cx-20.16*kx}" y="${fy}" width="${40.32*kx}" height="${16.5*ky}" ${L}/><rect x="${cx-9.16*kx}" y="${fy}" width="${18.32*kx}" height="${5.5*ky}" ${L}/>`;
@@ -1040,7 +1042,7 @@ function secPlantel(R,box,ed){ const modo=R.base?"plantel":(vista.plv||"plantel"
   const lista=R.plantel.slice().sort((a,b)=>ordSlot(a)-ordSlot(b)||(parseInt(a.n)||999)-(parseInt(b.n)||999)||a.nome.localeCompare(b.nome,"pt"));
   const opSis=sel=>`${Object.keys(LAYOUTS).map(x=>`<option${x===sel?" selected":""}>${x}</option>`).join("")}`;
   const O=modo==="plantel"?null:R.onzes[modo];
-  box.innerHTML=`<header><h3>Plantel${R.adversario?" · "+esc(R.adversario):""}</h3><p>Plantel de partida, corrigido com o que vês nos jogos. Arrasta um nome para outra posição, toca nele para o editar, ou muda tudo na lista em baixo.</p></header>${bannerPend(R,"plantel",ed,"Plantel, sistema e cores vêm do jogo anterior")}
+  box.innerHTML=`<header><h3>Plantel${R.adversario?" · "+esc(nomeEq(R.adversario)):""}</h3><p>Plantel de partida, corrigido com o que vês nos jogos. Arrasta um nome para outra posição, toca nele para o editar, ou muda tudo na lista em baixo.</p></header>${bannerPend(R,"plantel",ed,"Plantel, sistema e cores vêm do jogo anterior")}
     <div class="card"><h4>Equipa técnica e equipa</h4><div class="fields">
       <label class="f">Treinador<input type="text" data-b="treinador" data-rr placeholder="Nome do treinador"></label>
       <label class="f">Treinador adjunto<input type="text" data-b="adjunto"></label>
@@ -1048,7 +1050,7 @@ function secPlantel(R,box,ed){ const modo=R.base?"plantel":(vista.plv||"plantel"
       <label class="f">Sistema habitual<select id="pl-sis" ${ed?"":"disabled"}><option value="">—</option>${opSis(R.sistema)}</select></label>
       <label class="f">Capitão<select data-b="capitao" data-rr><option value="">—</option>${lista.map(j=>`<option value="${esc(j.id)}">${esc((j.n?j.n+" ":"")+j.nome)}</option>`).join("")}</select></label></div>
       <label class="f">Notas do plantel (lesionados, castigados, reforços, saídas)<textarea data-b="plantelNotas" rows="2"></textarea></label></div>
-    <div class="card"><h4>Cores do equipamento</h4>${R.cores.cam?"":`<p class="hint" style="margin:0;color:var(--warn)">Ainda sem cores: escolhe a cor da camisola do ${esc(R.adversario||"adversário")}. Aplica-se ao plantel, à estrutura e às bolas paradas.</p>`}
+    <div class="card"><h4>Cores do equipamento</h4>${R.cores.cam?"":`<p class="hint" style="margin:0;color:var(--warn)">Ainda sem cores: escolhe a cor da camisola do ${esc(nomeEq(R.adversario)||"adversário")}. Aplica-se ao plantel, à estrutura e às bolas paradas.</p>`}
       <div class="fields cores">
         <label class="f">Camisola<span class="row"><input type="color" data-b="cores.cam" data-def="${SEM_COR}" data-rr aria-label="Cor da camisola"><span class="sw" data-sw="cam">${["#FFFFFF","#000000","#C8102E","#0055A4","#118C3E","#FFD100","#F28C00","#5B2C83","#7FB2E5"].map(c=>`<button type="button" data-c="${c}" style="background:${c}" aria-label="${c}"></button>`).join("")}</span></span></label>
         <label class="f">Segunda cor (contorno)<span class="row"><input type="color" data-b="cores.cam2" data-def="#000000" data-rr aria-label="Segunda cor"><span class="sw" data-sw="cam2">${["#000000","#FFFFFF","#C8102E","#0055A4","#118C3E","#FFD100"].map(c=>`<button type="button" data-c="${c}" style="background:${c}" aria-label="${c}"></button>`).join("")}</span></span></label>
@@ -1144,8 +1146,8 @@ function secEstr(R,box,ed){ const est=vista.estr||"com", O=R.onze, st=O[est];
   <div class="card"><div class="row" style="justify-content:space-between"><div class="seg" id="es-m"></div><label class="row hint" style="gap:8px"><input type="checkbox" id="es-nos" ${O.nos?"checked":""} style="width:20px;height:20px" ${ed?"":"disabled"}> Mostrar o nosso 3-4-3</label></div>
     <div class="estr"><div class="pitch" id="es-p"></div><div style="display:flex;flex-direction:column;gap:10px">
       <label class="f">Sistema ${est==="com"?"com bola":"sem bola"}<select id="es-sis" ${ed?"":"disabled"}>${Object.keys(SISTEMAS).map(s=>`<option${s===st.sis?" selected":""}>${s}</option>`).join("")}</select></label>
-      <div class="leg"><span><i style="background:${corEq(R).cam}"></i>${esc(R.adversario||"Adversário")} (ataca para cima)</span>${O.nos?`<span><i style="background:${COR.sca}"></i>SC Angrense 3-4-3</span>`:""}</div>
-      ${corEq(R).definida?"":`<p class="hint" style="margin:0">As cores do ${esc(R.adversario||"adversário")} escolhem-se no separador <b>Plantel</b>.</p>`}
+      <div class="leg"><span><i style="background:${corEq(R).cam}"></i>${esc(nomeEq(R.adversario)||"Adversário")} (ataca para cima)</span>${O.nos?`<span><i style="background:${COR.sca}"></i>SC Angrense 3-4-3</span>`:""}</div>
+      ${corEq(R).definida?"":`<p class="hint" style="margin:0">As cores do ${esc(nomeEq(R.adversario)||"adversário")} escolhem-se no separador <b>Plantel</b>.</p>`}
       <label class="f">${est==="com"?"Notas da estrutura com bola (largura, quem baixa, quem fixa)":"Notas da estrutura sem bola (altura do bloco, distâncias, referências)"}<textarea data-b="onze.${est}.nota" rows="4"></textarea></label>
       ${ed&&R.jogos[0]&&R.jogos[0].onze.length?`<button class="btn sm" id="es-onze">↺ Pôr o onze da ficha do jogo</button>`:""}${ed?`<button class="btn sm" id="es-rp">Repor posições do sistema (as duas equipas)</button>`:""}</div></div></div>`;
   seg($("es-m"),[["com","Com bola"],["sem","Sem bola"]],est,v=>{ vista.estr=v; render.mesma=true; render(); });
@@ -1201,9 +1203,9 @@ let bpModo="mover", bpSeta="corrida";
 function edBp(R,B,el,ed){ el.innerHTML=`${bannerPend(R,"bp:"+B.id,ed,"Esta bola parada vem do jogo anterior")}<div class="fields"><label class="f">Tipo<select data-b="bp.${B.id}.tipo" data-rr>${Object.entries(BP_TIPO).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></label>
     <label class="f">Lado<select data-b="bp.${B.id}.lado" data-rr>${Object.entries(BP_LADO).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></label>
     <label class="f">Corredor<select data-b="bp.${B.id}.cor" data-rr><option value="">—</option>${Object.entries(BP_COR).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></label></div>
-    ${ed?`<div class="row"><div class="seg" id="bp-m"></div><div class="seg" id="bp-s"></div></div><div class="row"><button class="btn sm" data-add="adv">+ ${esc(R.adversario||"Adversário")}</button><button class="btn sm" data-add="out">+ Outra equipa</button><button class="btn sm" data-add="bola"${B.pecas.some(p=>p.eq==="bola")?" disabled":""}>+ Bola</button></div>`:""}
+    ${ed?`<div class="row"><div class="seg" id="bp-m"></div><div class="seg" id="bp-s"></div></div><div class="row"><button class="btn sm" data-add="adv">+ ${esc(nomeEq(R.adversario)||"Adversário")}</button><button class="btn sm" data-add="out">+ Outra equipa</button><button class="btn sm" data-add="bola"${B.pecas.some(p=>p.eq==="bola")?" disabled":""}>+ Bola</button></div>`:""}
     <div class="pitch half" id="bp-p"></div>
-    <div class="leg"><span><i style="background:${corEq(R).cam}"></i>${esc(R.adversario||"Adversário")}</span><span><i style="background:${COR.out}"></i>Outra equipa</span><span>━ corrida</span><span>╍ trajetória da bola</span><span>A baliza atacada está em cima</span></div>
+    <div class="leg"><span><i style="background:${corEq(R).cam}"></i>${esc(nomeEq(R.adversario)||"Adversário")}</span><span><i style="background:${COR.out}"></i>Outra equipa</span><span>━ corrida</span><span>╍ trajetória da bola</span><span>A baliza atacada está em cima</span></div>
     ${BP_ASP.map(([k,t])=>`<label class="f">${t}<textarea data-b="bp.${B.id}.asp.${k}" rows="2"></textarea></label>`).join("")}
     <div><h4 style="margin-bottom:6px">Evidências</h4>${listaEv(R,"bp:"+B.id,ed)}</div>
     ${ed?`<div class="actions"><button class="btn danger l" id="bp-del">Apagar esta bola parada</button></div>`:""}`;
@@ -1226,7 +1228,7 @@ function edBp(R,B,el,ed){ el.innerHTML=`${bannerPend(R,"bp:"+B.id,ed,"Esta bola 
         if(a.mov) { editaRel(R=>{ const p=R.bp.find(x=>x.id===B.id).pecas.find(p=>p.id===a.k); p.x=Math.round(a.x*10)/10; p.y=Math.round(a.y*10)/10; },true); desenha(); } else folhaPecaBp(B.id,a.k); }}); };
   desenha(); }
 function folhaPecaBp(bid,kid){ const R=relAtual(), X=R.bp.find(x=>x.id===bid), P=X&&X.pecas.find(p=>p.id===kid); if(!P) return;
-  folha(`<h3>${P.eq==="bola"?"Bola":P.eq==="adv"?esc(R.adversario||"Adversário"):"Outra equipa"}</h3>${P.eq!=="bola"?`<label class="f">Número ou função (ex.: 9, GR, B = batedor)<input type="text" id="pb-n" maxlength="4" value="${esc(P.n)}"></label>`:""}
+  folha(`<h3>${P.eq==="bola"?"Bola":P.eq==="adv"?esc(nomeEq(R.adversario)||"Adversário"):"Outra equipa"}</h3>${P.eq!=="bola"?`<label class="f">Número ou função (ex.: 9, GR, B = batedor)<input type="text" id="pb-n" maxlength="4" value="${esc(P.n)}"></label>`:""}
     <div class="actions"><button class="btn danger l" id="pb-del">Apagar</button><button class="btn" data-close>Fechar</button>${P.eq!=="bola"?`<button class="btn primary" id="pb-ok">Guardar</button>`:""}</div>`,(s,fecha)=>{
     confirma2(s.querySelector("#pb-del"),"Toca outra vez",()=>{ fecha(); editaRel(R=>{ const X=R.bp.find(x=>x.id===bid); X.pecas=X.pecas.filter(p=>p.id!==kid); }); });
     const ok=s.querySelector("#pb-ok"); if(ok) ok.onclick=()=>{ const n=s.querySelector("#pb-n").value.trim().toUpperCase(); fecha(); editaRel(R=>{ R.bp.find(x=>x.id===bid).pecas.find(p=>p.id===kid).n=n; }); }; }); }
@@ -1258,7 +1260,7 @@ function folhaRefPlantel(){ const R=relAtual(); if(!R) return; const sis=R.siste
   const ls=R.plantel.slice().sort((a,b)=>ordPl(R,a)-ordPl(R,b)||(parseInt(a.n)||999)-(parseInt(b.n)||999));
   const novo=j=>{ const pos=j?posNoSis(j.slot,sis)||"":""; const p={id:nid("p"),jid:j?j.id:"",n:j?j.n||"":"",nome:j?j.nome:"",pos,papeis:pos==="GR"?["gr"]:[],fortes:""}; jogAberto=p.id; editaRel(R=>R.refs.push(p)); };
   if(!ls.length){ novo(null); return; }
-  folha(`<h3>Jogador de referência</h3><p class="hint" style="margin:0">Escolhe do plantel${R.adversario?" do "+esc(R.adversario):""}.</p>
+  folha(`<h3>Jogador de referência</h3><p class="hint" style="margin:0">Escolhe do plantel${R.adversario?" do "+esc(nomeEq(R.adversario)):""}.</p>
     <div class="pgrid" id="rf-l">${ls.map(j=>`<button type="button" data-k="${esc(j.id)}"${ja.has(j.id)?' aria-pressed="true"':""}><b>${esc(j.n||"–")}</b><span>${esc(j.nome)}</span><small>${esc(posNoSis(j.slot,sis)||"")}${ja.has(j.id)?" · já está":""}</small></button>`).join("")}</div>
     <div class="actions"><button class="btn l" id="rf-mao">Outro (escrever à mão)</button><button class="btn" data-close>Cancelar</button></div>`,(s_,fecha)=>{
     s_.querySelectorAll("#rf-l button").forEach(b=>b.onclick=()=>{ fecha(); novo(ls.find(j=>j.id===b.dataset.k)); });

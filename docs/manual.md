@@ -82,6 +82,11 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - **Treino › Rankings**: Rei do Meinho e Rei das Cuecas com 👑 (empate partilha o título); total, UT com meinho em que esteve presente, média por UT; toca num atleta para ver as ocorrências. Os GR entram como os outros. Filtros: época, mesociclo, microciclo. **⬇ CSV**.
 - **Histórico do Excel** (v97): os 21 passes e as cuecas do Excel (setembro e outubro de 2026) contam pela data de cada treino; «UT com meinho» conta quando o atleta estava presente (presenças do emjogo). Os registos de 23/10 ficaram na UT39 (21/10).
 
+## Local dos jogos e Jogo a partir do calendário (v106)
+- No jogo do calendário (Treino › Semana › ✎ ou + Jogo): **Campo**, **Localidade** e **Ilha**. Ao escrever o adversário de um jogo fora, o campo vem do último jogo com ele; em casa, do último jogo em casa. Ilha fora da Terceira = viagem (destino = ilha).
+- No separador **Jogo**, **📅 Do calendário**: toca no jogo e a app preenche adversário, data, hora, prova, jornada, local, casa / fora e competição (regras das substituições). Muda o que quiseres à mão depois. Se já houver outro adversário, pede 2 toques; o onze e os quadros não mudam.
+- Competições: Campeonato dos Açores, Taça AFAH (e Supertaça), **Taça Ilha Terceira** (7 suplentes, 7 substituições, 3 paragens), **Taça de Portugal** (9 suplentes, 5 substituições, 3 paragens), Outra / amigável (jogos-treino).
+
 ## Planeamento anual (Treino › Ano): cores e PDF (v105)
 - Jogos em casa a **vermelho claro** e fora a **azul claro**, como no plano semanal do clube (também no plano semanal e no Micro; o estágio e a viagem levam a cor do jogo). No Ano (v105.2) o **fundo é a prova** (CFA azul escuro, Taça AFAH cinzento escuro, Taça Ilha Terceira verde, jogo-treino laranja, Taça de Portugal roxo) e a **letra diz casa (vermelho) ou fora (azul claro)**; o nº das UT fica a vermelho e o período transitório (férias) a cor-de-rosa.
 - **⬇ PDF do ano**: A4 horizontal com a grelha da época, a legenda, os mesociclos e a data da última alteração; na 2.ª página o calendário de jogos. Serve para enviar à direção e aos jogadores sempre que o plano muda.

@@ -571,6 +571,10 @@ const mc = await pg.evaluate(async (seg) => { const ks = est.plantel.filter((p) 
   r.cores = W.dias.map((x) => x.bloco && x.bloco.cor || "").join(","); calendario.tmcA.casa = false;
   r.fora = semanaMicro(seg).dias.map((x) => x.bloco && x.bloco.cor || "").slice(5).join(","); calendario.tmcA.casa = true;
   const aE = aEpoca; aEpoca = 2026; r.anual = (await pdfAnual()).getNumberOfPages(); aEpoca = aE;
+  // v106: local completo, equipa sem prefixo e competição a partir do calendário
+  r.loc = localJogo(normJogoCal({ local: "Estádio João Paulo II", localidade: "Angra do Heroísmo", ilha: "Terceira", casa: false, adversario: "SC Lusitânia" }));
+  r.chave = [chaveEq("SC Barreiro"), chaveEq("C União Micaelense"), chaveEq("Barreiro"), chaveEq("GD São Roque")].join(",");
+  r.compCal = [compDeCal(calendario.tmcA), compDeCal(calendario.tmcJ), compDeCal(calendario.tmcB)].join(",");
   r.cfa = ["2027-06-13", "2027-06-16"].map((d) => celulaAnual(d).cor + celulaAnual(d).letra).join(",");   // v105.2: no Ano o fundo é a prova (CFA azul escuro, Taça AFAH cinzento) e a letra casa (vermelho) / fora (azul claro)
   mcSeg = seg; uModo = "micro"; return r; }, SEGM);
 await pg.click("#tab-u"); await pg.waitForSelector(".mc-tab");
@@ -606,8 +610,15 @@ await pg.evaluate((seg) => { delete ciclos["micro-" + seg]; mcSample = undefined
 await pg.click("#mc-pad"); await pg.waitForSelector(".mc-pl"); mcUi.padrao = await pg.locator(".mc-pl").count(); await pg.click("#sheet-root [data-close]"); await pg.waitForTimeout(100);
 if (mc.md !== "MD-4,MD-3,MD+1,MD+2,MD" || mc.blocos !== "folga,,,jogo,,estagio,md" || mc.at !== "2,1" || mc.min !== 10 || mc.ut !== "UT 901" || mc.hora !== "19h30 - 21h00" || mc.n !== 77 || mc.pf !== "Texto escrito|true" || mc.repor || !mc.pdf
   || mc.cores !== ",,,#F28E86,,#F28E86,#F28E86" || mc.fora !== "#B3CEFB,#B3CEFB" || mc.anual !== 2 || mc.cfa !== "#1F3864#FF6B6B,#404040#FF6B6B"
+  || mc.loc !== "Estádio João Paulo II - Angra do Heroísmo (Ilha Terceira)" || mc.chave !== "barreiro,uniao-micaelense,barreiro,sao-roque" || mc.compCal !== "camp,livre,taca"
   || mcUi.blocos !== 4 || mcUi.campo !== "Jogo reduzido e finalização" || mcUi.fechado !== "fechado,0" || mcUi.reaberto !== "rascunho,2" || mcUi.padrao !== 9)
   erros.push("Microciclo: resumo errado " + JSON.stringify({ mc, mcUi }));
+const jogoAntes = await pg.evaluate(() => JSON.stringify(jogo));
+await pg.click("#tab-j"); await pg.click("#j-cal"); await pg.waitForSelector('[data-cal="tmcA"]'); await pg.click('[data-cal="tmcA"]');
+if (await pg.locator('[data-cal="tmcA"]').count()) await pg.click('[data-cal="tmcA"]'); await pg.waitForTimeout(150);
+const jc = await pg.evaluate(() => [jogo.calId, jogo.adversario, jogo.data, jogo.comp, jogo.casa, $("j-adv").value].join("|"));
+if (jc !== "tmcA|Oficial FC|2027-06-13|camp|casa|Oficial FC") erros.push("Jogo do calendário: dados errados " + jc);
+await pg.evaluate((s) => guardaJogo(normJogo(JSON.parse(s))), jogoAntes); await pg.click("#tab-u");
 await pg.evaluate((seg) => { ["tmcA", "tmcJ", "tmcB"].forEach((id) => delete calendario[id]); delete semanas[seg]; delete uts.tmc1;
   Object.keys(microCampo).filter((k) => k.startsWith(seg)).forEach((k) => delete microCampo[k]); delete microResumo[seg]; uModo = "ut"; }, SEGM);
 await pg.click("#tab-u"); await pg.click(".u-modo button[data-m='ano']"); await pg.waitForSelector(".pan");

@@ -151,13 +151,14 @@ async function pdfAnual(){ await carregaJsPdf(false);
       T(`${dataCurta(c.inicio)} a ${dataCurta(c.fim)}${c.nome?" · "+c.nome:""}`.slice(0,62),cx+18,cy,7,{al:"left"}); }); }
   /* página 2: calendário de jogos */
   doc.addPage(); y=cabecalho("CALENDÁRIO DE JOGOS");
-  const cols=[["DATA",70],["HORA",42],["",34],["ADVERSÁRIO",190],["COMPETIÇÃO",200],["JORNADA",120],["LOCAL",W0-656]], hr=js.length>30?12:14;
+  const cols=[["DATA",68],["HORA",38],["",34],["ADVERSÁRIO",128],["COMPETIÇÃO",128],["JORNADA",76],["LOCAL",W0-472]], hr=js.length>30?12:14;
   /* só a coluna casa / fora leva a cor do jogo; as linhas alternam para se lerem bem impressas */
-  const linha=(vals,cor,tinta,b,cj)=>{ let cx=X0; cols.forEach(([,w],n)=>{ box(cx,y,w,hr,n===2&&cj?cj:cor); T(vals[n],n>=3?cx+5:cx+w/2,y+hr/2,7.5,{al:n>=3?"left":"center",c:n===2&&cj?BR:tinta,b:b||n===2||n===3}); cx+=w; }); y+=hr; };
+  const linha=(vals,cor,tinta,b,cj)=>{ let cx=X0; cols.forEach(([,w],n)=>{ box(cx,y,w,hr,n===2&&cj?cj:cor); T(vals[n],n>=3?cx+5:cx+w/2,y+hr/2,cabe(vals[n],w-8,7.5,b||n===2||n===3),{al:n>=3?"left":"center",c:n===2&&cj?BR:tinta,b:b||n===2||n===3}); cx+=w; }); y+=hr; };
+  const cabe=(s,w,fs,bold)=>{ doc.setFont(F,bold?"bold":"normal"); for(;fs>5.5;fs-=.25){ doc.setFontSize(fs); if(doc.getTextWidth(F==="RC"?String(s||""):pdfTxt(s))<=w) break; } return fs; };
   linha(cols.map(c=>c[0]),INK,BR,1);
   if(!js.length){ T("Sem jogos no calendário desta época.",X0+W0/2,y+20,10); }
   js.forEach((j,n)=>{ const dt=new Date(j.data+"T12:00");
-    linha([`${DIAS_AB[dt.getDay()]} ${dt.toLocaleDateString("pt-PT")}`,j.hora||"",j.casa?"CASA":"FORA",j.adversario||"A definir",j.competicao,j.jornada,j.local||(j.casa?"":j.destino)],n%2?[246,244,240]:BR,INK,0,rgb(corJogo(j))); });
+    linha([`${DIAS_AB[dt.getDay()]} ${dt.toLocaleDateString("pt-PT")}`,j.hora||"",j.casa?"CASA":"FORA",j.adversario||"A definir",j.competicao,j.jornada,localJogo(j)||(j.casa?"":j.destino)],n%2?[246,244,240]:BR,INK,0,rgb(corJogo(j))); });
   const n=doc.getNumberOfPages(); for(let p=1;p<=n;p++){ doc.setPage(p); T(`SC Angrense · Planeamento anual ${aEpoca}/${aEpoca+1} · actualizado a ${atual} · ${p}/${n}`,PW/2,583,7,{c:[128,128,128]}); }
   return doc; }
 async function guardaPdfAnual(botao){ if(botao) botao.disabled=true; toast("A gerar o PDF do planeamento anual…");

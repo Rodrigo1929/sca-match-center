@@ -5,7 +5,7 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
 | Caminho | Tipo | Conteúdo |
 |---|---|---|
 | `estado/atual` | documento | Plantel (nº, nome, posição para o campo do plantel das UT escalão `esc` para os jovens da formação: Sub19/Sub17/Sub15, sem `esc` = sénior; e `alc` com as alcunhas separadas por vírgulas, para ler grupos escritos em texto), linhas de troca do banco, fase, equipa técnica |
-| `jogo/atual` | documento | Jogo em curso (adversário, data, competição, onze, suplentes, relógio, vídeo; `adv` = onze, sistema, cores e suplentes do adversário; `encaixe` = sítios das bolinhas no quadro Encaixe) — sem eventos, subs nem subsAdv |
+| `jogo/atual` | documento | Jogo em curso (adversário, data, competição, `calId` = jogo do calendário escolhido em «📅 Do calendário» (v106), onze, suplentes, relógio, vídeo; `adv` = onze, sistema, cores e suplentes do adversário; `encaixe` = sítios das bolinhas no quadro Encaixe) — sem eventos, subs nem subsAdv |
 | `jogo/vivo` | documento | Contadores do Ao vivo por parte, posse |
 | `jogo/notas` | documento | Notas do jogo |
 | `analise/atual` | documento | Estado do Pós-jogo (posse, sentido de ataque) — sem registos |
@@ -106,7 +106,8 @@ O jogo não se grava na semana: vem do calendário pela data (de manhã se for a
 
 ## Jogo do calendário (`calendario/{id}`)
 ```
-{ id, data: "AAAA-MM-DD", hora: "15:00", adversario, casa: true|false, competicao, jornada, local, nota,
+{ id, data: "AAAA-MM-DD", hora: "15:00", adversario, casa: true|false, competicao, jornada, local (campo), nota,
+  localidade, ilha ("Terceira"…"Corvo", "Madeira", "Continente"),   // v106: «Campo - Localidade (Ilha X)»
   deslocacao: true|false (jogo fora da ilha), destino (ex.: "S. Miguel"),
   emblema?: { id, w, h },        // imagem no armazenamento do link (assets)
   criadoPor, criadoEm, alteradoPor, alteradoEm }

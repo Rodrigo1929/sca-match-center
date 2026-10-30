@@ -210,5 +210,21 @@ function renderJogo(){ setTimeout(renderFichaCampos,0); setTimeout(avisoSup,0);
     sp.appendChild(b); });
   if(!sp.childElementCount) sp.innerHTML=`<p class="sub">Todos os jogadores do plantel são titulares. Adiciona jogadores no separador Plantel.</p>`;
 }
+/* ---------- escolher o jogo do calendário (v106): preenche os dados do jogo, que se podem mudar à mão depois ---------- */
+const compDeCal=j=>({CFA:"camp",TAT:"taca",ST:"taca",TIT:"tit",TP:"tp"})[siglaJogo(j)]||"livre";
+function folhaJogoDoCal(){ const hoje=isoDia(new Date()), js=listaJogosCal(), prox=js.filter(j=>j.data>=hoje), ant=js.filter(j=>j.data<hoje).reverse();
+  const li=j=>`<button class="btn jc-pick${jogo.calId===j.id?" primary":""}" data-cal="${esc(j.id)}" style="justify-content:flex-start;text-align:left;width:100%;min-height:44px">
+    <b>${esc(new Date(j.data+"T12:00").toLocaleDateString("pt-PT"))}${j.hora?" · "+esc(j.hora):""}</b>&nbsp;· ${j.casa?"vs":"@"} ${esc(j.adversario||"A definir")}&nbsp;<small class="sub">${esc([j.competicao,j.jornada].filter(Boolean).join(" · "))}</small></button>`;
+  folha(`<h3>Escolher o jogo do calendário</h3><p class="sub" style="margin:0">Preenche adversário, data, hora, prova, jornada, local, casa / fora e competição (regras das substituições). Podes mudar tudo à mão depois. O onze e os quadros não mudam.</p>
+    ${js.length?"":`<p class="sub">Sem jogos no calendário (Treino › Semana › + Jogo).</p>`}
+    ${prox.length?`<h4>Próximos</h4><div style="display:grid;gap:6px">${prox.map(li).join("")}</div>`:""}
+    ${ant.length?`<h4>Anteriores</h4><div style="display:grid;gap:6px">${ant.slice(0,10).map(li).join("")}</div>`:""}
+    <div class="actions"><button class="btn" data-close>Cancelar</button></div>`,(s,fecha)=>{
+    s.querySelectorAll("[data-cal]").forEach(b=>{ const j=calendario[b.dataset.cal]; if(!j) return;
+      const aplica=()=>{ fecha(); guardaJogo({...jogo,calId:j.id,adversario:j.adversario,data:j.data,hora:j.hora,prova:j.competicao,jornada:j.jornada,local:localJogo(j)||(j.casa?LOCAL_CASA:""),casa:j.casa?"casa":"fora",comp:compDeCal(j)});
+        toast(`Jogo com ${j.adversario||"o adversário"} preenchido`); };
+      /* outro adversário já no Jogo: 2 toques */
+      if(jogo.adversario&&chaveEq(jogo.adversario)!==chaveEq(j.adversario)) confirma2(b,"Toca outra vez: troca o adversário",aplica); else b.onclick=aplica; }); }); }
 let jTimer=null;
+$("j-cal").onclick=folhaJogoDoCal;
 ["j-adv","j-data"].forEach(id=>$(id).addEventListener("input",()=>{ clearTimeout(jTimer); jTimer=setTimeout(()=>{ const J=clone(jogo); J.adversario=$("j-adv").value.trim(); J.data=$("j-data").value; guardaJogo(J,true); },600); }));
