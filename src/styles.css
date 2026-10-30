@@ -491,7 +491,7 @@ table.cptab th .lnk{text-decoration:none;color:inherit;font:inherit;letter-spaci
 .psem .ps-ses .b{font-weight:800}
 .psem .ps-ses .t{color:#C00000;font-weight:800;text-decoration:underline}
 .psem .ps-ut{display:block;margin-top:4px;color:var(--ok,#1E9E3E);font-weight:700}
-.psem .ps-jogo{background:#FF6600;color:#fff;height:118px}
+.psem .ps-jogo{background:#F28E86;color:#fff;height:118px}
 .psem .ps-jogo span{display:block;line-height:1.35}.psem .ps-jogo .b{font-weight:800}
 .psem .ps-it{padding:3px 0}
 .psem .ps-it+.ps-it{border-top:1px solid #1B1A17;margin-top:3px}
@@ -643,3 +643,7 @@ small.mc-e.fechado,.mc-e.fechado{color:var(--ink);font-weight:600}
 .rj-ind{display:flex;flex-direction:column;gap:6px;max-height:34vh;overflow:auto}
 .rp-v{display:flex;gap:10px;overflow-x:auto;padding:6px 2px;background:var(--surface-2);border-radius:10px;min-height:120px}
 .rp-v img{height:min(56vh,520px);width:auto;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.18);flex:none}
+
+/* cores dos jogos (v105): estágio e viagem com a cor do jogo, texto branco */
+.psem .ps-it.ps-jg{color:#fff;padding:4px 6px}.psem .ps-it.ps-jg .t{color:#fff}
+.pan .pan-p.jogo,.pan .pan-p.jogo.fora{color:#1B1A17}

@@ -101,6 +101,8 @@ Ver `docs/regras.md`. As principais:
 
 - Relatório para jogadores (v104): `relJog/{jogo}` guarda só o que se escreve e escolhe (mensagens, lances `{rid, titulo}`, exportações); tudo o resto vem do jogo arquivado (ou do jogo em curso, `relJog/atual`, que passa para o id ao arquivar). As ações do Pós-jogo já têm jogador (`j`). O individual nunca leva dados de colegas (nem marcadores); nunca saem quadros, Modelo de Jogo, adversário, notas nem treino. QR dos lances = `linkVideoModo(...,"web")` com o vídeo do jogo; sem vídeo, «sem vídeo». ZIP próprio (`zipFicheiros`, sem compressão).
 
+- Cores dos jogos (v105, do plano do clube): em casa `#F28E86`, fora `#B3CEFB` (`corJogo`, blocos `casa`/`fora` em `regimes`), no plano semanal, no Micro e no Ano; estágio e viagem com a cor do jogo ligado (`jogoLigado`) e texto branco. PDF do planeamento anual (`pdfAnual`): grelha + calendário de jogos, data = última alteração da época.
+
 ## Forma de trabalhar
 - Antes de uma mudança grande, perguntar o objetivo e quem usa (escolha múltipla quando fizer sentido).
 - Cada versão publicada: atualizar `CHANGELOG.md`, subir a versão em `package.json` e no dossier do projeto.

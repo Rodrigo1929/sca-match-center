@@ -63,7 +63,7 @@ function repoeAnual(As,Cs){ if(As){ Object.keys(anual).forEach(id=>{ if(!As[id])
 const mesesEpoca=()=>Array.from({length:12},(_,i)=>{ const m=(6+i)%12, a=aEpoca+(6+i>=12?1:0); return {a,m,dias:new Date(a,m+1,0).getDate()}; });
 const isoAMD=(a,m,d)=>`${a}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
 function celulaAnual(d){ const js=jogosDoDia(d), A=anual[d];
-  if(js.length){ const j=js[0]; return {cls:j.casa?"jogo":"jogo fora",txt:siglaJogo(j),tit:`${j.casa?"vs":"@"} ${j.adversario||"?"}${j.hora?" · "+j.hora:""} · ${[j.competicao,j.jornada].filter(Boolean).join(" · ")}`}; }
+  if(js.length){ const j=js[0]; return {cls:j.casa?"jogo":"jogo fora",cor:corJogo(j),txt:siglaJogo(j),tit:`${j.casa?"vs":"@"} ${j.adversario||"?"}${j.hora?" · "+j.hora:""} · ${[j.competicao,j.jornada].filter(Boolean).join(" · ")}`}; }
   if(!A) return {cls:"",txt:"",tit:"Livre"};
   if(A.tipo==="ut") return {cls:"ut",txt:String(A.ut||"UT"),tit:`UT ${A.ut||""}${A.txt?" · "+A.txt:""}`};
   if(A.tipo==="folga") return {cls:"folga",txt:"F",tit:"Folga"+(A.txt?" · "+A.txt:"")};
@@ -76,7 +76,7 @@ function renderAnualNav(){ const nav=$("u-nav"), ms=listaMesos().filter(c=>c.fim
   ligaModoUT(nav); $("a-ep-ant").onclick=()=>{ aEpoca--; renderUT(); }; $("a-ep-seg").onclick=()=>{ aEpoca++; renderUT(); };
   $("a-meso-n").onclick=()=>folhaMeso(null); nav.querySelectorAll("[data-meso]").forEach(b=>b.onclick=()=>folhaMeso(b.dataset.meso)); }
 function renderAnualCorpo(){ const bx=$("u-corpo"), bar=$("u-bar"), tg=$("u-tag"), hoje=isoDia(new Date());
-  $("u-tit").textContent=`Planeamento anual ${aEpoca}/${aEpoca+1}`; tg.hidden=false; tg.textContent="ANO"; tg.style.background="#C00000"; bar.innerHTML=`<button class="btn sm" id="a-jogo">+ Jogo</button><button class="btn sm" id="a-pmd">⚙ Padrão MD</button>`; $("a-pmd").onclick=()=>folhaPadraoMD();
+  $("u-tit").textContent=`Planeamento anual ${aEpoca}/${aEpoca+1}`; tg.hidden=false; tg.textContent="ANO"; tg.style.background="#C00000"; bar.innerHTML=`<button class="btn sm" id="a-jogo">+ Jogo</button><button class="btn sm" id="a-pmd">⚙ Padrão MD</button><button class="btn sm primary" id="a-pdf">⬇ PDF do ano</button>`; $("a-pmd").onclick=()=>folhaPadraoMD(); $("a-pdf").onclick=e=>guardaPdfAnual(e.currentTarget);
   $("a-jogo").onclick=()=>folhaJogoCal(null,hoje);
   let h=`<div class="pan-wrap"><table class="pan"><thead><tr><th class="pan-mes"></th>${Array.from({length:31},(_,i)=>`<th>${i+1}</th>`).join("")}</tr></thead><tbody>`;
   mesesEpoca().forEach(({a,m,dias})=>{ const ds=Array.from({length:31},(_,i)=>i<dias?isoAMD(a,m,i+1):null);
@@ -87,7 +87,7 @@ function renderAnualCorpo(){ const bx=$("u-corpo"), bar=$("u-bar"), tg=$("u-tag"
       let k=1; while(i+k<31&&ds[i+k]&&ds[i+k]<=M.fim) k++; const Me=mesoDe(d);
       mi+=`<td class="pan-mi" colspan="${k}" data-mi="${M.inicio}" style="background:${Me?corPeriodo(Me.periodo):"#EEE"}" title="Microciclo ${M.n}${Me?" · Mesociclo "+Me.n:""}">${M.inicio>=ds[i]||i===0?"M"+(M.n||"?"):""}</td>`; i+=k; }
     h+=`<tr class="pan-mic">${mi}</tr>`;
-    h+=`<tr class="pan-pl">${ds.map(d=>{ if(!d) return `<td class="pan-x"></td>`; const c=celulaAnual(d); return `<td class="pan-p ${c.cls}" data-d="${d}" title="${esc(c.tit)}">${esc(c.txt)}</td>`; }).join("")}</tr>`; });
+    h+=`<tr class="pan-pl">${ds.map(d=>{ if(!d) return `<td class="pan-x"></td>`; const c=celulaAnual(d); return `<td class="pan-p ${c.cls}" data-d="${d}" title="${esc(c.tit)}"${c.cor?` style="background:${c.cor}"`:""}>${esc(c.txt)}</td>`; }).join("")}</tr>`; });
   h+=`</tbody></table></div><p class="sub" style="margin:8px 14px">Toca num dia para marcar UT, folga, interrupção ou outro; toca na linha dos microciclos para mudar o nº da semana. Os jogos vêm do calendário. O plano semanal e as UT novas vão buscar aqui o nº da UT, as folgas e o microciclo.</p>`;
   bx.innerHTML=h;
   bx.querySelectorAll("td.pan-p").forEach(td=>td.onclick=()=>folhaDiaAnual(td.dataset.d));
@@ -95,8 +95,68 @@ function renderAnualCorpo(){ const bx=$("u-corpo"), bar=$("u-bar"), tg=$("u-tag"
 function renderAnualPainel(){ const pn=$("u-panel"), ini=`${aEpoca}-07-01`, fim=`${aEpoca+1}-06-30`, ds=Object.values(anual).filter(a=>a.id>=ini&&a.id<=fim), js=listaJogosCal().filter(j=>j.data>=ini&&j.data<=fim);
   pn.innerHTML=`<header><h2>Resumo da época</h2><p class="sub">${ds.filter(a=>a.tipo==="ut").length} UT planeadas · ${ds.filter(a=>a.tipo==="folga").length} folgas · ${js.length} jogos (${js.filter(j=>j.casa).length} em casa)</p></header>
     <div class="add"><h3>Legenda</h3><div class="pan-leg">${PERIODOS.map(([k,n,c])=>`<span><i style="background:${c}"></i>${n}</span>`).join("")}
-      <span><i class="jogo"></i>Jogo em casa</span><span><i class="jogo fora"></i>Jogo fora</span><span><i class="folga"></i>Folga</span><span><i class="pausa"></i>Interrupção</span></div>
+      <span><i style="background:${corJogo({casa:true})}"></i>Jogo em casa</span><span><i style="background:${corJogo({casa:false})}"></i>Jogo fora</span><span><i class="folga"></i>Folga</span><span><i class="pausa"></i>Interrupção</span></div>
       <p class="sub" style="margin:6px 0 0">TAT Taça AFAH · CFA Campeonato dos Açores · TIT Taça Ilha Terceira · TP Taça de Portugal · ST Supertaça · JT jogo-treino</p></div>`; }
+
+/* ---------- PDF do planeamento anual (v105): para enviar à direção e aos jogadores quando há alterações ----------
+   Página 1 = a grelha do ecrã (meses × dias, microciclos com a cor do período, jogos com a cor casa / fora), legenda e mesociclos.
+   Página 2 = calendário de jogos da época. Data de atualização = a última alteração no anual, nos ciclos ou nos jogos da época. */
+async function pdfAnual(){ await carregaJsPdf(false);
+  const doc=new window.jspdf.jsPDF({unit:"pt",format:"a4",orientation:"landscape"}), PW=841.89, ini=`${aEpoca}-07-01`, fim=`${aEpoca+1}-06-30`;
+  let F="helvetica"; try{ ["400","700"].forEach(p=>{ const b=IMG_DATA[`fonts/rc-${p}.ttf`].split(",")[1]; doc.addFileToVFS(`rc-${p}.ttf`,b); doc.addFont(`rc-${p}.ttf`,"RC",p==="700"?"bold":"normal"); }); F="RC"; }catch(e){ F="helvetica"; }
+  const rgb=h=>[1,3,5].map(i=>parseInt(String(h).slice(i,i+2),16)||0), RED=[192,0,0], INK=[27,26,23], BR=[255,255,255], LIN=[207,202,192];
+  const T=(t,x,y,s,o={})=>{ doc.setFont(F,o.b?"bold":"normal"); doc.setFontSize(s); doc.setTextColor(...(o.c||INK)); doc.text(F==="RC"?String(t):pdfTxt(t),x,y,{align:o.al||"center",baseline:"middle"}); };
+  const box=(x,y,w,h,cor,linha=LIN)=>{ if(cor){ doc.setFillColor(...cor); doc.rect(x,y,w,h,"F"); } if(linha){ doc.setDrawColor(...linha); doc.setLineWidth(.4); doc.rect(x,y,w,h); } };
+  const js=listaJogosCal().filter(j=>j.data>=ini&&j.data<=fim), ms=listaMesos().filter(c=>c.fim>=ini&&c.inicio<=fim);
+  const ult=[...Object.values(anual).filter(a=>a.id>=ini&&a.id<=fim),...Object.values(ciclos).filter(c=>c.fim>=ini&&c.inicio<=fim),...js].map(x=>x.alteradoEm||"").sort().pop();
+  const atual=new Date(ult||Date.now()).toLocaleDateString("pt-PT"), X0=24, W0=PW-48;
+  const cabecalho=tit=>{ const y=22, h=40; box(X0,y,W0,h,null,INK);
+    try{ doc.addImage(IMG_DATA["slides/af.png"],"PNG",X0+8,y+4,25,32); }catch(e){}
+    try{ doc.addImage(IMG_DATA["slides/logo.png"],"PNG",X0+W0-41,y+3,35,34); }catch(e){}
+    box(X0+44,y,170,h/2,RED,null); T("SC ANGRENSE",X0+129,y+h/4,10,{c:BR,b:1}); T(tit,X0+W0/2,y+h/4,13,{b:1});
+    box(X0+W0-214,y,170,h/2,RED,null); T(`ÉPOCA ${aEpoca} | ${aEpoca+1}`,X0+W0-129,y+h/4,10,{c:BR,b:1});
+    box(X0+44,y+h/2,W0-88,h/2,[242,240,236],null); T(`FUTEBOL - SENIORES   ·   ACTUALIZAÇÃO ${atual}`,X0+W0/2,y+h*.75,8.5,{b:1});
+    doc.setDrawColor(...INK); doc.setLineWidth(.8); doc.line(X0+44,y,X0+44,y+h); doc.line(X0+W0-44,y,X0+W0-44,y+h); return y+h+8; };
+  /* página 1: a grelha */
+  let y=cabecalho("PLANEAMENTO ANUAL");
+  const mc=42, dw=(W0-mc)/31, hH=12, hD=9, hM=10.5, hP=14, xd=i=>X0+mc+i*dw;
+  box(X0,y,W0,hH,INK,null); for(let i=0;i<31;i++) T(i+1,xd(i)+dw/2,y+hH/2,7,{c:BR,b:1}); y+=hH;
+  mesesEpoca().forEach(({a,m,dias})=>{ const ds=Array.from({length:31},(_,i)=>i<dias?isoAMD(a,m,i+1):null), y0=y;
+    box(X0,y,mc,hD+hM+hP,INK,null); T(MESES_AB[m],X0+mc/2,y+(hD+hM+hP)/2-4,9,{c:BR,b:1}); T(a,X0+mc/2,y+(hD+hM+hP)/2+6,6.5,{c:BR});
+    ds.forEach((d,i)=>{ if(!d){ box(xd(i),y,dw,hD+hM+hP,[244,242,238],null); return; } const dw_=new Date(d+"T12:00").getDay(), fds=dw_===0||dw_===6;
+      box(xd(i),y,dw,hD,fds?[238,234,227]:BR); T(DIAS_AB[dw_],xd(i)+dw/2,y+hD/2,5.5,{c:fds?INK:[110,106,98]}); });
+    y+=hD; let i=0;
+    while(i<31){ const d=ds[i]; if(!d){ i++; continue; } const M=microDe(d); if(!M){ box(xd(i),y,dw,hM,BR); i++; continue; }
+      let k=1; while(i+k<31&&ds[i+k]&&ds[i+k]<=M.fim) k++; const Me=mesoDe(d);
+      box(xd(i),y,dw*k,hM,rgb(Me?corPeriodo(Me.periodo):"#EEEEEE")); if(M.inicio>=d||i===0) T("M"+(M.n||"?"),xd(i)+dw*k/2,y+hM/2,6.5,{b:1}); i+=k; }
+    y+=hM;
+    ds.forEach((d,i)=>{ if(!d) return; const c=celulaAnual(d), A=anual[d];
+      const fundo=c.cor?rgb(c.cor):c.cls==="folga"?[252,228,160]:c.cls==="pausa"?[255,125,125]:c.cls==="outro"?[230,221,242]:BR;
+      box(xd(i),y,dw,hP,fundo); if(c.txt) T(c.txt,xd(i)+dw/2,y+hP/2,c.cls==="outro"?5.5:6.5,{b:1,c:c.cls==="pausa"?BR:INK}); });
+    y+=hP; doc.setDrawColor(...INK); doc.setLineWidth(.6); doc.line(X0,y,X0+W0,y); });
+  doc.setDrawColor(...INK); doc.setLineWidth(.8); doc.rect(X0,y-12*(hD+hM+hP)-hH,W0,12*(hD+hM+hP)+hH);
+  /* legenda e mesociclos */
+  y+=12; let x=X0; const leg=[...PERIODOS.map(([k,n,c])=>[n,c]),["Jogo em casa",corJogo({casa:true})],["Jogo fora",corJogo({casa:false})],["Folga","#FCE4A0"],["Interrupção","#FF7D7D"]];
+  leg.forEach(([n,c])=>{ box(x,y-4,9,9,rgb(c)); T(n,x+13,y+.5,7.5,{al:"left"}); doc.setFont(F,"normal"); doc.setFontSize(7.5); x+=doc.getTextWidth(F==="RC"?n:pdfTxt(n))+26; });
+  y+=13; T("TAT Taça AFAH · CFA Campeonato dos Açores · TIT Taça Ilha Terceira · TP Taça de Portugal · ST Supertaça · JT jogo-treino",X0,y+.5,7,{al:"left",c:[110,106,98]});
+  if(ms.length){ y+=14; const cw=W0/Math.min(4,ms.length);
+    ms.forEach((c,n)=>{ const cx=X0+(n%4)*cw, cy=y+Math.floor(n/4)*12; box(cx,cy-4.5,14,9,rgb(corPeriodo(c.periodo))); T(c.n||"–",cx+7,cy,6.5,{b:1});
+      T(`${dataCurta(c.inicio)} a ${dataCurta(c.fim)}${c.nome?" · "+c.nome:""}`.slice(0,62),cx+18,cy,7,{al:"left"}); }); }
+  /* página 2: calendário de jogos */
+  doc.addPage(); y=cabecalho("CALENDÁRIO DE JOGOS");
+  const cols=[["DATA",70],["HORA",42],["",34],["ADVERSÁRIO",190],["COMPETIÇÃO",200],["JORNADA",120],["LOCAL",W0-656]], hr=js.length>30?12:14;
+  /* só a coluna casa / fora leva a cor do jogo; as linhas alternam para se lerem bem impressas */
+  const linha=(vals,cor,tinta,b,cj)=>{ let cx=X0; cols.forEach(([,w],n)=>{ box(cx,y,w,hr,n===2&&cj?cj:cor); T(vals[n],n>=3?cx+5:cx+w/2,y+hr/2,7.5,{al:n>=3?"left":"center",c:n===2&&cj?BR:tinta,b:b||n===2||n===3}); cx+=w; }); y+=hr; };
+  linha(cols.map(c=>c[0]),INK,BR,1);
+  if(!js.length){ T("Sem jogos no calendário desta época.",X0+W0/2,y+20,10); }
+  js.forEach((j,n)=>{ const dt=new Date(j.data+"T12:00");
+    linha([`${DIAS_AB[dt.getDay()]} ${dt.toLocaleDateString("pt-PT")}`,j.hora||"",j.casa?"CASA":"FORA",j.adversario||"A definir",j.competicao,j.jornada,j.local||(j.casa?"":j.destino)],n%2?[246,244,240]:BR,INK,0,rgb(corJogo(j))); });
+  const n=doc.getNumberOfPages(); for(let p=1;p<=n;p++){ doc.setPage(p); T(`SC Angrense · Planeamento anual ${aEpoca}/${aEpoca+1} · actualizado a ${atual} · ${p}/${n}`,PW/2,583,7,{c:[128,128,128]}); }
+  return doc; }
+async function guardaPdfAnual(botao){ if(botao) botao.disabled=true; toast("A gerar o PDF do planeamento anual…");
+  try{ const doc=await pdfAnual(); await guardaFicheiro(`SCA_PLANEAMENTO ANUAL_${aEpoca}-${aEpoca+1}.pdf`,doc.output("arraybuffer"),"application/pdf"); toast("PDF do planeamento anual guardado"); }
+  catch(e){ if(e?.code!=="declined") toast(e?.message==="script"?"Não consegui carregar o gerador de PDF. Verifica a internet.":"Não foi possível gerar o PDF ("+(e?.code||e?.message||"erro")+")"); }
+  finally{ if(botao) botao.disabled=false; } }
 
 /* ---------- folhas ---------- */
 function folhaDiaAnual(d){ const A=anual[d], js=jogosDoDia(d), M=microDe(d), Me=mesoDe(d); let tipo=A?A.tipo:"livre";

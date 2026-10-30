@@ -50,6 +50,13 @@ function normJogoCal(d){ const s=v=>String(v??"").trim(), im=d.emblema, casa=d.c
 Object.keys(semanas).forEach(id=>{ try{ semanas[id]=normSemana({...semanas[id],id}); }catch(e){ delete semanas[id]; } });
 Object.keys(calendario).forEach(id=>{ try{ calendario[id]=normJogoCal({...calendario[id],id}); }catch(e){ delete calendario[id]; } });
 
+/* cores dos jogos (v105, como no plano do clube): em casa vermelho claro, fora azul claro, com texto branco.
+   O estágio e a viagem levam a cor do jogo a que se ligam. As cores mudam-se em Micro › ⚙ Padrão MD › Regimes e cores. */
+const COR_CASA="#F28E86", COR_FORA="#B3CEFB";
+const corJogo=j=>{ const k=j&&j.casa?"casa":"fora"; return typeof corBloco==="function"?corBloco(k):(k==="casa"?COR_CASA:COR_FORA); };
+/* jogo a que um estágio ou viagem se liga: o do dia, o seguinte até 2 dias depois, ou o da véspera (regresso) */
+function jogoLigado(d){ const js=listaJogosCal(); return js.find(j=>j.data===d)||js.find(j=>j.data>d&&j.data<=diaMais(d,2))||js.filter(j=>j.data<d&&j.data>=diaMais(d,-1)).pop()||null; }
+const ativJogo=x=>x.tipo==="viagem"||(x.tipo==="outro"&&/est[aá]gio|concentra|viagem/i.test(x.txt||""));
 const listaSemanas=()=>Object.values(semanas).sort((a,b)=>b.inicio.localeCompare(a.inicio));
 const listaJogosCal=()=>Object.values(calendario).sort((a,b)=>(a.data+a.hora).localeCompare(b.data+b.hora));
 const jogosDoDia=d=>listaJogosCal().filter(j=>j.data===d);
@@ -151,11 +158,12 @@ function renderSemCorpo(S){ const bx=$("u-corpo"), bar=$("u-bar"), tg=$("u-tag")
   bar.innerHTML=`<button class="btn sm" id="s-cab">✎ Semana e observações</button><button class="btn sm" id="s-jogo">+ Jogo</button><button class="btn sm primary" id="s-pdf">⬇ PDF do plano</button>`;
   $("s-cab").onclick=()=>folhaCabSemana(S.id); $("s-jogo").onclick=()=>folhaJogoCal(null,S.inicio); $("s-pdf").onclick=e=>guardaPdfSemana(S.id,e.currentTarget);
   const cel=(d,t)=>{ const D=S.dias[d], j=jogoDoTurno(d,t), xs=D[t], at=`data-d="${d}" data-t="${t}"`;
-    if(j) return `<td class="ps-jogo" ${at}>${htmlLinhasSem(linhasJogo(j,D.jogo))}${xs.map(x=>`<div class="ps-it">${htmlLinhasSem(linhasAtividade(x))}</div>`).join("")}</td>`;
+    if(j) return `<td class="ps-jogo" style="background:${corJogo(j)}" ${at}>${htmlLinhasSem(linhasJogo(j,D.jogo))}${xs.map(x=>`<div class="ps-it">${htmlLinhasSem(linhasAtividade(x))}</div>`).join("")}</td>`;
     if(!xs.length) return `<td class="ps-vazio" ${at} title="Tocar para marcar"></td>`;
     if(xs.length===1&&xs[0].tipo==="folga") return `<td class="ps-folga1" ${at}><b>FOLGA</b></td>`;
     return `<td class="ps-ses" ${at}>${xs.map(x=>{ const U=x.tipo==="treino"?utDoTreino(x.treino):null;
-      return `<div class="ps-it${x.tipo==="folga"?" folga":""}">${htmlLinhasSem(linhasAtividade(x))}${U&&U.data===d?`<small class="ps-ut" title="A UT deste treino já está feita">UT${U.numero} ✓</small>`:""}</div>`; }).join("")}</td>`; };
+      const Jl=ativJogo(x)?jogoLigado(d):null;
+      return `<div class="ps-it${x.tipo==="folga"?" folga":""}${Jl?" ps-jg":""}"${Jl?` style="background:${corJogo(Jl)}"`:""}>${htmlLinhasSem(linhasAtividade(x))}${U&&U.data===d?`<small class="ps-ut" title="A UT deste treino já está feita">UT${U.numero} ✓</small>`:""}</div>`; }).join("")}</td>`; };
   const locais=(d,t)=>{ const j=jogoDoTurno(d,t); if(j) return [j.local||(j.casa?LOCAL_CASA:j.destino)].filter(Boolean);
     return [...new Set(S.dias[d][t].filter(x=>x.tipo!=="folga"&&x.local).map(x=>x.local))]; };
   const loc=(d,t)=>{ const l=locais(d,t).join(" · "); return `<td class="ps-loc${l?"":" vazio"}">${esc(l.toUpperCase())}</td>`; };
@@ -272,7 +280,7 @@ async function pdfSemana(S){
   const doc=new window.jspdf.jsPDF({unit:"pt",format:"a4",orientation:"landscape"});
   /* letra condensada da app (a do plano do clube é parecida); se falhar, Helvetica */
   let F="helvetica"; try{ ["400","700"].forEach(p=>{ const b=IMG_DATA[`fonts/rc-${p}.ttf`].split(",")[1]; doc.addFileToVFS(`rc-${p}.ttf`,b); doc.addFont(`rc-${p}.ttf`,"RC",p==="700"?"bold":"normal"); }); doc.setFont("RC","normal"); F="RC"; }catch(e){ F="helvetica"; }
-  const RED=[192,0,0], INK=[0,0,0], BR=[255,255,255], CINZ=[128,128,128], ESC=[64,64,64], CL=[217,217,217], FOL=[252,228,160], LAR=[255,102,0];
+  const RED=[192,0,0], INK=[0,0,0], BR=[255,255,255], CINZ=[128,128,128], ESC=[64,64,64], CL=[217,217,217], FOL=[252,228,160], rgbHex=h=>[1,3,5].map(i=>parseInt(String(h).slice(i,i+2),16)||0);
   const T=(t,x,y,s,o={})=>{ doc.setFont(F,o.b?"bold":"normal"); doc.setFontSize(s); doc.setTextColor(...(o.c||INK)); doc.text(F==="RC"?String(t):pdfTxt(t),x,y,{align:o.al||"center",baseline:"middle"});
     if(o.u){ const w=doc.getTextWidth(String(t)); doc.setDrawColor(...(o.c||INK)); doc.setLineWidth(.6); doc.line(x-w/2,y+s*.45,x+w/2,y+s*.45); } };
   const box=(x,y,w,h,cor,linha=true)=>{ if(cor){ doc.setFillColor(...cor); doc.rect(x,y,w,h,"F"); } if(linha){ doc.setDrawColor(...INK); doc.setLineWidth(.5); doc.rect(x,y,w,h); } };
@@ -307,14 +315,15 @@ async function pdfSemana(S){
   ds.forEach((d,i)=>{ const x=xc(i), D=S.dias[d], jogos=jogosDoDia(d);
     if(D.folga&&!jogos.length){ box(x,yM,cw,hM*2+hL,FOL); "FOLGA".split("").forEach((c,k)=>T(c,x+cw/2,yM+hM-30+k*30,22,{b:1})); box(x,yLT,cw,hL,ESC); return; }
     [["manha",yM,yLM],["tarde",yT,yLT]].forEach(([t,yy,yl])=>{ const j=jogos.find(z=>turnoDoJogo(z)===t), xs=D[t];
-      if(j){ box(x,yy,cw,hM,LAR); let top=yy+8; if(emb[j.id]){ const e=j.emblema, r=e.w/e.h, eh=32, ew=Math.min(cw-20,eh*r); try{ doc.addImage(emb[j.id],/png/i.test(emb[j.id].slice(0,30))?"PNG":"JPEG",x+cw/2-ew/2,top,ew,eh); }catch(_){} top+=eh+4; }
+      if(j){ box(x,yy,cw,hM,rgbHex(corJogo(j))); let top=yy+8; if(emb[j.id]){ const e=j.emblema, r=e.w/e.h, eh=32, ew=Math.min(cw-20,eh*r); try{ doc.addImage(emb[j.id],/png/i.test(emb[j.id].slice(0,30))?"PNG":"JPEG",x+cw/2-ew/2,top,ew,eh); }catch(_){} top+=eh+4; }
         const L=quebra([...linhasJogo(j,D.jogo),...xs.flatMap(z=>[{gap:5},...linhasAtividade(z)])]), disp=yy+hM-top-6, k=Math.min(1,disp/altura(L));
         blocoTxt(L,x+cw/2,top,disp,BR,k);
         localPdf(j.local||(j.casa?LOCAL_CASA:j.destino),x,yl); return; }
       if(!xs.length){ box(x,yy,cw,hM,CINZ); box(x,yl,cw,hL,ESC); return; }
       /* cada atividade na sua faixa (a folga a amarelo) */
       const LS=xs.map(z=>quebra(linhasAtividade(z))), hs=xs.map((z,n)=>z.tipo==="folga"?30:altura(LS[n])+14), tot=hs.reduce((a,b)=>a+b,0), k=Math.min(1,hM/tot); let yA=yy;
-      xs.forEach((z,n)=>{ const h=n===xs.length-1?yy+hM-yA:hs[n]*hM/tot; box(x,yA,cw,h,z.tipo==="folga"?FOL:BR); blocoTxt(LS[n],x+cw/2,yA,h,INK,k); yA+=h; });
+      xs.forEach((z,n)=>{ const h=n===xs.length-1?yy+hM-yA:hs[n]*hM/tot, Jl=ativJogo(z)?jogoLigado(d):null;
+        box(x,yA,cw,h,z.tipo==="folga"?FOL:Jl?rgbHex(corJogo(Jl)):BR); blocoTxt(LS[n],x+cw/2,yA,h,Jl?BR:INK,k); yA+=h; });
       localPdf([...new Set(xs.filter(z=>z.tipo!=="folga"&&z.local).map(z=>z.local))].join(" · "),x,yl); }); });
   /* observações e rodapé */
   y=yLT+hL+8; box(X0,y,cl,hE,CL); T("OBSERVAÇÕES",X0+cl/2,y+hE/2,9,{b:1}); box(X0+cl,y,W0-cl,hE,BR);

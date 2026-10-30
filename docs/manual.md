@@ -82,6 +82,11 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - **Treino › Rankings**: Rei do Meinho e Rei das Cuecas com 👑 (empate partilha o título); total, UT com meinho em que esteve presente, média por UT; toca num atleta para ver as ocorrências. Os GR entram como os outros. Filtros: época, mesociclo, microciclo. **⬇ CSV**.
 - **Histórico do Excel** (v97): os 21 passes e as cuecas do Excel (setembro e outubro de 2026) contam pela data de cada treino; «UT com meinho» conta quando o atleta estava presente (presenças do emjogo). Os registos de 23/10 ficaram na UT39 (21/10).
 
+## Planeamento anual (Treino › Ano): cores e PDF (v105)
+- Jogos em casa a **vermelho claro** e fora a **azul claro**, como no plano semanal do clube (também no plano semanal e no Micro; o estágio e a viagem levam a cor do jogo).
+- **⬇ PDF do ano**: A4 horizontal com a grelha da época, a legenda, os mesociclos e a data da última alteração; na 2.ª página o calendário de jogos. Serve para enviar à direção e aos jogadores sempre que o plano muda.
+- As cores mudam-se em ⚙ Padrão MD › Regimes e cores (blocos Folga, Jogo em casa, Jogo fora).
+
 ## Resumo do microciclo (Treino › Micro) (v101)
 - À esquerda, os microciclos da época com o estado: **Rascunho**, **Pronto a fechar** (a última UT já foi dada e todas têm presenças) ou **🔒 Fechado**. A semana atual abre sozinha.
 - **Cabeçalho**: macrociclo (período do mesociclo), mesociclo com a **designação** (escreve-a no mesociclo em Treino › Ano), microciclo, duração e «xGR + yJG (zL)» contado pelas presenças das UT da semana (L = marcados com Lesão).
@@ -90,7 +95,7 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
   - **MD** de cada dia (no cabeçalho do dia): automático pelo próximo jogo **oficial** (os jogos-treino não contam); toca para acertar à mão (fica com *).
   - Hora e local vêm do plano semanal; UT, volume (minutos das UT, sem complementares) e exercícios vêm das UT.
   - Regime, nível de volume, objetivo e as 3 partes vêm do **Padrão MD**; o texto das partes junta a lista dos exercícios da UT. Em cinzento = automático; toca para escrever (fica a preto). **↺ Automático** volta ao texto da app (2 toques).
-  - Dias sem treino aparecem em bloco: **FOLGA**, **JOGO-TREINO** (adversário e local), **ESTÁGIO / DESLOCAÇÃO** (viagem do plano semanal) e **MD** com o adversário.
+  - Dias sem treino aparecem em bloco: **FOLGA**, **JOGO-TREINO** (adversário e local), **ESTÁGIO / DESLOCAÇÃO** (viagem do plano semanal) e **MD** com o adversário. Desde a v105 o jogo e o estágio / viagem têm a cor do jogo: **vermelho claro em casa, azul claro fora**, com texto branco.
 - **Blocos finais**: o jogo anterior (resultado, competição e números do jogo arquivado) e quem jogou com os minutos vêm do Histórico; por baixo escreves a análise. Pontos positivos e a melhorar.
 - **🔒 Fechar microciclo** (2 toques): fica só de leitura, com data e histórico. **Reabrir** (2 toques). Se uma UT da semana mudar depois do fecho, aparece um aviso (o texto não muda sozinho).
 - **⬇ PDF**: A4 horizontal como o Excel do clube; os blocos finais vão para a 2.ª página.

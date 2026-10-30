@@ -8,7 +8,7 @@
    microResumo/{seg}        = { estado: "rascunho"|"fechado", fechadoEm, fechadoPor, hist: [{acao, em, por}] } */
 const MD_LINHAS=["MD+1","MD+2","MD-6","MD-5","MD-4","MD-3","MD-2","MD-1","MD"];
 const NIVEIS_VOL=["Baixo","Baixo/Moderado","Moderado","Moderado/Alto","Alto"];
-const BLOCOS_MC=[["folga","FOLGA","#F4E690"],["jogo","JOGO / JOGO-TREINO","#C00000"],["md","MATCH DAY (jogo oficial)","#00B050"],["estagio","ESTÁGIO / DESLOCAÇÃO","#BDD7EE"]];
+const BLOCOS_MC=[["folga","FOLGA","#F4E690"],["casa","JOGO EM CASA (e o estágio)","#F28E86"],["fora","JOGO FORA (e a viagem)","#B3CEFB"]];   // v105: cores do plano do clube
 const PARTES_MC=[["pi","inicial","Parte inicial"],["pf","fundamental","Parte fundamental"],["pfin","final","Parte final"]];
 const FINAIS_MC=[["analise","Análise do jogo anterior e observações"],["perf","Análise da performance dos jogadores no último jogo"],["positivos","Pontos positivos"],["melhorar","Pontos a melhorar"]];
 const DIAS_MC=["2ª","3ª","4ª","5ª","6ª","Sáb","Dom"], DIAS_MC_PDF=["2ª Feira","3ª Feira","4ª Feira","5ª Feira","6ª Feira","Sábado","Domingo"];
@@ -45,6 +45,9 @@ const gravaMdP=P=>{ const N=normMdP({...P,...autoria()}); mdPadrao[N.id]=N; grav
 const gravaRegime=R=>{ const N=normRegime({...R,...autoria()}); regimes[N.id]=N; gravaDoc("regimes/"+N.id,N); guardaMicroLocal(); return N; };
 const rotRegime=R=>R?`${R.nome}${R.int?` (${R.int})`:""}`:"";
 const corBloco=k=>(regimes[k]&&regimes[k].cor)||(BLOCOS_MC.find(b=>b[0]===k)||[0,0,"#D9D9D9"])[2];
+/* cor e texto de um bloco do dia: jogo e estágio/viagem pela cor do jogo (casa / fora) com texto branco, como no plano do clube */
+const corBlocoMc=B=>B.cor||corBloco(B.k);
+const tintaBlocoMc=B=>B.cor?"#FFFFFF":tintaDe(corBloco(B.k));
 const listaRegimes=()=>Object.values(regimes).filter(R=>!R.bloco).sort((a,b)=>a.ordem-b.ordem||a.nome.localeCompare(b.nome,"pt"));
 /* texto escuro ou claro conforme a cor de fundo */
 const tintaDe=hex=>{ const h=corOk(hex)||"#FFFFFF", r=parseInt(h.slice(1,3),16), g=parseInt(h.slice(3,5),16), b=parseInt(h.slice(5,7),16); return (r*299+g*587+b*114)/1000<140?"#FFFFFF":"#1B1A17"; };
@@ -57,9 +60,9 @@ function semanaMicro(seg){ const fim=diaMais(seg,6), hoje=isoDia(new Date()), S=
     const z=S?S.dias[d]:null, ses=z?[...z.manha,...z.tarde]:[], trs=ses.filter(x=>x.tipo==="treino"), via=ses.find(x=>x.tipo==="viagem"), A=anual[d];
     const mdM=campoMc(seg,d+".md"), mdA=mdAuto(d), md=mdM!==null?mdM:mdA, treina=us.length>0||trs.length>0, P=(treina||jJT||!z)?mdPadrao[md]||null:null;   // dia sem treino no plano: sem textos do Padrão MD
     let bloco=null;
-    if(jOf) bloco={k:"md",txt:`MD · ${jOf.adversario||"JOGO"}`.toUpperCase(),sub:[jOf.hora?hhMc(jOf.hora):"",jOf.casa?localCurto(jOf.local||LOCAL_CASA):(jOf.local||jOf.destino||"")].filter(Boolean).join(" · "),desde:"hora"};
-    else if(!treina&&jJT) bloco={k:"jogo",txt:`JOGO-TREINO · ${jJT.adversario||""}`.toUpperCase(),sub:[jJT.hora?hhMc(jJT.hora):"",jJT.casa?localCurto(jJT.local||LOCAL_CASA):(jJT.local||"")].filter(Boolean).join(" · "),desde:"partes"};
-    else if(!treina&&via) bloco={k:"estagio",txt:"ESTÁGIO / DESLOCAÇÃO",sub:via.txt||via.local||"",desde:"local"};
+    if(jOf) bloco={k:"md",cor:corJogo(jOf),txt:`MD · ${jOf.adversario||"JOGO"}`.toUpperCase(),sub:[jOf.hora?hhMc(jOf.hora):"",jOf.casa?localCurto(jOf.local||LOCAL_CASA):(jOf.local||jOf.destino||"")].filter(Boolean).join(" · "),desde:"hora"};
+    else if(!treina&&jJT) bloco={k:"jogo",cor:corJogo(jJT),txt:`JOGO-TREINO · ${jJT.adversario||""}`.toUpperCase(),sub:[jJT.hora?hhMc(jJT.hora):"",jJT.casa?localCurto(jJT.local||LOCAL_CASA):(jJT.local||"")].filter(Boolean).join(" · "),desde:"partes"};
+    else if(!treina&&via) bloco={k:"estagio",cor:corJogo(jogoLigado(d)),txt:"ESTÁGIO / DESLOCAÇÃO",sub:via.txt||via.local||"",desde:"local"};
     else if(!treina&&((z&&z.folga)||(A&&A.tipo==="folga")||(!z&&P&&P.folga))) bloco={k:"folga",txt:"FOLGA",sub:"",desde:"hora"};
     const rgM=campoMc(seg,d+".regime"), regime=rgM!==null?rgM:(P?P.regime:""), nvM=campoMc(seg,d+".nivel"), nivel=nvM!==null?nvM:(P?P.nivel:"");
     const seg_=us.reduce((a,U)=>a+totalUT(U),0), min=Math.round(seg_/60);
@@ -115,11 +118,11 @@ function renderMicroCorpo(){ const W_=semanaMicro(mcSeg), bx=$("u-corpo"), tg=$(
   h+=`<div class="mc-cab"><div><small>Macrociclo</small><b>${esc(per||"—")}</b></div><div><small>Mesociclo</small><b>${W_.Me?esc(String(W_.Me.n).padStart(2,"0")+(W_.Me.nome?" | "+W_.Me.nome:"")):"—"}</b></div>
     <div><small>Microciclo</small><b>${W_.n?String(W_.n).padStart(2,"0"):"—"}</b></div><div><small>Duração</small><b>${esc(W_.seg.slice(8,10)+"/"+W_.seg.slice(5,7))} a ${esc(W_.fim.slice(8,10)+"/"+W_.fim.slice(5,7))}</b></div><div><small>Nº</small><b>${esc(nAtletasTxt(W_))}</b></div></div>
     <div class="mc-objs"><button class="mc-ob"${ed?"":" disabled"} data-ob="objPrin"><small>Objetivos principais</small>${txt(W_.obj.objPrin.v,!!W_.obj.objPrin.v,W_.obj.objPrin.ia)}</button><button class="mc-ob"${ed?"":" disabled"} data-ob="objSec"><small>Objetivos secundários</small>${txt(W_.obj.objSec.v,!!W_.obj.objSec.v,W_.obj.objSec.ia)}</button></div>`;
-  h+=`<div class="tblwrap mc-wrap"><table class="mc-tab"><thead><tr><th class="mc-lab">Dia</th>${W_.dias.map((x,i)=>{ const cor=x.bloco&&x.bloco.desde==="hora"?corBloco(x.bloco.k):x.R?x.R.cor:"#E9E3D6";
+  h+=`<div class="tblwrap mc-wrap"><table class="mc-tab"><thead><tr><th class="mc-lab">Dia</th>${W_.dias.map((x,i)=>{ const cor=x.bloco&&x.bloco.desde==="hora"?corBlocoMc(x.bloco):x.R?x.R.cor:"#E9E3D6";
     return `<th><div class="mc-h"><span class="mc-dia">${DIAS_MC[i]}</span><button class="mc-md"${ed?` data-e="${x.d}|md"`:" disabled"} style="background:${cor};color:${tintaDe(cor)}" aria-label="Dia relativo ao jogo">${esc(x.md||"—")}${x.mdMan?"*":""}</button></div></th>`; }).join("")}</tr></thead><tbody>`;
   linhas.forEach(([k,n],r)=>{ h+=`<tr class="mc-r-${k}"><th class="mc-lab">${n}</th>`;
     W_.dias.forEach(x=>{ const B=x.bloco;
-      if(B){ const r0=ini[B.desde]; if(r>r0) return; if(r===r0){ const cor=corBloco(B.k); h+=`<td class="mc-bloco" rowspan="${linhas.length-r0}" style="background:${cor};color:${tintaDe(cor)}"><span>${esc(B.txt)}${B.sub?`<small>${esc(B.sub)}</small>`:""}</span></td>`; return; } }
+      if(B){ const r0=ini[B.desde]; if(r>r0) return; if(r===r0){ const cor=corBlocoMc(B); h+=`<td class="mc-bloco" rowspan="${linhas.length-r0}" style="background:${cor};color:${tintaBlocoMc(B)}"><span>${esc(B.txt)}${B.sub?`<small>${esc(B.sub)}</small>`:""}</span></td>`; return; } }
       if(k==="data"){ h+=`<td>${esc(x.d.slice(8,10)+"/"+x.d.slice(5,7))}</td>`; return; }
       if(k==="hora"){ h+=`<td>${esc(x.hora||"")}</td>`; return; }
       if(k==="local"){ h+=`<td>${esc(x.local||"")}</td>`; return; }
@@ -307,11 +310,11 @@ async function pdfMicro(seg){ await carregaJsPdf(false); const W_=semanaMicro(se
   const yp=ry.pi[0], hp=yy-yp; caixa(M,yp,18,hp); T("OBJETIVOS",M+12,yp+hp/2+22,{b:1,s:9,ang:90});
   PARTES_MC.forEach(([k,,n])=>{ const [y1,h]=ry[k]; caixa(M+18,y1,LW-18,h); texto(n.toUpperCase(),M+18,y1,LW-18,h,{b:1,s:7.5,mid:1,al:"center"}); });
   W_.dias.forEach((x,i)=>{ const X=xs[i], B=x.bloco, ini={hora:"hora",local:"local",partes:"pi"}[B?B.desde:""], cor=x.R?x.R.cor:"";
-    const [yd,hd]=ry.dia, corMd=B&&B.desde==="hora"?corBloco(B.k):cor||"#E9E3D6"; caixa(X,yd,CW-MDW,hd,"#C00000"); texto(DIAS_MC_PDF[i],X,yd,CW-MDW,hd,{b:1,s:8,c:[255,255,255],mid:1,al:"center"});
+    const [yd,hd]=ry.dia, corMd=B&&B.desde==="hora"?corBlocoMc(B):cor||"#E9E3D6"; caixa(X,yd,CW-MDW,hd,"#C00000"); texto(DIAS_MC_PDF[i],X,yd,CW-MDW,hd,{b:1,s:8,c:[255,255,255],mid:1,al:"center"});
     caixa(X+CW-MDW,yd,MDW,hd,corMd); texto(x.md?x.md.replace("MD","")||"J":"",X+CW-MDW,yd,MDW,hd,{b:1,s:7,c:rgb(tintaDe(corMd)),mid:1,al:"center"});
     const valores={data:`${x.d.slice(8,10)}/${x.d.slice(5,7)}`,hora:x.hora,local:x.local,regime:rotRegime(x.R),vol:volTxt(x),ut:x.utTxt,obj:x.obj};
     let parar=false; rows.slice(1).forEach(([k])=>{ if(parar) return; const [y1,h]=ry[k];
-      if(B&&k===ini){ const hb=yy-y1, cb=corBloco(B.k); caixa(X,y1,CW,hb,cb); const tc=rgb(tintaDe(cb)); let s=Math.min(22,CW*.32); doc.setFont("helvetica","bold"); doc.setFontSize(s);
+      if(B&&k===ini){ const hb=yy-y1, cb=corBlocoMc(B); caixa(X,y1,CW,hb,cb); const tc=rgb(tintaBlocoMc(B)); let s=Math.min(22,CW*.32); doc.setFont("helvetica","bold"); doc.setFontSize(s);
         while(s>8&&doc.getTextWidth(B.txt)>hb-20){ s-=1; doc.setFontSize(s); } const tw=doc.getTextWidth(B.txt), cx=X+CW/2+(B.sub?-s*.15:s*.35);
         T(B.txt,cx,y1+hb/2+tw/2,{b:1,s,c:tc,ang:90}); if(B.sub){ doc.setFontSize(9); const sw=doc.getTextWidth(B.sub); T(B.sub,cx+s*.9,y1+hb/2+sw/2,{s:9,c:tc,ang:90}); } parar=true; return; }
       if(k==="regime"){ caixa(X,y1,CW,h,cor||null); texto(valores.regime,X,y1,CW,h,{b:1,s:6.8,c:cor?rgb(tintaDe(cor)):INK,mid:1,al:"center"}); return; }
