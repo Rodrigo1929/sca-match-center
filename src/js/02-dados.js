@@ -76,11 +76,16 @@ function passaNosLances(sai,entra,msg){ const novos=[], campo=new Set(titulares(
 const ausentesDe=L=>{ const tit=new Set(titulares()); return [...new Set(Object.values(L.fixo||{}).filter(n=>n&&!tit.has(n)))].filter(n=>slotsDe(L).some(s=>L.fixo[s]===n)); };
 /* corrige todos os lances: quem está agora no lugar dele no onze (posição com o nº dele) ou, se não houver, um titular livre */
 function corrigeAusentes(){ const novos=[], campo=new Set(titulares());
-  lancesAjustaveis().forEach(L=>{ const aus=ausentesDe(L); if(!aus.length) return; const ss=slotsDe(L), v=vDoLance(L), v0={...v};
+  lancesAjustaveis().forEach(L=>{ const aus=ausentesDe(L), ss=slotsDe(L), v=vDoLance(L), v0={...v}; if(!aus.length&&!repetidos(L,v).length) return;
     aus.forEach(x=>{ const o=jogo.onze.find(o=>o.slot===x); let y=o&&o.n!==x?o.n:null;
       if(!y){ const usados=new Set(ss.map(s=>v[s])), livre=n=>n&&campo.has(n)&&!usados.has(n)&&!ehGRn(n), s0=ss.find(s=>v[s]===x);
         y=livre(baseOf(s0))?baseOf(s0):[...campo].find(livre)||null; }
       if(y) passaTarefas(v,ss,x,y,campo); });
+    /* v107.1: repetidos ficam na tarefa escolhida para eles (fixa no lance); as outras passam para titulares livres */
+    repetidos(L,v).forEach(n=>{ const sl=[...new Set(L.bolas.filter(B=>!eAlternativa(B)).map(B=>B.slot))].filter(s=>v[s]===n), fica=sl.find(s=>L.fixo&&L.fixo[s]===n&&baseOf(s)!==n)||sl.find(s=>L.fixo&&L.fixo[s]===n)||sl[0];
+      /* a tarefa a mais vai para o colega com quem ele trocou de lugar no onze (quem está agora na posição com o nº dele), senão o dono da posição, senão um titular livre */
+      sl.filter(s=>s!==fica).forEach(s=>{ const usados=new Set(ss.map(x=>v[x])), livre=m=>m&&campo.has(m)&&!usados.has(m)&&!ehGRn(m), par=(jogo.onze.find(o=>o.slot===n)||{}).n;
+        const y=[par,baseOf(s)].find(livre)||[...campo].find(livre); if(y) v[s]=y; }); });
     if(ss.some(s=>v[s]!==v0[s])){ const A=copiaLance(L), C=copiaLance(L); C.fixo={...(C.fixo||{})}; ss.forEach(s=>{ if(v[s]!==v0[s]) C.fixo[s]=v[s]; }); novos.push([A,C]); } });
   gravaLances(novos,novos.length?`Bolas paradas corrigidas em ${novos.length} lance${novos.length>1?"s":""}`:"Nada a corrigir"); }
 function eAlternativa(B){ return (B.fill||"").toUpperCase()==="#FFFFFF"&&(B.stroke||"").toUpperCase()==="#F79646"; }

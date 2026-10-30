@@ -86,7 +86,7 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - **Pré-jogo (separador Jogo):** pôr um jogador no lugar de um titular passa-lhe as tarefas desse titular em **todos os lances** (aviso com Desfazer). Se já tinha outra tarefa nesse lance, essa vai para o titular livre. **Trocar dois titulares de lugar** (ex.: centrais) não mexe nas bolas paradas.
 - **Durante o jogo (Quadro › Jogo › Trocas no jogo):** prepara a troca antes de acontecer, para explicar ao jogador que vai entrar: «Adicionar troca», quem sai, quem entra, «Todos». Quem vem do banco fica com as tarefas de quem sai; depois podes acertar trocando dois que já estão em campo (ex.: 19 ↔ 21), que trocam de tarefas.
 - Quando o preparador regista a substituição no **Ao vivo**, a troca fica «✓ feita no Ao vivo (minuto)». Se entrou outro jogador, fica «não aconteceu» e os quadros mostram quem entrou. Substituições do Ao vivo não preparadas também entram sozinhas.
-- **⚠ «O 4 não está a jogar»** num lance: «Pôr quem está a jogar (todos os lances)» põe quem ficou no lugar dele no onze (ou o titular livre).
+- **⚠ «O 4 não está a jogar»** ou **jogadores repetidos** num lance: «Pôr quem está a jogar e tirar repetidos (todos os lances)» põe quem ficou no lugar dele no onze (ou o titular livre); o repetido fica na tarefa escolhida para ele e a outra vai para o colega com quem trocou de lugar no onze (v107.1).
 
 ## Local dos jogos e Jogo a partir do calendário (v106)
 - No jogo do calendário (Treino › Semana › ✎ ou + Jogo): **Campo**, **Localidade** e **Ilha**. Ao escrever o adversário de um jogo fora, o campo vem do último jogo com ele; em casa, do último jogo em casa. Ilha fora da Terceira = viagem (destino = ilha).
