@@ -459,7 +459,11 @@ table.ttab tfoot td{font-weight:700;border-top:2px solid var(--ink)}
 .cp-lista li.pend{opacity:.7}.cp-lista .cp-n{font-family:var(--f-display);font-weight:800;color:#C00000;min-width:22px}
 .cp-lista .cp-r{flex:1}.cp-lista .v{font-weight:800}
 .cp-eqtab td,.cp-eqtab th{padding:6px 8px}
-.mh-g{max-height:46vh}
+.mh-g{max-height:none;grid-template-columns:repeat(auto-fill,minmax(112px,1fr))} /* v110: sem altura máxima — rola a folha */
+.mh-g button{min-height:52px;touch-action:manipulation}
+.mh-top{display:flex;gap:8px;align-items:center}.mh-top input{flex:1;min-width:0;min-height:44px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface);font-size:16px}
+.mh-top .btn{min-height:44px;white-space:nowrap}
+.mh-bar{position:sticky;bottom:calc(-16px - env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--line);margin:0 -16px;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;z-index:2}
 .cp-h{font-family:var(--f-display);font-size:18px;margin:6px 14px 8px}
 table.cptab th .lnk{text-decoration:none;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit}
 .rk-rei{margin:0 14px 10px;padding:12px 14px;border-radius:12px;background:#FFF2CC;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;font-size:18px}
@@ -669,3 +673,16 @@ small.mc-e.fechado,.mc-e.fechado{color:var(--ink);font-weight:600}
 /* cores dos jogos (v105): estágio e viagem com a cor do jogo, texto branco */
 .psem .ps-it.ps-jg{color:#fff;padding:4px 6px}.psem .ps-it.ps-jg .t{color:#fff}
 .pan .pan-p.jogo,.pan .pan-p.jogo.fora{color:#1B1A17}
+
+/* v110: competição — jogadores por jogo (reforços), jogo aberto e marcadores na lista */
+.cp-lados{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.cp-lados{grid-template-columns:minmax(0,1fr)}}
+.cp-lado{display:flex;flex-direction:column;gap:6px;min-width:0}
+.cp-lado .chip{padding:2px 2px 2px 10px;min-height:40px}.cp-lado .chip .icon{width:36px;height:36px}
+.cp-lado .chip.cp-ref{border-color:#1F3A5F;background:#E6EEF8}.cp-lado .chip small{font-size:11px;color:#1F3A5F}
+.cp-lista li.cp-sel{outline:2px solid #C00000}
+.cp-lista .cp-r{display:flex;flex-wrap:wrap;gap:0 6px;align-items:baseline}.cp-mk{flex-basis:100%}
+.cp-lista li .btn{min-height:40px}
+.cp-todos{display:flex;flex-direction:column;gap:6px;margin:0 14px 14px}
+.cp-bl{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:8px 12px;min-height:48px}
+.cp-bl small{color:var(--muted);font-size:12.5px}

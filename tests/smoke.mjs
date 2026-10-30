@@ -60,6 +60,28 @@ if (!tj.antesF.length || !tj2.f || !tj2.semAtual) erros.push("Quadro: a troca de
 await pg.evaluate(() => { desfazQuadro(); });
 const tj3 = await pg.evaluate((tj) => tj.antesF.every((s) => vDoLance(lances().find((l) => l.id === "10"))[s] === tj.atual), tj);
 if (!tj3) erros.push("Quadro: desfazer a troca de jogador no slide inicial não repôs o lance ligado");
+// v110: lances ligados ficam com os jogadores do slide inicial (mesma posição = mesmo jogador); variantes mantêm os seus
+const v110 = await pg.evaluate(() => { const g = (id) => lances().find((l) => l.id === id), r = {}, sl = (L) => slotsDe(L).filter((s) => slotsDe(g("8")).includes(s));
+  const igual = () => sl(g("10")).every((s) => vDoLance(g("10"))[s] === vDoLance(g("8"))[s]);
+  r.ini = igual();
+  /* dados antigos diferentes (como estavam no link): o aviso e «Igualar» */
+  const [s1, s2] = sl(g("10")).filter((s) => g("10").bolas.some((b) => b.slot === s && !eAlternativa(b))), v = vDoLance(g("10"));
+  lancesDb["10"] = { ...copiaLance(g("10")), fixo: { ...(g("10").fixo || {}), [s1]: v[s2], [s2]: v[s1] } }; curId = "10"; render();
+  r.dif = difereDaBase(g("10")) && !!$("q-iguala"); $("q-iguala").click(); r.igualou = igual() && !difereDaBase(g("10"));
+  /* a bolinha do lance ligado não troca de jogador (vem do slide inicial) */
+  folhaBola(g("10"), g("10").bolas.findIndex((b) => b.slot === s1)); r.preso = document.querySelector("#s-jog").disabled && !!document.querySelector("#s-irbase"); document.querySelector("#sheet-root [data-close]").click();
+  /* trocar dois jogadores no slide inicial: o ligado fica igual */
+  const B = copiaLance(g("8")), vb = vDoLance(B); B.fixo = { ...(B.fixo || {}), [s1]: vb[s2], [s2]: vb[s1] }; guardaLance(B); r.segue = igual();
+  /* variante: mantém a sua troca quando o slide inicial muda noutra posição */
+  const V = copiaLance(g("10")); V.variante = true; const vv = vDoLance(V); V.fixo = { ...(V.fixo || {}), [s1]: vv[s2], [s2]: vv[s1] }; guardaLance(V); r.varGuarda = !igual();
+  const s3 = sl(g("8")).find((s) => s !== s1 && s !== s2), livre = est.plantel.map((p) => p.n).find((n) => n && !Object.values(vDoLance(g("8"))).includes(n));
+  const B2 = copiaLance(g("8")); B2.fixo = { ...(B2.fixo || {}), [s3]: livre }; guardaLance(B2); r.varMantem = vDoLance(g("10"))[s1] === vDoLance(g("8"))[s2] && vDoLance(g("10"))[s3] === vDoLance(g("8"))[s3];
+  /* deixar de ser variante: volta a ficar igual */
+  const N = copiaLance(g("10")); delete N.variante; guardaLance(N); r.volta = igual();
+  for (let i = 0; i < 6; i++) desfazQuadro(); delete lancesDb["10"].variante; curId = lances()[0].id; render();
+  return r; });
+if (JSON.stringify(v110) !== JSON.stringify({ ini: true, dif: true, igualou: true, preso: true, segue: true, varGuarda: true, varMantem: true, volta: true }))
+  erros.push("Quadro (v110): jogadores dos lances ligados " + JSON.stringify(v110));
 await pg.evaluate(() => { editing = false; curId = lances()[0].id; render(); });
 // Modelo de Jogo: criar quadro (começa no onze do separador Jogo), novo passo, arrastar um jogador, animar
 await pg.click("#tab-m"); await pg.click("#m-novo2"); await pg.fill("#mn-n", "Teste"); await pg.click("#mn-ok");
@@ -259,7 +281,7 @@ const pg2 = await pg.evaluate(() => { const U = uts[uCur]; return { pres: Object
 if (JSON.stringify(pg2.pres) !== '["CO","P","P"]' || JSON.stringify(pg2.ext) !== '["Santiago C./Sub19/2"]' || pg2.g !== 1 || pg2.gj !== 2 || !pg2.campo || !pg2.botao) erros.push("UT: presenças, jogadores de fora ou grupos errados " + JSON.stringify(pg2));
 // ausente: sai do grupo e passa para os Indisponíveis do campo do plantel; a folha do grupo só mostra quem está presente
 const k0 = await pg.evaluate(() => uts[uCur].grupos[0].jogadores[0]);
-await pg.click(`.upres button[data-k='${k0}']`, { button: "right" }); await pg.click(".mmenu button:has-text('Ausente')"); await pg.waitForTimeout(150);
+await pg.click(`.upres button[data-k='${k0}']`, { button: "right" }); await pg.waitForFunction(() => { const b = [...document.querySelectorAll(".mmenu button")].find((x) => x.textContent.includes("Ausente")); if (b) b.click(); return !!b; }); await pg.waitForTimeout(150);
 const aus = await pg.evaluate((k) => { const U = uts[uCur], txt = [...document.querySelectorAll(".ucampo text")].map((t) => t.textContent).join(" | "); return { noGrupo: U.grupos[0].jogadores.includes(k), indisp: txt.includes("INDISPONÍVEIS") && txt.includes("· Ausente"), naGrelha: (() => { folhaGrupoUT(U.id, null); const r = [...document.querySelectorAll("#ug-j button")].some((b) => b.dataset.k === k); document.querySelector("#sheet-root [data-close]").click(); return r; })() }; }, k0);
 if (aus.noGrupo || !aus.indisp || aus.naGrelha) erros.push("UT: ausente devia sair do grupo e ir para os Indisponíveis " + JSON.stringify(aus));
 // num grupo novo, quem já está noutro grupo aparece no fim, a dizer em que grupo está (e continua escolhível)
@@ -459,6 +481,33 @@ const cs = await pg.evaluate((ks) => { cF = { ep: "26.27", me: "", mi: "", et: "
     g4: g(ks[4]) && g(ks[4]).J, pend: S.pend.length, av: S.aviso.length, golos: Object.values(compGolos).length }; }, utA0.ks);
 if (selo.rep !== "liga/true" || selo.ut !== "liga" || !selo.tags.includes("LIGA") || !selo.tags.includes("MEINHO") || jgs.j.length !== 3 || jgs.j[0] !== "1:g1-g2:" || jgs.j[1] !== `2:g2-g0:${utA0.ks[1]}` || !jgs.desc.includes("descansa") ||
   cs.a2 !== "1,1,1,1,1,1,1" || cs.gr1 || cs.g1 !== "1,1,1,1" || cs.g4 !== 1 || cs.pend !== 1 || cs.av || cs.golos !== 2) erros.push("Competição (Liga): jogos, golos, GR ou classificação errados " + JSON.stringify({ selo, jgs, cs }));
+// v110: jogo 3 — reforço de outra equipa e saída só neste jogo, golo que vale 2 (1 golo para o marcador, 1 sofrido para o GR), corrigir um jogo já feito, tempos pelos jogos
+await pg.click(`li[data-l='${lidL}'] [data-a='jg']`); await pg.waitForSelector(".cp-atual");
+const j3 = await pg.evaluate((lid) => { const J = jogosDe("ta", lid).find((j) => !j.fim), U = uts.ta, ladoA = jogadoresJogo(U, J, "a").map((a) => a.k), ladoB = jogadoresJogo(U, J, "b").filter((a) => !ehGR(a)).map((a) => a.k);
+  const ref = [...document.querySelectorAll(".cp-atual select[data-ref='a'] option")].map((o) => o.value).find((k) => k && !ladoB.includes(k)), gr = atletasUT(U).find((a) => ehGR(a) && presenteUT(U, a.k));
+  return { id: J.id, ref, sai: ladoB[0], gr: gr && gr.k, ladoA }; }, lidL);
+await pg.evaluate(() => { document.querySelectorAll(".cp-atual details").forEach((d) => (d.open = true)); });
+await pg.selectOption(".cp-atual select[data-ref='a']", j3.ref); await pg.waitForTimeout(50);
+await pg.evaluate(() => { document.querySelectorAll(".cp-atual details").forEach((d) => (d.open = true)); }); await pg.click(`.cp-atual [data-tira='b'][data-k='${j3.sai}']`); await pg.waitForTimeout(50);
+if (j3.gr) { await pg.evaluate(() => { document.querySelectorAll(".cp-atual details").forEach((d) => (d.open = true)); }); await pg.selectOption(".cp-atual select[data-f='grB']", j3.gr); await pg.waitForTimeout(50); }
+await pg.setViewportSize({ width: 390, height: 800 }); await pg.evaluate(() => { document.querySelectorAll(".cp-atual details").forEach((d) => (d.open = true)); document.querySelector(".cp-jog").scrollIntoView(); }); await pg.screenshot({ path: join(cap, "treino-competicao-reforco-telemovel.png") });
+await pg.setViewportSize(ipad ? { width: 1080, height: 810 } : { width: 1366, height: 900 }); await pg.waitForTimeout(80);
+await pg.click(".cp-atual [data-g='a']"); await pg.click("#cp-v2 [data-v='2']"); await pg.click(`.cp-pick [data-k='${j3.ref}']`); await pg.waitForTimeout(50);
+await pg.click(".cp-atual [data-fim]"); await pg.waitForTimeout(50);
+const lista110 = await pg.evaluate(() => ({ n: document.querySelectorAll(".cp-lista li").length, abre: document.querySelectorAll(".cp-lista [data-abre]").length }));
+await pg.click(".cp-lista [data-abre]"); await pg.waitForTimeout(50); const corr = await pg.evaluate(() => !!document.querySelector(".cp-atual [data-ok]")); await pg.click(".cp-atual [data-ok]"); await pg.waitForTimeout(50);
+await pg.click("#sheet-root [data-close]"); await pg.waitForTimeout(100);
+const v110c = await pg.evaluate(({ j3, lid }) => { const J = compJogos[j3.id], r = resultado(J), F = utsFiltro(), S = compStats(F), pr = S.P["n:" + j3.ref] || {}, U = uts.ta;
+  const jogR = (pr.jogos || []).find((x) => x.eq.includes("reforço")), saiu = (S.P["n:" + j3.sai] || { jogos: [] }).jogos.length, g = j3.gr ? S.GR["n:" + j3.gr] : null;
+  const T = temposUT(U), sj = seriesPorJogos(U, U.exercicios.find((l) => l.id === lid)), segL = (k) => ((T.por[k] || { det: [] }).det.find((d) => d.lid === lid) || { seg: 0 }).seg;
+  const esp = (k) => sj.filter((x) => x.a.includes(k) || x.b.includes(k)).reduce((a, x) => a + x.seg, 0);
+  return { res: `${r.a}-${r.b}`, golosRef: jogR && jogR.golos, ptsRef: jogR && jogR.res, saiuJogos: saiu, grGS: g ? g.jogos.find((x) => x.res && x.gs !== undefined && x.gm === 0 && x.gs === 1) !== undefined : true,
+    sj: sj.length, seg: sj[0].seg, tRef: segL(j3.ref) === esp(j3.ref) && esp(j3.ref) > 0, tSai: segL(j3.sai) === esp(j3.sai), saiFora: !sj[sj.length - 1].b.includes(j3.sai) && sj[sj.length - 1].a.includes(j3.ref),
+    mini: !!document.querySelector(`li[data-l='${lid}'] .urot.mini`) && document.querySelector(`li[data-l='${lid}']`).textContent.includes("Tempos pelos") }; }, { j3, lid: lidL });
+if (v110c.res !== "2-0" || v110c.golosRef !== 1 || v110c.ptsRef !== "V" || !v110c.grGS || v110c.sj !== 3 || v110c.seg !== 240 || !v110c.tRef || !v110c.tSai || !v110c.saiFora || !v110c.mini || lista110.n !== 3 || lista110.abre !== 3 || !corr)
+  erros.push("Competição (v110): reforço, golo que vale 2, corrigir ou tempos pelos jogos " + JSON.stringify({ v110c, lista110, corr, j3 }));
+/* repõe o jogo 3 como estava (por jogar, sem golos nem alterações) para os testes seguintes */
+await pg.evaluate((id) => { golosDe(id).forEach((g) => tiraGolo(g.id)); const J = { ...compJogos[id], fim: false }; delete J.mais; delete J.menos; J.grB = ""; compJogos[id] = normJogoInt(J); gravaJogoInt(J); }, j3.id);
 // Champions: quem ganha fica; quem perde vai para o fim da fila; empate = sai quem estava na mesa
 const ch = await pg.evaluate(() => { const novoJ = (o) => gravaJogoInt({ id: uId("cj"), ut: "tmp", lid: "tmp", criadoEm: new Date().toISOString(), ...o }), golo = (j, eq) => gravaGolo({ id: uId("cg"), jogo: j.id, eq, k: "x", em: new Date().toISOString() });
   const gs = ["A", "B", "C"], r = [JSON.stringify(proxChampions(gs, []))];
@@ -480,6 +529,26 @@ await pg.click(`.mh-g [data-k='${utA0.ks[3]}']`); await pg.click(`.mh-g [data-k=
 await pg.click("#mh-t [data-k='cueca']"); await pg.click(`.mh-g [data-k='${utA0.ks[5]}']`); await pg.click("#mh-ok"); await pg.waitForTimeout(50);
 await pg.click(`.mh-g [data-k='${utA0.ks[6]}']`); await pg.click("#mh-ok"); await pg.waitForTimeout(50);
 await pg.click("#mh-un"); await pg.click("#mh-un"); await pg.waitForTimeout(50); const un1 = await pg.evaluate(() => Object.keys(meinhoRegs).length);
+// v110: meinho no telemóvel — todos os nomes se tocam (nada por trás dos botões), pesquisa pelo nome e «GR participam»
+await pg.setViewportSize({ width: 390, height: 700 }); await pg.waitForTimeout(150);
+const mh110 = await pg.evaluate(() => { const bs = [...document.querySelectorAll(".mh-g button")], r = {};
+  r.tocaveis = bs.every((b) => { b.scrollIntoView({ block: "center" }); const q = b.getBoundingClientRect(), el = document.elementFromPoint(q.x + q.width / 2, q.y + q.height / 2); return !!el && b.contains(el); });
+  r.n = bs.length; return r; });
+await pg.evaluate(() => document.querySelector(".sheet").scrollTo(0, 0)); await pg.screenshot({ path: join(cap, "treino-meinho-telemovel.png") });
+const alvo = await pg.evaluate(() => { const b = document.querySelector(".mh-g button"); return { k: b.dataset.k, t: b.querySelector("b").textContent }; });
+await pg.fill("#mh-q", alvo.t.slice(0, 4).toUpperCase()); await pg.waitForTimeout(80);
+const mhq = await pg.evaluate((k) => ({ n: document.querySelectorAll(".mh-g button").length, tem: !!document.querySelector(`.mh-g [data-k='${k}']`), foco: document.activeElement && document.activeElement.id }), alvo.k);
+await pg.click(`.mh-g [data-k='${alvo.k}']`); await pg.waitForTimeout(50);
+const mhs = await pg.evaluate(() => ({ q: document.querySelector("#mh-q").value, sel: document.querySelectorAll(".mh-g [aria-pressed='true']").length, ok: !document.querySelector("#mh-ok").disabled }));
+await pg.fill("#mh-q", ""); await pg.waitForTimeout(50);
+const temGR = await pg.evaluate(() => !document.querySelector("#mh-gr").hidden);
+let mhgr = { semGR: true, linha: true };
+if (temGR) { await pg.click("#mh-gr"); await pg.waitForTimeout(80);
+  mhgr = await pg.evaluate(() => { const U = uts[uCur], L = U.exercicios.find((l) => meinhoDe(l)); return { semGR: [...document.querySelectorAll(".mh-g button")].every((b) => !b.querySelector("small").textContent.startsWith("GR")), linha: !!L.mhSemGR }; });
+  await pg.click("#mh-gr"); await pg.waitForTimeout(80); }
+await pg.setViewportSize(ipad ? { width: 1080, height: 810 } : { width: 1366, height: 900 }); await pg.waitForTimeout(100);
+if (!mh110.tocaveis || !mh110.n || mhq.n < 1 || !mhq.tem || mhq.foco !== "mh-q" || mhs.sel !== 1 || !mhs.ok || !mhgr.semGR || !mhgr.linha)
+  erros.push("Meinho (v110): toque no telemóvel, pesquisa ou GR " + JSON.stringify({ mh110, mhq, mhs, mhgr, temGR }));
 await pg.screenshot({ path: join(cap, "treino-meinho.png") }); await pg.click("#sheet-root [data-close]"); await pg.waitForTimeout(100);
 await pg.click(".u-modo button[data-m='rank']"); await pg.waitForSelector(".rk-rei");
 const rk = await pg.evaluate((ks) => { const R = meinhoStats(utsFiltro()); return { regs: Object.keys(meinhoRegs).length, m: [R["21"]["n:" + ks[3]].tot, R["21"]["n:" + ks[4]].tot, R.cueca["n:" + ks[5]].tot].join(","),

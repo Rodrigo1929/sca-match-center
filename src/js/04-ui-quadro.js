@@ -65,12 +65,13 @@ function renderBoard(){
     :`<span><b>Toca numa bolinha</b> para trocar o jogador.</span><span class="legend-chip"><i></i>trocado durante o jogo</span>`;
   /* v108: posição inicial ligada */
   { const L_=lanceAtual(), B_=baseDe(L_), sg=L_.dinamico?[]:seguidoresDe(L_.id);
-    if(B_){ const so=soltasDe(L_); $("hint").innerHTML=`<span class="liga">🔗 Posição inicial do «${esc(B_.nome)}»${so.length?` · no seu sítio: ${so.map(k=>esc(nomePecaL(L_,k))).join(", ")}`:""}</span>`+$("hint").innerHTML; }
-    else if(sg.length) $("hint").innerHTML=`<span class="liga">🔗 Slide inicial de ${sg.length} lance${sg.length>1?"s":""}: mexer aqui nas bolinhas, na bola ou nos adversários muda-os também</span>`+$("hint").innerHTML; }
+    if(B_){ const so=soltasDe(L_), dif=difereDaBase(L_); $("hint").innerHTML=`<span class="liga">🔗 Posição inicial do «${esc(B_.nome)}»${eVariante(L_)?" · variante (jogadores próprios)":" · mesmos jogadores"}${so.length?` · no seu sítio: ${so.map(k=>esc(nomePecaL(L_,k))).join(", ")}`:""}</span>${dif?`<button class="btn sm" id="q-iguala">Igualar os jogadores ao «${esc(B_.nome)}»</button>`:""}`+$("hint").innerHTML; }
+    else if(sg.length) $("hint").innerHTML=`<span class="liga">🔗 Slide inicial de ${sg.length} lance${sg.length>1?"s":""}: mexer aqui nas bolinhas, na bola, nos adversários ou nos jogadores muda-os também</span>`+$("hint").innerHTML; }
   { const L_=lanceAtual(); if(!L_.dinamico&&L_.bolas&&L_.bolas.length){ const au=ausentesDe(L_), dp=repetidos(L_,vDoLance(L_)); if(au.length||dp.length){ $("hint").innerHTML=`<span style="color:#B45F00">${au.length?`<b>⚠ ${au.map(n=>"O "+esc(n)).join(", ")} não ${au.length>1?"estão":"está"} a jogar</b> e ${au.length>1?"têm":"tem"} tarefas neste lance.`:"<b>⚠ Jogadores repetidos.</b>"}</span><button class="btn sm" id="q-aus">Pôr quem está a jogar e tirar repetidos (todos os lances)</button>`+$("hint").innerHTML; } } }
   { const L_=lanceAtual(); if(!L_.dinamico){ const d=calcula(L_).dups||[]; if(d.length) $("hint").innerHTML=`<span style="color:#B45F00"><b>⚠ ${d.map(n=>"Nº "+esc(n)).join(", ")} repetido neste lance</b> (anel laranja). Toca numa dessas bolinhas e escolhe quem faz essa tarefa. Para mostrar o mesmo jogador noutro sítio de propósito, usa o estilo <b>Alternativa</b> (bola branca).</span>`+$("hint").innerHTML; } }
   /* v107.2: o clique liga-se no fim (os avisos reescrevem o texto e perdiam a ligação) */
   { const qa=$("q-aus"); if(qa) qa.onclick=corrigeAusentes; }
+  { const qi=$("q-iguala"); if(qi) qi.onclick=()=>{ const L_=lanceAtual(), B_=baseDe(L_); if(B_) guardaLance(copiaLance(L_),{segue:true,msg:`Jogadores iguais ao «${B_.nome}»`}); }; }
 }
 function renderRows(){
   const pre=est.fase==="pre";

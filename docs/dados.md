@@ -17,12 +17,12 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
 | `adversarios/{id}` | coleção | Plantel de cada equipa adversária (id = nome sem acentos, ex.: `sc-barreiro`), para todos os jogos contra ela (ver abaixo) |
 | `regs/{id}` | coleção | Ações registadas no Pós-jogo |
 | `historico/{id}` | coleção | Jogos arquivados |
-| `lances/{id}` | coleção | Lances de bolas paradas editados (os de origem estão em `src/data/lances-base.json`). Desde a v108: `base` (id do lance cujas posições segue) e `soltas` (chaves das peças que ficam no seu sítio: posição no onze, `bj0`… da bola, `a0`… dos adversários) |
+| `lances/{id}` | coleção | Lances de bolas paradas editados (os de origem estão em `src/data/lances-base.json`). Desde a v108: `base` (id do lance cujas posições segue) e `soltas` (chaves das peças que ficam no seu sítio: posição no onze, `bj0`… da bola, `a0`… dos adversários) Desde a v110: `variante: true` (lance ligado que mantém os seus jogadores; sem isto, cada posição tem o jogador do slide inicial). |
 | `modelo/{id}` | coleção | Quadros do Modelo de Jogo |
 | `exercicios/{id}` | coleção | Repositório de exercícios para as UT (ver abaixo) |
 | `uts/{id}` | coleção | Unidades de Treino (ver abaixo) |
-| `compJogos/{id}` | coleção | Jogos da competição interna (v95): `{ut, lid, serie, a, b (ids dos grupos), grA, grB (GR de cada equipa), semGR, fim, criadoEm, criadoPor}` |
-| `compGolos/{id}` | coleção | Golos da competição interna (v95): `{jogo, eq: "a"\|"b" (equipa que ganha o golo), k (quem marcou), ag (auto-golo: k é da outra equipa), em, por}` |
+| `compJogos/{id}` | coleção | Jogos da competição interna (v95): `{ut, lid, serie, a, b (ids dos grupos), grA, grB (GR de cada equipa), semGR, fim, criadoEm, criadoPor}`; v110: `mais {a:[k], b:[k]}` (reforços de outra equipa só nesse jogo) e `menos {a:[k], b:[k]}` (quem saiu nesse jogo), só quando há |
+| `compGolos/{id}` | coleção | Golos da competição interna (v95): `{jogo, eq: "a"\|"b" (equipa que ganha o golo), k (quem marcou), ag (auto-golo: k é da outra equipa), em, por}`; v110: `v: 2` = golo que vale 2 (2 no resultado; 1 para o marcador e 1 sofrido para o GR) |
 | `mdPadrao/{MD}` | coleção | Padrão MD da Época (v101): uma linha por dia relativo ao jogo (MD+1, MD+2, MD-6…MD-1, MD): `{regime (id em regimes), objetivo, pi, pf, pfin, nivel, folga}` |
 | `regimes/{id}` | coleção | Regimes do microciclo (v101): `{nome, int (símbolo de intensidade), cor, ordem, bloco}`; os ids `folga`, `casa` e `fora` guardam só a cor dos blocos (v105; `jogo`, `md` e `estagio`, da v101, ficam sem uso) |
 | `microCampo/{seg}~{campo}` | coleção | Campos do resumo do microciclo escritos ou acertados à mão (v101), um documento por campo: `{seg, campo, v, ia}` (`ia: true` = rascunho da IA por aprovar, v102; `objPrin`/`objSec` = objetivos propostos pela IA até serem aprovados); campo = `<dia>.md|regime|nivel|obj|pi|pf|pfin` ou `analise`, `perf`, `positivos`, `melhorar`. Sem documento = valor automático |
@@ -85,6 +85,7 @@ As imagens ficam no armazenamento de ficheiros do link (capacidade `assets`), n�
   exercicios: [{ id, exId, copia: { …exercício completo como estava no dia, com os ajustes desta UT, sem links… },   // pela ordem da UT
      pai?,        // v93: complementar — id da linha do exercício principal; vem logo a seguir a ele (3.1, 3.2…) e não soma ao tempo da UT nem ao da parte
      conta?,      // v93: true|false = conta para os tempos só nesta UT; sem campo = como no repositório (contaTempo)
+     mhSemGR?,         // v110: true = os GR não participaram neste meinho (não aparecem para escolher nem contam «UT com meinho» se nenhum meinho da UT os tiver)
      comp?, meinho?,   // v95: só nesta UT ("" = anulada; sem campo = como no repositório); fica fora da cópia, por isso o «↻ Atualizar» não a perde
      grupos?,     // v93: ids dos grupos de trabalho que fazem este exercício (no principal; os complementares tiram-nos da rotação)
      rot? }],     // v93 no principal com complementares; v94 em qualquer exercício: { nEq (até 20), nJogo (equipas ao mesmo tempo / grupos por período), modo: "rodar"|"periodos", equipas: [id do grupo|""],

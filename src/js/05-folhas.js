@@ -58,8 +58,11 @@ function miniBola(st){ return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" 
 /* editar bolinha */
 function folhaBola(L,i){
   const B=L.bolas[i], LB=baseDe(L), solta=LB&&!eAlternativa(B)&&soltasDe(L).includes(B.slot);
-  const nSeg=eAlternativa(B)?0:seguidoresDe(L.id).length;
-  folha(`<h3>Bolinha</h3><label class="f">Jogador nesta bolinha (${nSeg?`neste lance e nos ${nSeg} que o seguem`:"neste lance"})<select id="s-jog"></select></label>
+  const nSeg=seguidoresDe(L.id).length;
+  /* v110: num lance ligado (não variante) o jogador vem do slide inicial: troca-se lá */
+  const preso=LB&&!eVariante(L)&&slotsDe(LB).includes(B.slot);
+  folha(`<h3>Bolinha</h3><label class="f">Jogador nesta bolinha (${preso?`vem do «${esc(LB.nome)}»`:nSeg?`neste lance e nos ${nSeg} que o seguem`:"neste lance"})<select id="s-jog"${preso?" disabled":""}></select></label>
+    ${preso?`<p class="sub" style="margin:0">Nos lances ligados, cada posição tem o jogador do slide inicial. Para trocar, faz a troca no «${esc(LB.nome)}» (muda em todos) ou marca este lance como <b>variante</b> em ✎ Lance.</p><button class="btn" id="s-irbase">↗ Abrir o «${esc(LB.nome)}»</button>`:""}
     <label class="f">Posição no onze base que representa <span class="sub">(avançado)</span><select id="s-slot"></select></label>
     ${LB&&!eAlternativa(B)?`<p class="sub" style="margin:0">${solta?`Posição própria neste lance (não segue o «${esc(LB.nome)}»).`:`Segue a posição do «${esc(LB.nome)}». Arrastá-la aqui deixa-a no seu sítio só neste lance.`}</p>${solta?`<button class="btn" id="s-segue">↺ Voltar a seguir o «${esc(LB.nome)}»</button>`:""}`:""}
     <h4>Estilo</h4><div class="styles" id="s-est"></div>
@@ -67,17 +70,16 @@ function folhaBola(L,i){
     <div class="actions"><button class="btn danger l" id="s-rem">Remover bolinha</button><button class="btn" id="s-dup">Duplicar</button><button class="btn dark" data-close>Fechar</button></div>`,(s,fecha)=>{
     opcSlots(s.querySelector("#s-slot"),B.slot,L);
     { const sg=s.querySelector("#s-segue"); if(sg) sg.onclick=()=>{ fecha(); voltaSeguir(L,B.slot); }; }
+    { const ib=s.querySelector("#s-irbase"); if(ib) ib.onclick=()=>{ fecha(); curId=LB.id; render(); }; }
     { const sj=s.querySelector("#s-jog"), v=calcula(L).v, atual=v[B.slot];
       const lista=[...new Set([...est.plantel.map(p=>p.n).filter(Boolean),atual])].sort(byNum);
       sj.innerHTML=lista.map(n=>{ const onde=Object.entries(v).find(([sl,x])=>x===n&&sl!==B.slot&&L.bolas.some(b=>b.slot===sl&&!eAlternativa(b))); return `<option value="${esc(n)}">${esc(n)}${nome(n)?" · "+esc(nome(n)):""}${onde?" — já está neste lance (troca)":""}</option>`; }).join(""); sj.value=atual;
       sj.onchange=()=>{ const novo=sj.value; if(novo===atual) return; const C=clone(L); C.fixo={...(C.fixo||{})};
         if(!eAlternativa(B)) Object.entries(v).forEach(([sl,x])=>{ if(x===novo&&sl!==B.slot) C.fixo[sl]=atual; });
         C.fixo[B.slot]=novo;
-        /* v108.1: no slide inicial, a mesma troca passa aos lances que o seguem (quem era o `atual` passa a `novo`; se o `novo` lá estava, trocam) */
-        const junto=[]; if(!eAlternativa(B)) seguidoresDe(L.id).forEach(F=>{ const vf=vDoLance(F), D=copiaLance(F); D.fixo={...(D.fixo||{})}; let m=false;
-          Object.entries(vf).forEach(([sl,x])=>{ if(x===atual){ D.fixo[sl]=novo; m=true; } else if(x===novo){ D.fixo[sl]=atual; m=true; } }); if(m) junto.push(D); });
-        const quem=`${novo}${nome(novo)?" · "+nome(novo):""}`;
-        guardaLance(C,{junto,msg:junto.length?`${atual} → ${quem} neste lance e em ${junto.length} lance${junto.length>1?"s":""} que o seguem (${junto.map(x=>x.nome).join(", ")})`:`Bolinha passa a ${quem} neste lance`}); fecha(); }; }
+        /* v110: no slide inicial, os lances que o seguem ficam com os mesmos jogadores; nas variantes, a troca passa como troca de pessoas (guardaLance) */
+        const quem=`${novo}${nome(novo)?" · "+nome(novo):""}`, vF=F=>vDoLance(F), ns=seguidoresDe(L.id).filter(F=>eVariante(F)?Object.values(vF(F)).some(x=>x===atual||x===novo):slotsDe(F).includes(B.slot));
+        guardaLance(C,{msg:ns.length?`${atual} → ${quem} neste lance e em ${ns.length} lance${ns.length>1?"s":""} que o seguem (${ns.map(x=>x.nome).join(", ")})`:`Bolinha passa a ${quem} neste lance`}); fecha(); }; }
     s.querySelector("#s-slot").onchange=e=>{ const C=clone(L), novo=e.target.value, velho=C.bolas[i].slot;
       if(!eAlternativa(C.bolas[i])&&C.bolas.some((b,k)=>k!==i&&b.slot===novo&&!eAlternativa(b))){ C.bolas.forEach((b,k)=>{ if(k!==i&&b.slot===novo) b.slot=velho; }); C.bolas[i].slot=novo; guardaLance(C); toast("Esse jogador já estava neste lance: as duas bolinhas trocaram de jogador."); return; }
       C.bolas[i].slot=novo; guardaLance(C); };
@@ -164,13 +166,15 @@ function folhaProps(L){
     segs.forEach(b=>b.onclick=()=>{tipo=b.dataset.t;upd();}); upd();
     /* v108: posição inicial igual à de outro lance (o slide inicial) */
     const pb=s.querySelector("#pp-base"), segs_=seguidoresDe(L.id), so=soltasDe(L);
-    if(segs_.length) pb.innerHTML=`<p class="sub" style="margin:0">É o <b>slide inicial</b> de: ${segs_.map(x=>esc(x.nome)).join(", ")}. Mexer aqui nas bolinhas, na bola ou nos adversários muda-os também.</p>`;
+    if(segs_.length) pb.innerHTML=`<p class="sub" style="margin:0">É o <b>slide inicial</b> de: ${segs_.map(x=>esc(x.nome)+(eVariante(x)?" (variante)":"")).join(", ")}. Mexer aqui nas bolinhas, na bola, nos adversários ou nos jogadores muda-os também (nas variantes, as trocas de jogadores passam como troca de pessoas).</p>`;
     else { const opc=lances().filter(x=>x.id!==L.id&&!x.base&&!x.dinamico&&x.bolas&&x.bolas.length);
       pb.innerHTML=`<label class="f">Posição inicial igual a<select id="pp-b"><option value="">— própria deste lance —</option>${opc.map(x=>`<option value="${esc(x.id)}">${esc(x.nome)}</option>`).join("")}</select></label>
-        <p class="sub" style="margin:0">As bolinhas, a bola e os adversários seguem esse lance; as setas, as tarefas e os textos ficam deste.${L.base&&so.length?` Soltas neste lance: ${so.map(k=>esc(nomePecaL(L,k))).join(", ")}.`:""}</p>${L.base&&so.length?`<button class="btn" id="pp-todas">↺ Voltar a seguir todas</button>`:""}`;
+        <p class="sub" style="margin:0">As bolinhas, a bola e os adversários seguem esse lance; as setas, as tarefas e os textos ficam deste.${L.base&&so.length?` Soltas neste lance: ${so.map(k=>esc(nomePecaL(L,k))).join(", ")}.`:""}</p>${L.base&&so.length?`<button class="btn" id="pp-todas">↺ Voltar a seguir todas</button>`:""}
+        <label style="display:flex;gap:10px;align-items:flex-start;font-size:14px;min-height:40px"><input type="checkbox" id="pp-var" style="width:22px;height:22px;flex:none"${eVariante(L)?" checked":""}> <span><b>Variante</b>: mantém os seus jogadores (ex.: pés trocados). Sem isto, cada posição tem o jogador do slide inicial.</span></label>`;
       s.querySelector("#pp-b").value=L.base&&opc.some(x=>x.id===L.base)?L.base:"";
       const td=s.querySelector("#pp-todas"); if(td) td.onclick=()=>{ const B=baseDe(L); if(!B) return; const C=copiaLance(L); movePecas(C,paraBase(C,B)); C.soltas=[]; guardaLance(C,{segue:true}); fecha(); toast(`Tudo volta a seguir o «${B.nome}»`); }; }
     s.querySelector("#pp-ok").onclick=()=>{ const C=clone(L); C.nome=inp.value.trim()||L.nome; C.tipo=tipo;
+      const pv=s.querySelector("#pp-var"); if(pv){ if(pv.checked) C.variante=true; else delete C.variante; }
       const sb=s.querySelector("#pp-b"), nb=sb?sb.value:L.base||""; let msg=null;
       if(sb&&nb!==(L.base||"")){ if(!nb){ desligaBase(C); msg="Este lance passa a ter a sua posição inicial"; }
         else { const B=lances().find(x=>x.id===nb); ligaBase(C,B); msg=`Posição inicial igual ao «${B.nome}» (o que arrastares depois neste lance fica no seu sítio)`; } }

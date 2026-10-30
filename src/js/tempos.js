@@ -80,6 +80,12 @@ function temposUT(U){ const nums=numerosUT(U), por={}, avisos=[], comGrupo=new S
   U.exercicios.forEach(l=>{ if(l.pai) return; const cs=U.exercicios.filter(c=>c.pai===l.id), contaC=cs.filter(contaLinha), contaP=contaLinha(l);
     if(!contaP&&!contaC.length) return; haConta=true;
     const gs=(l.grupos||[]).map(id=>U.grupos.find(g=>g.id===id)).filter(Boolean);
+    /* v110: Liga/Champions com jogos terminados — a rotação segue os jogos: em cada jogo contam as duas equipas desse jogo (com reforços e saídas),
+       o tempo de prática divide-se pelos jogos; as equipas que esperam vão para o complementar da rotação (ou o primeiro) */
+    const sj=typeof seriesPorJogos==="function"?seriesPorJogos(U,l):null;
+    if(sj){ sj.forEach((x,i)=>{ if(contaP) serie(l,[{jogadores:x.a},{jogadores:x.b}],x.seg);
+        if(contaC.length) gs.filter(g=>g.id!==x.J.a&&g.id!==x.J.b).forEach(g=>{ const R=l.rot, j=R?R.equipas.indexOf(g.id):-1, v=j>=0&&R.grelha[i]?R.grelha[i][j]:"", c=contaC.find(y=>y.id===v)||contaC[0];
+          serie(c,[g],x.seg); }); }); return; }
     if(!gs.length){ avisos.push({lid:l.id,t:`${nums[l.id]} · ${l.copia.nome}: conta para os tempos mas não tem grupos`}); return; }
     if(l.rot){ const R=l.rot; avisosRot(U,l,cs,nums).forEach(t=>avisos.push({lid:l.id,t:`${nums[l.id]} · ${t}`}));
       const gDe=j=>U.grupos.find(x=>x.id===R.equipas[j]);

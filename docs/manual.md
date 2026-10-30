@@ -192,3 +192,8 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - **Tamanho**: toca numa peça (bolinha, bola, cone, baliza ou material) e usa − / + (50% a 250%).
 - **Texto desta bolinha**: só nessa bolinha, «Como o quadro», número, posição ou sem texto.
 - **Botão direito** numa peça (no iPad, manter o dedo sem mexer): ⧉ Duplicar (a cópia fica 2 m ao lado em todos os passos), ＋ Aumentar, － Diminuir, ✎ Editar e 🗑 Apagar (com Desfazer).
+
+## Novidades da v110
+- **Quadro · lances ligados:** cada posição tem o jogador do slide inicial. Troca-se o jogador no slide inicial e muda em todos os lances que o seguem. Um lance com jogadores próprios (ex.: pés trocados) marca-se como **Variante** em ✎ Lance. Se um lance ligado tiver jogadores diferentes, aparece o botão «Igualar os jogadores».
+- **Meinho:** a folha rola toda no telemóvel e no iPad (todos os nomes se tocam), tem pesquisa pelo nome e o botão «🧤 GR participam / não participam».
+- **Liga / Champions:** «Golo que vale 2» ao escolher o marcador; «👥 Jogadores neste jogo» para tirar alguém ou juntar um reforço de outra equipa só nesse jogo; todos os jogos aparecem na lista com «▶ Jogar» ou «✎ Corrigir»; «✎ Equipas deste jogo» e «+ Jogo extra» na Liga. Os tempos do exercício passam a vir dos jogos terminados. Em Treino › Competição aparecem todos os jogos do filtro (toca para abrir).

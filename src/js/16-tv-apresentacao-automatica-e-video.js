@@ -245,6 +245,8 @@ function guardaLance(L,op={}){ const antesDe=id=>lancesDb[id]?clone(lancesDb[id]
   const velho=aDesfazer?null:lances().find(x=>x.id===C.id), soltou=op.segue?[]:soltaMexidas(velho,C), segue=acompanhaBase(velho,C);
   /* op.junto: outros lances já alterados (ex.: troca de jogador no slide inicial) que se gravam com este e se desfazem juntos */
   (op.junto||[]).forEach(F=>{ const k=segue.findIndex(([,x])=>x.id===F.id); if(k>=0) segue[k]=[null,F]; else segue.push([null,F]); });
+  /* v110: um lance ligado fica com os jogadores do slide inicial (exceto variantes); mudar os jogadores do slide inicial muda-os nos que o seguem */
+  if(!aDesfazer){ if(C.base){ const B=baseDe(C); if(B) igualaJogadores(C,B); } else segue.push(...igualaSeguidores(C,segue,velho)); }
   pushUndo(segue.length?{tipo:"grupo",itens:[{id:C.id,antes:antesDe(C.id)},...segue.map(([,F])=>({id:F.id,antes:antesDe(F.id)}))]}:{tipo:"lance",id:C.id,antes:antesDe(C.id)});
   lancesDb[C.id]=C; segue.forEach(([,F])=>{ lancesDb[F.id]=F; gravaDoc("lances/"+F.id,F); }); guardaLocal(); render(); gravaDoc("lances/"+C.id,C);
   if(op.msg) toast(op.msg);
