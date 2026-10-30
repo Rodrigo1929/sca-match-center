@@ -516,7 +516,7 @@ table.cptab th .lnk{text-decoration:none;color:inherit;font:inherit;letter-spaci
 .pan .pan-ds td{color:var(--muted);font-size:9.5px}.pan .pan-ds td.fds{background:#EEEAE3;color:#1B1A17}.pan .pan-ds td.hoje{background:#C00000;color:#fff}
 .pan .pan-mi{font-weight:700;font-size:10px;cursor:pointer}.pan .pan-mi.vazio{background:#fff}
 .pan .pan-p{cursor:pointer;font-weight:700;height:26px;background:#fff}
-.pan .pan-p.ut{color:#1B1A17}.pan .pan-p.folga{background:#FCE4A0}.pan .pan-p.pausa{background:#FF7D7D;color:#fff}
+.pan .pan-p.ut{color:#C00000}.pan .pan-p.folga{background:#FCE4A0}.pan .pan-p.pausa{background:#FF7D7D;color:#fff}
 .pan .pan-p.outro{background:#E6DDF2;font-size:9px}.pan .pan-p.jogo{background:#FF6600;color:#fff;font-size:9.5px}.pan .pan-p.jogo.fora{background:#B34700}
 .pan-leg{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:13px}
 .pan-leg i{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:5px;vertical-align:-2px;border:1px solid #CFCAC0}

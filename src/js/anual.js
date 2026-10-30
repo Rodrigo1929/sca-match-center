@@ -62,8 +62,10 @@ function repoeAnual(As,Cs){ if(As){ Object.keys(anual).forEach(id=>{ if(!As[id])
 /* ---------- ecrã: o ano em meses × dias, como o Excel do clube ---------- */
 const mesesEpoca=()=>Array.from({length:12},(_,i)=>{ const m=(6+i)%12, a=aEpoca+(6+i>=12?1:0); return {a,m,dias:new Date(a,m+1,0).getDate()}; });
 const isoAMD=(a,m,d)=>`${a}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+/* no Ano, os jogos do Campeonato dos Açores (CFA) ficam todos a azul, em casa e fora (v105.1, pedido do Rodrigo) */
+const corJogoAnual=j=>siglaJogo(j)==="CFA"?corJogo({casa:false}):corJogo(j);
 function celulaAnual(d){ const js=jogosDoDia(d), A=anual[d];
-  if(js.length){ const j=js[0]; return {cls:j.casa?"jogo":"jogo fora",cor:corJogo(j),txt:siglaJogo(j),tit:`${j.casa?"vs":"@"} ${j.adversario||"?"}${j.hora?" · "+j.hora:""} · ${[j.competicao,j.jornada].filter(Boolean).join(" · ")}`}; }
+  if(js.length){ const j=js[0]; return {cls:j.casa?"jogo":"jogo fora",cor:corJogoAnual(j),txt:siglaJogo(j),tit:`${j.casa?"vs":"@"} ${j.adversario||"?"}${j.hora?" · "+j.hora:""} · ${[j.competicao,j.jornada].filter(Boolean).join(" · ")}`}; }
   if(!A) return {cls:"",txt:"",tit:"Livre"};
   if(A.tipo==="ut") return {cls:"ut",txt:String(A.ut||"UT"),tit:`UT ${A.ut||""}${A.txt?" · "+A.txt:""}`};
   if(A.tipo==="folga") return {cls:"folga",txt:"F",tit:"Folga"+(A.txt?" · "+A.txt:"")};
@@ -95,7 +97,7 @@ function renderAnualCorpo(){ const bx=$("u-corpo"), bar=$("u-bar"), tg=$("u-tag"
 function renderAnualPainel(){ const pn=$("u-panel"), ini=`${aEpoca}-07-01`, fim=`${aEpoca+1}-06-30`, ds=Object.values(anual).filter(a=>a.id>=ini&&a.id<=fim), js=listaJogosCal().filter(j=>j.data>=ini&&j.data<=fim);
   pn.innerHTML=`<header><h2>Resumo da época</h2><p class="sub">${ds.filter(a=>a.tipo==="ut").length} UT planeadas · ${ds.filter(a=>a.tipo==="folga").length} folgas · ${js.length} jogos (${js.filter(j=>j.casa).length} em casa)</p></header>
     <div class="add"><h3>Legenda</h3><div class="pan-leg">${PERIODOS.map(([k,n,c])=>`<span><i style="background:${c}"></i>${n}</span>`).join("")}
-      <span><i style="background:${corJogo({casa:true})}"></i>Jogo em casa</span><span><i style="background:${corJogo({casa:false})}"></i>Jogo fora</span><span><i class="folga"></i>Folga</span><span><i class="pausa"></i>Interrupção</span></div>
+      <span><i style="background:${corJogo({casa:true})}"></i>Jogo em casa</span><span><i style="background:${corJogo({casa:false})}"></i>Jogo fora e CFA</span><span><i class="folga"></i>Folga</span><span><i class="pausa"></i>Interrupção</span></div>
       <p class="sub" style="margin:6px 0 0">TAT Taça AFAH · CFA Campeonato dos Açores · TIT Taça Ilha Terceira · TP Taça de Portugal · ST Supertaça · JT jogo-treino</p></div>`; }
 
 /* ---------- PDF do planeamento anual (v105): para enviar à direção e aos jogadores quando há alterações ----------
@@ -132,11 +134,11 @@ async function pdfAnual(){ await carregaJsPdf(false);
     y+=hM;
     ds.forEach((d,i)=>{ if(!d) return; const c=celulaAnual(d), A=anual[d];
       const fundo=c.cor?rgb(c.cor):c.cls==="folga"?[252,228,160]:c.cls==="pausa"?[255,125,125]:c.cls==="outro"?[230,221,242]:BR;
-      box(xd(i),y,dw,hP,fundo); if(c.txt) T(c.txt,xd(i)+dw/2,y+hP/2,c.cls==="outro"?5.5:6.5,{b:1,c:c.cls==="pausa"?BR:INK}); });
+      box(xd(i),y,dw,hP,fundo); if(c.txt) T(c.txt,xd(i)+dw/2,y+hP/2,c.cls==="outro"?5.5:6.5,{b:1,c:c.cls==="pausa"?BR:c.cls==="ut"?RED:INK}); });
     y+=hP; doc.setDrawColor(...INK); doc.setLineWidth(.6); doc.line(X0,y,X0+W0,y); });
   doc.setDrawColor(...INK); doc.setLineWidth(.8); doc.rect(X0,y-12*(hD+hM+hP)-hH,W0,12*(hD+hM+hP)+hH);
   /* legenda e mesociclos */
-  y+=12; let x=X0; const leg=[...PERIODOS.map(([k,n,c])=>[n,c]),["Jogo em casa",corJogo({casa:true})],["Jogo fora",corJogo({casa:false})],["Folga","#FCE4A0"],["Interrupção","#FF7D7D"]];
+  y+=12; let x=X0; const leg=[...PERIODOS.map(([k,n,c])=>[n,c]),["Jogo em casa",corJogo({casa:true})],["Jogo fora e CFA",corJogo({casa:false})],["Folga","#FCE4A0"],["Interrupção","#FF7D7D"]];
   leg.forEach(([n,c])=>{ box(x,y-4,9,9,rgb(c)); T(n,x+13,y+.5,7.5,{al:"left"}); doc.setFont(F,"normal"); doc.setFontSize(7.5); x+=doc.getTextWidth(F==="RC"?n:pdfTxt(n))+26; });
   y+=13; T("TAT Taça AFAH · CFA Campeonato dos Açores · TIT Taça Ilha Terceira · TP Taça de Portugal · ST Supertaça · JT jogo-treino",X0,y+.5,7,{al:"left",c:[110,106,98]});
   if(ms.length){ y+=14; const cw=W0/Math.min(4,ms.length);
