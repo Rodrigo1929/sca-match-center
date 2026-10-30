@@ -571,7 +571,7 @@ const mc = await pg.evaluate(async (seg) => { const ks = est.plantel.filter((p) 
   r.cores = W.dias.map((x) => x.bloco && x.bloco.cor || "").join(","); calendario.tmcA.casa = false;
   r.fora = semanaMicro(seg).dias.map((x) => x.bloco && x.bloco.cor || "").slice(5).join(","); calendario.tmcA.casa = true;
   const aE = aEpoca; aEpoca = 2026; r.anual = (await pdfAnual()).getNumberOfPages(); aEpoca = aE;
-  r.cfa = [celulaAnual("2027-06-13").cor, celulaAnual("2027-06-16").cor].join(",");   // v105.1: no Ano o CFA é sempre azul; a taça em casa continua vermelha
+  r.cfa = ["2027-06-13", "2027-06-16"].map((d) => celulaAnual(d).cor + celulaAnual(d).letra).join(",");   // v105.2: no Ano o fundo é a prova (CFA azul escuro, Taça AFAH cinzento) e a letra casa (vermelho) / fora (azul claro)
   mcSeg = seg; uModo = "micro"; return r; }, SEGM);
 await pg.click("#tab-u"); await pg.waitForSelector(".mc-tab");
 const mcUi = { blocos: await pg.locator(".mc-tab .mc-bloco").count() };
@@ -605,7 +605,7 @@ if (ia.semana !== "OBJ IA*|PI IA*|Jogo reduzido e finalização|PFIN IA*|OBJ IA*
 await pg.evaluate((seg) => { delete ciclos["micro-" + seg]; mcSample = undefined; }, SEGM);
 await pg.click("#mc-pad"); await pg.waitForSelector(".mc-pl"); mcUi.padrao = await pg.locator(".mc-pl").count(); await pg.click("#sheet-root [data-close]"); await pg.waitForTimeout(100);
 if (mc.md !== "MD-4,MD-3,MD+1,MD+2,MD" || mc.blocos !== "folga,,,jogo,,estagio,md" || mc.at !== "2,1" || mc.min !== 10 || mc.ut !== "UT 901" || mc.hora !== "19h30 - 21h00" || mc.n !== 77 || mc.pf !== "Texto escrito|true" || mc.repor || !mc.pdf
-  || mc.cores !== ",,,#F28E86,,#F28E86,#F28E86" || mc.fora !== "#B3CEFB,#B3CEFB" || mc.anual !== 2 || mc.cfa !== "#B3CEFB,#F28E86"
+  || mc.cores !== ",,,#F28E86,,#F28E86,#F28E86" || mc.fora !== "#B3CEFB,#B3CEFB" || mc.anual !== 2 || mc.cfa !== "#1F3864#FF6B6B,#404040#FF6B6B"
   || mcUi.blocos !== 4 || mcUi.campo !== "Jogo reduzido e finalização" || mcUi.fechado !== "fechado,0" || mcUi.reaberto !== "rascunho,2" || mcUi.padrao !== 9)
   erros.push("Microciclo: resumo errado " + JSON.stringify({ mc, mcUi }));
 await pg.evaluate((seg) => { ["tmcA", "tmcJ", "tmcB"].forEach((id) => delete calendario[id]); delete semanas[seg]; delete uts.tmc1;

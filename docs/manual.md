@@ -83,7 +83,7 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - **Histórico do Excel** (v97): os 21 passes e as cuecas do Excel (setembro e outubro de 2026) contam pela data de cada treino; «UT com meinho» conta quando o atleta estava presente (presenças do emjogo). Os registos de 23/10 ficaram na UT39 (21/10).
 
 ## Planeamento anual (Treino › Ano): cores e PDF (v105)
-- Jogos em casa a **vermelho claro** e fora a **azul claro**, como no plano semanal do clube (também no plano semanal e no Micro; o estágio e a viagem levam a cor do jogo). No Ano, os jogos do **CFA** ficam sempre a azul, em casa e fora (v105.1), e o nº das UT a vermelho.
+- Jogos em casa a **vermelho claro** e fora a **azul claro**, como no plano semanal do clube (também no plano semanal e no Micro; o estágio e a viagem levam a cor do jogo). No Ano (v105.2) o **fundo é a prova** (CFA azul escuro, Taça AFAH cinzento escuro, Taça Ilha Terceira verde, jogo-treino laranja, Taça de Portugal roxo) e a **letra diz casa (vermelho) ou fora (azul claro)**; o nº das UT fica a vermelho e o período transitório (férias) a cor-de-rosa.
 - **⬇ PDF do ano**: A4 horizontal com a grelha da época, a legenda, os mesociclos e a data da última alteração; na 2.ª página o calendário de jogos. Serve para enviar à direção e aos jogadores sempre que o plano muda.
 - As cores mudam-se em ⚙ Padrão MD › Regimes e cores (blocos Folga, Jogo em casa, Jogo fora).
 
