@@ -93,6 +93,7 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - Mexer no **slide inicial** muda os outros (aviso com os nomes; «↶ Desfazer» volta tudo atrás). As setas que saem de um jogador passam a sair do sítio novo.
 - Arrastar uma bolinha num lance ligado deixa-a **no seu sítio só nesse lance** (ex.: o homem que sai do pé do GR no Canto Aberto). Toca nela para «↺ Voltar a seguir»; nas Propriedades há «Voltar a seguir todas».
 - No slide inicial, **trocar o jogador** de uma bolinha (ex.: o 8 passa a 40) faz a mesma troca nos lances que o seguem; se o 40 já lá estava, os dois trocam (v108.1).
+- Ao ligar, a posição inicial fica **igual** à do slide inicial (as alternativas também); só o que arrastares depois nesse lance fica no seu sítio (v109.0.1).
 - Na lista, os **slides iniciais** estão sombreados com barra dourada; os que os seguem têm ↳.
 
 ## Quadro: passar de lance (v107.3)

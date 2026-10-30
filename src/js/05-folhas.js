@@ -169,12 +169,11 @@ function folhaProps(L){
       pb.innerHTML=`<label class="f">Posição inicial igual a<select id="pp-b"><option value="">— própria deste lance —</option>${opc.map(x=>`<option value="${esc(x.id)}">${esc(x.nome)}</option>`).join("")}</select></label>
         <p class="sub" style="margin:0">As bolinhas, a bola e os adversários seguem esse lance; as setas, as tarefas e os textos ficam deste.${L.base&&so.length?` Soltas neste lance: ${so.map(k=>esc(nomePecaL(L,k))).join(", ")}.`:""}</p>${L.base&&so.length?`<button class="btn" id="pp-todas">↺ Voltar a seguir todas</button>`:""}`;
       s.querySelector("#pp-b").value=L.base&&opc.some(x=>x.id===L.base)?L.base:"";
-      const td=s.querySelector("#pp-todas"); if(td) td.onclick=()=>{ const B=baseDe(L); if(!B) return; const C=copiaLance(L), PB=pecasPos(B), PC=pecasPos(C);
-        Object.keys(PC).forEach(k=>{ if(PB[k]) poePeca(C,PC[k],PB[k].cx,PB[k].cy); }); C.soltas=[]; guardaLance(C,{segue:true}); fecha(); toast(`Tudo volta a seguir o «${B.nome}»`); }; }
+      const td=s.querySelector("#pp-todas"); if(td) td.onclick=()=>{ const B=baseDe(L); if(!B) return; const C=copiaLance(L); movePecas(C,paraBase(C,B)); C.soltas=[]; guardaLance(C,{segue:true}); fecha(); toast(`Tudo volta a seguir o «${B.nome}»`); }; }
     s.querySelector("#pp-ok").onclick=()=>{ const C=clone(L); C.nome=inp.value.trim()||L.nome; C.tipo=tipo;
       const sb=s.querySelector("#pp-b"), nb=sb?sb.value:L.base||""; let msg=null;
       if(sb&&nb!==(L.base||"")){ if(!nb){ desligaBase(C); msg="Este lance passa a ter a sua posição inicial"; }
-        else { const B=lances().find(x=>x.id===nb); const sl=ligaBase(C,B); msg=`Posição inicial igual ao «${B.nome}»${sl.length?` · ficam no seu sítio: ${sl.map(k=>nomePecaL(C,k)).join(", ")}`:""}`; } }
+        else { const B=lances().find(x=>x.id===nb); ligaBase(C,B); msg=`Posição inicial igual ao «${B.nome}» (o que arrastares depois neste lance fica no seu sítio)`; } }
       guardaLance(C,{segue:true}); fecha(); if(msg) toast(msg); };
   });
 }

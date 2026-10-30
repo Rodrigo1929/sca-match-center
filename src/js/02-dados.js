@@ -63,35 +63,39 @@ function gravaLances(novos,msg){ if(!novos.length) return 0; const antes=novos.m
   return novos.length; }
 const copiaLance=L=>{ const C=clone(L); delete C.original; return C; };
 /* posição inicial ligada (v108): um lance pode seguir as posições de outro (o slide inicial, `base`).
-   Seguem as bolinhas (pela posição no onze, sem alternativas), a bola (bj0…) e os adversários (a0…); as setas, tarefas e textos são de cada lance.
+   Seguem as bolinhas (pela posição no onze; as alternativas também, `slot~1`…), a bola (bj0…) e os adversários (a0…); as setas, tarefas e textos são de cada lance.
    `soltas` = peças deste lance que ficaram no seu sítio. Mexer no slide inicial muda os outros; mexer numa peça de um lance ligado solta-a. */
-const LIGA_SOLTA=2000; /* ao ligar: diferenças maiores do que isto (~2 m) ficam soltas, as menores acertam pelo slide inicial */
-function pecasPos(L){ const m={}; (L.bolas||[]).forEach(b=>{ if(!eAlternativa(b)&&!m[b.slot]) m[b.slot]=b; }); (L.bj||[]).forEach((b,i)=>m["bj"+i]=b); (L.adv||[]).forEach((a,i)=>m["a"+i]=a); return m; }
+function pecasPos(L){ const m={}, na={}; (L.bolas||[]).forEach(b=>{ if(eAlternativa(b)){ na[b.slot]=(na[b.slot]||0)+1; m[b.slot+"~"+na[b.slot]]=b; } else if(!m[b.slot]) m[b.slot]=b; });
+  (L.bj||[]).forEach((b,i)=>m["bj"+i]=b); (L.adv||[]).forEach((a,i)=>m["a"+i]=a); return m; }
 const soltasDe=L=>Array.isArray(L.soltas)?L.soltas:[];
 const baseDe=L=>L&&L.base?lances().find(x=>x.id===L.base&&x.bolas&&x.bolas.length&&!x.base)||null:null;
 const seguidoresDe=id=>lances().filter(x=>x.base===id&&x.id!==id);
-function nomePecaL(L,k){ return k.startsWith("bj")?"a bola":/^a\d+$/.test(k)?"o adversário "+(+k.slice(1)+1):"o "+((L.fixo&&L.fixo[k])||baseOf(k)); }
-/* põe a peça k de F no sítio (x,y); as setas que saem dela passam a sair do sítio novo (o destino fica) */
-function poePeca(F,it,x,y){ const dx=x-it.cx, dy=y-it.cy; if(!dx&&!dy) return false; const rr=(it.r||1450)*1.6;
-  (F.setas||[]).forEach(s=>{ if(Math.hypot(s.x1-it.cx,s.y1-it.cy)>rr) return; s.x1=Math.round(s.x1+dx); s.y1=Math.round(s.y1+dy); if(s.qx!=null){ s.qx=Math.round(s.qx+dx/2); s.qy=Math.round(s.qy+dy/2); } });
-  it.cx=x; it.cy=y; return true; }
+function nomePecaL(L,k){ if(k.startsWith("bj")) return "a bola"; if(/^a\d+$/.test(k)) return "o adversário "+(+k.slice(1)+1);
+  const [sl,alt]=k.split("~"); return "o "+((L.fixo&&L.fixo[sl])||baseOf(sl))+(alt?" (alternativa)":""); }
+/* põe várias peças de F nos sítios novos (mov = [[peça, x, y]…]). Uma seta que sai de uma peça passa a sair do sítio novo
+   (o destino fica), exceto se o sítio de onde sai continuar ocupado por outra peça (ex.: a alternativa que lá ficou). */
+function movePecas(F,mov){ const rr=it=>(it.r||1450)*1.6, novo=new Map(mov.map(([it,x,y])=>[it,{x,y}])), pos=it=>novo.get(it)||{x:it.cx,y:it.cy}, todas=Object.values(pecasPos(F));
+  (F.setas||[]).forEach(s=>{ let dono=null, bd=Infinity; mov.forEach(([it])=>{ const d=Math.hypot(s.x1-it.cx,s.y1-it.cy); if(d<=rr(it)&&d<bd){ bd=d; dono=it; } }); if(!dono) return;
+    if(todas.some(it=>{ const p=pos(it); return Math.hypot(s.x1-p.x,s.y1-p.y)<=rr(it); })) return;
+    const p=pos(dono), dx=p.x-dono.cx, dy=p.y-dono.cy; s.x1=Math.round(s.x1+dx); s.y1=Math.round(s.y1+dy); if(s.qx!=null){ s.qx=Math.round(s.qx+dx/2); s.qy=Math.round(s.qy+dy/2); } });
+  let m=false; mov.forEach(([it,x,y])=>{ if(it.cx!==x||it.cy!==y){ it.cx=x; it.cy=y; m=true; } }); return m; }
+/* peças de C que seguem B (todas as chaves comuns menos `fora`) → movimentos para o sítio de B */
+const paraBase=(C,B,fora=[])=>{ const PB=pecasPos(B), PC=pecasPos(C); return Object.keys(PC).filter(k=>PB[k]&&!fora.includes(k)).map(k=>[PC[k],PB[k].cx,PB[k].cy]); };
 /* o slide inicial mudou (velho → novo): devolve [antes, depois] de cada lance que o segue e mudou */
 function acompanhaBase(velho,novo){ if(!velho||novo.base) return []; const P0=pecasPos(velho), P1=pecasPos(novo);
   const mex=Object.keys(P1).filter(k=>P0[k]&&(P0[k].cx!==P1[k].cx||P0[k].cy!==P1[k].cy)); if(!mex.length) return [];
-  const out=[]; seguidoresDe(novo.id).forEach(F=>{ const A=copiaLance(F), C=copiaLance(F), PF=pecasPos(C), so=soltasDe(C); let m=false;
-    mex.forEach(k=>{ if(!so.includes(k)&&PF[k]&&poePeca(C,PF[k],P1[k].cx,P1[k].cy)) m=true; }); if(m) out.push([A,C]); });
+  const out=[]; seguidoresDe(novo.id).forEach(F=>{ const A=copiaLance(F), C=copiaLance(F), PF=pecasPos(C), so=soltasDe(C);
+    if(movePecas(C,mex.filter(k=>!so.includes(k)&&PF[k]).map(k=>[PF[k],P1[k].cx,P1[k].cy]))) out.push([A,C]); });
   return out; }
 /* peças mexidas num lance ligado ficam soltas; devolve as que se soltaram agora */
 function soltaMexidas(velho,C){ if(!C.base||!velho) return []; const P0=pecasPos(velho), P1=pecasPos(C), so=soltasDe(C);
   const novas=Object.keys(P1).filter(k=>P0[k]&&!so.includes(k)&&(P0[k].cx!==P1[k].cx||P0[k].cy!==P1[k].cy)); if(novas.length) C.soltas=[...so,...novas]; return novas; }
-/* ligar C ao slide inicial B: o que está perto acerta por B, o que está longe fica solto */
-function ligaBase(C,B){ const PB=pecasPos(B), PC=pecasPos(C), soltas=[];
-  Object.keys(PC).forEach(k=>{ if(!PB[k]) return; if(Math.hypot(PC[k].cx-PB[k].cx,PC[k].cy-PB[k].cy)>LIGA_SOLTA) soltas.push(k); else poePeca(C,PC[k],PB[k].cx,PB[k].cy); });
-  C.base=B.id; C.soltas=soltas; return soltas; }
+/* ligar C ao slide inicial B (v108.2): a posição inicial fica igual à de B; depois, o que se arrastar neste lance fica solto */
+function ligaBase(C,B){ movePecas(C,paraBase(C,B)); C.base=B.id; C.soltas=[]; return []; }
 function desligaBase(C){ delete C.base; delete C.soltas; }
 /* voltar a seguir: a peça k volta ao sítio do slide inicial */
 function voltaSeguir(L,k){ const B=baseDe(L); if(!B) return; const C=copiaLance(L), PB=pecasPos(B), PC=pecasPos(C);
-  if(PB[k]&&PC[k]) poePeca(C,PC[k],PB[k].cx,PB[k].cy); C.soltas=soltasDe(C).filter(x=>x!==k); guardaLance(C,{segue:true}); toast(`${nomePecaL(C,k)[0].toUpperCase()+nomePecaL(C,k).slice(1)} volta a seguir o «${B.nome}»`); }
+  if(PB[k]&&PC[k]) movePecas(C,[[PC[k],PB[k].cx,PB[k].cy]]); C.soltas=soltasDe(C).filter(x=>x!==k); guardaLance(C,{segue:true}); toast(`${nomePecaL(C,k)[0].toUpperCase()+nomePecaL(C,k).slice(1)} volta a seguir o «${B.nome}»`); }
 /* troca de lugar entre titulares: os lances ficam iguais (fixa quem lá estava nas tarefas que seguiam o onze) */
 function fixaLances(slotsTroca,antesB){ const novos=[];
   lancesAjustaveis().forEach(L=>{ const ss=slotsDe(L).filter(s=>slotsTroca.includes(s)&&!(L.fixo&&L.fixo[s])); if(!ss.length) return;
