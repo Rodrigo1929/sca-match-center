@@ -635,8 +635,10 @@ const bp = await pg.evaluate(() => { const J0 = clone(jogo), E0 = clone(est), D0
   est.linhas = [{ id: "p1", sai: "20", entra: "2", modo: "todos" }]; r.troca = v();
   // planeada 7 -> 21 mas no Ao vivo entrou o 22: conta o que aconteceu
   est.linhas = [{ id: "p2", sai: "7", entra: "21", modo: "todos" }]; jogo.subs.push({ id: "s7", sai: "7", entra: "22", min: "70:00", c: 2 }); r.real = v();
-  jogo = J0; est = E0; lancesDb = D0; return r; });
-if (JSON.stringify(bp) !== JSON.stringify({ ini: "4,3,9,5,7", lugar: "4,3,9,5,7", sai: "19,3,9,5,7", aus: "70", corr: "19,3,9,5,7", rep: "19,3,9,5,7", vivo: "19,3,20,5,7", troca: "19,3,2,5,7", real: "19,3,20,5,22" }))
+  // botão do Quadro (clique a sério): aviso com repetidos, toca e o lance fica sem repetidos
+  lancesDb.tbp.fixo["5"] = "3"; jogo.subs = []; est.linhas = []; curId = "tbp"; render(); const bt = document.getElementById("q-aus"); r.botao = !!bt; if (bt) bt.click(); r.depoisBotao = v();
+  jogo = J0; est = E0; lancesDb = D0; render(); return r; });
+if (JSON.stringify(bp) !== JSON.stringify({ ini: "4,3,9,5,7", lugar: "4,3,9,5,7", sai: "19,3,9,5,7", aus: "70", corr: "19,3,9,5,7", rep: "19,3,9,5,7", vivo: "19,3,20,5,7", troca: "19,3,2,5,7", real: "19,3,20,5,22", botao: true, depoisBotao: "19,3,9,5,7" }))
   erros.push("Bolas paradas e substituições: " + JSON.stringify(bp));
 await pg.click("#tab-j"); await pg.click("#j-cal"); await pg.waitForSelector('[data-cal="tmcA"]'); await pg.click('[data-cal="tmcA"]');
 if (await pg.locator('[data-cal="tmcA"]').count()) await pg.click('[data-cal="tmcA"]'); await pg.waitForTimeout(150);
