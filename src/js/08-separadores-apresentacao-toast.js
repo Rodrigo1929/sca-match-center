@@ -97,6 +97,8 @@ function folhaPainel(){ const C=COMPS[jogo.comp]||COMPS.taca, sr=subsReais(), pa
       tr.children[0].textContent=rot(x.n)+(x.tit?"":" (entrou)")+(c?.verm?" 🟥":c?.am?" 🟨":""); tb.appendChild(tr); });
   }); }
 function setTab(t){ if(t!=="m"&&typeof mPara==="function") mPara(); if(t!=="m"&&typeof mSaiFig==="function") mSaiFig(); if(t!=="x"&&typeof xPara==="function") xPara();
-  ["q","j","d","p","h","a","v","m","x","u"].forEach(k=>{ $("tab-"+k).setAttribute("aria-selected",String(k===t)); $("view-"+k).hidden=k!==t; }); renderBanco(); if(t==="j") renderJogo(); if(t==="d") renderAdv(); if(t==="h") renderHist(); if(t==="a") renderAnalise(); if(t==="v") renderVivo(); if(t==="m"&&typeof renderModelo==="function") renderModelo(); if(t==="x"&&typeof renderEx==="function") renderEx(); if(t==="u"&&typeof renderUT==="function") renderUT(); }
+  ["q","j","d","p","h","a","v","m","x","u"].forEach(k=>{ $("tab-"+k).setAttribute("aria-selected",String(k===t)); $("view-"+k).hidden=k!==t; }); renderBanco(); if(t==="j") renderJogo(); if(t==="d") renderAdv(); if(t==="h") renderHist(); if(t==="a") renderAnalise(); if(t==="v") renderVivo(); if(t==="m"&&typeof renderModelo==="function") renderModelo(); if(t==="x"&&typeof renderEx==="function") renderEx(); if(t==="u"&&typeof renderUT==="function") renderUT();
+  /* v111: no telemóvel a barra rola de lado: o separador aberto fica à vista */
+  { const b=$("tab-"+t), bar=b.parentElement; if(bar.scrollWidth>bar.clientWidth){ const l=b.offsetLeft-bar.offsetLeft; if(l<bar.scrollLeft||l+b.offsetWidth>bar.scrollLeft+bar.clientWidth) bar.scrollLeft=Math.max(0,l-(bar.clientWidth-b.offsetWidth)/2); } } }
 ["q","j","d","p","h","a","v","m","x","u"].forEach(k=>$("tab-"+k).onclick=()=>setTab(k));
 function dataPt(d){ return d?new Date(d+"T12:00").toLocaleDateString("pt-PT"):"sem data"; }
