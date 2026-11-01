@@ -14,6 +14,12 @@ const ipad = process.argv.includes("--ipad");
 const cap = join(raiz, ipad ? "tests/capturas/ipad" : "tests/capturas"); mkdirSync(cap, { recursive: true });
 const browser = ipad ? await webkit.launch() : await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
 const pg = ipad ? await (await browser.newContext({ ...devices["iPad (gen 7) landscape"] })).newPage() : await browser.newPage({ viewport: { width: 1366, height: 900 } });
+// sem acesso às CDN (ex.: ambiente fechado): CDN_LOCAL=<pasta com node_modules de jspdf, jspdf-autotable, xlsx e mp4-muxer> serve os scripts dali
+const cdnLocal = async (alvo) => { const d = process.env.CDN_LOCAL; if (!d) return; const { readFileSync } = await import("node:fs");
+  const mapa = [[/jspdf-autotable/, "jspdf-autotable/dist/jspdf.plugin.autotable.min.js"], [/jspdf\/2/, "jspdf/dist/jspdf.umd.min.js"], [/xlsx/, "xlsx/dist/xlsx.full.min.js"], [/mp4-muxer/, "mp4-muxer/build/mp4-muxer.js"]];
+  await alvo.route(/cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|fonts\.(googleapis|gstatic)\.com/, (r) => { const m = mapa.find(([re]) => re.test(r.request().url()));
+    return m ? r.fulfill({ status: 200, contentType: "application/javascript", body: readFileSync(join(d, "node_modules", m[1])) }) : r.fulfill({ status: 200, body: "" }); }); };
+await cdnLocal(pg);
 // o WebKit regista como erro de página um fetch a file:// já apanhado pela app (imagem em falta); no link é https e não acontece
 const erros = []; pg.on("pageerror", (e) => { const s = String(e); if (!/Fetch API cannot load file:/.test(s)) erros.push(s); });
 await pg.goto(pathToFileURL(join(raiz, "dist/index.html")).href);
@@ -873,10 +879,37 @@ await pg.click("#ia-ok"); const n1 = await pg.evaluate(() => advs.lusitania.plan
 const n2 = await pg.evaluate(() => advs.lusitania.plantel.length);
 if (n1 !== 13 || n2 !== 11) erros.push("Adversário: substituir o plantel importado devia pedir 2 toques " + JSON.stringify({ n1, n2 }));
 
+// v112: princípios do Modelo de Jogo — carregar o modelo, ligar exercícios (1 ★ + até 3), propostas, tempo treinado, linha da UT e PowerPoint
+{ const { readFileSync } = await import("node:fs");
+  const M = JSON.parse(readFileSync(join(raiz, "docs/modelo-2627.json"), "utf8"));
+  const v112 = await pg.evaluate(async (M) => { const r = {};
+    repoePrincipios({ principios: M.principios, modeloTxt: M.modeloTxt });
+    r.n = Object.keys(principios).length; r.cadeia = princCadeia("OD-3.1").join(",");
+    const ids = Object.keys(exercicios); const E = exercicios[ids[0]];
+    r.max = normPr({ p: "OD-3.1", s: ["OO-3.1", "TD-1", "OD-4.2", "TO-4", "OD-3.1"] }).s.length;
+    guardaEx({ ...E, princ: { p: "OD-3.1", s: ["OO-3.1"] } }, true);
+    // proposta: aceitar passa para o exercício e sai da lista
+    const E2 = ids.find((id) => prVazio(exercicios[id].princ)); princProp = { [E2]: { p: "TD-1", s: ["TD-1.1"], conf: "media" } };
+    r.porRever = propsPorRever().length; aceitaProp(E2); r.aceite = exercicios[E2].princ.p === "TD-1" && !princProp[E2] && propsPorRever().length === 0;
+    // linha da UT: herda, muda só nesta UT, «nenhum» = null
+    const U = Object.values(uts).find((u) => u.exercicios.some((l) => !l.pai && l.exId === E.id));
+    if (U) { const l = U.exercicios.find((l) => !l.pai && l.exId === E.id); delete l.princ; r.herda = princLinha(l).p === "OD-3.1";
+      l.princ = { p: "OO-3.1", s: [] }; r.muda = princLinha(l).p === "OO-3.1"; const T = tempoPrinc([U]).T; r.tempo = !!(T["OO-3.1"] && T["OO-3.1"].pri > 0 && T["OO-3"] && T["M:oo"]);
+      l.princ = null; r.nenhum = princLinha(l) === null; delete l.princ; } else r.semUT = true;
+    const pres = deckModelo(); r.slides = pres.slides.length;
+    const B = JSON.parse(JSON.stringify({ principios, modeloTxt, princProp })); r.copia = Object.keys(B.principios).length === r.n && !!B.modeloTxt.identidade;
+    return r; }, M);
+  if (v112.n !== 86 || v112.cadeia !== "OD-3.1,OD-3,M:od" || v112.max !== 3 || v112.porRever !== 1 || !v112.aceite || (!v112.semUT && (!v112.herda || !v112.muda || !v112.tempo || !v112.nenhum)) || v112.slides < 25 || !v112.copia)
+    erros.push("Modelo de Jogo (v112): princípios, ligações, propostas ou tempo " + JSON.stringify(v112));
+  await pg.evaluate(() => { setTab("m"); mModo = "princ"; pSec = "tempo"; renderModelo(); }); await pg.waitForTimeout(200);
+  await pg.screenshot({ path: join(cap, "modelo-principios-tempo.png"), fullPage: true });
+  await pg.evaluate(() => { mModo = "quadros"; renderModelo(); }); }
+
 // base de dados simulada: no link, os dados que chegam da base de dados vêm congelados (snapshots e data());
 // a app tem de os copiar à entrada (lerDoc), senão uma alteração a seguir pode não mudar nada sem dar erro (como na app de observação)
 {
   const ctx = ipad ? await browser.newContext({ ...devices["iPad (gen 7) landscape"] }) : await browser.newContext({ viewport: { width: 1366, height: 900 } });
+  await cdnLocal(ctx);
   const pb = await ctx.newPage();
   pb.on("pageerror", (e) => { const s = String(e); if (!/Fetch API cannot load file:/.test(s)) erros.push("bd simulada: " + s); });
   await pb.addInitScript(() => {

@@ -149,7 +149,8 @@ function renderMicroPainel(){ const W_=semanaMicro(mcSeg), E=W_.E, pn=$("u-panel
       ${W_.nIA&&!W_.fechado?`<p class="mc-av ia" style="margin:0 0 8px">${W_.nIA} ${W_.nIA===1?"texto da IA por aprovar":"textos da IA por aprovar"}</p><button class="btn" id="mc-apr" style="margin-bottom:8px">✓ Aprovar todos os textos IA</button>`:""}
       ${W_.fechado?`<button class="btn" id="mc-re">Reabrir microciclo</button><p class="sub" style="margin:6px 0 0">Fechado: os campos ficam só de leitura.</p>`
         :`<button class="btn primary" id="mc-fe">🔒 Fechar microciclo</button><p class="sub" style="margin:6px 0 0">${W_.pronto?"Pronto a fechar.":"Ainda há UT por dar ou sem presenças; podes fechar na mesma."}${W_.nIA?` Há ${W_.nIA} textos da IA por aprovar.`:""}</p>`}
-      ${E.hist.length?`<h3 style="margin-top:12px">Histórico</h3><ul class="uavisos">${E.hist.slice().reverse().map(x=>`<li>${x.acao==="fechar"?"Fechado":"Reaberto"} · ${esc(dataHora(x.em))}</li>`).join("")}</ul>`:""}</div>`;
+      ${E.hist.length?`<h3 style="margin-top:12px">Histórico</h3><ul class="uavisos">${E.hist.slice().reverse().map(x=>`<li>${x.acao==="fechar"?"Fechado":"Reaberto"} · ${esc(dataHora(x.em))}</li>`).join("")}</ul>`:""}</div>
+    ${typeof htmlResumoPrinc==="function"?htmlResumoPrinc(W_.uSem,"Princípios treinados na semana"):""}`;
   if($("mc-apr")) confirma2($("mc-apr"),"Toca outra vez para aprovar todos",()=>{ Object.values(microCampo).filter(c=>c.seg===mcSeg&&c.ia).forEach(c=>aprovaCampoMc(mcSeg,c.campo,true)); renderUT(); toast("Textos da IA aprovados"); });
   const b=$("mc-fe")||$("mc-re"); confirma2(b,"Toca outra vez para confirmar",()=>mudaEstadoMc(mcSeg,W_.fechado?"reabrir":"fechar")); }
 function mudaEstadoMc(seg,acao){ const E=microResumo[seg]||normMResumo({id:seg}), em=new Date().toISOString();

@@ -37,6 +37,13 @@ Jogadores dos lances ligados (v110, decidido pelo Rodrigo em 30/10/2026; substit
 
 Posição inicial ligada (v108, decidido pelo Rodrigo em 30/10/2026): um lance pode ter a «posição inicial igual a» outro lance (o slide inicial, `base`). Seguem as bolinhas (pela posição no onze, sem alternativas), a bola e os adversários; as setas, as tarefas e os textos são de cada lance. Mexer no slide inicial muda os lances que o seguem; as setas que saem de uma peça passam a sair do sítio novo e o destino fica. Mexer numa peça num lance ligado deixa-a no seu sítio só nesse lance (`soltas`), com «Voltar a seguir». Ao ligar, a posição inicial fica toda igual à do slide inicial, alternativas incluídas (v109.0.1; antes, diferenças maiores do que ~2 m ficavam soltas); uma seta só muda se o sítio de onde sai ficar vazio. Um slide inicial não segue outro. Trocar o jogador de uma bolinha no slide inicial faz a mesma troca nos lances que o seguem (quem era passa a ser o novo; se o novo já estava, trocam), sem copiar quem está em cada sítio: cada variante mantém os seus jogadores (v108.1). Na lista, os slides iniciais aparecem sombreados com barra dourada e os que os seguem com ↳.
 
+## Princípios do Modelo de Jogo (v112, decidido pelo Rodrigo em 30–31/10/2026)
+- Hierarquia: **macroprincípio** (momento do jogo) → **princípio** → **microprincípio** (o termo «subprincípio» deixa de se usar). Transversais (TR) e rotinas (R) à parte. Os princípios são dados na app, editáveis no Modelo de Jogo; o PowerPoint exporta-se dos dados.
+- Cada exercício: **1 principal (★) e até 3 secundários**, princípio ou microprincípio; o macroprincípio vem por arrasto.
+- Na UT, cada linha herda do repositório e pode mudar principal e secundários só nessa UT (com «↺ Repor do repositório» e «Gravar também no repositório»).
+- **Tempo treinado** de um princípio = minutos de prática dos exercícios em que esteve presente (principal ou secundário), contados uma vez por exercício, com «dos quais principal» e % do tempo de treino (a soma passa de 100%). Sem complementares. Por período, nível (macro / princípio / micro) e atleta.
+- Propostas para os exercícios antigos: feitas a partir da categoria, objetivos e comportamentos; só entram ao aceitar. Validação do João depois, dentro da app.
+
 ## Competição interna e Meinho (v110, decidido pelo Rodrigo em 30/10/2026)
 - Golo que vale 2: conta 2 no resultado da equipa (V/E/D, GM, GS e DG); o marcador fica com 1 golo e o GR com 1 golo sofrido.
 - Equipa com menos 1: num jogo pode entrar um reforço de outra equipa e sair um jogador. Só nesse jogo. O reforço conta pela equipa que reforça (resultado, pontos e tempo) e os golos dele contam para a estatística individual dele; quem saiu não conta esse jogo.

@@ -1,0 +1,1398 @@
+{
+ "versao": "2026/27 · 31/10/2026",
+ "principios": {
+  "TR-1": {
+   "cod": "TR-1",
+   "nivel": "tr",
+   "mom": "tr",
+   "pai": "",
+   "nome": "Posse com propósito",
+   "comp": "Circular em segurança para «viajar» com bola · paciência e continuidade",
+   "ind": "",
+   "txt": "Progredir para finalizar ou preparar uma nova progressão.",
+   "estado": "vigor",
+   "ordem": 1
+  },
+  "TR-1.1": {
+   "cod": "TR-1.1",
+   "nivel": "micro",
+   "mom": "tr",
+   "pai": "TR-1",
+   "nome": "Paciência e continuidade",
+   "comp": "",
+   "ind": "",
+   "txt": "Não precipitar. Nunca abdicar da nossa forma de jogar, mesmo quando o jogo corre mal.",
+   "estado": "vigor",
+   "ordem": 2
+  },
+  "TR-2": {
+   "cod": "TR-2",
+   "nivel": "tr",
+   "mom": "tr",
+   "pai": "",
+   "nome": "Dentro e fora",
+   "comp": "Atrair de um lado, sair da pressão, aproveitar o lado contrário",
+   "ind": "",
+   "txt": "Atrair num corredor para encontrar espaço no corredor contrário ou por dentro.",
+   "estado": "vigor",
+   "ordem": 3
+  },
+  "TR-3": {
+   "cod": "TR-3",
+   "nivel": "tr",
+   "mom": "tr",
+   "pai": "",
+   "nome": "Terceiro homem",
+   "comp": "Terceiro e quarto homem",
+   "ind": "",
+   "txt": "Utilizar um apoio para encontrar um colega orientado de frente.",
+   "estado": "vigor",
+   "ordem": 4
+  },
+  "TR-4": {
+   "cod": "TR-4",
+   "nivel": "tr",
+   "mom": "tr",
+   "pai": "",
+   "nome": "Apoio e rutura",
+   "comp": "Rutura da 2.ª linha · apoio da 3.ª linha · referências de transição",
+   "ind": "",
+   "txt": "Garantir uma solução próxima enquanto outro jogador ameaça a profundidade.",
+   "estado": "vigor",
+   "ordem": 5
+  },
+  "TR-5": {
+   "cod": "TR-5",
+   "nivel": "tr",
+   "mom": "tr",
+   "pai": "",
+   "nome": "Equilíbrio",
+   "comp": "Ver OO-5 Equilíbrio ofensivo",
+   "ind": "",
+   "txt": "Atacar com coberturas e controlo das ameaças adversárias.",
+   "estado": "vigor",
+   "ordem": 6
+  },
+  "TR-6": {
+   "cod": "TR-6",
+   "nivel": "tr",
+   "mom": "tr",
+   "pai": "",
+   "nome": "Decisão coletiva",
+   "comp": "Ritmo de jogo · temporização · acelerar ou estabilizar · pressionar ou reorganizar",
+   "ind": "",
+   "txt": "Acelerar com vantagem. Proteger e reorganizar quando a ação fecha.",
+   "estado": "vigor",
+   "ordem": 7
+  },
+  "TR-6.1": {
+   "cod": "TR-6.1",
+   "nivel": "micro",
+   "mom": "tr",
+   "pai": "TR-6",
+   "nome": "Temporização ofensiva",
+   "comp": "",
+   "ind": "",
+   "txt": "O portador dá tempo para os colegas ocuparem os espaços: condução horizontal ou passes curtos sem intenção de progredir.",
+   "estado": "vigor",
+   "ordem": 8
+  },
+  "TR-6.2": {
+   "cod": "TR-6.2",
+   "nivel": "micro",
+   "mom": "tr",
+   "pai": "TR-6",
+   "nome": "Ritmo de jogo",
+   "comp": "",
+   "ind": "",
+   "txt": "Passes tensos, poucos toques, dominar com a perna afastada; saber quando «congelar» o jogo.",
+   "estado": "vigor",
+   "ordem": 9
+  },
+  "OO-1": {
+   "cod": "OO-1",
+   "nivel": "princ",
+   "mom": "oo",
+   "pai": "",
+   "nome": "Superioridade e segurança",
+   "comp": "GR e 1.ª linha oferecem soluções. O portador conduz quando tem espaço e atrai antes de soltar.",
+   "ind": "Encontramos um jogador de frente além da primeira pressão.",
+   "txt": "",
+   "estado": "vigor",
+   "ordem": 10
+  },
+  "OO-1.1": {
+   "cod": "OO-1.1",
+   "nivel": "micro",
+   "mom": "oo",
+   "pai": "OO-1",
+   "nome": "Atrair antes de soltar",
+   "comp": "",
+   "ind": "",
+   "txt": "A condução funciona como íman à pressão e transforma um 1×1 num 2×1.",
+   "estado": "vigor",
+   "ordem": 11
+  },
+  "OO-1.2": {
+   "cod": "OO-1.2",
+   "nivel": "micro",
+   "mom": "oo",
+   "pai": "OO-1",
+   "nome": "Apoios constantes / ajustar",
+   "comp": "",
+   "ind": "",
+   "txt": "Uma rede de soluções: 1–2 apoios laterais, 2 de progressão, apoios para a profundidade e 1–2 passes de segurança atrás da bola.",
+   "estado": "vigor",
+   "ordem": 12
+  },
+  "OO-1.3": {
+   "cod": "OO-1.3",
+   "nivel": "micro",
+   "mom": "oo",
+   "pai": "OO-1",
+   "nome": "Construção apoiada: jogadores de outra linha",
+   "comp": "",
+   "ind": "",
+   "txt": "Médio que baixa na 1.ª fase; ala ou lateral que entra por fora na entrada no espaço.",
+   "estado": "vigor",
+   "ordem": 13
+  },
+  "OO-1.4": {
+   "cod": "OO-1.4",
+   "nivel": "micro",
+   "mom": "oo",
+   "pai": "OO-1",
+   "nome": "Posse segura",
+   "comp": "",
+   "ind": "",
+   "txt": "Circular em zonas de superioridade; não orientar a bola para onde estamos em desvantagem.",
+   "estado": "vigor",
+   "ordem": 14
+  },
+  "OO-1.5": {
+   "cod": "OO-1.5",
+   "nivel": "micro",
+   "mom": "oo",
+   "pai": "OO-1",
+   "nome": "Projeção da 1.ª linha",
+   "comp": "",
+   "ind": "",
+   "txt": "Central que entra em condução na zona média; projeção do lado para criar superioridade no corredor.",
+   "estado": "vigor",
+   "ordem": 15
+  },
+  "OO-1.6": {
+   "cod": "OO-1.6",
+   "nivel": "micro",
+   "mom": "oo",
+   "pai": "OO-1",
+   "nome": "Distância de relação",
+   "comp": "",
+   "ind": "",
+   "txt": "Nem acumulados na mesma zona, nem desligados: «degraus» em alturas diferentes.",
+   "estado": "vigor",
+   "ordem": 16
+  },
+  "OO-2": {
+   "cod": "OO-2",
+   "nivel": "princ",
+   "mom": "oo",
+   "pai": "",
+   "nome": "Dentro e fora",
+   "comp": "Jogamos por dentro para libertar fora ou fixamos no corredor para voltar ao espaço interior.",
+   "ind": "A mudança de corredor encontra um jogador com tempo ou vantagem.",
+   "txt": "",
+   "estado": "vigor",
+   "ordem": 17
+  },
+  "OO-2.1": {
+   "cod": "OO-2.1",
+   "nivel": "micro",
+   "mom": "oo",
+   "pai": "OO-2",
+   "nome": "Fixar num corredor para mudar",
+   "comp": "",
+   "ind": "",
+   "txt": "Atrair de um lado, sair da pressão e aproveitar o lado contrário.",
+   "estado": "vigor",
+   "ordem": 18
+  },
+  "OO-2.2": {
+   "cod": "OO-2.2",
+   "nivel": "micro",
+   "mom": "oo",
+   "pai": "OO-2",
+   "nome": "Largura e profundidade (campo grande)",
+   "comp": "",
+   "ind": "",
+   "txt": "Campo largo e comprido: se pressionam alto exploramos a profundidade; se baixam, posse segura.",
+   "estado": "vigor",
+   "ordem": 19
+  },
+  "OO-3": {
+   "cod": "OO-3",
+   "nivel": "princ",
+   "mom": "oo",
+   "pai": "",
+   "nome": "Terceiro homem",
+   "comp": "Um apoio liga a bola a um colega orientado de frente.",
+   "ind": "Superamos uma linha sem perder ligação entre setores.",
+   "txt": "",
+   "estado": "vigor",
+   "ordem": 20
+  },
+  "OO-3.1": {
+   "cod": "OO-3.1",
+   "nivel": "micro",
+   "mom": "oo",
+   "pai": "OO-3",
+   "nome": "Terceiro e quarto homem",
+   "comp": "",
+   "ind": "",
+   "txt": "O 3.º homem chega ao homem livre libertado pelo salto de pressão; o 4.º ataca logo as costas com a bola descoberta.",
+   "estado": "vigor",
+   "ordem": 21
+  },
+  "OO-3.2": {
+   "cod": "OO-3.2",
+   "nivel": "micro",
+   "mom": "oo",
+   "pai": "OO-3",
+   "nome": "Criar o homem livre (1×0)",
+   "comp": "",
+   "ind": "",
+   "txt": "Há sempre alguém com tempo e espaço; conduzir e fixar, com e sem bola, para o encontrar.",
+   "estado": "vigor",
+   "ordem": 22
+  },
+  "OO-3.3": {
+   "cod": "OO-3.3",
+   "nivel": "micro",
+   "mom": "oo",
+   "pai": "OO-3",
+   "nome": "Circulação rápida da bola",
+   "comp": "",
+   "ind": "",
+   "txt": "A bola chega ao homem livre antes de o adversário fechar o espaço.",
+   "estado": "vigor",
+   "ordem": 23
+  },
+  "OO-3.4": {
+   "cod": "OO-3.4",
+   "nivel": "micro",
+   "mom": "oo",
+   "pai": "OO-3",
+   "nome": "Ângulos em alturas diferentes",
+   "comp": "",
+   "ind": "",
+   "txt": "Jogadores à frente e nas costas das linhas adversárias.",
+   "estado": "vigor",
+   "ordem": 24
+  },
+  "OO-3.5": {
+   "cod": "OO-3.5",
+   "nivel": "micro",
+   "mom": "oo",
+   "pai": "OO-3",
+   "nome": "Receber orientado para a frente",
+   "comp": "",
+   "ind": "",
+   "txt": "Receção orientada, com o pé mais afastado.",
+   "estado": "vigor",
+   "ordem": 25
+  },
+  "OO-4": {
+   "cod": "OO-4",
+   "nivel": "princ",
+   "mom": "oo",
+   "pai": "",
+   "nome": "Apoio e rutura",
+   "comp": "Um jogador aproxima. Outro ameaça as costas da linha adversária.",
+   "ind": "O portador tem ao mesmo tempo apoio e profundidade.",
+   "txt": "",
+   "estado": "vigor",
+   "ordem": 26
+  },
+  "OO-4.1": {
+   "cod": "OO-4.1",
+   "nivel": "micro",
+   "mom": "oo",
+   "pai": "OO-4",
+   "nome": "Rutura da 2.ª linha",
+   "comp": "",
+   "ind": "",
+   "txt": "Médios ou laterais em rutura para aproveitar a profundidade.",
+   "estado": "vigor",
+   "ordem": 27
+  },
+  "OO-4.2": {
+   "cod": "OO-4.2",
+   "nivel": "micro",
+   "mom": "oo",
+   "pai": "OO-4",
+   "nome": "Apoio da 3.ª linha",
+   "comp": "",
+   "ind": "",
+   "txt": "Avançados que vêm entrelinhas para receber ou libertar para quem ataca o espaço.",
+   "estado": "vigor",
+   "ordem": 28
+  },
+  "OO-4.3": {
+   "cod": "OO-4.3",
+   "nivel": "micro",
+   "mom": "oo",
+   "pai": "OO-4",
+   "nome": "Atacar a profundidade depois da combinação",
+   "comp": "",
+   "ind": "",
+   "txt": "Depois da «parede» (forward run), 1–2 soluções a atacar o espaço.",
+   "estado": "vigor",
+   "ordem": 29
+  },
+  "OO-4.4": {
+   "cod": "OO-4.4",
+   "nivel": "micro",
+   "mom": "oo",
+   "pai": "OO-4",
+   "nome": "Contramovimentos individuais e coletivos",
+   "comp": "",
+   "ind": "",
+   "txt": "Falso movimento e mudança brusca: vir ao pé para atacar o espaço criado.",
+   "estado": "vigor",
+   "ordem": 30
+  },
+  "OO-4.5": {
+   "cod": "OO-4.5",
+   "nivel": "micro",
+   "mom": "oo",
+   "pai": "OO-4",
+   "nome": "Ameaçar as costas da linha adversária",
+   "comp": "",
+   "ind": "",
+   "txt": "Um jogador ameaça as costas da última linha para dar profundidade ao portador.",
+   "estado": "vigor",
+   "ordem": 31
+  },
+  "OO-5": {
+   "cod": "OO-5",
+   "nivel": "princ",
+   "mom": "oo",
+   "pai": "",
+   "nome": "Equilíbrio ofensivo",
+   "comp": "Centrais, médios e lado contrário ajustam coberturas enquanto atacamos.",
+   "ind": "Após a perda, pressionamos a bola ou controlamos logo a profundidade.",
+   "txt": "",
+   "estado": "vigor",
+   "ordem": 32
+  },
+  "OO-5.1": {
+   "cod": "OO-5.1",
+   "nivel": "micro",
+   "mom": "oo",
+   "pai": "OO-5",
+   "nome": "Coberturas atrás da linha da bola",
+   "comp": "",
+   "ind": "",
+   "txt": "Os passes de segurança atrás da bola são também a 1.ª cobertura depois da perda.",
+   "estado": "vigor",
+   "ordem": 33
+  },
+  "OO-5.2": {
+   "cod": "OO-5.2",
+   "nivel": "micro",
+   "mom": "oo",
+   "pai": "OO-5",
+   "nome": "Distâncias para pressionar nos 5 s",
+   "comp": "",
+   "ind": "",
+   "txt": "As distâncias curtas do ataque («viajar com bola») permitem a pressão imediata.",
+   "estado": "vigor",
+   "ordem": 34
+  },
+  "OO-R1": {
+   "cod": "OO-R1",
+   "nivel": "rot",
+   "mom": "oo",
+   "pai": "",
+   "nome": "Posicionamentos padrão na construção",
+   "comp": "",
+   "ind": "",
+   "txt": "A desenhar em quadro animado.",
+   "estado": "construcao",
+   "ordem": 35
+  },
+  "OO-R2": {
+   "cod": "OO-R2",
+   "nivel": "rot",
+   "mom": "oo",
+   "pai": "",
+   "nome": "Circulação padrão",
+   "comp": "",
+   "ind": "",
+   "txt": "A desenhar em quadro animado.",
+   "estado": "construcao",
+   "ordem": 36
+  },
+  "OO-R3": {
+   "cod": "OO-R3",
+   "nivel": "rot",
+   "mom": "oo",
+   "pai": "",
+   "nome": "Combinações padrão na criação",
+   "comp": "",
+   "ind": "",
+   "txt": "A desenhar em quadro animado.",
+   "estado": "construcao",
+   "ordem": 37
+  },
+  "OO-R4": {
+   "cod": "OO-R4",
+   "nivel": "rot",
+   "mom": "oo",
+   "pai": "",
+   "nome": "Zonas-chave de finalização",
+   "comp": "",
+   "ind": "",
+   "txt": "1.º poste, 2.º poste, penalty e entrada da área. Mais importante do que estar é chegar.",
+   "estado": "vigor",
+   "ordem": 38
+  },
+  "TD-1": {
+   "cod": "TD-1",
+   "nivel": "princ",
+   "mom": "td",
+   "pai": "",
+   "nome": "Reação imediata",
+   "comp": "O mais próximo pressiona a bola. Os apoios aproximam e fecham as primeiras saídas.",
+   "ind": "O adversário não executa o 1.º passe limpo para a frente.",
+   "txt": "",
+   "estado": "vigor",
+   "ordem": 39
+  },
+  "TD-1.1": {
+   "cod": "TD-1.1",
+   "nivel": "micro",
+   "mom": "td",
+   "pai": "TD-1",
+   "nome": "Cobrir a bola",
+   "comp": "",
+   "ind": "",
+   "txt": "Pressão rápida sobre o portador: sem tempo para pensar nem para o passe longo. Janela: recuperar nos primeiros 5 segundos.",
+   "estado": "vigor",
+   "ordem": 40
+  },
+  "TD-2": {
+   "cod": "TD-2",
+   "nivel": "princ",
+   "mom": "td",
+   "pai": "",
+   "nome": "Proteger o centro",
+   "comp": "Fechamos primeiro a ligação interior e o passe vertical para o avançado.",
+   "ind": "A saída adversária acontece para fora ou para trás.",
+   "txt": "",
+   "estado": "vigor",
+   "ordem": 41
+  },
+  "TD-2.1": {
+   "cod": "TD-2.1",
+   "nivel": "micro",
+   "mom": "td",
+   "pai": "TD-2",
+   "nome": "Fechar as linhas de passe circundantes",
+   "comp": "",
+   "ind": "",
+   "txt": "Os mais próximos fecham as linhas de passe à volta do centro do jogo, para o adversário não sair da pressão.",
+   "estado": "vigor",
+   "ordem": 42
+  },
+  "TD-3": {
+   "cod": "TD-3",
+   "nivel": "princ",
+   "mom": "td",
+   "pai": "",
+   "nome": "Pressão com cobertura",
+   "comp": "A equipa encurta quando há proximidade, acesso à bola e proteção das costas.",
+   "ind": "2.º e 3.º defensores chegam ligados ao 1.º.",
+   "txt": "",
+   "estado": "vigor",
+   "ordem": 43
+  },
+  "TD-3.1": {
+   "cod": "TD-3.1",
+   "nivel": "micro",
+   "mom": "td",
+   "pai": "TD-3",
+   "nome": "Subir a linha e abafar",
+   "comp": "",
+   "ind": "",
+   "txt": "A linha defensiva sobe e compacta o bloco ao máximo.",
+   "estado": "vigor",
+   "ordem": 44
+  },
+  "TD-4": {
+   "cod": "TD-4",
+   "nivel": "princ",
+   "mom": "td",
+   "pai": "",
+   "nome": "Temporizar e agrupar",
+   "comp": "Sem acesso, atrasamos a progressão e recuperamos posições pelo corredor central.",
+   "ind": "Reorganizamos o bloco antes da entrada no último terço.",
+   "txt": "",
+   "estado": "vigor",
+   "ordem": 45
+  },
+  "TD-4.1": {
+   "cod": "TD-4.1",
+   "nivel": "micro",
+   "mom": "td",
+   "pai": "TD-4",
+   "nome": "Temporizar",
+   "comp": "",
+   "ind": "",
+   "txt": "Atrasar a condução e o passe vertical.",
+   "estado": "vigor",
+   "ordem": 46
+  },
+  "TD-4.2": {
+   "cod": "TD-4.2",
+   "nivel": "micro",
+   "mom": "td",
+   "pai": "TD-4",
+   "nome": "Recuperar posições pelo lado da baliza",
+   "comp": "",
+   "ind": "",
+   "txt": "Voltar por dentro, entre a bola e a baliza.",
+   "estado": "vigor",
+   "ordem": 47
+  },
+  "TD-4.3": {
+   "cod": "TD-4.3",
+   "nivel": "micro",
+   "mom": "td",
+   "pai": "TD-4",
+   "nome": "Agrupar e voltar a orientar para fora",
+   "comp": "",
+   "ind": "",
+   "txt": "Juntar a equipa e voltar a empurrar o jogo para o corredor lateral.",
+   "estado": "vigor",
+   "ordem": 48
+  },
+  "TD-4.4": {
+   "cod": "TD-4.4",
+   "nivel": "micro",
+   "mom": "td",
+   "pai": "TD-4",
+   "nome": "Baixar a linha defensiva",
+   "comp": "",
+   "ind": "",
+   "txt": "Sem condições para pressionar: baixar no terreno e aplicar os princípios da organização defensiva.",
+   "estado": "vigor",
+   "ordem": 49
+  },
+  "TD-5": {
+   "cod": "TD-5",
+   "nivel": "princ",
+   "mom": "td",
+   "pai": "",
+   "nome": "Controlar a profundidade",
+   "comp": "Linha defensiva e GR ajustam a altura à pressão sobre a bola.",
+   "ind": "O adversário não encontra rutura sem oposição nas nossas costas.",
+   "txt": "Usa OD-5.3 (baixar com a bola descoberta) e OD-5.5 (GR controla a profundidade).",
+   "estado": "vigor",
+   "ordem": 50
+  },
+  "OD-1": {
+   "cod": "OD-1",
+   "nivel": "princ",
+   "mom": "od",
+   "pai": "",
+   "nome": "Fechar o centro",
+   "comp": "1.ª linha condiciona por fora. Médios protegem as ligações ao 6, 8 e 10 adversários.",
+   "ind": "Reduzimos receções adversárias entre linhas e de frente.",
+   "txt": "",
+   "estado": "vigor",
+   "ordem": 51
+  },
+  "OD-1.1": {
+   "cod": "OD-1.1",
+   "nivel": "micro",
+   "mom": "od",
+   "pai": "OD-1",
+   "nome": "Distâncias curtas entre setores",
+   "comp": "",
+   "ind": "",
+   "txt": "Compactação vertical: sem espaço entrelinhas.",
+   "estado": "vigor",
+   "ordem": 52
+  },
+  "OD-1.2": {
+   "cod": "OD-1.2",
+   "nivel": "micro",
+   "mom": "od",
+   "pai": "OD-1",
+   "nome": "Fechar dentro",
+   "comp": "",
+   "ind": "",
+   "txt": "Compactação horizontal: fechar as zonas interiores e mais próximas da baliza.",
+   "estado": "vigor",
+   "ordem": 53
+  },
+  "OD-1.3": {
+   "cod": "OD-1.3",
+   "nivel": "micro",
+   "mom": "od",
+   "pai": "OD-1",
+   "nome": "Negar receções entre linhas",
+   "comp": "",
+   "ind": "",
+   "txt": "Linhas definidas conforme o momento, a bola e a estratégia; mudar de forma para surpreender.",
+   "estado": "vigor",
+   "ordem": 54
+  },
+  "OD-1.4": {
+   "cod": "OD-1.4",
+   "nivel": "micro",
+   "mom": "od",
+   "pai": "OD-1",
+   "nome": "Relação eficiente na linha",
+   "comp": "",
+   "ind": "",
+   "txt": "Intralinha: nem afastados demais, nem tão juntos que deixem o lado contrário vazio.",
+   "estado": "vigor",
+   "ordem": 55
+  },
+  "OD-1.5": {
+   "cod": "OD-1.5",
+   "nivel": "micro",
+   "mom": "od",
+   "pai": "OD-1",
+   "nome": "Negar as ligações interiores",
+   "comp": "",
+   "ind": "",
+   "txt": "Fechar linhas de passe: limitar as opções do portador e o avanço da bola.",
+   "estado": "vigor",
+   "ordem": 56
+  },
+  "OD-2": {
+   "cod": "OD-2",
+   "nivel": "princ",
+   "mom": "od",
+   "pai": "",
+   "nome": "Encaminhar para fora",
+   "comp": "A aproximação conduz o portador ao corredor lateral e ao pé menos forte.",
+   "ind": "A circulação entra no corredor sem ligação interior limpa.",
+   "txt": "",
+   "estado": "vigor",
+   "ordem": 57
+  },
+  "OD-2.1": {
+   "cod": "OD-2.1",
+   "nivel": "micro",
+   "mom": "od",
+   "pai": "OD-2",
+   "nome": "1.º defesa encaminha para a zona de pressão",
+   "comp": "",
+   "ind": "",
+   "txt": "A trajetória do 1.º defesa depende de onde queremos começar a pressionar.",
+   "estado": "vigor",
+   "ordem": 58
+  },
+  "OD-2.2": {
+   "cod": "OD-2.2",
+   "nivel": "micro",
+   "mom": "od",
+   "pai": "OD-2",
+   "nome": "Atacar o portador e cobrir a bola",
+   "comp": "",
+   "ind": "",
+   "txt": "Pressão constante nas zonas definidas; a bola coberta permite subir o bloco.",
+   "estado": "vigor",
+   "ordem": 59
+  },
+  "OD-2.3": {
+   "cod": "OD-2.3",
+   "nivel": "micro",
+   "mom": "od",
+   "pai": "OD-2",
+   "nome": "Temporizar",
+   "comp": "",
+   "ind": "",
+   "txt": "Sem condições para recuperar: atrasar o avanço e obrigar a jogar para trás.",
+   "estado": "vigor",
+   "ordem": 60
+  },
+  "OD-3": {
+   "cod": "OD-3",
+   "nivel": "princ",
+   "mom": "od",
+   "pai": "",
+   "nome": "Gatilhos de pressão",
+   "comp": "Passe lateral ou atrasado, mau domínio, receção fechada e bola junto à linha ativam o salto.",
+   "ind": "Pressionamos com cobertura e forçamos erro, passe longo ou recuo.",
+   "txt": "",
+   "estado": "vigor",
+   "ordem": 61
+  },
+  "OD-3.1": {
+   "cod": "OD-3.1",
+   "nivel": "micro",
+   "mom": "od",
+   "pai": "OD-3",
+   "nome": "Gatilhos",
+   "comp": "",
+   "ind": "",
+   "txt": "Reativos: má receção, receção de costas, bola no ar, passe lateral ou atrasado, bola junto à linha. Proativos: zonas de pressão.",
+   "estado": "vigor",
+   "ordem": 62
+  },
+  "OD-3.2": {
+   "cod": "OD-3.2",
+   "nivel": "micro",
+   "mom": "od",
+   "pai": "OD-3",
+   "nome": "Zonas de pressão (armadilhas)",
+   "comp": "",
+   "ind": "",
+   "txt": "Levar o adversário para onde estamos em superioridade. 1.ª zona: deixar sair curto por um lado definido, por jogo.",
+   "estado": "vigor",
+   "ordem": 63
+  },
+  "OD-3.3": {
+   "cod": "OD-3.3",
+   "nivel": "micro",
+   "mom": "od",
+   "pai": "OD-3",
+   "nome": "Referências individuais",
+   "comp": "",
+   "ind": "",
+   "txt": "O jogador adversário que ativa a pressão, definido no plano de jogo.",
+   "estado": "vigor",
+   "ordem": 64
+  },
+  "OD-3.4": {
+   "cod": "OD-3.4",
+   "nivel": "micro",
+   "mom": "od",
+   "pai": "OD-3",
+   "nome": "Subir em passes para trás",
+   "comp": "",
+   "ind": "",
+   "txt": "Passe para trás ou adversário de costas: o bloco sobe e aperta.",
+   "estado": "vigor",
+   "ordem": 65
+  },
+  "OD-4": {
+   "cod": "OD-4",
+   "nivel": "princ",
+   "mom": "od",
+   "pai": "",
+   "nome": "Bascular em corrente",
+   "comp": "A equipa desloca-se como uma unidade. As referências passam de jogador para jogador.",
+   "ind": "Mantemos distâncias curtas sem abrir o lado contrário cedo demais.",
+   "txt": "",
+   "estado": "vigor",
+   "ordem": 66
+  },
+  "OD-4.1": {
+   "cod": "OD-4.1",
+   "nivel": "micro",
+   "mom": "od",
+   "pai": "OD-4",
+   "nome": "Basculação",
+   "comp": "",
+   "ind": "",
+   "txt": "A posição de cada um depende da bola (primeiro), do colega, do espaço e do adversário.",
+   "estado": "vigor",
+   "ordem": 67
+  },
+  "OD-4.2": {
+   "cod": "OD-4.2",
+   "nivel": "micro",
+   "mom": "od",
+   "pai": "OD-4",
+   "nome": "Coberturas em zonas contíguas",
+   "comp": "",
+   "ind": "",
+   "txt": "Quem pressiona sabe que tem ajuda e pode ser mais agressivo.",
+   "estado": "vigor",
+   "ordem": 68
+  },
+  "OD-4.3": {
+   "cod": "OD-4.3",
+   "nivel": "micro",
+   "mom": "od",
+   "pai": "OD-4",
+   "nome": "Vigilâncias sem bola",
+   "comp": "",
+   "ind": "",
+   "txt": "Controlar o adversário direto sem bola, que pode ser o próximo portador.",
+   "estado": "vigor",
+   "ordem": 69
+  },
+  "OD-5": {
+   "cod": "OD-5",
+   "nivel": "princ",
+   "mom": "od",
+   "pai": "",
+   "nome": "Controlar a profundidade",
+   "comp": "Linha defensiva e GR ajustam à pressão na bola e às ameaças nas costas.",
+   "ind": "Negamos ruturas e remates limpos nas zonas centrais.",
+   "txt": "",
+   "estado": "vigor",
+   "ordem": 70
+  },
+  "OD-5.1": {
+   "cod": "OD-5.1",
+   "nivel": "micro",
+   "mom": "od",
+   "pai": "OD-5",
+   "nome": "Pressão sobre o portador",
+   "comp": "",
+   "ind": "",
+   "txt": "Sem bola em boas condições para as nossas costas.",
+   "estado": "vigor",
+   "ordem": 71
+  },
+  "OD-5.2": {
+   "cod": "OD-5.2",
+   "nivel": "micro",
+   "mom": "od",
+   "pai": "OD-5",
+   "nome": "Alinhamento defensivo",
+   "comp": "",
+   "ind": "",
+   "txt": "Linha alinhada, fora de jogo; o central do lado da bola dita a altura.",
+   "estado": "vigor",
+   "ordem": 72
+  },
+  "OD-5.3": {
+   "cod": "OD-5.3",
+   "nivel": "micro",
+   "mom": "od",
+   "pai": "OD-5",
+   "nome": "Baixar com a bola descoberta",
+   "comp": "",
+   "ind": "",
+   "txt": "Bola descoberta: a linha baixa e cobre o espaço.",
+   "estado": "vigor",
+   "ordem": 73
+  },
+  "OD-5.4": {
+   "cod": "OD-5.4",
+   "nivel": "micro",
+   "mom": "od",
+   "pai": "OD-5",
+   "nome": "Orientação dos apoios",
+   "comp": "",
+   "ind": "",
+   "txt": "Bola coberta: apoios para a frente. Descoberta: apoios de lado, prontos a correr para trás.",
+   "estado": "vigor",
+   "ordem": 74
+  },
+  "OD-5.5": {
+   "cod": "OD-5.5",
+   "nivel": "micro",
+   "mom": "od",
+   "pai": "OD-5",
+   "nome": "GR controla a profundidade",
+   "comp": "",
+   "ind": "",
+   "txt": "GR «fora dos postes», cobre as costas do bloco e comunica.",
+   "estado": "vigor",
+   "ordem": 75
+  },
+  "TO-1": {
+   "cod": "TO-1",
+   "nivel": "princ",
+   "mom": "to",
+   "pai": "",
+   "nome": "Primeiro olhar para a frente",
+   "comp": "O recuperador identifica espaço, pressão e colegas antes do 1.º toque.",
+   "ind": "O 1.º passe ou condução conserva ou aumenta a vantagem.",
+   "txt": "",
+   "estado": "vigor",
+   "ordem": 76
+  },
+  "TO-1.1": {
+   "cod": "TO-1.1",
+   "nivel": "micro",
+   "mom": "to",
+   "pai": "TO-1",
+   "nome": "Olhar o mais longe possível",
+   "comp": "",
+   "ind": "",
+   "txt": "Ao recuperar, olhar o mais longe possível; a janela dura poucos segundos.",
+   "estado": "vigor",
+   "ordem": 77
+  },
+  "TO-2": {
+   "cod": "TO-2",
+   "nivel": "princ",
+   "mom": "to",
+   "pai": "",
+   "nome": "Apoio e rutura",
+   "comp": "Um jogador oferece apoio frontal. Outros atacam as costas e os corredores livres.",
+   "ind": "O portador tem uma solução próxima e uma de profundidade.",
+   "txt": "",
+   "estado": "vigor",
+   "ordem": 78
+  },
+  "TO-2.1": {
+   "cod": "TO-2.1",
+   "nivel": "micro",
+   "mom": "to",
+   "pai": "TO-2",
+   "nome": "Referências de transição",
+   "comp": "",
+   "ind": "",
+   "txt": "Avançados: profundidade ou apoio «ao pé». Laterais e alas: saída de pressão pelos corredores.",
+   "estado": "vigor",
+   "ordem": 79
+  },
+  "TO-3": {
+   "cod": "TO-3",
+   "nivel": "princ",
+   "mom": "to",
+   "pai": "",
+   "nome": "Largura e profundidade",
+   "comp": "Alas, extremos e avançados afastam referências e abrem linhas de progressão.",
+   "ind": "A defesa adversária tem de proteger centro e largura.",
+   "txt": "",
+   "estado": "vigor",
+   "ordem": 80
+  },
+  "TO-3.1": {
+   "cod": "TO-3.1",
+   "nivel": "micro",
+   "mom": "to",
+   "pai": "TO-3",
+   "nome": "Mobilidade",
+   "comp": "",
+   "ind": "",
+   "txt": "Afastar-se do portador oferecendo linhas de passe efetivas e variadas.",
+   "estado": "vigor",
+   "ordem": 81
+  },
+  "TO-4": {
+   "cod": "TO-4",
+   "nivel": "princ",
+   "mom": "to",
+   "pai": "",
+   "nome": "Acelerar com vantagem",
+   "comp": "Progredimos na vertical quando o portador está de frente e há espaço útil.",
+   "ind": "Chegamos ao último terço antes da reorganização adversária.",
+   "txt": "",
+   "estado": "vigor",
+   "ordem": 82
+  },
+  "TO-4.1": {
+   "cod": "TO-4.1",
+   "nivel": "micro",
+   "mom": "to",
+   "pai": "TO-4",
+   "nome": "Explorar a desorganização adversária",
+   "comp": "",
+   "ind": "",
+   "txt": "Aproveitar os espaços livres antes de o adversário se reorganizar.",
+   "estado": "vigor",
+   "ordem": 83
+  },
+  "TO-5": {
+   "cod": "TO-5",
+   "nivel": "princ",
+   "mom": "to",
+   "pai": "",
+   "nome": "Estabilizar sem vantagem",
+   "comp": "Protegemos a bola, ligamos num apoio seguro e recuperamos a estrutura.",
+   "ind": "Mantemos a posse sem forçar uma ação de risco elevado.",
+   "txt": "",
+   "estado": "vigor",
+   "ordem": 84
+  },
+  "TO-5.1": {
+   "cod": "TO-5.1",
+   "nivel": "micro",
+   "mom": "to",
+   "pai": "TO-5",
+   "nome": "Apoios por trás do portador",
+   "comp": "",
+   "ind": "",
+   "txt": "Cobertura ofensiva que garante uma zona de posse.",
+   "estado": "vigor",
+   "ordem": 85
+  },
+  "TO-5.2": {
+   "cod": "TO-5.2",
+   "nivel": "micro",
+   "mom": "to",
+   "pai": "TO-5",
+   "nome": "Apoios laterais",
+   "comp": "",
+   "ind": "",
+   "txt": "Largura para começar a organização ofensiva já em campo grande.",
+   "estado": "vigor",
+   "ordem": 86
+  }
+ },
+ "modeloTxt": {
+  "identidade": {
+   "lema": "TODOS ATACAM. TODOS DEFENDEM.",
+   "frase": "Princípios claros. Comportamentos observáveis. Estruturas adaptáveis.",
+   "valores": [
+    {
+     "nome": "Espírito de equipa",
+     "sig": "O coletivo acima da ação individual.",
+     "comps": [
+      "Comunicar para orientar, corrigir e ajudar",
+      "Reagir ao erro do colega com apoio e ação",
+      "Cumprir a função em benefício do coletivo",
+      "Manter o compromisso quando o jogo é adverso"
+     ],
+     "evid": "A equipa permanece ligada e competitiva em todos os momentos."
+    },
+    {
+     "nome": "Intensidade",
+     "sig": "Pensar rápido e agir com intenção.",
+     "comps": [
+      "Entrar em cada ação preparado para decidir",
+      "Acelerar quando existe vantagem",
+      "Encurtar distâncias e pressionar com cobertura",
+      "Reagir logo à perda, ao erro e à 2.ª bola"
+     ],
+     "evid": "A equipa chega junta às ações e repete esforços sem perder organização."
+    },
+    {
+     "nome": "Organização",
+     "sig": "Conhecer funções, referências e ajustamentos.",
+     "comps": [
+      "Ocupar racionalmente os espaços",
+      "Manter distâncias curtas entre jogadores e setores",
+      "Passar referências e comunicar os ajustamentos",
+      "Reconhecer quando pressionar, temporizar ou mudar o centro do jogo"
+     ],
+     "evid": "A equipa move-se como uma unidade e mantém equilíbrio com e sem bola."
+    },
+    {
+     "nome": "Objetividade",
+     "sig": "Progredir com critério e chegar à baliza.",
+     "comps": [
+      "Receber e conduzir orientado para a frente",
+      "Procurar passe progressivo, rutura ou finalização",
+      "Atacar a profundidade com e sem bola",
+      "Estabilizar a posse quando o risco supera a vantagem"
+     ],
+     "evid": "A equipa progride com critério e transforma vantagem em chegada à baliza."
+    }
+   ],
+   "macros": [
+    {
+     "mom": "oo",
+     "frase": "Todos preparados para serem solução",
+     "desc": "Cada jogador tem sempre uma tarefa, que muda conforme a bola, o espaço, os colegas e o adversário.",
+     "valores": "Espírito de equipa · Objetividade"
+    },
+    {
+     "mom": "od",
+     "frase": "Todos defendem",
+     "desc": "Ninguém se esconde do trabalho defensivo. O grande objetivo é recuperar a bola.",
+     "valores": "Espírito de equipa · Organização"
+    },
+    {
+     "mom": "tr",
+     "frase": "Mudança rápida de atitude",
+     "desc": "Passar logo de uma postura à outra. Nas duas transições, decidir: acelerar ou estabilizar, pressionar ou reorganizar.",
+     "valores": "Intensidade · Objetividade"
+    }
+   ],
+   "gerais": [
+    "Não permitir a inferioridade numérica",
+    "Evitar a igualdade numérica",
+    "Procurar criar a superioridade numérica"
+   ],
+   "fundOf": [
+    "Penetração",
+    "Cobertura ofensiva",
+    "Mobilidade",
+    "Espaço"
+   ],
+   "fundDef": [
+    "Contenção",
+    "Cobertura defensiva",
+    "Equilíbrio",
+    "Concentração"
+   ]
+  },
+  "mom-oo": {
+   "pergunta": "Como queremos construir, progredir e chegar à baliza?",
+   "frase": "Posse com propósito. Criar vantagens. Finalizar com equilíbrio.",
+   "macro": "Todos preparados para serem solução",
+   "intencao": "Ter posse com propósito, criar vantagens e chegar à finalização com jogadores ligados à ação.",
+   "po": "Circular em segurança para «viajar» com bola. Método: ataque posicional; ataque rápido e contra-ataque sempre que possível sem perder o controlo.",
+   "fases": [
+    {
+     "nome": "1.ª Construção",
+     "obj": "Sair sob controlo e encontrar condições para progredir.",
+     "comp": "Usar o GR, atrair a 1.ª pressão, conduzir para fixar, curto ou longo preparado para a 2.ª bola.",
+     "rot": "OO-R1"
+    },
+    {
+     "nome": "2.ª Preparação e criação",
+     "obj": "Criar o homem livre e ameaçar a última linha.",
+     "comp": "Dentro e fora, 3.º homem, apoio e rutura, fixar para mudar, acelerar quando há vantagem.",
+     "rot": "OO-R2 · OO-R3"
+    },
+    {
+     "nome": "3.ª Finalização e decisão",
+     "obj": "Ocupar zonas distintas e finalizar com vantagem.",
+     "comp": "1.º poste, zona central e 2.º poste; passe atrasado; 2.ª bola; cobertura fora da área.",
+     "rot": "OO-R4"
+    }
+   ]
+  },
+  "mom-td": {
+   "pergunta": "Como reagimos imediatamente após perder a bola?",
+   "frase": "Recuperar se existe acesso. Travar e reorganizar quando faltam condições.",
+   "macro": "Mudança rápida de atitude",
+   "intencao": "Recuperar imediatamente ou impedir que o adversário explore a nossa desorganização.",
+   "po": "Pressionar ou temporizar e reorganizar: por preferência pressionar; se a 1.ª pressão falhar ou a equipa estiver desequilibrada, temporizar e reorganizar.",
+   "decisao": {
+    "pergunta": "Temos acesso à bola e cobertura das costas?",
+    "sim": {
+     "t": "Pressionar para recuperar",
+     "itens": [
+      "O mais próximo condiciona o portador",
+      "Os apoios fecham as ligações interiores",
+      "A linha encurta com a bola pressionada",
+      "O lado contrário fecha por dentro"
+     ],
+     "nota": "Janela: recuperar nos primeiros 5 segundos."
+    },
+    "nao": {
+     "t": "Temporizar e reorganizar",
+     "itens": [
+      "Atrasar a condução ou o passe vertical",
+      "Proteger o corredor central",
+      "Recuperar posições pelo lado da baliza",
+      "Agrupar e voltar a orientar para fora"
+     ],
+     "nota": "Também quando a 1.ª pressão falha ou a equipa está desequilibrada."
+    },
+    "regra": "A pressão exige acesso e cobertura. Sem ambos, a prioridade passa a ser proteger o centro."
+   }
+  },
+  "mom-od": {
+   "pergunta": "Como protegemos a baliza e recuperamos a bola?",
+   "frase": "Fechar dentro. Orientar para fora. Pressionar em conjunto.",
+   "macro": "Todos defendem",
+   "intencao": "Proteger o corredor central, retirar tempo ao adversário e recuperar em zonas favoráveis.",
+   "po": "Reorganização pressionante: assumir coletivamente a iniciativa do jogo defensivo.",
+   "fases": [
+    {
+     "nome": "Pressão alta",
+     "obj": "Recuperar perto da baliza adversária ou provocar uma bola longa desconfortável.",
+     "comp": "Avançado orienta para fora · lado contrário controla o 6 · linha sobe com bola pressionada · GR controla a profundidade",
+     "rot": "Subir em passes para trás ou com o adversário de costas (OD-3.4)."
+    },
+    {
+     "nome": "Bloco médio",
+     "obj": "Proteger o centro e preparar armadilhas no corredor lateral.",
+     "comp": "Negar ligações ao 6 e ao 10 · saltar no momento do passe · superioridade local · distâncias entre setores",
+     "rot": "Fechar por dentro e orientar para as zonas de pressão. Temporizar (OD-2.3)."
+    },
+    {
+     "nome": "Bloco baixo",
+     "obj": "Proteger a baliza, o passe atrasado e o 2.º poste.",
+     "comp": "Linha de 5 no 3-4-3 · condicionar o cruzamento · controlar entradas tardias · atacar a 2.ª bola",
+     "rot": "Linha de 5, com o médio-ala a baixar."
+    }
+   ],
+   "regraFases": "A altura do bloco pode mudar. Fechar o centro e orientar para fora permanece.",
+   "atitude": "Intensidade defensiva: atitude agressiva e confiante para antecipar e coordenar. Em pressão alta, uma falha individual desequilibra a equipa."
+  },
+  "mom-to": {
+   "pergunta": "Como aproveitamos a recuperação da bola?",
+   "frase": "Primeiro olhar para a frente. Acelerar com vantagem. Estabilizar quando a progressão fecha.",
+   "macro": "Mudança rápida de atitude",
+   "intencao": "Explorar a desorganização adversária ou assegurar a posse para iniciar a organização ofensiva.",
+   "po": "Acelerar ou estabilizar: idealmente rápido, se houver hipótese de chegar a zonas de finalização.",
+   "decisao": {
+    "pergunta": "Transição rápida ou lenta?",
+    "sim": {
+     "t": "Acelerar",
+     "itens": [
+      "Portador orientado de frente",
+      "Espaço livre à frente da bola",
+      "Vantagem numérica ou posicional",
+      "Profundidade acessível"
+     ],
+     "nota": "Passe vertical, condução e ruturas coordenadas."
+    },
+    "nao": {
+     "t": "Estabilizar",
+     "itens": [
+      "Recuperador pressionado",
+      "Poucos apoios próximos",
+      "Corredor central bloqueado",
+      "Risco elevado de nova perda"
+     ],
+     "nota": "Proteger, retirar da pressão e recuperar a organização."
+    },
+    "regra": "Onde recuperamos (zonas de pressão, OD-3.2) define que referências de transição estão disponíveis (TO-2.1)."
+   }
+  },
+  "estruturas": {
+   "comuns": "Construção apoiada · Terceiro homem · Apoio e rutura · Fechar o centro · Pressão pós-perda",
+   "base": {
+    "nome": "Estrutura-base",
+    "sis": "3-4-3 / 3-4-2-1",
+    "txt": "Três centrais garantem construção e controlo. Os alas dão largura. Dois médios ligam setores. Os avançados interiores relacionam-se entre linhas com o 9."
+   },
+   "alt": {
+    "nome": "Estrutura alternativa",
+    "sis": "4-3-3",
+    "txt": "Dois centrais e o 6 organizam a base. Laterais, extremos e interiores coordenam a largura e os espaços interiores. Os princípios ficam iguais."
+   },
+   "ataque": [
+    {
+     "ref": "Construção",
+     "base": "Três centrais dão largura útil. Os médios dividem o campo em diagonal. Ala e avançado interior ajustam ao central exterior.",
+     "alt": "Dois centrais ligam com o 6. Laterais e extremos coordenam a largura. Um interior aproxima e outro prepara a progressão."
+    },
+    {
+     "ref": "Progressão",
+     "base": "Central exterior, médio, ala e avançado interior criam ângulos em alturas diferentes.",
+     "alt": "Lateral, extremo e interior formam relações no corredor. O 6 muda o centro do jogo."
+    },
+    {
+     "ref": "Finalização",
+     "base": "O 9 e os avançados interiores ocupam a área. O ala contrário pode atacar o 2.º poste, com compensação.",
+     "alt": "9, extremos e interiores coordenam as zonas de chegada. O lateral contrário ajusta o equilíbrio."
+    },
+    {
+     "ref": "Equilíbrio",
+     "base": "Três centrais e pelo menos um médio controlam o centro e a profundidade.",
+     "alt": "Dois centrais, o 6 e o lateral contrário compensam as projeções ofensivas."
+    }
+   ],
+   "defesa": [
+    {
+     "ref": "Primeira linha",
+     "base": "O 9 e os avançados interiores orientam a construção e fecham as ligações centrais.",
+     "alt": "O 9 orienta o lado. O extremo do lado contrário controla o 6 adversário."
+    },
+    {
+     "ref": "Corredor lateral",
+     "base": "O ala salta. O médio aproxima por dentro. O central exterior controla as costas.",
+     "alt": "Extremo ou lateral salta conforme a altura da bola. O interior cobre por dentro."
+    },
+    {
+     "ref": "Basculação",
+     "base": "O ala contrário fecha. Centrais e médios ajustam largura e profundidade.",
+     "alt": "A equipa passa referências e desloca-se como uma corrente de um lado ao outro."
+    },
+    {
+     "ref": "Bloco médio/baixo",
+     "base": "Transformação em 5-4-1, com os alas na linha defensiva.",
+     "alt": "Organização em 4-1-4-1 ou 4-4-2, conforme o salto de um interior."
+    }
+   ]
+  },
+  "plano": {
+   "ident": [
+    "Macroprincípios",
+    "Princípios e microprincípios dos quatro momentos",
+    "Linguagem comum",
+    "Comportamentos inegociáveis"
+   ],
+   "adapt": [
+    "Estrutura utilizada",
+    "Altura do bloco",
+    "Alvo e gatilhos de pressão (OD-3)",
+    "Rotinas específicas para o adversário"
+   ],
+   "regra": "A adaptação pode alterar a forma. Não pode retirar organização, intensidade ou proteção do corredor central."
+  },
+  "bp": {
+   "intro": "As bolas paradas têm metodologia própria, mas acontecem dentro dos quatro momentos do jogo. O trabalho operacional vive no Quadro da SCA Performance.",
+   "of": [
+    "Executante e sinal",
+    "Zonas de ataque",
+    "Movimentos e bloqueios permitidos",
+    "1.ª e 2.ª bola",
+    "Equilíbrio contra a transição (OO-5)"
+   ],
+   "def": [
+    "Responsabilidades sobre bola, zona e adversário",
+    "Proteção das zonas de finalização",
+    "Ataque à 1.ª bola",
+    "Controlo da 2.ª bola",
+    "1.ª saída após recuperação (TO-1, TO-2)"
+   ],
+   "prio": "Cantos defensivos · lançamentos no último terço · cruzamentos ofensivos padronizados"
+  },
+  "indicadores": {
+   "frase": "Um princípio que não pode ser observado em vídeo continua demasiado abstrato para orientar o treino.",
+   "linhas": [
+    {
+     "mom": "oo",
+     "ind": "Receções de frente além da pressão · entradas controladas no último terço · perdas com equilíbrio preparado",
+     "compl": "Cruzamentos para zonas OO-R4 ocupadas"
+    },
+    {
+     "mom": "td",
+     "ind": "1.º passe vertical impedido · recuperação ou passe para trás forçado · tempo até reorganizar o bloco",
+     "compl": "Recuperações até 5 s após a perda"
+    },
+    {
+     "mom": "od",
+     "ind": "Entradas adversárias pelo centro · recuperações no corredor lateral · remates limpos e cruzamentos concedidos",
+     "compl": "Recuperações na zona de pressão do jogo"
+    },
+    {
+     "mom": "to",
+     "ind": "1.ª ação após recuperar · entradas no último terço antes da reorganização · posse estabilizada sem perda forçada",
+     "compl": "Decisão certa: acelerou ou estabilizou"
+    }
+   ]
+  },
+  "construcao": {
+   "itens": [
+    {
+     "tema": "Altura de referência do bloco",
+     "sit": "Por regra o mais subido possível, ou definida jogo a jogo no plano de jogo (20%)?",
+     "quem": "Treinador principal"
+    },
+    {
+     "tema": "Referência de marcação",
+     "sit": "Marcação zonal pressionante como referência da equipa sénior.",
+     "quem": "Treinador principal"
+    },
+    {
+     "tema": "Vigilâncias no equilíbrio ofensivo",
+     "sit": "Proposta: quem não participa no ataque controla o avançado e o jogador de transição adversários (OO-5).",
+     "quem": "Treinador principal"
+    },
+    {
+     "tema": "Indicadores fixos",
+     "sit": "Escolher 8 a 10 indicadores para medir em todos os jogos.",
+     "quem": "Equipa técnica"
+    },
+    {
+     "tema": "Rotinas padrão OO-R1 a R3",
+     "sit": "Posicionamentos na construção, circulação e combinações por desenhar.",
+     "quem": "Treinador principal + adjunto"
+    },
+    {
+     "tema": "Funções por posição",
+     "sit": "Responsabilidades em cada estrutura e momento.",
+     "quem": "Treinador principal"
+    },
+    {
+     "tema": "Exemplos por estrutura",
+     "sit": "Rever os exemplos dos microprincípios para as funções do 3-4-3 e do 4-3-3.",
+     "quem": "Treinador adjunto"
+    }
+   ]
+  }
+ }
+}

@@ -15,6 +15,9 @@ src/page.html            esqueleto HTML com marcadores {{CSS}} {{APP_JS}} {{MODE
 src/styles.css           todo o CSS
 src/js/NN-*.js           script principal, partido por secções (ordem em src/js/ordem.json)
 src/js/modelo-de-jogo.js separador Modelo de Jogo (2.º <script>); o editor também desenha a figura dos exercícios
+src/js/principios.js     Modelo de Jogo › Princípios (dados, vistas, edição, tempo treinado, escolha de princípios, propostas) (2.º <script>, depois do modelo-de-jogo)
+src/js/modelo-pptx.js    PowerPoint do modelo a partir dos dados (2.º <script>, depois de principios.js)
+src/vendor/pptxgen.min.js PptxGenJS 4.0.1 (MIT), embutido como texto (`lib-pptx`) e só carregado ao exportar; usa um JSZip próprio (`ZipPptx`, sobre `zipFicheiros`)
 src/js/exercicios.js     separador Exercícios, repositório para as UT (3.º <script>)
 src/js/treino.js         separador Treino, Unidades de Treino e PDF da UT (4.º <script>)
 src/js/semana.js         Plano semanal e calendário de jogos (no separador Treino; junta-se ao 4.º <script>)
@@ -109,6 +112,8 @@ Ver `docs/regras.md`. As principais:
 - Cores dos jogos (v105, do plano do clube): em casa `#F28E86`, fora `#B3CEFB` (`corJogo`, blocos `casa`/`fora` em `regimes`), no plano semanal, no Micro e no Ano (no Ano, v105.2: fundo pela prova em `PROVAS_ANUAL`, letra casa `LETRA_CASA` / fora `LETRA_FORA`; nº da UT a vermelho; período transitório cor-de-rosa); estágio e viagem com a cor do jogo ligado (`jogoLigado`) e texto branco. PDF do planeamento anual (`pdfAnual`): grelha + calendário de jogos, data = última alteração da época.
 
 - Calendário e Jogo (v106): local = `local` (campo) + `localidade` + `ilha` (`localJogo`); campo sugerido do último jogo com o adversário (`ultimoLocal`). «📅 Do calendário» no Jogo preenche os dados e `calId`; competição pela sigla (`compDeCal`: CFA camp, TAT/ST taca, TIT tit, TP tp, resto livre). Nomes oficiais dos clubes (SC Barreiro, SC Lusitânia, FC Madalena, SC Praiense, CD Rabo de Peixe, CD Santo António, GD São Roque, C União Micaelense, FC Vale Formoso, SC Angrense); equipas comparam-se por `chaveEq` (sem SC/FC/CD/GD). Na Observação o nome mostrado vem de `nomeEq`; a chave (`EQUIPAS[i][0]`, `R.adversario`, `base/<slug>`, `J.vs`) nunca muda.
+
+- Princípios do Modelo de Jogo (v112, decidido pelo Rodrigo em 30–31/10/2026): macroprincípio → princípio → **microprincípio** (nunca «subprincípio»); `principios/{código}`, `modeloTxt/{chave}`, `princProp/{idExercício}`. Exercício `princ: {p, s[]}` = 1 principal + até 3 secundários (princípio ou micro; macro por arrasto). Linha da UT: `princ` ausente herda do repositório, `null` = nenhum, objeto = só nesta UT. Tempo treinado = prática (séries × prática, sem pausas, sem complementares) dos exercícios em que o código esteve, uma vez por exercício, com «dos quais principal»; calcula-se na hora. O PowerPoint do modelo gera-se dos dados (`deckModelo`). O conteúdo do modelo (nomes, códigos, textos) é do Rodrigo e do João: não mudar sem eles. Carga inicial `docs/modelo-2627.json`.
 
 ## Forma de trabalhar
 - Antes de uma mudança grande, perguntar o objetivo e quem usa (escolha múltipla quando fizer sentido).

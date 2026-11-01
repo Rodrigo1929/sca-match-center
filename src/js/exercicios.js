@@ -45,6 +45,7 @@ function normEx(d){ const s=v=>String(v??"").trim(), L=v=>(Array.isArray(v)?v.ma
     contaTempo:typeof d.contaTempo==="boolean"?d.contaTempo:null,
     comp:d.comp==="liga"||d.comp==="champions"?d.comp:"", meinho:!!d.meinho,   // v95: competição interna (etiqueta) e meinho
     criadoPor:s(d.criadoPor), criadoEm:s(d.criadoEm), alteradoPor:s(d.alteradoPor), alteradoEm:s(d.alteradoEm)};
+  const pr=typeof normPr==="function"?normPr(d.princ):null; if(pr) E.princ=pr;   // v112: princípios do Modelo de Jogo {p: principal, s: [até 3 secundários]}
   if(d.figura&&typeof d.figura==="object"){ const F={};
     if(d.figura.quadro&&typeof d.figura.quadro==="object") F.quadro=d.figura.quadro;
     const im=d.figura.imagem; if(im&&/^[\w-]{8,64}$/.test(String(im.id||""))) F.imagem={id:String(im.id),w:n(im.w)||1600,h:n(im.h)||900};
@@ -119,8 +120,9 @@ function folhaImagemEx(id){ const E=exercicios[id]; if(!E) return; const im=E.fi
 function xPara(){ if(xPl&&xPl.playing) xPl.pause(); }
 
 /* ---------- lista, pesquisa e filtros ---------- */
-function exFiltrados(){ const q=xFiltro.q.trim().toLowerCase();
+function exFiltrados(){ const q=xFiltro.q.trim().toLowerCase(), fp=xFiltro.pr||"";
   return Object.values(exercicios).filter(E=>(!xFiltro.mom||E.momento===xFiltro.mom)&&(!xFiltro.tipo||E.tipo===xFiltro.tipo)
+    &&(!fp||(fp==="-"?prVazio(E.princ):Object.keys(codsLinha(normPr(E.princ))).includes(fp)))
     &&(!q||[E.nome,E.formato,E.espaco.txt,E.descricao,E.objetivos,...E.objEsp,rotuloDe(TIPOS_EX,E.tipo),catEx(E),...E.comportamentos,...E.variantes,...E.material].join(" ").toLowerCase().includes(q)))
     .sort((a,b)=>a.nome.localeCompare(b.nome,"pt")); }
 function guardaFiltro(){ try{ localStorage.setItem("sca-ex-filtro",JSON.stringify(xFiltro)); }catch(e){} }
@@ -128,12 +130,36 @@ function renderExFiltros(){ const bx=$("x-filtros"); if($("x-q")) return;
   bx.innerHTML=`<input type="search" id="x-q" placeholder="Pesquisar exercícios…" aria-label="Pesquisar exercícios">
     <select id="x-fm" aria-label="Categoria"><option value="">Todas as categorias</option>${MOM_EX.map(m=>`<option value="${m[0]}">${m[1]}</option>`).join("")}</select>
     <select id="x-ft" aria-label="Formato do exercício"><option value="">Todos os formatos</option>${TIPOS_EX.map(t=>`<option value="${t[0]}">${t[1]}</option>`).join("")}</select>
-    <span class="sub" id="x-n"></span><button class="btn" id="x-livro">📕 Livro de exercícios</button><button class="btn primary" id="x-novo">+ Novo exercício</button>`;
-  $("x-livro").onclick=()=>folhaLivros();
+    ${typeof temPrinc==="function"&&temPrinc()?`<select id="x-fpr" aria-label="Princípio"><option value="">Todos os princípios</option><option value="-">Sem princípios</option>${princLista().filter(P=>P.nivel!=="rot").map(P=>`<option value="${esc(P.cod)}">${P.nivel==="micro"?"\u00a0\u00a0":""}${esc(P.cod)} ${esc(P.nome)}</option>`).join("")}</select>`:""}
+    <span class="sub" id="x-n"></span>${typeof propsPorRever==="function"&&propsPorRever().length&&temPrinc()?`<button class="btn" id="x-props">🎯 Rever propostas (${propsPorRever().length})</button>`:""}<button class="btn" id="x-livro">📕 Livro de exercícios</button><button class="btn primary" id="x-novo">+ Novo exercício</button>`;
+  $("x-livro").onclick=()=>folhaLivros(); if($("x-props")) $("x-props").onclick=()=>folhaPropostas();
   const q=$("x-q"), fm=$("x-fm"), ft=$("x-ft"); q.value=xFiltro.q; fm.value=xFiltro.mom; ft.value=xFiltro.tipo;
   q.oninput=()=>{ xFiltro.q=q.value; guardaFiltro(); renderExNav(exFiltrados(),exercicios[xCur]); };
-  fm.onchange=()=>{ xFiltro.mom=fm.value; guardaFiltro(); renderEx(); }; ft.onchange=()=>{ xFiltro.tipo=ft.value; guardaFiltro(); renderEx(); };
+  fm.onchange=()=>{ xFiltro.mom=fm.value; guardaFiltro(); renderEx(); }; const fpr=$("x-fpr"); if(fpr){ fpr.value=xFiltro.pr||""; if(fpr.value!==(xFiltro.pr||"")) xFiltro.pr=""; fpr.onchange=()=>{ xFiltro.pr=fpr.value; guardaFiltro(); renderEx(); }; } ft.onchange=()=>{ xFiltro.tipo=ft.value; guardaFiltro(); renderEx(); };
   $("x-novo").onclick=()=>folhaEx(null); }
+/* ---------- propostas de princípios (v112) ---------- */
+function botaoProps(){ const b=$("x-props"), n=propsPorRever().length; if(b){ if(n) b.textContent=`🎯 Rever propostas (${n})`; else b.remove(); } }
+function aceitaProp(id,pr){ const X=exercicios[id], P=pr||princProp[id]; if(!X||!P) return; const N=clone(X); N.princ={p:P.p,s:P.s.slice(0,P_MAX_SEC)}; tiraProp(id); guardaEx(N,true); }
+function folhaPropostas(){ let ids=propsPorRever(); if(!ids.length){ toast("Não há propostas por rever."); return; }
+  const ord=id=>{ const X=exercicios[id]; return [princProp[id].conf==="baixa"?1:0,X.n||9999]; };
+  ids.sort((a,b)=>{ const A=ord(a),B=ord(b); return A[0]-B[0]||A[1]-B[1]; });
+  folha(`<h3>Propostas de princípios <span class="count" id="pp-n">${ids.length}</span></h3>
+    <p class="sub" style="margin:0">Proposta feita a partir da categoria, dos objetivos e dos comportamentos de cada exercício. ★ = principal. Aceita, muda ou ignora; o que fica por rever continua aqui. As pouco seguras aparecem no fim.</p>
+    <div class="pplista" id="pp-l"></div>
+    <div class="actions"><button class="btn" data-close>Fechar</button><button class="btn primary" id="pp-todas">✓ Aceitar todas (${ids.length})</button></div>`,(s,fecha)=>{
+    const L=s.querySelector("#pp-l");
+    const pinta=()=>{ botaoProps(); ids=ids.filter(id=>princProp[id]&&exercicios[id]&&prVazio(exercicios[id].princ)); s.querySelector("#pp-n").textContent=ids.length;
+      const bt=s.querySelector("#pp-todas"); bt.textContent=`✓ Aceitar todas (${ids.length})`; bt.disabled=!ids.length;
+      L.innerHTML=ids.map(id=>{ const X=exercicios[id], P=princProp[id];
+        return `<div class="pprop${P.conf==="baixa"?" baixa":""}" data-id="${esc(id)}"><div class="pp-cab"><span class="n">${X.n||"–"}</span><b>${esc(X.nome)}</b><small>${esc(catEx(X))}${P.conf==="baixa"?" · pouco segura":""}</small></div>
+          <div class="pp-ch">${chipsPrinc(P)}</div>
+          <div class="pp-bt"><button class="btn sm primary" data-k="ok">✓ Aceitar</button><button class="btn sm" data-k="ed">✎ Mudar</button><button class="btn sm" data-k="no">✕ Ignorar</button></div></div>`; }).join("")||`<p class="sub">Todas as propostas estão revistas.</p>`;
+      L.querySelectorAll(".pprop button").forEach(b=>b.onclick=()=>{ const id=b.closest(".pprop").dataset.id;
+        if(b.dataset.k==="ok"){ aceitaProp(id); pinta(); }
+        else if(b.dataset.k==="no"){ tiraProp(id); pinta(); }
+        else { const X=exercicios[id]; fecha(); folhaEscolhePrinc(`Princípios · ${X.nome}`,princProp[id],pr=>{ if(pr&&pr.p) aceitaProp(id,pr); else if(pr){ const N=clone(exercicios[id]); N.princ=pr; tiraProp(id); guardaEx(N,true); } setTimeout(()=>{ renderEx(); botaoProps(); if(propsPorRever().length) folhaPropostas(); },0); }); } }); };
+    confirma2(s.querySelector("#pp-todas"),"Toca outra vez para aceitar todas",()=>{ const n=ids.length; ids.slice().forEach(id=>aceitaProp(id)); fecha(); renderEx(); botaoProps(); toast(`${n} propostas aceites`); });
+    pinta(); }); }
 function renderExNav(ls,E){ const nav=$("x-nav"), tot=Object.keys(exercicios).length;
   $("x-n").textContent=tot?(ls.length===tot?`${tot} ${tot===1?"exercício":"exercícios"}`:`${ls.length} de ${tot}`):"";
   let h=""; PARTES.forEach(([pk,pn,cor])=>{ const q=ls.filter(x=>x.parte===pk); h+=`<div class="grp"><h3><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cor};margin-right:6px"></i>${pn}</h3><ul>`;
@@ -201,11 +227,15 @@ function renderExPainel(E){ const pn=$("x-panel");
       <dt>Formato</dt><dd>${esc(rotuloDe(TIPOS_EX,E.tipo)||"–")}</dd><dt>Estrutura</dt><dd>${esc(E.formato||"–")}</dd>
       <dt>Tempos</dt><dd>${contaExDef(E)?"Conta para a estatística":"Não conta"}${E.contaTempo===null?" (pela parte)":""}</dd>
       <dt>Competição interna</dt><dd>${E.comp?(E.comp==="liga"?"Liga":"Champions"):"–"}</dd><dt>Meinho</dt><dd>${E.meinho?"Sim":"–"}</dd></dl>
+    ${typeof temPrinc==="function"&&temPrinc()?`<div class="add"><h3>Princípios do Modelo de Jogo</h3>${prVazio(E.princ)?(princProp[E.id]?`<p class="sub" style="margin:0 0 6px">Proposta${princProp[E.id].conf==="baixa"?" (pouco segura)":""}:</p>${chipsPrinc(princProp[E.id])}<div class="row" style="gap:6px;margin-top:8px"><button class="btn sm primary" id="x-pp-ok">✓ Aceitar</button><button class="btn sm" id="x-pp-no">✕ Ignorar</button></div>`:`<p class="sub" style="margin:0">Ainda sem princípios. 1 principal (★) e até 3 secundários.</p>`):chipsPrinc(E.princ)}<button class="btn sm" id="x-pr" style="margin-top:8px">🎯 ${prVazio(E.princ)?"Escolher princípios":"Mudar princípios"}</button></div>`:""}
     <div class="add"><h3>Material</h3>${E.material.length?`<div class="picks">${E.material.map(m=>`<label>${esc(m)}</label>`).join("")}</div>`:`<p class="sub" style="margin:0">Sem material indicado.</p>`}</div>
     <div class="add"><h3>Ligações</h3>${lM.length||lL.length?`<div class="xlig">${lM.map(id=>`<button class="btn sm" data-m="${esc(id)}">Modelo · ${esc(modelos[id].nome)}</button>`).join("")}${lL.map(L=>`<button class="btn sm" data-l="${esc(L.id)}">Bola parada · ${esc(L.nome)}</button>`).join("")}</div>`:`<p class="sub" style="margin:0">Sem ligações a quadros do Modelo de Jogo ou de bolas paradas.</p>`}</div>
     <div class="add"><h3>Vídeos e ligações</h3>${E.links.length?`<ul class="xlinks">${E.links.map(x=>`<li><a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a><small>${esc(hostDe(x.url))}</small></li>`).join("")}</ul>`:`<p class="sub" style="margin:0">Sem ligações.</p>`}<p class="sub" style="margin:0">Só no repositório: não passam para as UT nem para os PDF.</p></div>
     <div class="add"><h3>Autoria</h3><p class="sub" style="margin:0">Criado por ${quem(E.criadoPor,E.criadoEm)}</p>${E.alteradoEm?`<p class="sub" style="margin:0">Última alteração: ${quem(E.alteradoPor,E.alteradoEm)}</p>`:""}</div>`;
-  pn.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{ mCur=b.dataset.m; setTab("m"); });
+  pn.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{ mCur=b.dataset.m; if(typeof mModo!=="undefined") mModo="quadros"; setTab("m"); });
+  if($("x-pr")) $("x-pr").onclick=()=>folhaEscolhePrinc(`Princípios · ${E.nome}`,prVazio(E.princ)&&princProp[E.id]?princProp[E.id]:E.princ,pr=>{ const N=clone(exercicios[E.id]); if(pr) N.princ=pr; else delete N.princ; tiraProp(E.id); guardaEx(N); botaoProps(); toast("Princípios guardados"); });
+  if($("x-pp-ok")) $("x-pp-ok").onclick=()=>{ aceitaProp(E.id); renderEx(); botaoProps(); toast("Proposta aceite"); };
+  if($("x-pp-no")) $("x-pp-no").onclick=()=>{ tiraProp(E.id); renderEx(); botaoProps(); };
   pn.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{ curId=b.dataset.l; setTab("q"); render(); });
   preencheNomes(pn); }
 /* nomes de quem criou/alterou: só se guarda o id; o nome vem sempre na hora */

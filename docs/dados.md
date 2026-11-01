@@ -136,6 +136,22 @@ jogo.encaixe: { nos: { [slot]: {x,y} }, adv: { [slot]: {x,y} } }    // só o qua
 ```
 O adversário ataca para a esquerda (guarda-redes do lado direito), no mesmo campo do Onze. O quadro «Possíveis Encaixes» (id `encaixe`) mostra o nosso onze e o do adversário com as substituições e os cartões das duas equipas marcados no Ao vivo (bolinha verde = entrou; cartão amarelo; vermelho ou 2.º amarelo = bolinha esbatida), o número na bolinha e o nome só nos do adversário; por baixo, os suplentes do adversário ainda por entrar e as substituições; entra no PDF e na TV. Ao arquivar, o jogo do histórico guarda `adv` (com nomes e `subs`) e `encaixe`; o jogo seguinte começa sem onze nem substituições do adversário (os planteis ficam).
 
+## Princípios do Modelo de Jogo (v112)
+```
+principios/{código}   // um documento por princípio; o id é o código (OO-3, OO-3.1, OO-R1, TR-6.2…)
+{ cod, nivel: "princ"|"micro"|"rot"|"tr",   // princípio, microprincípio, rotina (padrão), transversal
+  mom: "oo"|"td"|"od"|"to"|"tr",            // macroprincípio = momento do jogo (tr = transversal)
+  pai: "OO-3" | "",                         // microprincípio → princípio
+  nome, comp, ind, txt,                     // comportamentos, indicador, explicação
+  estado: "vigor"|"construcao", ordem, alteradoPor, alteradoEm }
+modeloTxt/{chave}     // textos do modelo: identidade, mom-oo|mom-td|mom-od|mom-to, estruturas, plano, bp, indicadores, construcao
+princProp/{idExercício} { p, s: [], conf: "media"|"baixa" }   // proposta por rever; sai ao aceitar ou ignorar
+```
+- Carga inicial: `docs/modelo-2627.json` (gerado por `tools/modelo-2627.mjs` a partir do PowerPoint final da época 26/27). Propostas: `docs/propostas-princ-2627.json` (`tools/propostas-princ.mjs`).
+- Exercício: `princ: { p: "OD-3.1", s: ["OO-3.1", "TD-1"] }` (1 principal + até 3 secundários; princípio ou microprincípio). Não conta para «mudou no repositório».
+- Linha da UT: `princ` ausente = herda do repositório; `null` = nenhum nesta UT; objeto = escolhido só nesta UT.
+- Tempo treinado (calculado na hora, nada gravado): por linha sem `pai`, prática da cópia (séries × prática, sem pausas); cada código conta uma vez por linha com a cadeia micro → princípio → macro (`princCadeia`); `pri` = parte em que foi o principal (ou cadeia do principal). Por atleta: as séries em que esteve (`temposUT`).
+
 ## Competição interna e Meinho (v95)
 - Classificação calculada na hora: cada jogador presente no grupo de uma equipa num jogo **terminado** (`fim`) soma o resultado dessa equipa (3-1-0), GM/GS da equipa, os seus golos (sem auto-golos) e os seus auto-golos (AG). Jogadores com posição GR no Plantel ficam de fora desta tabela.
 - Guarda-redes: o `grA`/`grB` de cada jogo terminado soma J e golos sofridos; jogo sem GR (e sem `semGR`) fica assinalado e os golos sofridos não se atribuem.

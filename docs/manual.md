@@ -193,6 +193,24 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - **Texto desta bolinha**: só nessa bolinha, «Como o quadro», número, posição ou sem texto.
 - **Botão direito** numa peça (no iPad, manter o dedo sem mexer): ⧉ Duplicar (a cópia fica 2 m ao lado em todos os passos), ＋ Aumentar, － Diminuir, ✎ Editar e 🗑 Apagar (com Desfazer).
 
+## Modelo de Jogo › Princípios (v112)
+- No separador **Modelo de Jogo** há dois modos: **📘 Princípios** (o modelo escrito) e **🎞 Quadros** (os quadros animados de sempre).
+- Secções: Identidade, Estruturas e plano, Transversais, um por momento (Organização ofensiva, Transição defensiva, Organização defensiva, Transição ofensiva), Bolas paradas, Indicadores, Em construção e **⏱ Tempo treinado**.
+- Tocar num princípio abre a ficha para editar (nome, comportamentos, indicador, explicação, «em construção»); «+ Microprincípio» acrescenta com o código seguinte; apagar um microprincípio pede 2 toques. Os textos de cada secção editam-se com ✎.
+- **⬇ PowerPoint**: exporta o modelo completo (capa, identidade, momentos, princípios, microprincípios, estruturas, bolas paradas, indicadores) a partir do que está na app.
+
+### Ligar princípios aos exercícios
+- Na ficha do exercício (painel da direita) › **🎯 Escolher princípios**: ★ = principal (um), + = secundários (até 3). Pesquisa por código ou nome.
+- Filtro «Todos os princípios / Sem princípios / código» na lista dos exercícios.
+- **🎯 Rever propostas (n)**: a app propõe princípios para os exercícios antigos. Para cada um: ✓ Aceitar, ✎ Mudar (abre a escolha com a proposta) ou ✕ Ignorar. «Aceitar todas» pede 2 toques. As propostas «pouco seguras» aparecem no fim e a tracejado. Uma proposta também aparece na ficha do exercício.
+
+### Na UT
+- Cada exercício mostra os princípios por baixo do nome; «🎯 Princípios» muda-os **só nesta UT** (marca «nesta UT»), com «↺ Repor do repositório» e a opção «Gravar também no repositório».
+- O painel da UT e o Micro mostram os princípios treinados (minutos, % e ★ principal).
+
+### Tempo treinado
+- Modelo de Jogo › Princípios › **⏱ Tempo treinado**: período (época, mesociclo, microciclo, últimas 4 semanas), nível (momentos, princípios, microprincípios) e atleta. Minutos = prática dos exercícios em que o princípio esteve (principal ou secundário), uma vez por exercício; «★ principal» = parte em que foi o foco.
+
 ## Novidades da v110
 - **Quadro · lances ligados:** cada posição tem o jogador do slide inicial. Troca-se o jogador no slide inicial e muda em todos os lances que o seguem. Um lance com jogadores próprios (ex.: pés trocados) marca-se como **Variante** em ✎ Lance. Se um lance ligado tiver jogadores diferentes, aparece o botão «Igualar os jogadores».
 - **Meinho:** a folha rola toda no telemóvel e no iPad (todos os nomes se tocam), tem pesquisa pelo nome e o botão «🧤 GR participam / não participam».

@@ -699,3 +699,61 @@ small.mc-e.fechado,.mc-e.fechado{color:var(--ink);font-weight:600}
 }
 /* v111: abaixo de 1280 px o seletor da época (Treino › Ano) ficava sem largura, tapado pelo «+ Mesociclo» */
 @media (max-width:1279px){ nav.lances .a-epoca{flex:none;width:210px;align-self:center} }
+
+/* ---------- v112 · Modelo de Jogo › Princípios ---------- */
+.mmodos{display:flex;margin:0 0 10px}.mmodos button{flex:1}
+.mprinc{padding:4px 14px 18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.mprinc h3{font-family:var(--f-display);margin:0;font-size:18px;text-wrap:balance}
+.mprinc h4{font-family:var(--f-display);text-transform:uppercase;letter-spacing:1px;font-size:12px;color:var(--muted);margin:14px 0 6px}
+.mprinc p{margin:4px 0}
+.psec{display:flex;flex-direction:column;gap:4px;min-width:0}
+.phead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.phead h3{margin-right:auto}
+.pgrid2,.pgrid3,.pgrid4{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
+.pcard{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.pcard small{font-family:var(--f-display);text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-size:11px}
+.pv{font-family:var(--f-display);font-size:17px}.pbig{font-family:var(--f-display);font-size:30px;line-height:1.1}
+.plist{margin:4px 0;padding-left:18px}.plist li{margin:2px 0}
+.pnota{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-weight:600}
+.pprin{border:1px solid var(--line);border-left:5px solid var(--pc);background:var(--surface);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.pprin.constr,.ttab tr.constr td{opacity:.75}
+.pcod{font-family:var(--f-display);font-weight:700;color:var(--pc,var(--ink));white-space:nowrap}
+.ptag{font-size:11px;font-family:var(--f-display);text-transform:uppercase;letter-spacing:.6px;background:var(--gold-soft);color:var(--warn);border-radius:999px;padding:2px 8px}
+.pfoot{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-top:4px}
+table.pmic td:first-child{white-space:nowrap}
+.presumo{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.presumo li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 8px;align-items:baseline}
+.presumo li small{grid-column:2 / -1;color:var(--muted);font-size:12px}
+.presumo .pnm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pchips{display:inline-flex;flex-wrap:wrap;gap:4px;vertical-align:middle}
+.pchip{border:1px solid var(--pc);color:var(--ink);border-radius:999px;padding:1px 8px;font-size:12.5px;line-height:1.5;background:var(--surface)}
+.pchip b{color:var(--pc);font-family:var(--f-display)}
+.pchip.pri{background:var(--pc);color:#fff}.pchip.pri b{color:#fff}
+.utx-pr{display:block;margin-top:3px}
+.psel{min-height:30px;padding:6px 0}
+.plista{max-height:min(52vh,520px);overflow:auto;border:1px solid var(--line);border-radius:8px;padding:4px 8px;background:var(--surface)}
+.plista h4{font-family:var(--f-display);text-transform:uppercase;letter-spacing:1px;font-size:12px;margin:10px 0 4px}
+.prow{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:6px;align-items:center;padding:3px 0;border-bottom:1px solid var(--line)}
+.prow.micro{padding-left:14px}.prow.constr{opacity:.7}
+.prow .pnm{min-width:0}.prow .pnm small{color:var(--warn)}
+.prow .btn{min-width:42px;min-height:40px;padding:4px 10px}
+.pextra{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.pextra .chk{display:flex;gap:8px;align-items:center;min-height:40px}
+.pfiltros{display:flex;gap:10px;flex-wrap:wrap}.pfiltros .f{min-width:min(100%,200px);flex:1}
+table.ptempo tr.zero td{color:var(--muted)}table.ptempo tr.micro td:nth-child(2){padding-left:22px;font-size:14px}
+.pbarc{width:28%;min-width:60px}.pbar{display:block;height:8px;border-radius:4px;min-width:2px}
+.pform{display:flex;flex-direction:column;gap:8px;max-height:min(62vh,640px);overflow:auto;padding-right:4px}
+.pform textarea{width:100%;font:inherit}
+.pfs{border:1px solid var(--line);border-radius:8px;padding:6px 10px;display:flex;flex-direction:column;gap:6px}
+.pfs legend{font-family:var(--f-display);color:var(--muted);font-size:12px}
+.pfg{display:flex;flex-direction:column;gap:6px}.pfg>b{font-family:var(--f-display);font-size:13px}
+#x-fpr{min-height:40px;max-width:100%}
+
+/* v112 — propostas de princípios */
+.pplista{display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow:auto;margin:10px 0}
+.pprop{border:1px solid var(--line,#ddd);border-radius:10px;padding:8px 10px;display:grid;gap:6px}
+.pprop.baixa{border-style:dashed;opacity:.92}
+.pp-cab{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.pp-cab .n{font-weight:700;color:#8a8579;min-width:2em}
+.pp-cab small{color:#8a8579}
+.pp-bt{display:flex;gap:6px;flex-wrap:wrap}
+.pp-bt .btn{min-height:40px}

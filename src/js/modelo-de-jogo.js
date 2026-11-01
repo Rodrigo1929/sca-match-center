@@ -515,7 +515,8 @@ function moveNaLista(d){ const Q=qAtual(); if(!Q) return; const ls=listaModelos(
 
 /* ---------- interface ---------- */
 let mNotaT=null;
-function renderModelo(){ const view=$("view-m"); if(!view||view.hidden) return; if(mFig&&!mLe("fx:"+mFig)) mSaiFig(); const Q=qAtual();
+function renderModelo(){ const view=$("view-m"); if(!view||view.hidden) return; if(mFig&&!mLe("fx:"+mFig)) mSaiFig();
+  if(mModo==="princ"&&!mFig&&temPrinc()){ if(mPl&&mPl.playing) mPl.pause(); renderPrinc(); return; } mostraPrincView(false); const Q=qAtual();
   if(Q&&!mFig) mCur=Q.id; try{ localStorage.setItem("sca-modelo-cur",mCur||""); }catch(e){}
   renderModeloNav(Q); const stage=$("m-stage");
   if(!Q){ if(mPl){ mPl.pause(); mPl=null; } stage.innerHTML=`<div class="m-vazio"><b>Ainda não há quadros do Modelo de Jogo.</b><span>Cada quadro é uma sequência de passos animados: crias o passo 1, copias para o passo 2 e arrastas só o que muda.</span><button class="btn primary" id="m-novo2">+ Criar o primeiro quadro</button></div>`;
@@ -548,12 +549,12 @@ function renderModelo(){ const view=$("view-m"); if(!view||view.hidden) return; 
 function renderModeloNav(Q){ const nav=$("m-nav"), ls=listaModelos();
   if(mFig){ nav.innerHTML=`<div class="mfig-aviso"><b>A desenhar a figura de um exercício</b><span></span><button class="btn sm primary" id="mf-volta2">↩ Voltar ao exercício</button></div>`;
     nav.querySelector("span").textContent=Q?Q.nome:""; $("mf-volta2").onclick=voltaAoExercicio; return; }
-  let h=`<button class="newl" id="m-novo">+ Novo quadro</button>`;
+  let h=modosModeloHtml()+`<button class="newl" id="m-novo">+ Novo quadro</button>`;
   MOMENTOS.forEach(([mk,mn,cor,subs])=>{ const q=ls.filter(x=>x.mom===mk); h+=`<div class="grp"><h3><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cor};margin-right:6px"></i>${mn}</h3><ul>`;
     if(!q.length) h+=`<li><span class="m-nada">Sem quadros</span></li>`;
     q.forEach((x,i)=>{ h+=`<li><button data-id="${esc(x.id)}" aria-current="${Q&&x.id===Q.id}"><span class="n">${i+1}</span><span class="m-nm">${esc(x.nome)}<small>${esc(subNome(x.mom,x.sub))} · ${x.passos.length} ${x.passos.length===1?"passo":"passos"}</small></span></button></li>`; });
     h+=`</ul></div>`; });
-  nav.innerHTML=h; $("m-novo").onclick=folhaNovoModelo;
+  nav.innerHTML=h; ligaModosModelo(nav); $("m-novo").onclick=folhaNovoModelo;
   nav.querySelectorAll("button[data-id]").forEach(b=>{ b.onclick=()=>{ if(b.dataset.id===mCur) return; mPara(); mCur=b.dataset.id; mT_=0; mSel=null; mUndo=mUndo.filter(u=>u.id===mCur); renderModelo(); };
     b.oncontextmenu=e=>{ const Q=modelos[b.dataset.id]; if(Q) menuContexto(e,[[`🗑 Apagar quadro “${Q.nome}”`,()=>apagaQuadro(Q.id),"perigo"]]); }; }); }
 function marcaPasso(){ const Q=qAtual(); if(!Q) return; const pv=passoVisivel(Q,mT_); document.querySelectorAll("#m-play .mpasso").forEach((b,i)=>b.setAttribute("aria-current",String(i===pv)));
