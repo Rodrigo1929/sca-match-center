@@ -5,7 +5,15 @@ const IMG_DATA={{IMG_DATA}}; const IMG_URL=IMG_DATA;
 function preCarregaImagens(){}
 function el(tag,attrs={},parent){ const e=document.createElementNS(NS,tag); for(const k in attrs){ let v=attrs[k]; if(k==="href"&&tag==="image"&&IMG_URL[v]) v=IMG_URL[v]; e.setAttribute(k,v); if(k==="href"&&tag==="image") e.setAttributeNS("http://www.w3.org/1999/xlink","xlink:href",v); } if(parent) parent.appendChild(e); return e; }
 let mctx=null;
-function textW(t,px,w){ mctx=mctx||document.createElement("canvas").getContext("2d"); mctx.font=`${w} ${px}px "Roboto Condensed","Arial Narrow",sans-serif`; return mctx.measureText(t).width; }
+/* v112: a letra dos quadros (Roboto Condensed) vem embutida na página ("RC Quadro"): sem internet (banco, iPad) o Safari usava o Arial,
+   mais largo, e as legendas saíam da caixa. Quando a letra acaba de carregar, o quadro volta a desenhar-se com as medidas certas. */
+let rcPronta=false;
+(function(){ try{ if(!window.FontFace) return; const ps=[["400","fonts/rc-400.ttf"],["700","fonts/rc-700.ttf"]].filter(([,f])=>IMG_DATA[f]).map(([w,f])=>new FontFace("RC Quadro",`url(${IMG_DATA[f]})`,{weight:w}).load().then(x=>{ document.fonts.add(x); }));
+  Promise.all(ps).then(()=>{ rcPronta=true; mctx=null; try{ if(typeof render==="function"&&$("view-q")&&!$("view-q").hidden) render(); }catch(e){} }).catch(()=>{}); }catch(e){} })();
+const FONTE_Q=`"RC Quadro","Roboto Condensed","Arial Narrow",Arial,sans-serif`;
+function textW(t,px,w){ mctx=mctx||document.createElement("canvas").getContext("2d"); mctx.font=`${w} ${px}px ${FONTE_Q}`; return mctx.measureText(t).width; }
+/* legendas e caixas de texto sempre dentro do slide (margem pequena) */
+const MARG_Q=500, dentroQ=(x,w,lim)=>Math.max(MARG_Q,Math.min(x,lim-w-MARG_Q));
 function svgPt(svg,e){ const p=svg.createSVGPoint(); p.x=e.clientX; p.y=e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); }
 function titulo(svg,L){
   const pre=L.tipo==="DEF"?"Esquema Tático Defensivo – ":L.tipo==="OF"?"Esquema Tático Ofensivo – ":"";
@@ -30,7 +38,7 @@ function desenha(L,opts={}){
   const {v,base:bv,dups}=calcula(L); cartoesCache=cartoes(); dupsAtual=dups||[];
   L.legs.forEach((G,gi)=>{
     const g=el("g",{class:"leg"},svg);
-    const {x,y,w,h}=G, fs=(G.fs||18)*PT, ins=914, num=v[G.slot]??G.slot;
+    const w=Math.min(G.w,W-2*MARG_Q), h=Math.min(G.h,H-2*MARG_Q), x=dentroQ(G.x,w,W), y=dentroQ(G.y,h,H), fs=(G.fs||18)*PT, ins=914, num=v[G.slot]??G.slot;
     const mod=num!==(bv[G.slot]??baseOf(G.slot))&&!opts.clean;
     el("rect",{x,y,width:w,height:h,fill:"#fff",stroke:"#111","stroke-width":200,filter:"url(#sh)"},g);
     const cellW=textW("88",fs,700)+fs*.15;
@@ -38,14 +46,15 @@ function desenha(L,opts={}){
     const base=y+h/2+fs*.36;
     el("text",{x:x+ins+cellW/2,y:base,"text-anchor":"middle","font-size":fs,"font-weight":700,fill:"#C00000",class:"legtxt"},g).textContent=num;
     const rx=x+ins+cellW+fs*.12;
-    const t=el("text",{x:rx,y:base,"font-size":fs,class:"legtxt"},g);
+    const t=el("text",{x:rx,y:base,"font-size":fs,class:"legtxt"},g);   // a letra da tarefa diminui se não couber (v112)
     el("tspan",{"font-weight":700,fill:"#000"},t).textContent="- ";
     let full="- ";
     const parts=(G.parts||[]).filter(p=>p.t);
     if(!parts.length && editing && !opts.clean){ el("tspan",{fill:"#9A958B","font-style":"italic"},t).textContent="tarefa…"; }
     parts.forEach(p=>{ el("tspan",{fill:p.c||"#000","font-weight":p.b?700:400},t).textContent=p.t; full+=p.t; });
-    const avail=x+w-ins*.8-rx, need=textW(full,fs,400)*1.02;
-    if(need>avail){ t.setAttribute("textLength",avail); t.setAttribute("lengthAdjust","spacingAndGlyphs"); }
+    const avail=x+w-ins*.8-rx, larg=f=>(textW("- ",f,700)+parts.reduce((a,p)=>a+textW(p.t,f,p.b?700:400),0))*1.03;
+    if(larg(fs)>avail){ const f2=Math.max(fs*.75,fs*avail/larg(fs)); t.setAttribute("font-size",f2); t.setAttribute("y",y+h/2+f2*.36);
+      if(larg(f2)>avail){ t.setAttribute("textLength",avail); t.setAttribute("lengthAdjust","spacingAndGlyphs"); } }
     if(!opts.clean) liga(g,svg,L,"legs",gi);
     if(editing&&!opts.clean){ const xg=el("g",{style:"cursor:pointer"},svg);
       el("circle",{cx:x+w,cy:y,r:720,fill:"#C00000",stroke:"#fff","stroke-width":150},xg);
@@ -106,6 +115,10 @@ function linhasTexto(T){
 }
 function desenhaTexto(svg,L,T,ti,opts){
   const g=el("g",{class:"leg"},svg);
+  /* v112: a caixa fica dentro do slide; se o texto não cabe na altura da caixa, a letra diminui ligeiramente (até ~85%) antes de a caixa crescer */
+  { const w=Math.min(T.w,W-2*MARG_Q), x=T.rot?T.x:dentroQ(T.x,w,W), y=T.rot?T.y:dentroQ(T.y,Math.min(T.h,H-2*MARG_Q),H); if(w!==T.w||x!==T.x||y!==T.y) T={...T,x,y,w}; }
+  { const ins0=T.ins||[914,457,914,457], cabe=T.h-ins0[1]-ins0[3], alt=X=>linhasTexto(X).reduce((a,l)=>a+l.h,0);
+    if(cabe>0&&alt(T)>cabe){ let k=1, X=T; while(k>.86&&alt(X)>cabe){ k-=.03; X={...T,paras:(T.paras||[]).map(P=>({...P,sz:(P.sz||18)*k,runs:(P.runs||[]).map(r=>({...r,sz:(r.sz||P.sz||18)*k}))}))}; } T=X; } }
   if(T.rot) g.setAttribute("transform",`rotate(${T.rot} ${T.x+T.w/2} ${T.y+T.h/2})`);
   const ls=linhasTexto(T), tot=ls.reduce((a,l)=>a+l.h,0), ins=T.ins||[914,457,914,457];
   const h=Math.max(T.h,tot+ins[1]+ins[3]);

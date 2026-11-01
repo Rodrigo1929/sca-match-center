@@ -99,7 +99,7 @@ nav.lances{display:flex;flex-direction:column;gap:14px;position:sticky;top:calc(
 .legend-chip i{width:12px;height:12px;border-radius:50%;border:2px solid var(--gold);display:inline-block}
 svg .bola,svg .leg{cursor:pointer}
 svg .num,svg .lbl{font-family:var(--f-display);font-weight:700;pointer-events:none}
-svg .legtxt{font-family:var(--f-display);pointer-events:none}
+svg .legtxt{font-family:"RC Quadro",var(--f-display);pointer-events:none}
 .editing svg .bola{cursor:grab}
 .editing svg .leg{cursor:move}
 
