@@ -190,7 +190,7 @@ function folhaCompUT(id,lid){ const U0=uts[id], l=U0&&U0.exercicios.find(x=>x.id
 function folhaMeinhoUT(id,lid){ const U0=uts[id], l=U0&&U0.exercicios.find(x=>x.id===lid); if(!l) return; const num=numerosUT(U0)[lid];
   /* v110: grelha sem altura máxima (rola a folha toda; antes, no telemóvel e no iPad os nomes de baixo ficavam por trás dos botões e não se tocavam),
      pesquisa pelo nome que não se perde ao tocar, e «GR participam» por exercício nesta UT (l.mhSemGR = os GR não entraram) */
-  let tipo="21", sel=[], q="";
+  let tipo="21", sel=[], q="", edId=null;   // edId: registo em edição (v112: lista de registos com editar e apagar)
   folha(`<h3>👑 Meinho · ${num} ${esc(l.copia.nome)}</h3><p class="sub" style="margin:0">UT${U0.numero}. Cada registo vale 1 para cada atleta escolhido.</p>
     <div class="seg" id="mh-t"><button data-k="21">21 passes (1 a 3 no meio)</button><button data-k="cueca">Cueca (quem levou)</button></div>
     <div class="mh-top"><input type="search" id="mh-q" placeholder="🔍 Procurar jogador" autocomplete="off" autocorrect="off" spellcheck="false"><button class="btn" id="mh-gr"></button></div>
@@ -206,18 +206,22 @@ function folhaMeinhoUT(id,lid){ const U0=uts[id], l=U0&&U0.exercicios.find(x=>x.
       const regs=meinhoDeLinha(id,lid), cnt={}; regs.forEach(r=>r.ks.forEach(k=>{ const x=cnt[k]||(cnt[k]={m:0,c:0}); r.tipo==="cueca"?x.c++:x.m++; }));
       s.querySelectorAll("#mh-t button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===tipo)));
       const nGR=todos.filter(ehGR).length; gb.hidden=!nGR; gb.textContent=gr?"🧤 GR participam":"🧤 GR não participam"; gb.setAttribute("aria-pressed",String(gr));
-      const ult=regs[regs.length-1];
-      c.innerHTML=`<p class="sub" style="margin:0 0 6px">${tipo==="cueca"?"Toca no atleta que levou a cueca.":"Toca nos atletas que estavam no meio (1 a 3)."}</p>
+      if(edId&&!meinhoRegs[edId]) edId=null; const hora=r=>new Date(r.em).toLocaleTimeString("pt-PT",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+      c.innerHTML=`${edId?`<div class="mh-ed"><span>✎ A editar o registo das <b>${esc(hora(meinhoRegs[edId]))}</b>: escolhe o tipo e os atletas certos e toca em «Guardar alteração».</span><button type="button" class="btn sm" id="mh-edx">Cancelar edição</button></div>`:""}
+        <p class="sub" style="margin:0 0 6px">${tipo==="cueca"?"Toca no atleta que levou a cueca.":"Toca nos atletas que estavam no meio (1 a 3)."}</p>
         <div class="pgrid mh-g">${at.map(a=>{ const x=cnt[a.k]; return `<button type="button" data-k="${esc(a.k)}" aria-pressed="${sel.includes(a.k)}"><b>${esc(nomeCurto(a))}</b><small>${ehGR(a)?"GR ":""}${x?`${x.m?x.m+" × 21":""}${x.m&&x.c?" · ":""}${x.c?x.c+" cueca"+(x.c>1?"s":""):""}`:" "}</small></button>`; }).join("")
           ||`<p class="sub">${todos.length?"Ninguém com esse nome.":"Marca primeiro as presenças desta UT."}</p>`}</div>
-        <p class="sub" style="margin:6px 0 0">${regs.length} ${regs.length===1?"registo":"registos"} neste exercício${ult?` · último: ${ult.tipo==="cueca"?"cueca":"21 passes"} · ${esc(ult.ks.map(k=>nomeK(U,k)).join(", "))} · ${esc(new Date(ult.em).toLocaleTimeString("pt-PT",{hour:"2-digit",minute:"2-digit",second:"2-digit"}))}`:""}</p>
-        ${ult?`<div style="margin-top:6px"><button class="btn sm danger" id="mh-un">↶ Desfazer o último</button></div>`:""}`;
+        <div class="mh-regs"><h4>Registos neste exercício <span class="count">${regs.length}</span></h4>${regs.length?`<ul>${regs.slice().reverse().map(r=>`<li${r.id===edId?' class="ed"':""}><span class="mh-rt ${r.tipo==="cueca"?"cueca":""}">${r.tipo==="cueca"?"Cueca":"21 passes"}</span><span class="mh-rn">${esc(r.ks.map(k=>nomeK(U,k)).join(", "))}<small>${esc(hora(r))}</small></span><button type="button" class="btn sm" data-e="${esc(r.id)}" aria-label="Editar registo">✎</button><button type="button" class="btn sm danger" data-d="${esc(r.id)}" aria-label="Apagar registo">🗑</button></li>`).join("")}</ul>`:`<p class="sub" style="margin:0">Ainda sem registos.</p>`}</div>`;
       st.innerHTML=`Escolhidos: <b>${sel.length?esc(sel.map(k=>nomeK(U,k)).join(", ")):"—"}</b>`;
-      ok.textContent=`Registar ${tipo==="cueca"?"cueca":"21 passes"}`; ok.disabled=!sel.length;
+      ok.textContent=edId?"Guardar alteração":`Registar ${tipo==="cueca"?"cueca":"21 passes"}`; ok.disabled=!sel.length;
       c.querySelectorAll(".mh-g button").forEach(b=>b.onclick=()=>{ const k=b.dataset.k; if(sel.includes(k)) sel=sel.filter(x=>x!==k); else if(max===1) sel=[k]; else if(sel.length<max) sel=[...sel,k]; else { toast("No máximo 3 atletas."); return; } desenha(); });
-      const un=c.querySelector("#mh-un"); if(un) confirma2(un,"Toca outra vez para desfazer",()=>{ const r=meinhoDeLinha(id,lid).pop(); if(r){ tiraMeinho(r.id); toast("Último registo desfeito"); } desenha(); }); };
-    ok.onclick=()=>{ const U=uts[id]; if(!sel.length||!U) return; gravaMeinho({id:uId("mh"),ut:id,lid,tipo,ks:sel,em:new Date().toISOString(),por:meuId||""});
-      toast(`${tipo==="cueca"?"Cueca":"21 passes"} · ${sel.map(k=>nomeK(U,k)).join(", ")}`); sel=[]; if(q){ q=""; qi.value=""; } desenha(); };
+      c.querySelectorAll("[data-e]").forEach(b=>b.onclick=()=>{ const r=meinhoRegs[b.dataset.e]; if(!r) return; edId=r.id; tipo=r.tipo; sel=[...r.ks]; if(q){ q=""; qi.value=""; } desenha(); s.closest(".sheet")?.scrollTo?.({top:0,behavior:"smooth"}); });
+      c.querySelectorAll("[data-d]").forEach(b=>confirma2(b,"Apagar?",()=>{ const r=meinhoRegs[b.dataset.d]; if(r){ tiraMeinho(r.id); if(edId===r.id){ edId=null; sel=[]; } toast(`Registo apagado · ${r.tipo==="cueca"?"cueca":"21 passes"} · ${r.ks.map(k=>nomeK(U,k)).join(", ")}`); } desenha(); }));
+      const ex=c.querySelector("#mh-edx"); if(ex) ex.onclick=()=>{ edId=null; sel=[]; desenha(); }; };
+    ok.onclick=()=>{ const U=uts[id]; if(!sel.length||!U) return;
+      if(edId&&meinhoRegs[edId]){ gravaMeinho({...meinhoRegs[edId],tipo,ks:sel}); toast(`Registo corrigido · ${tipo==="cueca"?"cueca":"21 passes"} · ${sel.map(k=>nomeK(U,k)).join(", ")}`); edId=null; }
+      else { gravaMeinho({id:uId("mh"),ut:id,lid,tipo,ks:sel,em:new Date().toISOString(),por:meuId||""}); toast(`${tipo==="cueca"?"Cueca":"21 passes"} · ${sel.map(k=>nomeK(U,k)).join(", ")}`); }
+      sel=[]; if(q){ q=""; qi.value=""; } desenha(); };
     qi.oninput=()=>{ q=qi.value.trim(); desenha(); };
     gb.onclick=()=>{ const U=uts[id], L=U&&U.exercicios.find(x=>x.id===lid); if(!L) return; const sem=!L.mhSemGR, U2=clone(U), L2=U2.exercicios.find(x=>x.id===lid);
       if(sem) L2.mhSemGR=true; else delete L2.mhSemGR; guardaUT(U2); toast(sem?"Os GR não participam neste meinho":"Os GR participam neste meinho"); desenha(); };

@@ -757,3 +757,15 @@ table.ptempo tr.zero td{color:var(--muted)}table.ptempo tr.micro td:nth-child(2)
 .pp-cab small{color:#8a8579}
 .pp-bt{display:flex;gap:6px;flex-wrap:wrap}
 .pp-bt .btn{min-height:40px}
+
+/* v112 — Meinho: lista de registos com editar e apagar */
+.mh-regs{margin-top:12px;border-top:1px solid var(--line);padding-top:8px}
+.mh-regs h4{margin:0 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted,#6B675E)}
+.mh-regs ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.mh-regs li{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+.mh-regs li.ed{border-color:#C00000;background:rgba(192,0,0,.06)}
+.mh-regs li .btn{min-height:40px;min-width:44px}
+.mh-rt{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:#E8F0E3;color:#1F5130;white-space:nowrap}
+.mh-rt.cueca{background:#FBE3E3;color:#8A1C1C}
+.mh-rn{flex:1;min-width:0;display:flex;flex-direction:column}.mh-rn small{color:var(--muted,#6B675E)}
+.mh-ed{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:rgba(192,0,0,.08);border:1px solid #C00000;border-radius:8px;padding:8px 10px;margin-bottom:8px}.mh-ed span{flex:1;min-width:200px}

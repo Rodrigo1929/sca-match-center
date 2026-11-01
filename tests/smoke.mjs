@@ -534,7 +534,12 @@ await pg.click(`li[data-l='${lidL}'] [data-a='mh']`); await pg.waitForSelector("
 await pg.click(`.mh-g [data-k='${utA0.ks[3]}']`); await pg.click(`.mh-g [data-k='${utA0.ks[4]}']`); await pg.click("#mh-ok"); await pg.waitForTimeout(50);
 await pg.click("#mh-t [data-k='cueca']"); await pg.click(`.mh-g [data-k='${utA0.ks[5]}']`); await pg.click("#mh-ok"); await pg.waitForTimeout(50);
 await pg.click(`.mh-g [data-k='${utA0.ks[6]}']`); await pg.click("#mh-ok"); await pg.waitForTimeout(50);
-await pg.click("#mh-un"); await pg.click("#mh-un"); await pg.waitForTimeout(50); const un1 = await pg.evaluate(() => Object.keys(meinhoRegs).length);
+// v112: lista de registos — apagar o mais recente (1.º da lista) com 2 toques; editar a cueca para outro atleta e voltar
+await pg.click(".mh-regs [data-d]"); await pg.click(".mh-regs [data-d]"); await pg.waitForTimeout(50); const un1 = await pg.evaluate(() => Object.keys(meinhoRegs).length);
+await pg.click(".mh-regs [data-e]"); await pg.click(`.mh-g [data-k='${utA0.ks[6]}']`); await pg.click("#mh-ok"); await pg.waitForTimeout(50);
+const ed1 = await pg.evaluate((k) => { const r = Object.values(meinhoRegs).find((m) => m.tipo === "cueca"); return { k: r && r.ks.join(), n: Object.keys(meinhoRegs).length, lista: document.querySelectorAll(".mh-regs li").length, semEd: !document.querySelector(".mh-ed") }; }, utA0.ks[6]);
+await pg.click(".mh-regs [data-e]"); await pg.click(`.mh-g [data-k='${utA0.ks[5]}']`); await pg.click("#mh-ok"); await pg.waitForTimeout(50);
+if (ed1.k !== utA0.ks[6] || ed1.n !== 2 || ed1.lista !== 2 || !ed1.semEd) erros.push("Meinho (v112): editar um registo da lista " + JSON.stringify(ed1));
 // v110: meinho no telemóvel — todos os nomes se tocam (nada por trás dos botões), pesquisa pelo nome e «GR participam»
 await pg.setViewportSize({ width: 390, height: 700 }); await pg.waitForTimeout(150);
 const mh110 = await pg.evaluate(() => { const bs = [...document.querySelectorAll(".mh-g button")], r = {};
@@ -904,6 +909,16 @@ if (n1 !== 13 || n2 !== 11) erros.push("Adversário: substituir o plantel import
   await pg.evaluate(() => { setTab("m"); mModo = "princ"; pSec = "tempo"; renderModelo(); }); await pg.waitForTimeout(200);
   await pg.screenshot({ path: join(cap, "modelo-principios-tempo.png"), fullPage: true });
   await pg.evaluate(() => { mModo = "quadros"; renderModelo(); }); }
+
+// v112: mudar o nº no Plantel passa o treino (presenças, grupos, meinho…) para o nº novo, com 2 toques
+{ const mn0 = await pg.evaluate(() => { const U = Object.values(uts).find((u) => Object.keys(u.presencas || {}).some((k) => !k.startsWith("e:") && est.plantel.some((p) => p.n === k)));
+    if (!U) return null; const de = Object.keys(U.presencas).find((k) => !k.startsWith("e:") && est.plantel.some((p) => p.n === k)), para = "8" + de + "7";
+    const antes = usoNumero(de); guardaEst({ ...est, plantel: est.plantel.map((p) => p.n === de ? { ...p, n: para } : p) }, true); perguntaMudaNumero(de, para);
+    return { de, para, ut: U.id, antes: antes.uts, folha: !!document.querySelector("#mn-ok") }; });
+  if (mn0) { await pg.click("#mn-ok"); await pg.click("#mn-ok"); await pg.waitForTimeout(100);
+    const mn = await pg.evaluate(({ de, para, ut }) => ({ velho: usoNumero(de).uts, novo: usoNumero(para).uts, pres: uts[ut].presencas[para] }), mn0);
+    if (!mn0.folha || mn.velho !== 0 || mn.novo !== mn0.antes || !mn.pres) erros.push("Plantel (v112): mudar o nº não passou o treino " + JSON.stringify({ mn0, mn }));
+    await pg.evaluate(({ de, para }) => { guardaEst({ ...est, plantel: est.plantel.map((p) => p.n === para ? { ...p, n: de } : p) }, true); mudaNumeroTreino(para, de); }, mn0); } }
 
 // base de dados simulada: no link, os dados que chegam da base de dados vêm congelados (snapshots e data());
 // a app tem de os copiar à entrada (lerDoc), senão uma alteração a seguir pode não mudar nada sem dar erro (como na app de observação)

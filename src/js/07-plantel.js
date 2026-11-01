@@ -26,6 +26,8 @@ function renderPlantel(){ avisoAlcunhas();
     const [inN,inM,inA]=tr.querySelectorAll("input"), [inP,inE]=tr.querySelectorAll("select"); inN.value=p.n; inM.value=p.nome||""; inA.value=p.alc||""; inP.value=p.pos||""; inE.value=p.esc||"";
     const upd=()=>{ clearTimeout(pTimer); pTimer=setTimeout(()=>{ const pl=est.plantel.slice(); pl[i]={n:inN.value.trim(),nome:inM.value.trim(),...(inA.value.trim()?{alc:inA.value.trim()}:{}),...(inP.value?{pos:inP.value}:{}),...(inE.value?{esc:inE.value}:{})}; guardaEst({...est,plantel:pl},true); avisoAlcunhas(); },600); };
     tr.querySelector(".fbtn").onclick=()=>{ if(!String(p.n).trim()){ toast("Escreve primeiro o número do atleta."); return; } folhaFoto(String(p.n),p.nome); };
+    let nAntes=p.n; inN.onfocus=()=>{ nAntes=inN.value.trim(); }
+    inN.onchange=()=>{ const de=nAntes, para=inN.value.trim(); nAntes=para; setTimeout(()=>{ if(typeof perguntaMudaNumero==="function") perguntaMudaNumero(de,para); },700); };   // v112: passar o treino para o nº novo
     inN.oninput=upd; inM.oninput=upd; inA.oninput=upd; inP.onchange=upd; inE.onchange=()=>{ upd(); setTimeout(()=>{ document.activeElement.blur(); renderPlantel(); },700); };
     tr.querySelector(".icon").onclick=()=>{ if(tit.has(p.n)){ toast("É titular: troca-o primeiro no separador Jogo."); return; }
       const pl=est.plantel.slice(); const rem=pl.splice(i,1)[0]; guardaEst({...est,plantel:pl}); toast(`Jogador ${rem.n} removido`,()=>{ const r=est.plantel.slice(); r.splice(i,0,rem); guardaEst({...est,plantel:r}); }); };
