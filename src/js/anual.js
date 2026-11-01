@@ -181,7 +181,28 @@ function folhaDiaAnual(d){ const A=anual[d], js=jogosDoDia(d), M=microDe(d), Me=
     s.querySelectorAll("[data-jc]").forEach(b=>b.onclick=()=>{ fecha(); folhaJogoCal(b.dataset.jc); });
     q("#ad-j").onclick=()=>{ fecha(); folhaJogoCal(null,d); };
     q("#ad-ok").onclick=()=>{ const n=Math.round(+q("#ad-n").value); if(tipo==="ut"&&!(n>0)){ toast("Escreve o nº da UT."); return; } fecha();
-      guardaDiaAnual(d,tipo==="livre"?null:{tipo,ut:tipo==="ut"?n:0,txt:q("#ad-x").value.trim()},tipo==="livre"?"Dia livre":tipo==="ut"?`UT ${n} a ${dataCurta(d)}`:`${(TIPOS_DIA.find(t=>t[0]===tipo)||[])[1]} a ${dataCurta(d)}`); }; }); }
+      const msg=tipo==="livre"?"Dia livre":tipo==="ut"?`UT ${n} a ${dataCurta(d)}`:`${(TIPOS_DIA.find(t=>t[0]===tipo)||[])[1]} a ${dataCurta(d)}`, x=tipo==="livre"?null:{tipo,ut:tipo==="ut"?n:0,txt:q("#ad-x").value.trim()};
+      /* v112: uma UT que passa a folga (ou outro) puxa as UT seguintes 1 nº para trás; um dia que passa a UT no meio da numeração empurra-as 1 para a frente */
+      const eraUT=A&&A.tipo==="ut"?A.ut:0, R=eraUT&&tipo!=="ut"?{delta:-1,desde:eraUT+1}:!eraUT&&tipo==="ut"&&utsDepois(d).some(a=>a.ut>=n)?{delta:1,desde:n}:null;
+      if(!R){ guardaDiaAnual(d,x,msg); return; }
+      const antes={dia:anual[d]?clone(anual[d]):null,...fotoNumeracao(d)}; guardaDiaAnual(d,x); const k=renumeraUTsDepois(d,R.delta,R.desde);
+      toast(`${msg} · ${k} UT seguintes ${R.delta<0?"passam 1 nº para trás":"passam 1 nº para a frente"}`,()=>{ if(antes.dia){ anual[d]=antes.dia; gravaDoc("anual/"+d,antes.dia); } else { delete anual[d]; apagaDoc("anual/"+d); } repoeNumeracao(antes); guardaAnualLocal(); renderUT(); }); }; }); }
+/* ---------- renumerar as UT seguintes (v112) ---------- */
+const fimEpocaDe=d=>{ const x=new Date(d+"T12:00"), a=x.getMonth()>=6?x.getFullYear():x.getFullYear()-1; return `${a+1}-06-30`; };
+const utsDepois=d=>Object.values(anual).filter(a=>a.id>d&&a.id<=fimEpocaDe(d)&&a.tipo==="ut"&&a.ut);
+function fotoNumeracao(d){ const fim=fimEpocaDe(d);
+  return {anual:utsDepois(d).map(a=>clone(a)),uts:Object.values(uts).filter(U=>U.data&&U.data>d&&U.data<=fim).map(U=>clone(U)),
+    sem:Object.values(semanas).filter(S=>Object.keys(S.dias||{}).some(x=>x>d&&x<=fim)).map(S=>clone(S))}; }
+function repoeNumeracao(F){ F.anual.forEach(a=>{ anual[a.id]=a; gravaDoc("anual/"+a.id,a); }); F.uts.forEach(U=>{ uts[U.id]=U; gravaDoc("uts/"+U.id,U); }); guardaUTLocal();
+  F.sem.forEach(S=>{ semanas[S.id]=S; gravaDoc("semanas/"+S.id,S); }); guardaSemLocal(); }
+/* muda em delta os nº ≥ desde depois do dia d (até ao fim da época): dias do planeamento, UT já criadas e treinos do plano semanal */
+function renumeraUTsDepois(d,delta,desde){ const fim=fimEpocaDe(d), em=new Date().toISOString(); let k=0;
+  utsDepois(d).filter(a=>a.ut>=desde).forEach(a=>{ anual[a.id]=normDiaAnual({...a,ut:a.ut+delta,alteradoPor:meuId||"",alteradoEm:em}); gravaDoc("anual/"+a.id,anual[a.id]); k++; });
+  Object.values(uts).filter(U=>U.data&&U.data>d&&U.data<=fim&&U.numero>=desde).forEach(U=>guardaUT({...U,numero:U.numero+delta},true));
+  Object.values(semanas).forEach(S=>{ let mud=false; const S2=clone(S);
+    Object.entries(S2.dias||{}).forEach(([x,D])=>{ if(x<=d||x>fim) return; ["manha","tarde"].forEach(p=>(D[p]||[]).forEach(b=>{ if(b.tipo==="treino"&&+b.treino>=desde){ b.treino=+b.treino+delta; mud=true; } })); });
+    if(mud) guardaSemana(S2,true); });
+  guardaAnualLocal(); renderUT(); return k; }
 function folhaMicro(seg){ const M=Object.values(ciclos).find(c=>c.tipo==="micro"&&c.inicio===seg)||null, ant=Object.values(ciclos).filter(c=>c.tipo==="micro"&&c.inicio<seg).sort((a,b)=>b.inicio.localeCompare(a.inicio))[0];
   folha(`<h3>Microciclo · semana de ${esc(dataCurta(seg))} a ${esc(dataCurta(diaMais(seg,6)))}</h3>
     <label class="f">Nº do microciclo (= nº do plano semanal)<input type="text" id="am-n" inputmode="numeric" value="${M?M.n:(ant?ant.n+1:1)}"></label>

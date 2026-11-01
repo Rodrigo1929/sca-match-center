@@ -44,6 +44,9 @@ Posição inicial ligada (v108, decidido pelo Rodrigo em 30/10/2026): um lance p
 - **Tempo treinado** de um princípio = minutos de prática dos exercícios em que esteve presente (principal ou secundário), contados uma vez por exercício, com «dos quais principal» e % do tempo de treino (a soma passa de 100%). Sem complementares. Por período, nível (macro / princípio / micro) e atleta.
 - Propostas para os exercícios antigos: feitas a partir da categoria, objetivos e comportamentos; só entram ao aceitar. Validação do João depois, dentro da app.
 
+## Planeamento anual: renumerar as UT (v112)
+- Um dia que era UT e passa a folga, interrupção, outro ou livre puxa as UT seguintes até ao fim da época 1 nº para trás. Um dia que passa a UT com um nº que já existe mais à frente empurra as seguintes 1 nº para a frente. Mudam também as UT já criadas depois desse dia e os treinos do plano semanal. Um toast permite desfazer tudo.
+
 ## Nº do atleta e treino (v112)
 - O treino liga-se ao atleta pelo nº do Plantel. Mudar o nº no Plantel pergunta (2 toques) se passa o treino do nº antigo para o novo: presenças, grupos (e estrutura), competição interna (GR, reforços, golos), meinho, histórico do Excel e foto. Os jogos não mudam (conta o nº da camisola nesse jogo). Se o nº novo já tiver treino, não junta sozinho.
 - Meinho: cada registo pode editar-se (tipo e atletas) ou apagar-se (2 toques) na lista do exercício.
