@@ -343,6 +343,16 @@ const ge = await pg.evaluate(async () => { const U = uts.ugt, g = U.grupos[0], N
   return { sis: g.estr && g.estr.sis, nPos: g.estr && Object.keys(g.estr.pos).length, nJ: g.jogadores.length, mini: !!document.querySelector(".ug-mini svg"), norm: !!N.grupos[0].estr && !N.grupos[1].estr, pdf: n1 > n0 }; });
 if (!sisB.some((t) => /^GR \+ \d/.test(t) || /^\d-\d/.test(t)) || ge.sis !== sisB[1].replace("GR + ", "") || ge.nPos !== ge.nJ || ge.nJ !== 8 || bol.length !== 8 || !troca || !ge.mini || !ge.norm || !ge.pdf)
   erros.push("Grupos: estrutura do grupo falhou " + JSON.stringify({ sisB, ge, n: bol.length, troca }));
+// v112.2: 2-4-2 para 8 de campo e estrutura «Livre» (começa pelas posições do Plantel, sem legenda no campo)
+const livre = await pg.evaluate(() => { const U = uts.ugt, g = { ...clone(U.grupos[0]), estr: { sis: "livre", pos: {} } }, svg = estruturaSvg(U, g), sp = estruturaSvg(U, { ...g, estr: { sis: "pos", pos: {} } });
+  const at = atletasUT(U), js = g.jogadores.map((k) => at.find((a) => a.k === k));
+  return { txt: [...svg.querySelectorAll(":scope > text")].length, txtPos: [...sp.querySelectorAll(":scope > text")].length, n: svg.querySelectorAll("g[data-k]").length, igual: JSON.stringify(posEstr(js, { sis: "livre", pos: {} })) === JSON.stringify(posEstr(js, { sis: "pos", pos: {} })), s242: SIS_GRUPO[8].includes("2-4-2") && SIS_GRUPO[7].includes("2-4-1") }; });
+// sistema que deixou de servir para o nº de jogadores: continua na lista e avisa
+const avS = await pg.evaluate(() => { folhaGrupoUT("ugt", uts.ugt.grupos[0].id); const ops = [...document.querySelectorAll("#ug-s button")].map((b) => b.dataset.k);
+  const at = atletasUT(uts.ugt); [...document.querySelectorAll("#ug-j button[aria-pressed='true']")].find((b) => at.find((a) => a.k === b.dataset.k).pos !== "1").click(); const r = { ops: [...document.querySelectorAll("#ug-s button")].map((b) => b.dataset.k), av: document.querySelector("#ug-e b")?.textContent || "" };
+  document.querySelector("#sheet-root [data-close]").click(); return { ...r, ops0: ops, sis: uts.ugt.grupos[0].estr.sis }; });
+if (!avS.av.includes("é para") || !avS.ops.includes(avS.sis)) erros.push("Grupos: aviso do sistema que não serve " + JSON.stringify(avS));
+if (livre.txt !== 0 || livre.txtPos !== 1 || livre.n !== 8 || !livre.igual || !livre.s242) erros.push("Grupos: estrutura livre ou 2-4-2 errada " + JSON.stringify(livre));
 await pg.evaluate((a) => { delete uts.ugt; uCur = a; renderUT(); }, utA);
 if (!lista.some((t) => t.includes("Santiago C.")) || !lista.some((t) => t.includes("Gustavo Rocha")) || visG !== 1 || ux.e !== "Sub19/2" || !String(ux.dis).includes("Santiago C.")) erros.push("UT: lista dos jogadores de fora que já treinaram falhou " + JSON.stringify({ lista, visG, ux }));
 // muitos grupos no PDF: continuam num bloco/página seguinte em vez de ficarem cortados

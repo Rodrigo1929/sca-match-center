@@ -47,7 +47,7 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 
 ### Grupos de trabalho (v109)
 - A folha do grupo é larga e os jogadores aparecem em botões compactos: todos os presentes (P e CO) cabem à vista, com a contagem «24 no treino · 8 no grupo». Os botões Guardar / Cancelar ficam sempre visíveis no fundo.
-- **Estrutura (opcional)**: escolhe-se o sistema do grupo pelo nº de jogadores de campo (ex.: 8 com GR → GR + 3-3-1, 3-2-2, 2-3-2, 3-1-3) ou «Pelas posições do Plantel». Cada jogador vai para o lugar mais perto da sua posição no Plantel; o GR do grupo vai à baliza. Arrasta-se uma bolinha para a mudar de lugar e larga-se em cima de outra para trocarem; «↺ Repor pelo sistema» volta ao início. Fica gravado no grupo.
+- **Estrutura (opcional)**: escolhe-se o sistema do grupo pelo nº de jogadores de campo (ex.: 8 com GR → GR + 3-3-1, 3-2-2, 2-3-2, 3-1-3, 2-4-1; 8 de campo → também 2-4-2), «Pelas posições do Plantel» ou **Livre** (v112.2: começa pelas posições do Plantel, mexe-se à vontade e não leva legenda no campo). Cada jogador vai para o lugar mais perto da sua posição no Plantel; o GR do grupo vai à baliza. Arrasta-se uma bolinha para a mudar de lugar e larga-se em cima de outra para trocarem; «↺ Repor pelo sistema» volta ao início. Fica gravado no grupo.
 - As bolinhas têm a cor do nome do grupo (Vermelhos, Brancos, Azuis, Amarelos, Verdes, Laranjas, Pretos; sem cor no nome, vermelho) e o GR a amarelo.
 - Na lista dos grupos aparece o campo pequeno (toque abre o grupo). No **PDF da UT**, o grupo com estrutura mostra o nome e o campo (com as alcunhas) em vez da lista de nomes; cabem dois por bloco e a nota continua por baixo.
 

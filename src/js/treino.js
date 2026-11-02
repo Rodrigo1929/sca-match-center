@@ -349,13 +349,13 @@ function folhaGrupoUT(id,gid){ const U=uts[id]; if(!U) return; const G=gid?U.gru
     const conta=()=>{ q("#ug-c").textContent=atl.length?`· ${atl.length} no treino · ${escolhidos().length} no grupo`:""; };
     /* estrutura: sistema pelo nº de jogadores de campo; arrastar muda de lugar e largar em cima de outro troca os dois */
     const pintaE=()=>{ const js=escolhidos(), ops=sisPara(js), gr=grDe(js)?"GR + ":"", box=q("#ug-e"), sv=estr?estr.sis:"";
-      const ls=[["","Sem estrutura"],...ops.map(x=>[x,gr+x]),...(sv&&sv!=="pos"&&!ops.includes(sv)?[[sv,gr+sv]]:[]),["pos","Pelas posições do Plantel"]];
+      const ls=[["","Sem estrutura"],...ops.map(x=>[x,gr+x]),...(sv&&/^\d/.test(sv)&&!ops.includes(sv)?[[sv,gr+sv]]:[]),["pos","Pelas posições do Plantel"],["livre","Livre"]];
       q("#ug-s").innerHTML=ls.map(([k,n])=>`<button data-k="${esc(k)}" aria-pressed="${sv===k}">${esc(n)}</button>`).join("");
       q("#ug-s").querySelectorAll("button").forEach(b=>b.onclick=()=>{ estr=b.dataset.k?{sis:b.dataset.k,pos:{}}:null; pintaE(); });
       if(!estr){ box.innerHTML=""; return; }
       if(!js.length){ box.innerHTML=`<p class="sub" style="margin:0">Escolhe primeiro os jogadores do grupo.</p>`; return; }
-      const nC=js.length-(grDe(js)?1:0), soma=sv==="pos"?0:sv.split("-").reduce((a,n)=>a+(parseInt(n)||0),0);
-      box.innerHTML=`<p class="sub" style="margin:0">${soma&&soma!==nC?`<b style="color:var(--red)">O ${esc(sv)} é para ${soma} jogadores de campo; o grupo tem ${nC}.</b> `:""}Arrasta um jogador para o mudar de lugar; larga-o em cima de outro para trocarem.</p><div class="ug-campo"></div><button class="btn sm" id="ug-rp">↺ Repor pelo sistema</button>`;
+      const nC=js.length-(grDe(js)?1:0), soma=!/^\d/.test(sv)?0:sv.split("-").reduce((a,n)=>a+(parseInt(n)||0),0);
+      box.innerHTML=`<p class="sub" style="margin:0">${soma&&soma!==nC?`<b style="color:var(--red)">O ${esc(sv)} é para ${soma} jogadores de campo; o grupo tem ${nC}.</b> `:""}Arrasta um jogador para o mudar de lugar; larga-o em cima de outro para trocarem.</p><div class="ug-campo"></div><button class="btn sm" id="ug-rp">${sv==="livre"?"↺ Repor":"↺ Repor pelo sistema"}</button>`;
       const svg=estruturaSvg(U,{nome:q("#ug-n").value,jogadores:js.map(a=>a.k)},{estr}); box.querySelector(".ug-campo").appendChild(svg);
       arrastaEstr(svg,(k,dx,dy)=>{ const P=posEstr(js,estr), [x0,y0]=P[k], cl=v=>Math.round(Math.min(.97,Math.max(.03,v))*1000)/1000, nx=cl(x0+dx/EGV.fw), ny=cl(y0+dy/EGV.fh);
         const o=js.find(a=>a.k!==k&&Math.hypot((P[a.k][0]-nx)*EGV.fw,(P[a.k][1]-ny)*EGV.fh)<55);
@@ -375,9 +375,9 @@ function folhaGrupoUT(id,gid){ const U=uts[id]; if(!U) return; const G=gid?U.gru
       const ng={id:gid||uId("g"),nome:nm,jogadores:js.map(a=>a.k),nota:q("#ug-o").value.trim(),...(estr&&js.length?{estr:{sis:estr.sis,pos:posEstr(js,estr)}}:{})};
       editaUT(U=>{ if(gid) U.grupos=U.grupos.map(x=>x.id===gid?ng:x); else U.grupos.push(ng); }); }; }); }
 /* ---------- estrutura de um grupo (opcional, v109): os jogadores no meio campo, por sistema; g.estr = {sis, pos: {chave: [x, y]}} em fração do campo ---------- */
-/* sistemas pelo nº de jogadores de campo (o GR do grupo vai à baliza); «pos» = cada um na sua posição do Plantel */
-const SIS_GRUPO={3:["2-1","1-2"],4:["2-2","1-2-1","3-1"],5:["2-2-1","3-1-1","2-1-2","3-2"],6:["3-2-1","2-3-1","3-1-2","2-2-2"],7:["3-3-1","3-2-2","2-3-2","3-1-3"],
-  8:["3-4-1","3-3-2","4-3-1","3-2-3"],9:["3-4-2","4-3-2","3-3-3","4-4-1"],10:["3-4-3","4-3-3","4-4-2","3-5-2","4-2-3-1"],11:["4-4-3","3-5-3","4-3-4"]};
+/* sistemas pelo nº de jogadores de campo (o GR do grupo vai à baliza); «pos» = cada um na sua posição do Plantel; «livre» (v112.2) = começa como «pos», sem legenda no campo */
+const SIS_GRUPO={3:["2-1","1-2"],4:["2-2","1-2-1","3-1"],5:["2-2-1","3-1-1","2-1-2","3-2"],6:["3-2-1","2-3-1","3-1-2","2-2-2"],7:["3-3-1","3-2-2","2-3-2","3-1-3","2-4-1"],
+  8:["3-4-1","3-3-2","4-3-1","3-2-3","2-4-2"],9:["3-4-2","4-3-2","3-3-3","4-4-1"],10:["3-4-3","4-3-3","4-4-2","3-5-2","4-2-3-1"],11:["4-4-3","3-5-3","4-3-4"]};
 const EGV={W:1680,H:1070,fx:40,fy:70,fw:1600,fh:930};
 const COR_GRUPO=[["verm","vermelho"],["branc","branco"],["azu","azul"],["amarel","amarelo"],["verde","verde"],["laranj","laranja"],["pret","preto"]];
 function normEstrutura(e){ if(!e||typeof e!=="object") return null; const sis=String(e.sis||"").trim(); if(!sis) return null; const pos={}, f=v=>Math.round(Math.min(1,Math.max(0,+v))*1000)/1000;
@@ -390,7 +390,7 @@ const prefPos=a=>{ const p=POS_UT.find(x=>x[0]===a.pos); return p?[p[2],p[3]]:[.
 function corGrupo(g){ const n=semAcento(g.nome), c=(COR_GRUPO.find(([t])=>n.includes(t))||[0,"vermelho"])[1]; return COLETES.find(x=>x[0]===c)||COLETES[0]; }
 /* lugares do sistema (linhas da defesa ao ataque, como no campo do plantel) e cada jogador sem lugar fixo no livre mais perto da sua posição no Plantel; quem sobra fica numa fila por baixo */
 function autoEstr(sis,js,fixos){ const out={}, ocup=Object.values(fixos), gr=grDe(js), resto=js.filter(a=>!fixos[a.k]); let lug=[];
-  if(sis==="pos"){ const n={}; resto.forEach(a=>{ if(!a.pos) return; const [x,y]=prefPos(a), i=n[a.pos]=(n[a.pos]||0)+1; lug.push([Math.min(.95,Math.max(.05,x+(i-1)*.12*(x>.5?-1:1))),y+(i-1)*.045]); }); }
+  if(sis==="pos"||sis==="livre"){ const n={}; resto.forEach(a=>{ if(!a.pos) return; const [x,y]=prefPos(a), i=n[a.pos]=(n[a.pos]||0)+1; lug.push([Math.min(.95,Math.max(.05,x+(i-1)*.12*(x>.5?-1:1))),y+(i-1)*.045]); }); }
   else { const ls=sis.split("-").map(n=>parseInt(n)||0).filter(n=>n>0), k=ls.length; if(gr) lug.push([.5,.06]);
     ls.forEach((m,i)=>{ const y=k===1?.55:.34+i*.45/(k-1), st=Math.min(.22,.84/m); for(let j=0;j<m;j++) lug.push([.5+(j-(m-1)/2)*st,y]); }); }
   lug=lug.filter(([x,y])=>!ocup.some(([a,b])=>Math.hypot(a-x,b-y)<.05));
@@ -403,7 +403,7 @@ function posEstr(js,E){ const fix={}; js.forEach(a=>{ if(E.pos[a.k]) fix[a.k]=E.
 function estruturaSvg(U,g,o={}){ const {W,H,fx,fy,fw,fh}=EGV, E=o.estr||g.estr, at=atletasUT(U), js=g.jogadores.map(k=>at.find(a=>a.k===k)).filter(Boolean), P=posEstr(js,E), C=corGrupo(g), gr=grDe(js);
   const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":`Estrutura ${g.nome||"do grupo"}`,class:"uestr"});
   el("rect",{x:0,y:0,width:W,height:H,fill:"#fff"},svg); meioCampoSvg(svg,fx,fy,fw,fh);
-  el("text",{x:fx,y:fy-24,"font-size":34,"font-weight":800,fill:"#6B675E",class:"lbl"},svg).textContent=E.sis==="pos"?"Pelas posições do Plantel":(gr?"GR + ":"")+E.sis;
+  if(E.sis!=="livre") el("text",{x:fx,y:fy-24,"font-size":34,"font-weight":800,fill:"#6B675E",class:"lbl"},svg).textContent=E.sis==="pos"?"Pelas posições do Plantel":(gr?"GR + ":"")+E.sis;
   js.forEach(a=>{ const [px,py]=P[a.k], x=fx+px*fw, y=fy+py*fh, G=el("g",{"data-k":a.k},svg), t=o.alc?nomeAlc(a):nomeCurto(a), fs=40, w=Math.min(270,textW(t,fs,700)+24);
     el("circle",{cx:x,cy:y,r:34,fill:a===gr?"#FFFF00":C[2],stroke:"#1B1A17","stroke-width":4},G);
     el("rect",{x:x-w/2,y:y+40,width:w,height:52,rx:6,fill:"#fff",stroke:"#1B1A17","stroke-width":2},G);
