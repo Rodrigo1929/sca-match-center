@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| 112.3.1 | **Champions:** os tempos do exercício contam **só pelos jogos terminados** — enquanto nenhum terminar, o exercício não dá tempo a ninguém e a linha da UT diz «os tempos contam pelos jogos terminados (ainda nenhum)» (antes usava a grelha da rotação, que não é o que se joga: quem ganha fica). Sem dados novos. |
 | 112.3 | **Liga:** com os jogos gerados e ainda nenhum terminado, a grelha da linha da UT e os tempos passam a seguir **os jogos marcados, pela ordem dos jogos** (antes mostravam a grelha da rotação, com outra ordem — ex.: jogo 1 Brancos × Azuis, mas série 1 Vermelhos + Brancos). Quando há jogos terminados, conta como antes (só os terminados). Sem dados novos. |
 | 112.2 | Grupos de trabalho: sistemas **2-4-1** (7 jogadores de campo) e **2-4-2** (8 jogadores de campo) e estrutura **Livre** — começa com cada jogador na sua posição do Plantel, arrasta-se à vontade e não tem legenda no campo (nem no ecrã nem no PDF da UT). |
 | 112.1 | **Quadros das bolas paradas:** a letra dos quadros passa a vir embutida na app (antes vinha da internet; sem rede, no iPad, era trocada por uma mais larga e as legendas saíam das caixas ou ficavam espremidas). As legendas e caixas de texto ficam sempre dentro do slide; se a tarefa não cabe na legenda, a letra diminui ligeiramente (até 75%) antes de apertar; nas caixas de texto, a letra diminui até ~85% antes de a caixa crescer. Sem dados novos. |

@@ -526,9 +526,12 @@ if (v110c.res !== "2-0" || v110c.golosRef !== 1 || v110c.ptsRef !== "V" || !v110
 await pg.evaluate((id) => { golosDe(id).forEach((g) => tiraGolo(g.id)); const J = { ...compJogos[id], fim: false }; delete J.mais; delete J.menos; J.grB = ""; compJogos[id] = normJogoInt(J); gravaJogoInt(J); }, j3.id);
 // v112.3: Liga com jogos gerados e nenhum terminado — os tempos seguem os jogos marcados, pela ordem dos jogos (não a grelha da rotação)
 const v1123 = await pg.evaluate((lid) => { const U = uts.ta, l = U.exercicios.find((x) => x.id === lid), js = jogosDe("ta", lid), fins = js.map((J) => J.fim);
-  js.forEach((J) => (compJogos[J.id].fim = false)); const sj = seriesPorJogos(U, l); js.forEach((J, i) => (compJogos[J.id].fim = fins[i]));
-  return { n: sj && sj.length, plan: !!(sj && sj.every((x) => x.plan)), ordem: !!sj && sj.every((x, i) => x.J.a === js[i].a && x.J.b === js[i].b), nj: js.length }; }, lidL);
-if (v1123.n !== v1123.nj || !v1123.plan || !v1123.ordem) erros.push("Competição (v112.3): sem jogos terminados, os tempos não seguem os jogos marcados " + JSON.stringify(v1123));
+  js.forEach((J) => (compJogos[J.id].fim = false)); const sj = seriesPorJogos(U, l);
+  /* Champions sem jogos terminados: nada conta (nem a grelha da rotação) */
+  const c0 = l.comp; l.comp = "champions"; const sc = seriesPorJogos(U, l), T = temposUT(U), segC = Object.values(T.por).reduce((a, x) => a + ((x.det.find((d) => d.lid === lid) || { seg: 0 }).seg), 0); if (c0 === undefined) delete l.comp; else l.comp = c0;
+  js.forEach((J, i) => (compJogos[J.id].fim = fins[i]));
+  return { n: sj && sj.length, plan: !!(sj && sj.every((x) => x.plan)), ordem: !!sj && sj.every((x, i) => x.J.a === js[i].a && x.J.b === js[i].b), nj: js.length, champ: Array.isArray(sc) && sc.length === 0, segC }; }, lidL);
+if (v1123.n !== v1123.nj || !v1123.plan || !v1123.ordem || !v1123.champ || v1123.segC !== 0) erros.push("Competição (v112.3): sem jogos terminados, os tempos não seguem os jogos marcados " + JSON.stringify(v1123));
 // Champions: quem ganha fica; quem perde vai para o fim da fila; empate = sai quem estava na mesa
 const ch = await pg.evaluate(() => { const novoJ = (o) => gravaJogoInt({ id: uId("cj"), ut: "tmp", lid: "tmp", criadoEm: new Date().toISOString(), ...o }), golo = (j, eq) => gravaGolo({ id: uId("cg"), jogo: j.id, eq, k: "x", em: new Date().toISOString() });
   const gs = ["A", "B", "C"], r = [JSON.stringify(proxChampions(gs, []))];
