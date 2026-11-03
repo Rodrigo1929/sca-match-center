@@ -68,12 +68,13 @@ function jogadoresJogo(U,J,e){ const o=e==="a"?"b":"a", mais=(J.mais&&J.mais[e])
   return [...atletasGrupo(U,J[e]).filter(a=>!menos.includes(a.k)&&!fora.includes(a.k)),...mais.map(k=>at.find(a=>a.k===k)).filter(a=>a&&presenteUT(U,a.k))]; }
 /* v110: na linha da UT, a rotação que conta (pelos jogos terminados) */
 function jogosMiniHtml(U,sj){ const nm=g=>nomeGrupoUT(U,g);
-  return `<small class="utx-tp">⏱ Tempos pelos ${sj.length} ${sj.length===1?"jogo":"jogos"} terminados (${fmtTempo(sj[0].seg)} cada${sj.length>1&&sj.some(x=>x.seg!==sj[0].seg)?", aprox.":""})</small>
+  return `<small class="utx-tp">⏱ Tempos pelos ${sj.length} ${sj.length===1?"jogo":"jogos"} ${sj[0].plan?"marcados (ainda nenhum terminado; ":"terminados ("}${fmtTempo(sj[0].seg)} cada${sj.length>1&&sj.some(x=>x.seg!==sj[0].seg)?", aprox.":""})</small>
     <div class="tblwrap"><table class="urot mini"><thead><tr><th>Jogo</th><th>Equipas</th><th>Res.</th></tr></thead><tbody>${sj.map((x,i)=>{ const r=resultado(x.J), aj=(x.J.mais?Object.values(x.J.mais).flat().length:0)+(x.J.menos?Object.values(x.J.menos).flat().length:0);
-      return `<tr><th>${i+1}</th><td style="padding:3px 8px;text-align:left">${esc(nm(x.J.a))} × ${esc(nm(x.J.b))}${aj?" · ↔":""}</td><td>${r.a}–${r.b}</td></tr>`; }).join("")}</tbody></table></div>`; }
-/* v110: tempos de um exercício de competição pelos jogos terminados (cada jogo é uma série; o tempo de prática divide-se pelos jogos) → null se não houver */
-function seriesPorJogos(U,l){ if(!compDe(l)) return null; const js=jogosDe(U.id,l.id).filter(J=>J.fim); if(!js.length) return null;
-  const p=praticaEx(l.copia), n=js.length; return js.map((J,i)=>({J,seg:Math.round(p*(i+1)/n)-Math.round(p*i/n),a:jogadoresJogo(U,J,"a").map(x=>x.k),b:jogadoresJogo(U,J,"b").map(x=>x.k)})); }
+      return `<tr><th>${i+1}</th><td style="padding:3px 8px;text-align:left">${esc(nm(x.J.a))} × ${esc(nm(x.J.b))}${aj?" · ↔":""}</td><td>${x.J.fim?`${r.a}–${r.b}`:"–"}</td></tr>`; }).join("")}</tbody></table></div>`; }
+/* v110: tempos de um exercício de competição pelos jogos terminados (cada jogo é uma série; o tempo de prática divide-se pelos jogos) → null se não houver.
+   v112.3: na Liga, com jogos gerados e nenhum terminado, contam os jogos marcados (plan) — a grelha da rotação tem outra ordem e não batia com os jogos */
+function seriesPorJogos(U,l){ const et=compDe(l); if(!et) return null; const tod=jogosDe(U.id,l.id), fim=tod.filter(J=>J.fim), plan=et==="liga"&&!fim.length, js=plan?tod:fim; if(!js.length) return null;
+  const p=praticaEx(l.copia), n=js.length; return js.map((J,i)=>({J,plan,seg:Math.round(p*(i+1)/n)-Math.round(p*i/n),a:jogadoresJogo(U,J,"a").map(x=>x.k),b:jogadoresJogo(U,J,"b").map(x=>x.k)})); }
 
 /* Liga: voltas de todos contra todos (método do círculo); com nº ímpar de equipas, em cada jornada descansa quem não joga */
 function jogosLiga(gs,voltas){ const t=gs.length%2?[...gs,""]:gs.slice(), n=t.length, jor=[];

@@ -524,6 +524,11 @@ if (v110c.res !== "2-0" || v110c.golosRef !== 1 || v110c.ptsRef !== "V" || !v110
   erros.push("Competição (v110): reforço, golo que vale 2, corrigir ou tempos pelos jogos " + JSON.stringify({ v110c, lista110, corr, j3 }));
 /* repõe o jogo 3 como estava (por jogar, sem golos nem alterações) para os testes seguintes */
 await pg.evaluate((id) => { golosDe(id).forEach((g) => tiraGolo(g.id)); const J = { ...compJogos[id], fim: false }; delete J.mais; delete J.menos; J.grB = ""; compJogos[id] = normJogoInt(J); gravaJogoInt(J); }, j3.id);
+// v112.3: Liga com jogos gerados e nenhum terminado — os tempos seguem os jogos marcados, pela ordem dos jogos (não a grelha da rotação)
+const v1123 = await pg.evaluate((lid) => { const U = uts.ta, l = U.exercicios.find((x) => x.id === lid), js = jogosDe("ta", lid), fins = js.map((J) => J.fim);
+  js.forEach((J) => (compJogos[J.id].fim = false)); const sj = seriesPorJogos(U, l); js.forEach((J, i) => (compJogos[J.id].fim = fins[i]));
+  return { n: sj && sj.length, plan: !!(sj && sj.every((x) => x.plan)), ordem: !!sj && sj.every((x, i) => x.J.a === js[i].a && x.J.b === js[i].b), nj: js.length }; }, lidL);
+if (v1123.n !== v1123.nj || !v1123.plan || !v1123.ordem) erros.push("Competição (v112.3): sem jogos terminados, os tempos não seguem os jogos marcados " + JSON.stringify(v1123));
 // Champions: quem ganha fica; quem perde vai para o fim da fila; empate = sai quem estava na mesa
 const ch = await pg.evaluate(() => { const novoJ = (o) => gravaJogoInt({ id: uId("cj"), ut: "tmp", lid: "tmp", criadoEm: new Date().toISOString(), ...o }), golo = (j, eq) => gravaGolo({ id: uId("cg"), jogo: j.id, eq, k: "x", em: new Date().toISOString() });
   const gs = ["A", "B", "C"], r = [JSON.stringify(proxChampions(gs, []))];
