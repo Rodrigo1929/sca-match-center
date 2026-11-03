@@ -937,6 +937,13 @@ if (n1 !== 13 || n2 !== 11) erros.push("Adversário: substituir o plantel import
     const mn = await pg.evaluate(({ de, para, ut }) => ({ velho: usoNumero(de).uts, novo: usoNumero(para).uts, pres: uts[ut].presencas[para] }), mn0);
     if (!mn0.folha || mn.velho !== 0 || mn.novo !== mn0.antes || !mn.pres) erros.push("Plantel (v112): mudar o nº não passou o treino " + JSON.stringify({ mn0, mn }));
     await pg.evaluate(({ de, para }) => { guardaEst({ ...est, plantel: est.plantel.map((p) => p.n === para ? { ...p, n: de } : p) }, true); mudaNumeroTreino(para, de); }, mn0); } }
+// v112.4: mudar o nº passa também a convocatória, o onze e o Encaixe do jogo atual (sem repetidos); com registos no Ao vivo com o nº antigo, o jogo fica como está
+{ const v1124 = await pg.evaluate(() => { const J0 = clone(jogo), on = J0.onze.map((o, i) => i ? o : { ...o, n: "93" });
+    guardaJogo({ ...J0, eventos: [], subs: [], onze: on, suplentes: ["91", "92"], encaixe: { nos: { 93: { x: 1, y: 1 } }, adv: {} } });
+    const a = mudaNumeroJogo("92", "91"), b = mudaNumeroJogo("93", "94"), r1 = { sup: jogo.suplentes.join(), on0: jogo.onze[0].n, enc: Object.keys(jogo.encaixe.nos).join() };
+    guardaJogo({ ...clone(jogo), eventos: [{ id: "t", tipo: "amarelo", n: "94", min: "10", c: 1 }] }); const c = mudaNumeroJogo("94", "95"), on0 = jogo.onze[0].n;
+    guardaJogo(J0); return { a, b, c, on0, ...r1 }; });
+  if (!v1124.a || !v1124.b || v1124.c || v1124.sup !== "91" || v1124.on0 !== "94" || v1124.enc !== "94") erros.push("Plantel (v112.4): mudar o nº não passou o jogo atual " + JSON.stringify(v1124)); }
 
 // base de dados simulada: no link, os dados que chegam da base de dados vêm congelados (snapshots e data());
 // a app tem de os copiar à entrada (lerDoc), senão uma alteração a seguir pode não mudar nada sem dar erro (como na app de observação)

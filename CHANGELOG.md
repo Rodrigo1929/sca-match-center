@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| 112.4 | **Plantel:** mudar o nº de um atleta passa também **o jogo atual** para o nº novo — convocatória, onze e Encaixe — sem repetir o atleta (antes o nº antigo ficava na convocatória, ex.: 19 do Santiago, que passou a 25, aparecia no Onze base vs Barreiro sem nome). Se o jogo já tiver registos no Ao vivo com o nº antigo, fica como está. Jogos arquivados não mudam. Dados: tirado o 19 dos suplentes do jogo atual. |
 | 112.3.1 | **Champions:** os tempos do exercício contam **só pelos jogos terminados** — enquanto nenhum terminar, o exercício não dá tempo a ninguém e a linha da UT diz «os tempos contam pelos jogos terminados (ainda nenhum)» (antes usava a grelha da rotação, que não é o que se joga: quem ganha fica). Sem dados novos. |
 | 112.3 | **Liga:** com os jogos gerados e ainda nenhum terminado, a grelha da linha da UT e os tempos passam a seguir **os jogos marcados, pela ordem dos jogos** (antes mostravam a grelha da rotação, com outra ordem — ex.: jogo 1 Brancos × Azuis, mas série 1 Vermelhos + Brancos). Quando há jogos terminados, conta como antes (só os terminados). Sem dados novos. |
 | 112.2 | Grupos de trabalho: sistemas **2-4-1** (7 jogadores de campo) e **2-4-2** (8 jogadores de campo) e estrutura **Livre** — começa com cada jogador na sua posição do Plantel, arrasta-se à vontade e não tem legenda no campo (nem no ecrã nem no PDF da UT). |

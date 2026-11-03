@@ -56,14 +56,23 @@ function mudaNumeroTreino(de,para){ const tr=k=>k===de?para:k, M=o=>{ if(!o||!(d
     Object.values(histTreino).forEach(h=>{ if(h.linhas.some(l=>l.k==="n:"+de)){ const H=normHist({...h,linhas:h.linhas.map(l=>l.k==="n:"+de?{...l,k:"n:"+para}:l)}); histTreino[H.id]=H; gravaDoc("histTreino/"+H.id,H); } }); guardaCompLocal(); }
   if(typeof fotos!=="undefined"&&fotos[de]&&!fotos[para]){ fotos[para]={...fotos[de],id:para}; delete fotos[de]; guardaFotosLocal(); gravaDoc("fotos/"+para,fotos[para]); apagaDoc("fotos/"+de); fotosRefresca(); }
   return n; }
+/* v112.4: a convocatória, o onze e o Encaixe do jogo atual passam para o nº novo; se o jogo já tem registos com o nº antigo (Ao vivo), fica como está */
+function mudaNumeroJogo(de,para){ const regs=[...(jogo.eventos||[]),...(jogo.subs||[])];
+  if(regs.some(e=>[e.n,e.ast,e.as,e.entra,e.sai].includes(de))) return false;
+  const J=clone(jogo); let m=false;
+  J.onze.forEach(o=>{ if(o.n===de){ o.n=para; m=true; } });
+  if(J.suplentes.includes(de)){ J.suplentes=[...new Set(J.suplentes.map(n=>n===de?para:n))].filter(n=>n!==para||!J.onze.some(o=>o.n===para)); m=true; }
+  const nos=J.encaixe&&J.encaixe.nos; if(nos&&de in nos){ if(!(para in nos)) nos[para]=nos[de]; delete nos[de]; m=true; }
+  if(m) guardaJogo(J); return m; }
 function perguntaMudaNumero(de,para){ de=String(de||"").trim(); para=String(para||"").trim(); if(!de||!para||de===para) return;
   if(est.plantel.some(p=>p.n===de)) return;   // outro atleta continua com o nº antigo: o treino é dele
+  const mj=mudaNumeroJogo(de,para); if(mj) toast(`Jogo atual: o nº ${de} passou para o ${para}`);
   const u=usoNumero(de); if(!temUso(u)) return; const P=est.plantel.find(p=>p.n===para), nm=P&&P.nome?P.nome:"o atleta", c=usoNumero(para);
   const itens=[u.uts&&`${u.uts} UT (presenças e grupos)`,u.comp&&`${u.comp} registos da competição interna`,u.mh&&`${u.mh} registos de meinho`,u.hist&&`${u.hist} UT do histórico do Excel`,u.foto&&"a foto"].filter(Boolean);
   if(temUso(c)){ folha(`<h3>Nº ${esc(de)} → ${esc(para)}</h3><p>Há treino registado com o nº <b>${esc(de)}</b> (${esc(itens.join(", "))}), mas o nº <b>${esc(para)}</b> também já tem treino registado. A app não junta os dois sozinha.</p><p class="sub">Se o ${esc(de)} e o ${esc(para)} são a mesma pessoa, pede para juntar à mão.</p><div class="actions"><button class="btn primary" data-close>Percebi</button></div>`); return; }
   folha(`<h3>${esc(nm)}: nº ${esc(de)} → ${esc(para)}</h3>
     <p>Há treino registado com o nº <b>${esc(de)}</b>: ${esc(itens.join(", "))}. Passa tudo para o nº <b>${esc(para)}</b>, para ${esc(nm)} continuar nos Tempos, Competição, Meinho e Rankings.</p>
-    <p class="sub" style="margin:0">Os jogos (Ao vivo, Pós-jogo, Histórico e quadros) não mudam: aí conta o número da camisola nesse jogo.</p>
+    <p class="sub" style="margin:0">${mj?"A convocatória e o onze do jogo atual já passaram para o nº novo. ":""}Os jogos registados (Ao vivo, Pós-jogo, Histórico e quadros) não mudam: aí conta o número da camisola nesse jogo.</p>
     <div class="actions"><button class="btn" data-close>Não passar</button><button class="btn primary" id="mn-ok">Passar para o ${esc(para)}</button></div>`,(s,fecha)=>{
     confirma2(s.querySelector("#mn-ok"),"Toca outra vez para passar",()=>{ const n=mudaNumeroTreino(de,para); fecha(); toast(`Treino do nº ${de} passou para o ${para} (${n} UT)`); if(typeof renderUT==="function"&&!$("view-u")?.hidden) renderUT(); }); }); }
 /* na app (grupos, campo do plantel, tempos, competição): primeiro e último nome, nunca o nome completo nem o número.

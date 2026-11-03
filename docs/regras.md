@@ -48,7 +48,7 @@ Posição inicial ligada (v108, decidido pelo Rodrigo em 30/10/2026): um lance p
 - Um dia que era UT e passa a folga, interrupção, outro ou livre puxa as UT seguintes até ao fim da época 1 nº para trás. Um dia que passa a UT com um nº que já existe mais à frente empurra as seguintes 1 nº para a frente. Mudam também as UT já criadas depois desse dia e os treinos do plano semanal. Um toast permite desfazer tudo.
 
 ## Nº do atleta e treino (v112)
-- O treino liga-se ao atleta pelo nº do Plantel. Mudar o nº no Plantel pergunta (2 toques) se passa o treino do nº antigo para o novo: presenças, grupos (e estrutura), competição interna (GR, reforços, golos), meinho, histórico do Excel e foto. Os jogos não mudam (conta o nº da camisola nesse jogo). Se o nº novo já tiver treino, não junta sozinho.
+- O treino liga-se ao atleta pelo nº do Plantel. Mudar o nº no Plantel pergunta (2 toques) se passa o treino do nº antigo para o novo: presenças, grupos (e estrutura), competição interna (GR, reforços, golos), meinho, histórico do Excel e foto. O jogo atual passa logo para o nº novo na convocatória, no onze e no Encaixe (v112.4, pedido do Rodrigo), exceto se já tiver registos no Ao vivo com o nº antigo; os jogos registados não mudam (conta o nº da camisola nesse jogo). Se o nº novo já tiver treino, não junta sozinho.
 - Meinho: cada registo pode editar-se (tipo e atletas) ou apagar-se (2 toques) na lista do exercício.
 
 ## Competição interna e Meinho (v110, decidido pelo Rodrigo em 30/10/2026)
