@@ -19,7 +19,8 @@ function lances(){
 function lanceAtual(){ const L=lances(); return L.find(l=>l.id===curId)||L[0]; }
 function baseOf(slot){ const o=jogo.onze.find(o=>o.slot===slot); return o?o.n:slot; }
 function posOf(slot){ const o=jogo.onze.find(o=>o.slot===slot); return o?o.pos:""; }
-function aplica(l,id){ return l.modo==="todos"||(l.lances||[]).includes(id); }
+/* v112.5: uma troca feita no slide inicial vale também para os lances que o seguem (base) */
+function aplica(l,id){ const b=(lancesDb[id]||{}).base; return l.modo==="todos"||(l.lances||[]).some(x=>x===id||(b&&x===b)); }
 function calcula(L){
   const slots=[...new Set([...L.bolas,...L.legs].map(x=>x.slot))];
   const v={}; slots.forEach(s=>v[s]=(L.fixo&&L.fixo[s])||baseOf(s));

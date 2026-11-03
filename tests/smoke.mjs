@@ -937,6 +937,13 @@ if (n1 !== 13 || n2 !== 11) erros.push("Adversário: substituir o plantel import
     const mn = await pg.evaluate(({ de, para, ut }) => ({ velho: usoNumero(de).uts, novo: usoNumero(para).uts, pres: uts[ut].presencas[para] }), mn0);
     if (!mn0.folha || mn.velho !== 0 || mn.novo !== mn0.antes || !mn.pres) erros.push("Plantel (v112): mudar o nº não passou o treino " + JSON.stringify({ mn0, mn }));
     await pg.evaluate(({ de, para }) => { guardaEst({ ...est, plantel: est.plantel.map((p) => p.n === para ? { ...p, n: de } : p) }, true); mudaNumeroTreino(para, de); }, mn0); } }
+// v112.5: uma troca do Quadro feita no slide inicial (modo «lances») vale também nos lances que o seguem
+{ const v1125 = await pg.evaluate(() => { const [A, B] = lancesAjustaveis(), E0 = est, D0 = lancesDb[B.id];
+    lancesDb[B.id] = { ...clone(B), base: A.id }; const v0 = calcula(lancesAjustaveis().find((l) => l.id === B.id)).v, s = Object.keys(v0)[0], sai = v0[s];
+    const entra = est.plantel.map((p) => p.n).find((n) => n && !Object.values(v0).includes(n));
+    est = { ...est, linhas: [{ id: "t1125", modo: "lances", lances: [A.id], sai, entra }] }; const v1 = calcula(lancesAjustaveis().find((l) => l.id === B.id)).v[s];
+    est = E0; if (D0) lancesDb[B.id] = D0; else delete lancesDb[B.id]; return { sai, entra, v1 }; });
+  if (!v1125.entra || v1125.v1 !== v1125.entra) erros.push("Quadro (v112.5): troca no slide inicial não chegou ao lance que o segue " + JSON.stringify(v1125)); }
 // v112.4: mudar o nº passa também a convocatória, o onze e o Encaixe do jogo atual (sem repetidos); com registos no Ao vivo com o nº antigo, o jogo fica como está
 { const v1124 = await pg.evaluate(() => { const J0 = clone(jogo), on = J0.onze.map((o, i) => i ? o : { ...o, n: "93" });
     guardaJogo({ ...J0, eventos: [], subs: [], onze: on, suplentes: ["91", "92"], encaixe: { nos: { 93: { x: 1, y: 1 } }, adv: {} } });
