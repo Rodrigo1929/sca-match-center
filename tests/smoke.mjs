@@ -944,6 +944,20 @@ if (n1 !== 13 || n2 !== 11) erros.push("Adversário: substituir o plantel import
     est = { ...est, linhas: [{ id: "t1125", modo: "lances", lances: [A.id], sai, entra }] }; const v1 = calcula(lancesAjustaveis().find((l) => l.id === B.id)).v[s];
     est = E0; if (D0) lancesDb[B.id] = D0; else delete lancesDb[B.id]; return { sai, entra, v1 }; });
   if (!v1125.entra || v1125.v1 !== v1125.entra) erros.push("Quadro (v112.5): troca no slide inicial não chegou ao lance que o segue " + JSON.stringify(v1125)); }
+// v112.6: Quadro Livre — não recebe trocas nem substituições, não segue o onze depois de gravado, não entra nos ajustes nem nas opções de posição inicial
+{ const v1126 = await pg.evaluate(() => { const E0 = est, D0 = lancesDb.livre, J0 = clone(jogo), LV = () => lances().find((l) => l.id === "livre");
+    const ok = !!LV() && LV().tipo === "JOGO", v0 = calcula(LV()).v, s = Object.keys(v0)[0], sai = v0[s], entra = est.plantel.map((p) => p.n).find((n) => n && !Object.values(v0).includes(n));
+    est = { ...est, linhas: [{ id: "t1126", modo: "todos", sai, entra }] }; const semTroca = calcula(LV()).v[s] === sai; est = E0;
+    guardaLance(LV()); const fx = !!(lancesDb.livre.fixo && lancesDb.livre.fixo[s] === sai);
+    guardaJogo({ ...clone(jogo), onze: jogo.onze.map((o) => o.slot === s ? { ...o, n: entra } : o) }); const segueOnze = calcula(LV()).v[s] !== sai;
+    const ajusta = lancesAjustaveis().some((l) => l.id === "livre");
+    guardaJogo(J0); if (D0) { lancesDb.livre = D0; gravaDoc("lances/livre", D0); } else { delete lancesDb.livre; apagaDoc("lances/livre"); } guardaLocal(); render();
+    return { ok, semTroca, fx, segueOnze, ajusta }; });
+  if (!v1126.ok || !v1126.semTroca || !v1126.fx || v1126.segueOnze || v1126.ajusta) erros.push("Quadro (v112.6): Quadro Livre ligado ao jogo ou às trocas " + JSON.stringify(v1126));
+  const ecra = await pg.evaluate(() => { setTab("q"); curId = "livre"; render(); return { hint: $("hint").textContent.includes("Quadro livre"), painel: $("q-panel").hidden, tit: document.querySelector(".boardbar h2")?.textContent }; });
+  await pg.screenshot({ path: join(cap, "quadro-livre.png") });
+  await pg.evaluate(() => { curId = lances()[0].id; render(); }); const pVolta = await pg.evaluate(() => !$("q-panel").hidden);
+  if (!ecra.hint || !ecra.painel || !pVolta) erros.push("Quadro (v112.6): Quadro Livre sem a explicação no ecrã " + JSON.stringify(ecra)); }
 // v112.4: mudar o nº passa também a convocatória, o onze e o Encaixe do jogo atual (sem repetidos); com registos no Ao vivo com o nº antigo, o jogo fica como está
 { const v1124 = await pg.evaluate(() => { const J0 = clone(jogo), on = J0.onze.map((o, i) => i ? o : { ...o, n: "93" });
     guardaJogo({ ...J0, eventos: [], subs: [], onze: on, suplentes: ["91", "92"], encaixe: { nos: { 93: { x: 1, y: 1 } }, adv: {} } });

@@ -241,6 +241,7 @@ function desfazQuadro(){ const it=undoQ.pop(); if(!it){ toast("Nada para desfaze
     else { delete lancesDb[it.id]; apagaDoc("lances/"+it.id); guardaLocal(); render(); } }
   finally{ aDesfazer=false; } atualizaUndo(); if(presentOpen) renderPresent(); toast("Alteração desfeita"); }
 function guardaLance(L,op={}){ const antesDe=id=>lancesDb[id]?clone(lancesDb[id]):null, C=clone(L); delete C.original;
+  if(C.livre) C.fixo=vDoLance(C);   // v112.6: o quadro livre guarda os seus jogadores (deixa de seguir o onze)
   /* v108: posição inicial ligada — mexer num lance ligado solta a peça; mexer no slide inicial leva os que o seguem */
   const velho=aDesfazer?null:lances().find(x=>x.id===C.id), soltou=op.segue?[]:soltaMexidas(velho,C), segue=acompanhaBase(velho,C);
   /* op.junto: outros lances já alterados (ex.: troca de jogador no slide inicial) que se gravam com este e se desfazem juntos */

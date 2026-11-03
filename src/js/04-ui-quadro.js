@@ -44,6 +44,7 @@ function renderBoard(){
   curId=L.id;
   $("b-tag").className="tag "+L.tipo; $("b-tag").textContent=L.tipo;
   $("b-title").textContent=L.nome;
+  $("q-panel").hidden=!!L.livre;   // v112.6: o quadro livre não tem trocas nem pré-jogo
   { const all=lances(), i=all.findIndex(l=>l.id===L.id), nm=d=>all[(i+d+all.length)%all.length].nome;
     $("b-pos").textContent=`${i+1} / ${all.length}`; $("prev").title="Anterior: "+nm(-1); $("next").title="Seguinte: "+nm(1); }
   $("btn-edit").textContent=editing?"✓ Concluir":"✎ Editar lance";
@@ -63,11 +64,12 @@ function renderBoard(){
   $("hint").innerHTML=din?`<span><b>Arrasta</b> as peças ou <b>toca</b> numa para mudar o titular ou a posição. É o mesmo quadro do separador Jogo.</span>`
     :!editing?`<span><b>Arrasta</b> as bolas e as legendas para as mover. <b>Toca</b> numa legenda para a editar e numa bola para ${est.fase==="pre"?"definir quem faz essa tarefa":"substituir"}.</span><span class="legend-chip"><i></i>trocado durante o jogo</span>`:editing?`<span><b>Arrasta</b> para mover. <b>Toca</b> numa bolinha para mudar o estilo ou a posição do onze; numa legenda para escrever a tarefa.</span>`
     :`<span><b>Toca numa bolinha</b> para trocar o jogador.</span><span class="legend-chip"><i></i>trocado durante o jogo</span>`;
+  if(L.livre&&!editing) $("hint").innerHTML=`<span><b>Quadro livre:</b> não depende do jogo, das trocas nem dos outros lances. <b>Arrasta</b> as peças; <b>toca</b> numa bolinha para escolher o jogador. Usa <b>Duplicar</b> para outra opção.</span>`;
   /* v108: posição inicial ligada */
   { const L_=lanceAtual(), B_=baseDe(L_), sg=L_.dinamico?[]:seguidoresDe(L_.id);
     if(B_){ const so=soltasDe(L_), dif=difereDaBase(L_); $("hint").innerHTML=`<span class="liga">🔗 Posição inicial do «${esc(B_.nome)}»${eVariante(L_)?" · variante (jogadores próprios)":" · mesmos jogadores"}${so.length?` · no seu sítio: ${so.map(k=>esc(nomePecaL(L_,k))).join(", ")}`:""}</span>${dif?`<button class="btn sm" id="q-iguala">Igualar os jogadores ao «${esc(B_.nome)}»</button>`:""}`+$("hint").innerHTML; }
     else if(sg.length) $("hint").innerHTML=`<span class="liga">🔗 Slide inicial de ${sg.length} lance${sg.length>1?"s":""}: mexer aqui nas bolinhas, na bola, nos adversários ou nos jogadores muda-os também</span>`+$("hint").innerHTML; }
-  { const L_=lanceAtual(); if(!L_.dinamico&&L_.bolas&&L_.bolas.length){ const au=ausentesDe(L_), dp=repetidos(L_,vDoLance(L_)); if(au.length||dp.length){ $("hint").innerHTML=`<span style="color:#B45F00">${au.length?`<b>⚠ ${au.map(n=>"O "+esc(n)).join(", ")} não ${au.length>1?"estão":"está"} a jogar</b> e ${au.length>1?"têm":"tem"} tarefas neste lance.`:"<b>⚠ Jogadores repetidos.</b>"}</span><button class="btn sm" id="q-aus">Pôr quem está a jogar e tirar repetidos (todos os lances)</button>`+$("hint").innerHTML; } } }
+  { const L_=lanceAtual(); if(!L_.dinamico&&!L_.livre&&L_.bolas&&L_.bolas.length){ const au=ausentesDe(L_), dp=repetidos(L_,vDoLance(L_)); if(au.length||dp.length){ $("hint").innerHTML=`<span style="color:#B45F00">${au.length?`<b>⚠ ${au.map(n=>"O "+esc(n)).join(", ")} não ${au.length>1?"estão":"está"} a jogar</b> e ${au.length>1?"têm":"tem"} tarefas neste lance.`:"<b>⚠ Jogadores repetidos.</b>"}</span><button class="btn sm" id="q-aus">Pôr quem está a jogar e tirar repetidos (todos os lances)</button>`+$("hint").innerHTML; } } }
   { const L_=lanceAtual(); if(!L_.dinamico){ const d=calcula(L_).dups||[]; if(d.length) $("hint").innerHTML=`<span style="color:#B45F00"><b>⚠ ${d.map(n=>"Nº "+esc(n)).join(", ")} repetido neste lance</b> (anel laranja). Toca numa dessas bolinhas e escolhe quem faz essa tarefa. Para mostrar o mesmo jogador noutro sítio de propósito, usa o estilo <b>Alternativa</b> (bola branca).</span>`+$("hint").innerHTML; } }
   /* v107.2: o clique liga-se no fim (os avisos reescrevem o texto e perdiam a ligação) */
   { const qa=$("q-aus"); if(qa) qa.onclick=corrigeAusentes; }
@@ -126,12 +128,12 @@ function renderForm(){
   ["este","todos","esc"].forEach(k=>$("sc-"+k).setAttribute("aria-pressed",String(scope===k)));
   const pk=$("picks"); pk.hidden=scope!=="esc";
   if(scope==="esc"){ const marc=new Set([...pk.querySelectorAll("input:checked")].map(i=>i.value)); pk.innerHTML="";
-    lances().filter(l=>l.bolas.length).forEach(l=>{ const lb=document.createElement("label"); lb.innerHTML=`<input type="checkbox" value="${esc(l.id)}"> <span></span>`;
+    lances().filter(l=>l.bolas.length&&!l.livre).forEach(l=>{ const lb=document.createElement("label"); lb.innerHTML=`<input type="checkbox" value="${esc(l.id)}"> <span></span>`;
       lb.querySelector("span").textContent=l.nome; if(marc.has(l.id)) lb.querySelector("input").checked=true; pk.appendChild(lb); }); }
 }
 $("btn-gpre").onclick=()=>{
   const prevL=[], antes=est.linhas.slice();
-  lances().forEach(L=>{ if(!L.bolas.length||L.dinamico) return; const c=calcula(L); const fx={...(L.fixo||{})}; let mud=false;
+  lances().forEach(L=>{ if(!L.bolas.length||L.dinamico||L.livre) return; const c=calcula(L); const fx={...(L.fixo||{})}; let mud=false;
     Object.entries(c.base).forEach(([sl,n])=>{ if(n!==((L.fixo&&L.fixo[sl])||baseOf(sl))){ fx[sl]=n; mud=true; } });
     if(mud){ prevL.push(clone(L)); const C=clone(L); C.fixo=fx; guardaLance(C); } });
   guardaEst({...est,linhas:est.linhas.filter(l=>!l.pre)});

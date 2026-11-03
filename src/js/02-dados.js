@@ -12,6 +12,7 @@ function lances(){
   Object.values(lancesDb).forEach(o=>{ if(!seen.has(o.id)&&!o.apagado&&o.bolas) out.push(o); });
   const ord={JOGO:-1,DEF:0,OF:1,REF:2};
   let OL=((est&&est.ordem)||[]).slice(); if(OL.length&&!OL.includes("estat")){ const k=OL.indexOf("intervalo"); OL.splice(k>=0?k+1:OL.length,0,"estat"); }
+  if(OL.length&&!OL.includes("livre")){ const k=OL.indexOf("intervalo"); OL.splice(k>=0?k+1:OL.length,0,"livre"); }
   if(OL.length&&!OL.includes("encaixe")){ const k=OL.indexOf("onze"); OL.splice(k+1,0,"encaixe"); }
   const io=id=>{ const i=OL.indexOf(id); return i<0?1e6:i; };
   return out.sort((a,b)=>(ord[a.tipo]??1)-(ord[b.tipo]??1)||io(a.id)-io(b.id)||(a.ordem||0)-(b.ordem||0));
@@ -19,8 +20,9 @@ function lances(){
 function lanceAtual(){ const L=lances(); return L.find(l=>l.id===curId)||L[0]; }
 function baseOf(slot){ const o=jogo.onze.find(o=>o.slot===slot); return o?o.n:slot; }
 function posOf(slot){ const o=jogo.onze.find(o=>o.slot===slot); return o?o.pos:""; }
-/* v112.5: uma troca feita no slide inicial vale também para os lances que o seguem (base) */
-function aplica(l,id){ const b=(lancesDb[id]||{}).base; return l.modo==="todos"||(l.lances||[]).some(x=>x===id||(b&&x===b)); }
+/* v112.5: uma troca feita no slide inicial vale também para os lances que o seguem (base); o quadro livre (v112.6) não recebe trocas */
+const ehLivre=id=>id==="livre"||!!(lancesDb[id]&&lancesDb[id].livre);
+function aplica(l,id){ if(ehLivre(id)) return false; const b=(lancesDb[id]||{}).base; return l.modo==="todos"||(l.lances||[]).some(x=>x===id||(b&&x===b)); }
 function calcula(L){
   const slots=[...new Set([...L.bolas,...L.legs].map(x=>x.slot))];
   const v={}; slots.forEach(s=>v[s]=(L.fixo&&L.fixo[s])||baseOf(s));
@@ -55,7 +57,7 @@ function passaTarefas(v,slots,sai,entra,campo){ const ss=slots.filter(s=>v[s]===
 function trocasVivo(){ return subsReais().lista.map(s=>[{id:"vivo-"+s.id,sai:s.sai,entra:s.entra,modo:"todos",vivo:true,min:s.int?"Int.":s.min},"v:"+s.id]); }
 const subVivoDe=l=>!l.pre&&l.modo==="todos"?subsReais().lista.find(s=>s.sai===l.sai)||null:null;
 /* ajustes aos lances quando o onze muda no separador Jogo (v107) */
-const lancesAjustaveis=()=>lances().filter(L=>L.bolas&&L.bolas.length&&!L.dinamico);
+const lancesAjustaveis=()=>lances().filter(L=>L.bolas&&L.bolas.length&&!L.dinamico&&!L.livre);
 const slotsDe=L=>[...new Set([...L.bolas,...L.legs].map(x=>x.slot))];
 const vDoLance=L=>Object.fromEntries(slotsDe(L).map(s=>[s,(L.fixo&&L.fixo[s])||baseOf(s)]));
 function gravaLances(novos,msg){ if(!novos.length) return 0;

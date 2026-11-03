@@ -17,6 +17,7 @@ function botoesJog(grid,nums,onPick,marca){
 }
 /* substituição */
 function folhaSub(L,num,slotToque){
+  if(L.livre) return folhaSubLivre(L,num);
   let sc="este";
   const emCampo=new Set(Object.values(calcula(L).v));
   const sup=jogo.suplentes.filter(n=>n!==num&&!emCampo.has(n)).sort(byNum);
@@ -49,6 +50,15 @@ function folhaSub(L,num,slotToque){
     s.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{ sc=b.dataset.s; s.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); });
   });
 }
+/* v112.6: no quadro livre o jogador grava-se no próprio quadro (não é troca); se já estiver no quadro, os dois trocam de lugar */
+function folhaSubLivre(L,num){ const v=calcula(L).v, noQ=new Set(Object.values(v));
+  folha(`<h3>Jogador <span class="big"></span></h3><p class="sub" style="margin:-6px 0 0">Quadro livre: escolhe quem fica nesta bolinha. Se já estiver no quadro, os dois trocam de lugar. Não mexe no jogo nem nos outros lances.</p>
+    <h4>No quadro · troca de lugar</h4><div class="pgrid" id="g-campo"></div><h4>Plantel</h4><div class="pgrid" id="g-resto"></div>
+    <div class="actions"><button class="btn" data-close>Cancelar</button></div>`,(s,fecha)=>{
+    s.querySelector(".big").textContent=rot(num);
+    const pick=n=>{ fecha(); const C=clone(L), fx={...v}; Object.keys(fx).forEach(k=>{ if(v[k]===num) fx[k]=n; else if(v[k]===n) fx[k]=num; }); C.fixo=fx; guardaLance(C); };
+    botoesJog(s.querySelector("#g-campo"),[...noQ].filter(n=>n!==num).sort(byNum),pick);
+    botoesJog(s.querySelector("#g-resto"),est.plantel.map(p=>p.n).filter(n=>n&&!noQ.has(n)).sort(byNum),pick); }); }
 function opcSlots(sel,atual,L){ const v=L?calcula(L).v:{};
   jogo.onze.forEach(o=>{ const op=document.createElement("option"); op.value=o.slot; const n=v[o.slot]??o.n, ja=L&&L.bolas.some(b=>b.slot===o.slot);
     op.textContent=`${n}${nome(n)?" · "+nome(n):""}${o.pos?" · "+o.pos:""}${n!==o.n?` (no onze: ${o.n})`:""}${ja?" — já está neste lance":""}`; sel.appendChild(op); });
@@ -166,8 +176,9 @@ function folhaProps(L){
     segs.forEach(b=>b.onclick=()=>{tipo=b.dataset.t;upd();}); upd();
     /* v108: posição inicial igual à de outro lance (o slide inicial) */
     const pb=s.querySelector("#pp-base"), segs_=seguidoresDe(L.id), so=soltasDe(L);
-    if(segs_.length) pb.innerHTML=`<p class="sub" style="margin:0">É o <b>slide inicial</b> de: ${segs_.map(x=>esc(x.nome)+(eVariante(x)?" (variante)":"")).join(", ")}. Mexer aqui nas bolinhas, na bola, nos adversários ou nos jogadores muda-os também (nas variantes, as trocas de jogadores passam como troca de pessoas).</p>`;
-    else { const opc=lances().filter(x=>x.id!==L.id&&!x.base&&!x.dinamico&&x.bolas&&x.bolas.length);
+    if(L.livre) pb.innerHTML=`<p class="sub" style="margin:0">Quadro livre: não segue nenhum lance nem serve de posição inicial a outros.</p>`;
+    else if(segs_.length) pb.innerHTML=`<p class="sub" style="margin:0">É o <b>slide inicial</b> de: ${segs_.map(x=>esc(x.nome)+(eVariante(x)?" (variante)":"")).join(", ")}. Mexer aqui nas bolinhas, na bola, nos adversários ou nos jogadores muda-os também (nas variantes, as trocas de jogadores passam como troca de pessoas).</p>`;
+    else { const opc=lances().filter(x=>x.id!==L.id&&!x.base&&!x.dinamico&&!x.livre&&x.bolas&&x.bolas.length);
       pb.innerHTML=`<label class="f">Posição inicial igual a<select id="pp-b"><option value="">— própria deste lance —</option>${opc.map(x=>`<option value="${esc(x.id)}">${esc(x.nome)}</option>`).join("")}</select></label>
         <p class="sub" style="margin:0">As bolinhas, a bola e os adversários seguem esse lance; as setas, as tarefas e os textos ficam deste.${L.base&&so.length?` Soltas neste lance: ${so.map(k=>esc(nomePecaL(L,k))).join(", ")}.`:""}</p>${L.base&&so.length?`<button class="btn" id="pp-todas">↺ Voltar a seguir todas</button>`:""}
         <label style="display:flex;gap:10px;align-items:flex-start;font-size:14px;min-height:40px"><input type="checkbox" id="pp-var" style="width:22px;height:22px;flex:none"${eVariante(L)?" checked":""}> <span><b>Variante</b>: mantém os seus jogadores (ex.: pés trocados). Sem isto, cada posição tem o jogador do slide inicial.</span></label>`;
