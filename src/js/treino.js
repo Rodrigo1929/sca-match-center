@@ -162,7 +162,7 @@ const semAutoria=E=>{ const c={...E}; ["criadoPor","criadoEm","alteradoPor","alt
 function mudouNoRepo(l){ const R=exercicios[l.exId]; if(!R) return false;
   return (R.alteradoEm||"")>(l.copia.alteradoEm||"")&&JSON.stringify(semAutoria(R))!==JSON.stringify(semAutoria(l.copia)); }
 /* ↻ Atualizar: traz a versão do repositório; por defeito mantém os ajustes do dia (os mesmos campos do "Ajustar nesta UT") */
-const AJUSTES_DIA=["parte","espaco","duracao","variantes"];
+const AJUSTES_DIA=["parte","espaco","duracao","variantes","nome","formato"];   // v112.10: também o título e o formato desta UT
 function folhaAtualizaUT(id,lid){ const U=uts[id], l=U&&U.exercicios.find(x=>x.id===lid), R=l&&exercicios[l.exId]; if(!R) return; const C=l.copia;
   folha(`<h3>Atualizar a partir do repositório</h3>
     <p class="sub" style="margin:0"><b>${esc(R.nome)}</b> foi alterado no repositório${R.alteradoEm?` a ${esc(dataHora(R.alteradoEm))}`:""}.</p>
@@ -323,6 +323,7 @@ function folhaPrincUT(id,lid){ const U=uts[id], l=U&&U.exercicios.find(x=>x.id==
 function folhaAjusteUT(id,lid){ const U=uts[id], l=U&&U.exercicios.find(x=>x.id===lid); if(!l) return; const E=l.copia, D=E.duracao, tt=s=>s?fmtTempo(s):""; let parte=E.parte;
   let cp=typeof l.comp==="string"?(l.comp||"-"):"", mh=typeof l.meinho==="boolean"?(l.meinho?"1":"0"):"", armado=false;
   folha(`<h3>Ajustar nesta UT</h3><p class="sub" style="margin:0"><b>${esc(E.nome)}</b> · as mudanças ficam só na UT${U.numero}; o exercício do repositório não muda.</p>
+    <div class="fields"><label class="f">Título nesta UT<input type="text" id="uj-n" value="${esc(E.nome)}"></label><label class="f">Formato (nº de jogadores)<input type="text" id="uj-f" value="${esc(E.formato||"")}" placeholder="Ex.: GR+6×6+GR"></label></div>
     <h4>Parte</h4><div class="seg" id="uj-p">${PARTES.map(p=>`<button data-k="${p[0]}">${p[1]}</button>`).join("")}</div>
     <label class="f">Espaço<input type="text" id="uj-e" value="${esc(E.espaco.txt)}"></label>
     <div class="xe-dur"><label class="f">Séries / reps.<input type="text" inputmode="numeric" id="uj-se" value="${D.series||""}"></label><label class="f">Tempo prática<input type="text" id="uj-pr" value="${tt(D.pratica)}"></label><label class="f">Pausa<input type="text" id="uj-pa" value="${tt(D.pausa)}"></label><label class="f">Total<input type="text" id="uj-to" value="${tt(D.total)}" placeholder="Conta: ${fmtTempo(contaDur(D))}"></label></div>
@@ -343,7 +344,7 @@ function folhaAjusteUT(id,lid){ const U=uts[id], l=U&&U.exercicios.find(x=>x.id=
     q("#uj-ok").onclick=()=>{ if(perde().length&&!armado){ armado=true; q("#uj-ok").textContent="Toca outra vez para anular"; q("#uj-ok").style.background="#C00000"; return; }
       const d={series:Math.max(0,parseInt(q("#uj-se").value)||0),pratica:lerDur(q("#uj-pr").value),pausa:lerDur(q("#uj-pa").value),total:lerDur(q("#uj-to").value)};
       if(["pratica","pausa","total"].some(k=>isNaN(d[k]))){ toast("Corrige os tempos da duração."); return; } fecha();
-      editaUT(U=>{ const x=U.exercicios.find(y=>y.id===lid); x.copia={...x.copia,parte,espaco:{...x.copia.espaco,txt:q("#uj-e").value},duracao:{...d,total:d.total||null},variantes:q("#uj-v").value};
+      editaUT(U=>{ const x=U.exercicios.find(y=>y.id===lid); x.copia={...x.copia,nome:q("#uj-n").value.trim()||x.copia.nome,formato:q("#uj-f").value.trim(),parte,espaco:{...x.copia.espaco,txt:q("#uj-e").value},duracao:{...d,total:d.total||null},variantes:q("#uj-v").value};
         if(cp==="") delete x.comp; else x.comp=cp==="-"?"":cp; if(mh==="") delete x.meinho; else x.meinho=mh==="1"; },"Ajustado nesta UT"); }; }); }
 /* folha larga e botões compactos: com 24+ presentes, a grelha antiga (4 colunas, nomes em 2 linhas) deixava os últimos escondidos por baixo (v109) */
 function folhaGrupoUT(id,gid){ const U=uts[id]; if(!U) return; const G=gid?U.grupos.find(g=>g.id===gid):null, sel=new Set(G?G.jogadores:[]); let estr=G&&G.estr?clone(G.estr):null;

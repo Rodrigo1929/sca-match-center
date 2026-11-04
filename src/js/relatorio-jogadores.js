@@ -50,10 +50,10 @@ function acoesJogador(D,k){ const rs=D.nos.filter(x=>String(x.j)===String(k)), t
   return {rs,linhas:tipos.map(t=>{ const [ac,tp]=t.split("|"), q=rs.filter(x=>x.ac===ac&&(x.tipo||"")===tp); return [(q[0].acao||acaoDe(ac).nome)+(tp?" ("+tp+")":""),q.filter(x=>x.parte===1).length,q.filter(x=>x.parte===2).length,q.length]; })}; }
 function cartoesDe(D,k){ return D.ev.filter(e=>String(e.n)===String(k)&&(e.tipo==="amarelo"||e.tipo==="vermelho")).map(e=>(e.tipo==="amarelo"?"Amarelo ":"Vermelho ")+(e.min?String(e.min).split(":")[0]+"'":"")); }
 
-/* ---------- PDF A4 (coletivo: k=null; individual: k = nº do jogador) ---------- */
-async function pdfRelJog(G,k,R){ if(!window.jspdf) await carregaScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+/* ---------- PDF A4 (coletivo: k=null; individual: k = nº do jogador); base = PDF já começado, continua numa página nova (v112.10: PDF completo) ---------- */
+async function pdfRelJog(G,k,R,base){ if(!window.jspdf) await carregaScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
   if(!window.jspdf.jsPDF.API.autoTable) await carregaScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js");
-  const D=dadosRel(G), doc=new window.jspdf.jsPDF({unit:"pt",format:"a4"}), PW=595.28, PH=841.89, M=36, W=PW-2*M, RED=[192,0,0], INK=[27,26,23], MUT=[110,106,98];
+  const D=dadosRel(G), doc=base||new window.jspdf.jsPDF({unit:"pt",format:"a4"}); if(base) doc.addPage(); const p0=doc.getNumberOfPages(), PW=595.28, PH=841.89, M=36, W=PW-2*M, RED=[192,0,0], INK=[27,26,23], MUT=[110,106,98];
   const T=(t,x,y,o={})=>{ doc.setFont("helvetica",o.b?"bold":o.i?"italic":"normal"); doc.setFontSize(o.s||10); doc.setTextColor(...(o.c||INK)); doc.text(pdfTxt(String(t)),x,y,o.al?{align:o.al}:undefined); };
   let y=0; const novaSe=h=>{ if(y+h>PH-40){ doc.addPage(); y=M; } };
   const titulo=t=>{ novaSe(40); T(t.toUpperCase(),M,y+12,{b:1,s:10,c:RED}); doc.setDrawColor(...RED); doc.setLineWidth(1.2); doc.line(M,y+16,PW-M,y+16); y+=26; };
@@ -91,8 +91,11 @@ async function pdfRelJog(G,k,R){ if(!window.jspdf) await carregaScript("https://
     for(let i=0;i<lances.length;i+=por){ novaSe(lado+40); lances.slice(i,i+por).forEach((l,j)=>{ const x=M+j*(lado+40);
       if(l.url){ qrNoPdf(doc,l.url,x,y,lado); doc.link(x,y,lado,lado,{url:l.url}); } else { doc.setDrawColor(...MUT); doc.rect(x,y,lado,lado); T("sem vídeo",x+lado/2,y+lado/2,{s:7,c:MUT,al:"center"}); }
       doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.setTextColor(...INK); doc.text(doc.splitTextToSize(pdfTxt(`${l.min} · ${l.titulo}`),lado+34).slice(0,2),x+lado/2,y+lado+10,{align:"center"}); }); y+=lado+34; } }
-  const np=doc.getNumberOfPages(); for(let i=1;i<=np;i++){ doc.setPage(i); T(`SC Angrense · Pós-jogo vs ${G.adversario||""}${k?" · "+nomeJogRel(G,k):""} · ${i}/${np}`,PW/2,PH-16,{s:7.5,c:MUT,al:"center"}); }
+  const np=doc.getNumberOfPages(); for(let i=p0;i<=np;i++){ doc.setPage(i); T(`SC Angrense · Pós-jogo vs ${G.adversario||""}${k?" · "+nomeJogRel(G,k):""} · ${i-p0+1}/${np-p0+1}`,PW/2,PH-16,{s:7.5,c:MUT,al:"center"}); }
   return doc; }
+/* um só PDF: relatório da equipa e, a seguir, o de cada jogador (cada um com a sua numeração de páginas) */
+async function pdfCompletoRelJog(G,R,prog){ const quem=[null,...jogadoresRel(G)]; let doc=null;
+  for(let i=0;i<quem.length;i++){ if(prog) prog(i+1,quem.length,quem[i]); doc=await pdfRelJog(G,quem[i],R,doc); } return doc; }
 const PROP_CAMPO=H/W;   // proporção do campo da análise (altura / largura)
 
 /* ---------- ecrãs 1080×1920 para o WhatsApp ---------- */
@@ -185,7 +188,7 @@ function folhaPreviewRelJog(G,id){ const R=relJogs[id]||normRelJog({id}), js=jog
   folha(`<h3>Pré-visualização · vs ${esc(G.adversario||"")}</h3><p class="sub" style="margin:0">Vê os ecrãs do grupo e de cada jogador (o PDF tem o mesmo conteúdo). ✓ = já visto.</p>
     <div class="chips" id="rp-q">${quem.map((k,i)=>`<button class="chip" data-i="${i}">${esc(rot(k))}</button>`).join("")}</div>
     <div id="rp-v" class="rp-v"><p class="sub">A preparar…</p></div><p class="sub" id="rp-st" style="margin:0"></p>
-    <div class="actions"><button class="btn" id="rp-volta">Voltar</button><button class="btn" id="rp-x" hidden>Cancelar</button><button class="btn primary" id="rp-ok">✓ Aprovar e exportar</button></div>`,(s,fecha)=>{
+    <div class="actions"><button class="btn" id="rp-volta">Voltar</button><button class="btn" id="rp-x" hidden>Cancelar</button><button class="btn" id="rp-pdf">⬇ PDF completo (equipa + todos os jogadores)</button><button class="btn primary" id="rp-ok">✓ Aprovar e exportar</button></div>`,(s,fecha)=>{
     const q=x=>s.querySelector(x);
     const mostra=async i=>{ cur=i; const k=quem[i]; s.querySelectorAll("#rp-q .chip").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.i===i))); q("#rp-v").innerHTML=`<p class="sub">A preparar ${esc(rot(k))}…</p>`;
       try{ if(!cache[i]) cache[i]=(await ecrasRelJog(G,k,R)).map(cv=>cv.toDataURL("image/jpeg",.7)); if(cur!==i) return;
@@ -195,6 +198,11 @@ function folhaPreviewRelJog(G,id){ const R=relJogs[id]||normRelJog({id}), js=jog
     s.querySelectorAll("#rp-q .chip").forEach(b=>b.onclick=()=>mostra(+b.dataset.i)); mostra(0);
     q("#rp-volta").onclick=()=>{ if(ctl) ctl.cancelado=true; fecha(); folhaRelJog(G); };
     q("#rp-x").onclick=()=>{ if(ctl) ctl.cancelado=true; };
+    q("#rp-pdf").onclick=async()=>{ ctl={cancelado:false}; const b=q("#rp-pdf"), st=q("#rp-st"); b.disabled=true; q("#rp-x").hidden=false;
+      try{ const doc=await pdfCompletoRelJog(G,R,(i,n,k)=>{ if(ctl.cancelado) throw new Error("cancelado"); st.textContent=`PDF completo: ${i} de ${n} · ${rot(k)}…`; });
+        await guardaFicheiro(nomeFichRel(G,"relatorio_completo")+".pdf",new Uint8Array(doc.output("arraybuffer")),"application/pdf"); st.textContent="PDF completo guardado."; }
+      catch(e){ st.textContent=e&&e.message==="cancelado"?"Cancelado.":e&&e.code==="declined"?"":"Não foi possível criar o PDF ("+((e&&(e.code||e.message))||"erro")+")."; }
+      b.disabled=false; q("#rp-x").hidden=true; };
     confirma2(q("#rp-ok"),vistos.size<quem.length?"Toca outra vez: exportar (há ecrãs por ver)":"Toca outra vez para exportar",async()=>{ ctl={cancelado:false}; q("#rp-ok").disabled=true; q("#rp-x").hidden=false; const st=q("#rp-st");
       try{ const fs=[]; let i=0;
         for(const k of quem){ if(ctl.cancelado) throw new Error("cancelado"); i++; st.textContent=`A preparar ${i} de ${quem.length}: ${rot(k)}…`;

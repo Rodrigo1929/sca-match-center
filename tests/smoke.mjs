@@ -689,6 +689,11 @@ const rj = await pg.evaluate(async () => { const G = hist.Jtestearq, R = relJogD
     nome: nomeFichRel(G, alcunhaRel(G, "9")) }; });
 await pg.click("#a-jpdf"); await pg.waitForSelector("#rj-pv"); await pg.click("#rj-pv"); await pg.waitForSelector("#rp-v img", { timeout: 60000 });
 await pg.screenshot({ path: join(cap, "relatorio-jogadores-preview.png") });
+// v112.10: PDF completo = equipa + todos os jogadores no mesmo ficheiro (páginas = soma das partes)
+const rjc = await pg.evaluate(async () => { const G = hist.Jtestearq, R = relJogDe(G), js = jogadoresRel(G); let soma = (await pdfRelJog(G, null, R)).getNumberOfPages();
+  for (const k of js) soma += (await pdfRelJog(G, k, R)).getNumberOfPages(); const c = await pdfCompletoRelJog(G, R); return { np: c.getNumberOfPages(), soma, js: js.length }; });
+const [dPdfC] = await Promise.all([pg.waitForEvent("download", { timeout: 120000 }), pg.click("#rp-pdf")]);
+if (rjc.np !== rjc.soma || rjc.js < 1 || !/relatorio_completo.*\.pdf$/.test(dPdfC.suggestedFilename())) erros.push("Relatório para jogadores (v112.10): PDF completo " + JSON.stringify({ ...rjc, f: dPdfC.suggestedFilename() }));
 const [dZip] = await Promise.all([pg.waitForEvent("download", { timeout: 120000 }), (async () => { await pg.click("#rp-ok"); await pg.click("#rp-ok"); })()]);
 await pg.waitForTimeout(300);
 const rjx = await pg.evaluate(() => { const R = relJogDe(hist.Jtestearq); return R.exportado.map((x) => x.versao + ":" + (x.n > 2)).join(","); });
@@ -998,6 +1003,13 @@ if (n1 !== 13 || n2 !== 11) erros.push("Adversário: substituir o plantel import
     const s = { x1: 0, y1: 0, x2: 20, y2: 0 }, M = { x: 10, y: 6 }, c = { ...s, ...curvaPorM(s, M) }, mm = meioSetaM(c);
     return { curva: /<path d="M [^"]* Q /.test(svg), pegas: ["s1:1", "s1:2", "s1:3"].every((k) => svg.includes(`data-sh="${k}"`)), passa: Math.abs(mm.x - 10) < 1e-6 && Math.abs(mm.y - 6) < 1e-6 }; });
   if (!v1129s.curva || !v1129s.pegas || !v1129s.passa) erros.push("Figuras (v112.9): setas com curva " + JSON.stringify(v1129s)); }
+// v112.10: título e formato do exercício só nesta UT (o repositório não muda; «manter ajustes do dia» guarda-os)
+{ const l0 = await pg.evaluate(() => { const U = Object.values(uts).find((u) => u.exercicios.some((x) => !x.pai)); if (!U) return null; uCur = U.id; const l = U.exercicios.find((x) => !x.pai); folhaAjusteUT(U.id, l.id); return { ut: U.id, lid: l.id, ex: l.exId, nome: exercicios[l.exId] && exercicios[l.exId].nome, cop: clone(l.copia) }; });
+  if (!l0) erros.push("UT (v112.10): sem UT com exercícios para testar"); else {
+  await pg.fill("#uj-n", "Título só desta UT"); await pg.fill("#uj-f", "GR+7×7+GR"); await pg.click("#uj-ok"); await pg.waitForTimeout(100);
+  const v11210 = await pg.evaluate(({ ut, lid, ex, cop }) => { const l = uts[ut].exercicios.find((x) => x.id === lid), r = { nome: l.copia.nome, fmt: l.copia.formato, repo: exercicios[ex] && exercicios[ex].nome, aj: AJUSTES_DIA.includes("nome") };
+    editaUT((U) => { const x = U.exercicios.find((y) => y.id === lid); x.copia = cop; }); return r; }, l0);
+  if (v11210.nome !== "Título só desta UT" || v11210.fmt !== "GR+7×7+GR" || v11210.repo !== l0.nome || !v11210.aj) erros.push("UT (v112.10): título e formato nesta UT " + JSON.stringify(v11210)); } }
 // v112.4: mudar o nº passa também a convocatória, o onze e o Encaixe do jogo atual (sem repetidos); com registos no Ao vivo com o nº antigo, o jogo fica como está
 { const v1124 = await pg.evaluate(() => { const J0 = clone(jogo), on = J0.onze.map((o, i) => i ? o : { ...o, n: "93" });
     guardaJogo({ ...J0, eventos: [], subs: [], onze: on, suplentes: ["91", "92"], encaixe: { nos: { 93: { x: 1, y: 1 } }, adv: {} } });
