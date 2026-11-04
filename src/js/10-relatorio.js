@@ -77,10 +77,12 @@ function renderRelatorio(){
   const pts=sel.map(r_=>({x:r_.x,y:r_.y,...(r_.x2!=null?{x2:r_.x2,y2:r_.y2,lw:200,tr:r_.tipo==="Drible perdido"?"500 350":"none"}:{}),cor:F.acao(r_.ac).cor,r:950,txt:r_.j||"",op:.9}));
   const m=$("r-mapa"); m.innerHTML=""; m.appendChild(campoAnalise(null,pts));
   { const ul=$("r-lista"); ul.innerHTML=""; const ord=sel.slice().sort((a,b)=>a.parte-b.parte||a.seg-b.seg);
-    if(!ro&&(!jogo.video||!ytId(jogo.video.url))){ const li=document.createElement("li"); li.innerHTML=`<span>Configura o vídeo do jogo para teres ▶ em cada lance.</span><a href="#" id="r-cfgv">Configurar vídeo</a>`; ul.appendChild(li); li.querySelector("a").onclick=e=>{ e.preventDefault(); folhaVideo(); }; }
+    if(!F.video||!ytId(F.video.url)){ const li=document.createElement("li"); li.innerHTML=`<span>Configura o vídeo do jogo para teres ▶ em cada lance.</span><a href="#" id="r-cfgv">Configurar vídeo</a>`; ul.appendChild(li); li.querySelector("a").onclick=e=>{ e.preventDefault(); folhaVideo(F.arq||undefined); }; }
+    /* v112.7: tocar num lance abre-o para corrigir (também num jogo arquivado) */
     ord.slice(0,300).forEach(x=>{ const li=document.createElement("li"), u=F.video?linkVideoModo({t:minutoReg(x),parte:x.parte},F.video,"web"):null;
       li.innerHTML=`<span class="t"></span><span></span>${u?`<a target="_blank" rel="noopener">▶ Ver</a>`:""}`; li.children[0].textContent=minutoReg(x);
-      li.children[1].textContent=`${descReg(x,F.acao)} · ${x.eq==="eles"?"Adversário":x.j?F.rot(x.j):"Coletivo"}`; if(u) li.querySelector("a").href=u; ul.appendChild(li); }); }
+      li.children[1].textContent=`${descReg(x,F.acao)} · ${x.eq==="eles"?"Adversário":x.j?F.rot(x.j):"Coletivo"}`; if(u){ const a=li.querySelector("a"); a.href=u; a.onclick=e=>e.stopPropagation(); }
+      li.style.cursor="pointer"; li.title="Toca para corrigir"; li.onclick=()=>folhaReg(x.id,F.arq||null); ul.appendChild(li); }); }
   const cnt={}; sel.forEach(r_=>{ const k=r_.ac+(r_.tipo?"|"+r_.tipo:""); cnt[k]=(cnt[k]||0)+1; });
   $("r-leg").innerHTML=`<span>Campo 100×64 m · atacamos sempre para a direita neste mapa · ${sel.length} ações</span>`+Object.entries(cnt).map(([k,v])=>{ const [id,tp]=k.split("|"), a=F.acao(id); return `<span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${a.cor};margin-right:4px"></i>${esc(a.nome)}${tp?" · "+esc(tp):""} <b>${v}</b></span>`; }).join("")+(sel.some(r_=>r_.tipo==="Drible perdido"&&r_.x2!=null)?`<span>Seta tracejada = drible</span>`:"");
 }
@@ -177,10 +179,11 @@ function folhaJogoArq(J){
     <h4>Adversário${J.adv&&J.adv.sistema?" · "+esc(J.adv.sistema):""}</h4>${lst(J.adv&&J.adv.onze.filter(o=>o.n),o=>`<li><b>${esc(o.n)}</b> ${esc(o.pos||"")} ${esc(o.nome||"")}</li>`)}
     <h4>Substituições do adversário</h4>${lst(J.adv&&J.adv.subs,x=>`<li><b>${esc(x.min||"–")}'</b> · sai ${esc(x.sai)} ${esc(x.nomeSai||"")} → entra <b>${esc(x.entra)}</b> ${esc(x.nomeEntra||"")}</li>`)}
     <h4>Notas</h4>${lst((J.notas||[]).slice().sort((a,b)=>seg(a.t)-seg(b.t)),n=>{ const lv=J.video?linkVideo(n,J.video):null; return `<li><b style="color:var(--red)">${esc(n.t||"–")}</b> ${esc(n.txt)} ${lv?`<a href="${lv}" target="_blank" rel="noopener">▶ vídeo</a>`:""}</li>`; })}
-    <div class="actions"><button class="btn danger l" id="aj-del">Apagar do histórico</button><button class="btn" id="aj-an">📊 Ver análise pós-jogo</button><button class="btn" id="aj-pdf">⬇ Relatório PDF</button><button class="btn" id="aj-rj">📣 Relatório para jogadores</button><button class="btn" id="aj-fic">⬇ Ficha de jogo</button><button class="btn" data-close>Fechar</button><button class="btn primary" id="aj-ok">Guardar</button></div>`,(s,fecha)=>{
+    <div class="actions"><button class="btn danger l" id="aj-del">Apagar do histórico</button><button class="btn" id="aj-vid">▶ Vídeo do jogo${J.video&&ytId(J.video.url)?" ✓":""}</button><button class="btn" id="aj-an">📊 Ver análise pós-jogo</button><button class="btn" id="aj-pdf">⬇ Relatório PDF</button><button class="btn" id="aj-rj">📣 Relatório para jogadores</button><button class="btn" id="aj-fic">⬇ Ficha de jogo</button><button class="btn" data-close>Fechar</button><button class="btn primary" id="aj-ok">Guardar</button></div>`,(s,fecha)=>{
     s.querySelector("#aj-n").value=J.resultado?.nos??""; s.querySelector("#aj-e").value=J.resultado?.eles??""; s.querySelector("#aj-o").value=J.obs||"";
     s.querySelector("#aj-an").onclick=()=>{ fecha(); relArq=J.id; anVista="rel"; setTab("a"); };
     s.querySelector("#aj-rj").onclick=()=>{ fecha(); folhaRelJog(J); };
+    s.querySelector("#aj-vid").onclick=()=>{ fecha(); folhaVideo(hist[J.id]); };
     s.querySelector("#aj-pdf").onclick=e=>guardaRelatorio(J,e.currentTarget);
     s.querySelector("#aj-fic").onclick=e=>guardaFicha(e.currentTarget,J);
     s.querySelector("#aj-ok").onclick=()=>{ const N={...J,resultado:{nos:s.querySelector("#aj-n").value.trim(),eles:s.querySelector("#aj-e").value.trim()},obs:s.querySelector("#aj-o").value.trim()}; hist[J.id]=N; guardaLocal(); gravaDoc("historico/"+J.id,N); fecha(); renderHist(); };

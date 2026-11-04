@@ -3,7 +3,9 @@ const TECLAS_DEF={rec:"R",per:"P",re:"E",rd:"D",rb:"B",golo:"G",pc:"K",cr:"C",dg
 const ACOES_DEF=[["rec","Recuperação de bola","#1E7A46"],["per","Perda de bola","#C00000"],["re","Remate enquadrado","#1F497D"],["rd","Remate desenquadrado","#7F9CC0"],["rb","Remate bloqueado","#5B6B80"],["golo","Golo","#B8963F"],["pc","Passe chave","#2E8B57"],["cr","Cruzamento","#8064A2"],["dg","Duelo ganho","#4BACC6"],["dp","Duelo perdido","#E07B39"],["fc","Falta cometida","#8B5A2B"],["fs","Falta sofrida","#A0785A"],["can","Canto","#6B675E"],["fj","Fora de jogo","#9A958B"],["dgr","Defesa do GR","#00B0F0"],["ca","Cartão amarelo","#E6B000"],["cv","Cartão vermelho","#8B0000"]].map(([id,nome,cor])=>({id,nome,cor,tecla:TECLAS_DEF[id]||"",dir:["per","re","rd","rb","golo","pc","cr"].includes(id),tipos:id==="per"?["Passe falhado","Drible perdido","Receção falhada"]:[]}));
 let anCfg={acoes:ACOES_DEF.slice()};
 let an={regs:[],posse:{estado:"",parte:1,inicio:0,acum:{"1":{nos:0,eles:0,div:0,fora:0},"2":{nos:0,eles:0,div:0,fora:0}}},ataque:{"1":"dir","2":"esq"}};
-const VSTATS=[["rem","Remates"],["enq","Remates enquadrados"],["can","Cantos"],["fal","Faltas cometidas"],["fj","Foras de jogo"]];
+/* v112.7: grandes oportunidades (contador próprio no Ao vivo; no vídeo = remates/golos marcados com ⭐) */
+const VSTATS=[["rem","Remates"],["enq","Remates enquadrados"],["go","Grandes oportunidades"],["can","Cantos"],["fal","Faltas cometidas"],["fj","Foras de jogo"]];
+const REM_GO=["re","rd","rb","golo"];
 function vZero(){ const z=()=>Object.fromEntries(VSTATS.map(([k])=>[k,0])); return {"1":{nos:z(),eles:z()},"2":{nos:z(),eles:z()}}; }
 function normVivo(d){ const Z=vZero(); ["1","2"].forEach(p=>["nos","eles"].forEach(e=>VSTATS.forEach(([k])=>{ Z[p][e][k]=Math.max(0,+(d?.c?.[p]?.[e]?.[k])||0); })));
   const P=d?.posse||{}, z=()=>({nos:0,eles:0,div:0,fora:0});
@@ -37,7 +39,7 @@ function folhaCantoRapido(id){ const e0=(jogo.eventos||[]).find(x=>x.id===id); i
     CANTO_R.forEach(([k,n])=>bt("#cr-r",k,`<b style="font-family:var(--f-display)">${k}</b> <span>${n}</span>`,"res"));
     pinta(); }); }
 /* estatística combinada: vídeo substitui o ao vivo quando existir */
-const VID_MAP={rem:x=>["re","rd","rb","golo"].includes(x.ac),enq:x=>x.ac==="re"||x.ac==="golo",can:x=>x.ac==="can",fal:x=>x.ac==="fc"||x.ac==="fs",fj:x=>x.ac==="fj"};
+const VID_MAP={go:x=>!!x.go&&REM_GO.includes(x.ac),rem:x=>["re","rd","rb","golo"].includes(x.ac),enq:x=>x.ac==="re"||x.ac==="golo",can:x=>x.ac==="can",fal:x=>x.ac==="fc"||x.ac==="fs",fj:x=>x.ac==="fj"};
 /* de que equipa conta um registo: a falta sofrida por um jogador nosso é falta cometida do adversário (e vice-versa), sem a marcar duas vezes */
 const contaPara=(k,x,e)=>k==="fal"&&x.ac==="fs"?x.eq!==e:x.eq===e;
 function estatJogo(regs,vv,posseVid,evs){ regs=regs||an.regs; vv=vv||vivo; evs=evs||jogo.eventos||[]; const out={fonte:{}};
@@ -56,7 +58,7 @@ function estatJogo(regs,vv,posseVid,evs){ regs=regs||an.regs; vv=vv||vivo; evs=e
   const A=pl["1"],B=pl["2"], tn=A.nos+B.nos, te=A.eles+B.eles; out.t.nos.posse=tn+te?Math.round(tn/(tn+te)*100):null; out.t.eles.posse=tn+te?100-out.t.nos.posse:null; out.t.util=out["1"].util+out["2"].util;
   return out; }
 function vAcumDe(vv,parte){ const P=vv.posse, a={...P.acum[String(parte)]}; if(vv===vivo&&P.estado&&P.parte===parte&&P.inicio) a[P.estado]+=Math.max(0,(Date.now()-P.inicio)/1000); return a; }
-const ESTAT_LINHAS=[["golos","Golos"],["posse","Posse de bola (%)"],["rem","Remates"],["enq","Remates enquadrados"],["can","Cantos"],["fal","Faltas cometidas"],["fj","Foras de jogo"],["amarelo","Amarelos"],["vermelho","Vermelhos"]];
+const ESTAT_LINHAS=[["golos","Golos"],["posse","Posse de bola (%)"],["rem","Remates"],["enq","Remates enquadrados"],["go","Grandes oportunidades"],["can","Cantos"],["fal","Faltas cometidas"],["fj","Foras de jogo"],["amarelo","Amarelos"],["vermelho","Vermelhos"]];
 function tabelaEstat(E,ver){ const S=ver==="t"?E.t:E[ver]; const ad=esc((jogo.adversario||"ADV").slice(0,12));
   let h=`<table class="vtv"><tr><td class="v" style="color:#C00000">SCA</td><td class="l">${ver==="1"?"1.ª parte":ver==="2"?"2.ª parte":"Jogo todo"}</td><td class="v" style="color:#1F497D">${ad}</td></tr>`;
   ESTAT_LINHAS.forEach(([k,l])=>{ const a=S.nos[k], b=S.eles[k]; if(k==="vermelho"&&!a&&!b) return; const va=a==null?"–":a+(k==="posse"?"%":""), vb=b==null?"–":b+(k==="posse"?"%":"");
@@ -133,7 +135,7 @@ function opcBpl(sel,eq,val){ const tipos=eq==="eles"?["DEF","OF"]:["OF","DEF"]; 
 let anSel={ac:null,eq:"nos",pt:null}, anVista="reg", anTodos=false, kbBuf="", kbTimer=null;
 function normAn(d){ const z=()=>({nos:0,eles:0,div:0,fora:0}); const P=d?.posse||{};
   const ac={"1":{...z(),...(P.acum?.["1"]||{})},"2":{...z(),...(P.acum?.["2"]||{})}};
-  return {regs:Array.isArray(d?.regs)?d.regs.filter(x=>x&&x.ac).map((x,i)=>({c:+x.c||i,id:String(x.id||Math.random().toString(36).slice(2,9)),ac:String(x.ac),eq:x.eq==="eles"?"eles":"nos",x:+x.x||0,y:+x.y||0,j:x.j==null?null:String(x.j),parte:x.parte===2?2:1,seg:+x.seg||0,...(x.autor?{autor:String(x.autor)}:{}),...(x.tipo?{tipo:String(x.tipo)}:{}),...(ORIG[x.or]?{or:x.or}:{}),...(x.bpl?{bpl:String(x.bpl)}:{}),...(x.x2!=null&&x.y2!=null?{x2:+x.x2,y2:+x.y2}:{})})):[],
+  return {regs:Array.isArray(d?.regs)?d.regs.filter(x=>x&&x.ac).map((x,i)=>({c:+x.c||i,id:String(x.id||Math.random().toString(36).slice(2,9)),ac:String(x.ac),eq:x.eq==="eles"?"eles":"nos",x:+x.x||0,y:+x.y||0,j:x.j==null?null:String(x.j),parte:x.parte===2?2:1,seg:+x.seg||0,...(x.autor?{autor:String(x.autor)}:{}),...(x.tipo?{tipo:String(x.tipo)}:{}),...(x.go?{go:true}:{}),...(ORIG[x.or]?{or:x.or}:{}),...(x.bpl?{bpl:String(x.bpl)}:{}),...(x.x2!=null&&x.y2!=null?{x2:+x.x2,y2:+x.y2}:{})})):[],
     posse:{estado:["nos","eles","div","fora"].includes(P.estado)?P.estado:"",ult:["nos","eles","div","fora"].includes(P.ult)?P.ult:"",parte:P.parte===2?2:1,inicio:+P.inicio||0,acum:ac},
     ataque:{"1":d?.ataque?.["1"]==="esq"?"esq":"dir","2":d?.ataque?.["2"]==="dir"?"dir":"esq"}}; }
 function normCfg(d){ const a=Array.isArray(d?.acoes)&&d.acoes.length?d.acoes:ACOES_DEF; return {acoes:a.filter(x=>x&&x.nome).map(x=>{ const D=ACOES_DEF.find(d=>d.id===x.id)||{};
@@ -150,7 +152,7 @@ function guardaCfg(n){ anCfg=normCfg(n); guardaLocal(); renderAnalise(); gravaDo
 function acumAgora(parte){ const P=an.posse, a={...P.acum[String(parte)]}; if(P.estado&&P.parte===parte&&P.inicio) a[P.estado]+=Math.max(0,(Date.now()-P.inicio)/1000); return a; }
 function tempoParte(parte){ const a=acumAgora(parte); return a.nos+a.eles+a.div+a.fora; }
 function acaoDe(id){ return anCfg.acoes.find(a=>a.id===id)||{id,nome:id,cor:"#6B675E",dir:false,tipos:[]}; }
-function descReg(x,A=acaoDe){ return A(x.ac).nome+(x.tipo?" ("+x.tipo+")":"")+(x.x2!=null?" ↗":"")+(x.or==="trans"?" · Transição":x.or==="bp"?" · BP"+(x.bpl?": "+nomeBpl(x.bpl):""):""); }
+function descReg(x,A=acaoDe){ return A(x.ac).nome+(x.go?" ⭐ Grande oportunidade":"")+(x.tipo?" ("+x.tipo+")":"")+(x.x2!=null?" ↗":"")+(x.or==="trans"?" · Transição":x.or==="bp"?" · BP"+(x.bpl?": "+nomeBpl(x.bpl):""):""); }
 function minutoReg(r_){ return fmt((r_.parte===2?2700:0)+r_.seg); }
 let usr=null, sala=null, meuId=null;
 async function renderPeers(peers){

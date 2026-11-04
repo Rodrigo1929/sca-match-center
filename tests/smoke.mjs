@@ -958,6 +958,20 @@ if (n1 !== 13 || n2 !== 11) erros.push("Adversário: substituir o plantel import
   await pg.screenshot({ path: join(cap, "quadro-livre.png") });
   await pg.evaluate(() => { curId = lances()[0].id; render(); }); const pVolta = await pg.evaluate(() => !$("q-panel").hidden);
   if (!ecra.hint || !ecra.painel || !pVolta) erros.push("Quadro (v112.6): Quadro Livre sem a explicação no ecrã " + JSON.stringify(ecra)); }
+// v112.7: jogo arquivado — vídeo gravado no próprio arquivo e lances corrigíveis
+{ await pg.evaluate(() => { relArq = "tz1127"; hist.tz1127 = { id: "tz1127", adversario: "Teste", data: "2026-01-01", onze: [{ n: "7", pos: "PL", nome: "Sete" }], suplentes: [], subsReais: [], analise: { regs: [{ id: "r1", parte: 1, seg: 60, eq: "nos", ac: "re", acao: "Remate enquadrado", j: "7", nome: "Sete", x: 0.5, y: 0.5 }], posse: {} } }; folhaVideo(hist.tz1127); });
+  await pg.fill("#vd-u", "https://www.youtube.com/watch?v=dQw4w9WgXcQ"); await pg.fill("#vd-1", "0:10"); await pg.click("#vd-ok"); await pg.waitForTimeout(80);
+  await pg.evaluate(() => folhaReg("r1", hist.tz1127)); await pg.selectOption("#er-ac", "rd"); await pg.click("#er-ok"); await pg.waitForTimeout(80);
+  const v1127 = await pg.evaluate(() => { const J = hist.tz1127, r = J.analise.regs[0], out = { url: J.video && J.video.url, k1: J.video && J.video.k1, ac: r.ac, acao: r.acao, nome: r.nome, atual: jogo.video };
+    delete hist.tz1127; apagaDoc("historico/tz1127"); relArq = ""; guardaLocal(); return out; });
+  if (!/youtube/.test(v1127.url || "") || v1127.k1 !== 10 || v1127.ac !== "rd" || !/desenquadrado/i.test(v1127.acao || "") || v1127.nome !== "Sete") erros.push("Histórico (v112.7): vídeo ou correção no jogo arquivado " + JSON.stringify(v1127)); }
+// v112.7: grandes oportunidades — contador no Ao vivo; no Pós-jogo, remate marcado com ⭐ conta na estatística do vídeo (e sobrevive ao normalizador)
+{ const v1127g = await pg.evaluate(() => { const A0 = clone(an), V0 = clone(vivo), p = String(vParte());
+    vConta("nos", "go", 1); const vv = vivo.c[p].nos.go;
+    anSel = { ...anSel, eq: "nos", ac: "re", pt: { x: 0.8, y: 0.5 }, pt2: null, j: "7", go: true }; const ok = tentaGravar("7"), r = an.regs[an.regs.length - 1];
+    const go = !!(r && r.go), norm = !!normAn(clone(an)).regs.find((x) => x.id === r.id).go, est = estatJogo(an.regs).t.nos.go, desc = descReg(r);
+    guardaAn(A0); guardaVivo(V0); return { vv, ok, go, norm, est, desc }; });
+  if (v1127g.vv !== 1 || !v1127g.ok || !v1127g.go || !v1127g.norm || v1127g.est < 1 || !/Grande oportunidade/.test(v1127g.desc)) erros.push("Pós-jogo (v112.7): grandes oportunidades " + JSON.stringify(v1127g)); }
 // v112.4: mudar o nº passa também a convocatória, o onze e o Encaixe do jogo atual (sem repetidos); com registos no Ao vivo com o nº antigo, o jogo fica como está
 { const v1124 = await pg.evaluate(() => { const J0 = clone(jogo), on = J0.onze.map((o, i) => i ? o : { ...o, n: "93" });
     guardaJogo({ ...J0, eventos: [], subs: [], onze: on, suplentes: ["91", "92"], encaixe: { nos: { 93: { x: 1, y: 1 } }, adv: {} } });

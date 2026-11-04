@@ -101,9 +101,10 @@ function folhaRelogio(){
     s.querySelector("#rl-n").onclick=()=>{ const prev=notas.itens.slice(); guardaNotas({itens:[]}); fecha(); toast("Notas apagadas",()=>guardaNotas({itens:prev})); };
   });
 }
-function folhaVideo(){
-  const V=jogo.video||{};
-  folha(`<h3>Vídeo do jogo</h3><p class="sub" style="margin:0">Cola o link do YouTube e indica em que ponto do vídeo começa cada parte. Cada nota passa a ter ▶ para abrir o lance.</p>
+/* v112.7: também para um jogo arquivado (J): o vídeo grava-se no próprio arquivo */
+function folhaVideo(J){
+  const V=(J?J.video:jogo.video)||{}, guarda=v=>{ if(!J){ guardaJogo({...jogo,video:v},true); return; } const N={...hist[J.id],video:v}; hist[J.id]=N; guardaLocal(); gravaDoc("historico/"+J.id,N); if(typeof renderAnalise==="function") renderAnalise(); };
+  folha(`<h3>Vídeo do jogo${J?" · vs "+esc(J.adversario||"(sem adversário)"):""}</h3><p class="sub" style="margin:0">Cola o link do YouTube e indica em que ponto do vídeo começa cada parte. Cada nota passa a ter ▶ para abrir o lance.</p>
     <label class="f">Link do YouTube<input type="text" id="vd-u" placeholder="https://www.youtube.com/watch?v=…"></label>
     <div class="fields"><label class="f">Início 1ª parte no vídeo<input type="text" id="vd-1" placeholder="Ex.: 12:30 ou 1:02:15"></label><label class="f">Início 2ª parte no vídeo<input type="text" id="vd-2" placeholder="Ex.: 1:10:05"></label></div>
     <label class="f">Abrir quantos segundos antes do minuto da nota<select id="vd-a"><option>5</option><option>10</option><option>15</option><option>20</option><option>30</option></select></label>
@@ -112,8 +113,8 @@ function folhaVideo(){
     const u=s.querySelector("#vd-u"), a=s.querySelector("#vd-1"), b=s.querySelector("#vd-2"), an=s.querySelector("#vd-a");
     u.value=V.url||""; a.value=V.k1!=null?hms(V.k1):""; b.value=V.k2!=null?hms(V.k2):""; an.value=String(V.antes??10);
     s.querySelector("#vd-ok").onclick=()=>{ if(u.value.trim()&&!ytId(u.value)){ toast("Esse link não parece ser do YouTube."); return; }
-      guardaJogo({...jogo,video:{url:u.value.trim(),k1:a.value.trim()?lerHms(a.value):null,k2:b.value.trim()?lerHms(b.value):null,antes:+an.value}},true); fecha(); toast("Vídeo configurado"); };
-    s.querySelector("#vd-x").onclick=()=>{ guardaJogo({...jogo,video:null},true); fecha(); };
+      guarda({url:u.value.trim(),k1:a.value.trim()?lerHms(a.value):null,k2:b.value.trim()?lerHms(b.value):null,antes:+an.value}); fecha(); toast("Vídeo configurado"); };
+    s.querySelector("#vd-x").onclick=()=>{ guarda(null); fecha(); };
   });
 }
 function desenhaOnze(o_={}){

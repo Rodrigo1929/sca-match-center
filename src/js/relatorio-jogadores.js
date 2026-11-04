@@ -26,7 +26,7 @@ function ligaRelJogDb(){ if(!db) return; db.collection("relJog").onSnapshot(q=>{
 /* ---------- dados do jogo (tudo calculado na hora a partir do jogo) ---------- */
 const COR_PERDA={"Passe falhado":"#C00000","Drible perdido":"#E07B39","Receção falhada":"#8064A2"};
 const COR_REMATE={re:"#1F497D",rd:"#7F9CC0",rb:"#5B6B80",golo:"#B8963F"};
-const ESTAT_REL=[["golos","Golos"],["rem","Remates"],["enq","Remates à baliza"],["can","Cantos"],["fal","Faltas cometidas"],["fj","Foras de jogo"],["posse","Posse de bola (%)"]];
+const ESTAT_REL=[["golos","Golos"],["rem","Remates"],["enq","Remates à baliza"],["go","Grandes oportunidades"],["can","Cantos"],["fal","Faltas cometidas"],["fj","Foras de jogo"],["posse","Posse de bola (%)"]];
 function dadosRel(G){ const regs=(G.analise&&G.analise.regs)||[], nos=regs.filter(x=>x.eq==="nos"), ev=(G.eventos||[]).slice().sort((a,b)=>(minSeg(a.min)??0)-(minSeg(b.min)??0));
   const minC=m=>m?String(m).split(":")[0]+"'":"", nm=k=>nomeJogRel(G,k);
   const golos=ev.filter(e=>e.tipo==="golo").map(e=>`${e.n?nm(e.n)||e.n:"SC Angrense"} ${minC(e.min)}`.trim());

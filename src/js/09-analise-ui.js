@@ -68,8 +68,8 @@ function tentaGravar(j){
   if(j===undefined) j=S.j;
   if(S.eq==="nos"&&j===undefined) return false;
   const reg={id:Math.random().toString(36).slice(2,9),c:Date.now(),ac:S.ac,eq:S.eq,x:Math.round(S.pt.x*1000)/1000,y:Math.round(S.pt.y*1000)/1000,j:S.eq==="nos"?(j??null):null,parte:an.posse.parte,seg:Math.round(tempoParte(an.posse.parte)),...(meuId?{autor:meuId}:{}),
-    ...(A.tipos.length?{tipo:S.tipo}:{}),or:anOrig.or,...(anOrig.or==="bp"&&anOrig.bpl?{bpl:anOrig.bpl}:{}),...(A.dir&&S.pt2?{x2:Math.round(S.pt2.x*1000)/1000,y2:Math.round(S.pt2.y*1000)/1000}:{})};
-  anSel={...anSel,ac:null,pt:null,pt2:undefined,tipo:undefined,j:undefined};
+    ...(A.tipos.length?{tipo:S.tipo}:{}),...(S.go&&REM_GO.includes(S.ac)?{go:true}:{}),or:anOrig.or,...(anOrig.or==="bp"&&anOrig.bpl?{bpl:anOrig.bpl}:{}),...(A.dir&&S.pt2?{x2:Math.round(S.pt2.x*1000)/1000,y2:Math.round(S.pt2.y*1000)/1000}:{})};
+  anSel={...anSel,ac:null,pt:null,pt2:undefined,tipo:undefined,j:undefined,go:undefined};
   guardaAn({...an,regs:[...an.regs,reg]});
   const ac=acaoDe(reg.ac); toast(`${minutoReg(reg)} · ${descReg(reg)}${reg.j?" · "+rot(reg.j):reg.eq==="eles"?" · Adversário":" · Coletivo"}`,()=>guardaAn({...an,regs:an.regs.filter(x=>x.id!==reg.id)}));
   return true; }
@@ -86,7 +86,7 @@ function renderAnalise(){
   $("ae-nos").setAttribute("aria-pressed",String(anSel.eq==="nos")); $("ae-eles").setAttribute("aria-pressed",String(anSel.eq==="eles"));
   const la=$("a-acoes"); la.innerHTML="";
   anCfg.acoes.forEach(a=>{ const b=document.createElement("button"); b.setAttribute("aria-pressed",String(anSel.ac===a.id)); if(anSel.eq==="eles"&&soNos(a.id)){ b.disabled=true; b.title=AVISO_FALTA; } b.innerHTML=`<span class="sw"></span><span></span>${a.tecla?`<kbd>${a.tecla}</kbd>`:""}`; b.children[0].style.background=a.cor; b.children[1].textContent=a.nome;
-    b.onclick=()=>{ const novo=anSel.ac===a.id?null:a.id; anSel={...anSel,ac:novo,tipo:undefined,pt2:novo&&a.dir?anSel.pt2:undefined}; if(!tentaGravar(anSel.eq==="eles"?null:undefined)) renderAnalise(); }; la.appendChild(b); });
+    b.onclick=()=>{ const novo=anSel.ac===a.id?null:a.id; anSel={...anSel,ac:novo,tipo:undefined,go:REM_GO.includes(novo)?anSel.go:undefined,pt2:novo&&a.dir?anSel.pt2:undefined}; if(!tentaGravar(anSel.eq==="eles"?null:undefined)) renderAnalise(); }; la.appendChild(b); });
   // campo
   const recentes=an.regs.filter(x=>x.parte===an.posse.parte).slice(-12);
   const pts=recentes.map(x=>{ const p=paraEcra(x), p2=x.x2!=null?paraEcra({parte:x.parte,x:x.x2,y:x.y2}):null; return {...p,...(p2?{x2:p2.x,y2:p2.y,lw:160}:{}),cor:acaoDe(x.ac).cor,op:.35,r:700,sw:0}; });
@@ -101,6 +101,7 @@ function renderAnalise(){
   const tb=$("a-tipo"); tb.innerHTML=""; tb.hidden=!(AS&&(AS.tipos.length||AS.dir));
   if(AS){ if(AS.tipos.length){ const sp=document.createElement("span"); sp.textContent="Tipo:"; tb.appendChild(sp);
       AS.tipos.forEach(t=>{ const b=document.createElement("button"); b.textContent=t; b.setAttribute("aria-pressed",String(anSel.tipo===t)); b.onclick=()=>{ anSel={...anSel,tipo:anSel.tipo===t?undefined:t}; if(!tentaGravar(anSel.eq==="eles"?null:undefined)) renderAnalise(); }; tb.appendChild(b); }); }
+    if(REM_GO.includes(AS.id)){ const b=document.createElement("button"); b.id="a-go"; b.textContent="⭐ Grande oportunidade"; b.setAttribute("aria-pressed",String(!!anSel.go)); b.onclick=()=>{ anSel={...anSel,go:!anSel.go}; renderAnalise(); }; tb.appendChild(b); }
     if(AS.dir){ const sp=document.createElement("span"); sp.style.marginLeft=AS.tipos.length?"auto":"0"; sp.textContent=!anSel.pt?"Toca na origem e depois no destino":anSel.pt2===undefined?"Agora toca no destino":anSel.pt2?"Direção marcada":"Sem direção"; tb.appendChild(sp);
       if(anSel.pt&&anSel.pt2===undefined){ const b=document.createElement("button"); b.textContent="Sem direção"; b.onclick=()=>{ anSel={...anSel,pt2:null}; if(!tentaGravar(anSel.eq==="eles"?null:undefined)) renderAnalise(); }; tb.appendChild(b); } } }
   const falta=[!anSel.ac&&"a ação",!anSel.pt&&"o sítio no campo",precisaDest&&"o destino (direção)",AS&&AS.tipos.length&&!anSel.tipo&&"o tipo",anSel.eq==="nos"&&anSel.j===undefined&&"o jogador"].filter(Boolean);
@@ -154,7 +155,10 @@ $("v-reset").onclick=()=>{ let posse=true;
 $("v-undo").onclick=()=>{ const u=vLog.pop(); if(!u){ toast("Nada para desfazer."); return; } if(u.evId) guardaJogo({...jogo,eventos:(jogo.eventos||[]).filter(x=>x.id!==u.evId)},true); guardaVivo({...vivo,c:u.c}); toast("Último toque desfeito"); };
 $("a-bpl").onchange=e=>setOrig("bp",e.target.value);
 $("a-rec-todos").onclick=()=>{ anTodos=!anTodos; renderAnalise(); };
-function folhaReg(id){ const x0=an.regs.find(y=>y.id===id); if(!x0) return; const X={...x0};
+/* v112.7: J = jogo arquivado — corrige o registo no próprio arquivo (nomes e ação guardados com o registo, como ao arquivar) */
+function folhaReg(id,J){ const regsDe=()=>J?((hist[J.id].analise||{}).regs||[]):an.regs, x0=regsDe().find(y=>y.id===id); if(!x0) return; const X={...x0}, F=J?fonteRel():null;
+  const guardaRegs=rs=>{ if(!J){ guardaAn({...an,regs:rs}); return; } const H=hist[J.id], N={...H,analise:{...(H.analise||{}),regs:rs}}; hist[J.id]=N; guardaLocal(); gravaDoc("historico/"+J.id,N); renderAnalise(); };
+  const link=x=>{ if(!J) return linkAn(x); const V=hist[J.id].video; return V?linkVideoModo({t:minutoReg(x),parte:x.parte},V,"web"):null; };
   folha(`<h3>Editar registo</h3>
     <div class="er-grid">
       <label class="f">Minuto do jogo (mm:ss)<input type="text" id="er-min" inputmode="numeric"></label>
@@ -166,19 +170,20 @@ function folhaReg(id){ const x0=an.regs.find(y=>y.id===id); if(!x0) return; cons
       <label class="f" id="er-tl">Tipo<select id="er-t"></select></label>
       <label class="f" id="er-jl">Jogador<select id="er-j"></select></label>
     </div>
+    <label id="er-gol" style="display:flex;gap:8px;align-items:center;font-size:15px;min-height:42px"><input type="checkbox" id="er-go" style="width:22px;height:22px"> ⭐ Grande oportunidade</label>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="sub" style="margin:0">Toca no campo para mudar (atacamos sempre para a direita):</span>
       <div class="seg" role="group" id="er-m"><button data-m="o">Origem</button><button data-m="d">Destino</button></div><button class="btn sm" id="er-sd">Sem direção</button></div>
     <div class="er-campo" id="er-c"></div>
     <p class="sub" id="er-err" style="margin:0;color:#C00000" hidden>Minuto inválido — usa mm:ss (ex.: 47:30 na 2ª parte).</p>
-    <div class="actions"><button class="btn danger l" id="er-del">Apagar</button>${linkAn(X)?`<a class="btn" id="er-v" target="_blank" rel="noopener">▶ Ver no vídeo</a>`:""}<button class="btn" data-close>Cancelar</button><button class="btn primary" id="er-ok">Guardar</button></div>`,(s,fecha)=>{
-    const q=k=>s.querySelector(k); if(q("#er-v")) q("#er-v").href=linkAn(X);
+    <div class="actions"><button class="btn danger l" id="er-del">Apagar</button>${link(X)?`<a class="btn" id="er-v" target="_blank" rel="noopener">▶ Ver no vídeo</a>`:""}<button class="btn" data-close>Cancelar</button><button class="btn primary" id="er-ok">Guardar</button></div>`,(s,fecha)=>{
+    const q=k=>s.querySelector(k); if(q("#er-v")) q("#er-v").href=link(X);
     q("#er-min").value=minutoReg(X); q("#er-p").value=String(X.parte); q("#er-eq").value=X.eq;
     const acs=anCfg.acoes.slice(); if(!acs.find(a=>a.id===X.ac)) acs.push(acaoDe(X.ac));
     acs.forEach(a=>{ const o=document.createElement("option"); o.value=a.id; o.textContent=a.nome; q("#er-ac").appendChild(o); }); q("#er-ac").value=X.ac;
-    const emCampo=titulares(), trocou=(jogo.subs||[]).map(l=>l.entra);
-    const lista=[...new Set([...emCampo,...trocou,...jogo.suplentes,...est.plantel.map(p=>p.n).filter(Boolean)])]; if(X.j&&!lista.includes(X.j)) lista.unshift(X.j);
+    const emCampo=J?(J.onze||[]).map(o=>o.n):titulares(), trocou=J?(J.subsReais||[]).map(l=>l.entra):(jogo.subs||[]).map(l=>l.entra), sups=J?(J.suplentes||[]).map(o=>o.n):jogo.suplentes;
+    const lista=[...new Set([...emCampo,...trocou,...sups,...est.plantel.map(p=>p.n).filter(Boolean)])]; if(X.j&&!lista.includes(X.j)) lista.unshift(X.j);
     const oc=document.createElement("option"); oc.value=""; oc.textContent="— Coletivo (sem jogador)"; q("#er-j").appendChild(oc);
-    lista.forEach(n=>{ const o=document.createElement("option"); o.value=n; o.textContent=rot(n); q("#er-j").appendChild(o); }); q("#er-j").value=X.j||"";
+    lista.forEach(n=>{ const o=document.createElement("option"); o.value=n; o.textContent=F&&F.nome(n)?F.rot(n):rot(n); q("#er-j").appendChild(o); }); q("#er-j").value=X.j||"";
     q("#er-o").value=X.or||"org"; opcBpl(q("#er-b"),X.eq,X.bpl);
     const vis=()=>{ q("#er-jl").hidden=q("#er-eq").value==="eles"; q("#er-bl").hidden=q("#er-o").value!=="bp"; }; q("#er-eq").onchange=vis; q("#er-o").onchange=vis; vis();
     let modo="o";
@@ -191,15 +196,18 @@ function folhaReg(id){ const x0=an.regs.find(y=>y.id===id); if(!x0) return; cons
       c.appendChild(campoAnalise((fx,fy)=>{ const v={x:Math.round(fx*1000)/1000,y:Math.round(fy*1000)/1000}; if(modo==="d"){ X.x2=v.x; X.y2=v.y; } else { X.x=v.x; X.y=v.y; } pinta(); },pts)); };
     s.querySelectorAll("#er-m button").forEach(b=>b.onclick=()=>{ modo=b.dataset.m; pinta(); });
     q("#er-sd").onclick=()=>{ delete X.x2; delete X.y2; modo="o"; pinta(); };
-    q("#er-ac").onchange=()=>{ tipos(); pinta(); }; tipos(); pinta();
-    q("#er-del").onclick=()=>{ const prev=an.regs.slice(); fecha(); guardaAn({...an,regs:an.regs.filter(y=>y.id!==id)}); toast("Registo apagado",()=>guardaAn({...an,regs:prev})); };
+    q("#er-go").checked=!!X.go; const goVis=()=>{ q("#er-gol").hidden=!REM_GO.includes(q("#er-ac").value); };
+    q("#er-ac").onchange=()=>{ tipos(); pinta(); goVis(); }; tipos(); pinta(); goVis();
+    q("#er-del").onclick=()=>{ const prev=regsDe().slice(); fecha(); guardaRegs(prev.filter(y=>y.id!==id)); toast("Registo apagado",()=>guardaRegs(prev)); };
     q("#er-ok").onclick=()=>{ const abs=lerTempo(q("#er-min").value); if(abs==null){ q("#er-err").hidden=false; return; }
       if(q("#er-eq").value==="eles"&&soNos(q("#er-ac").value)){ toast(AVISO_FALTA); return; }
       const parte=+q("#er-p").value, eq=q("#er-eq").value;
       const A=acaoDe(q("#er-ac").value); const novo={...X,parte,eq,ac:A.id,seg:Math.max(0,abs-(parte===2?2700:0)),j:eq==="eles"?null:(q("#er-j").value||null)};
       if(A.tipos.length) novo.tipo=q("#er-t").value; else delete novo.tipo;
+      if(q("#er-go").checked&&REM_GO.includes(A.id)) novo.go=true; else delete novo.go;
       novo.or=q("#er-o").value; if(novo.or==="bp"&&q("#er-b").value) novo.bpl=q("#er-b").value; else delete novo.bpl;
-      const prev=an.regs.slice(); fecha(); guardaAn({...an,regs:an.regs.map(y=>y.id===id?novo:y)}); toast("Registo atualizado",()=>guardaAn({...an,regs:prev})); };
+      if(J){ novo.acao=A.nome; novo.nome=novo.j?(F.nome(novo.j)||nome(novo.j)):""; }
+      const prev=regsDe().slice(); fecha(); guardaRegs(prev.map(y=>y.id===id?novo:y)); toast("Registo atualizado",()=>guardaRegs(prev)); };
   }); }
 $("av-reg").onclick=()=>{ anVista="reg"; renderAnalise(); }; $("av-rel").onclick=()=>{ anVista="rel"; renderAnalise(); };
 $("ap-1").onclick=()=>setParte(1); $("ap-2").onclick=()=>setParte(2);
