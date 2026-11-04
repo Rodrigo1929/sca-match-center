@@ -15,18 +15,18 @@ const ESPECIAIS=[
   {id:"encaixe",tipo:"JOGO",nome:"Possíveis Encaixes",fundo:"pitch",dinamico:"encaixe",bolas:[],legs:[],ordem:.5},
   {id:"intervalo",tipo:"JOGO",nome:"Indicações ao Intervalo",fundo:"pitch-full",campoV:2,semCabecalho:true,arrastavel:true,bolas:null,legs:[],ordem:1},
   /* v112.6: quadro livre para falar de opções táticas — sem trocas, sem Ao vivo, sem onze, sem ligação a outros lances (as cópias também são livres) */
-  {id:"livre",tipo:"JOGO",nome:"Quadro Livre",fundo:"pitch-full",campoV:2,semCabecalho:true,arrastavel:true,livre:true,bolas:null,legs:[],ordem:1.2},
+  {id:"livre",tipo:"JOGO",nome:"Quadro Livre",fundo:"pitch-setores",campoV:2,semCabecalho:true,arrastavel:true,livre:true,bolas:null,legs:[],ordem:1.2},
   {id:"notas",tipo:"JOGO",nome:"Notas do Jogo",fundo:"b-head",dinamico:"notas",bolas:[],legs:[],ordem:2},
   {id:"estat",tipo:"JOGO",nome:"Estatística",fundo:"b-head",dinamico:"estat",bolas:[],legs:[],ordem:1.5}
 ];
-function mapaCampo(o){ const a=[2740,11380,81400,63780], b=[1100,1100,90340,67480];
+function mapaCampo(o,alvo="pitch-full"){ const a=[2740,11380,81400,63780], b=FUNDOS[alvo].campo;
   const fx=x=>Math.round(b[0]+(x-a[0])/(a[2]-a[0])*(b[2]-b[0])), fy=y=>Math.round(b[1]+(y-a[1])/(a[3]-a[1])*(b[3]-b[1]));
   const C=JSON.parse(JSON.stringify(o)); (C.bolas||[]).forEach(p=>{p.cx=fx(p.cx);p.cy=fy(p.cy);}); (C.adv||[]).forEach(p=>{p.cx=fx(p.cx);p.cy=fy(p.cy);}); (C.bj||[]).forEach(p=>{p.cx=fx(p.cx);p.cy=fy(p.cy);});
   (C.setas||[]).forEach(p=>{p.x1=fx(p.x1);p.y1=fy(p.y1);p.x2=fx(p.x2);p.y2=fy(p.y2); if(p.qx!=null){p.qx=fx(p.qx);p.qy=fy(p.qy);} });
   (C.textos||[]).forEach(p=>{p.x=fx(p.x);p.y=fy(p.y);}); (C.legs||[]).forEach(p=>{p.x=fx(p.x);p.y=fy(p.y);});
-  C.campoV=2; C.fundo="pitch-full"; return C; }
+  C.campoV=2; C.fundo=alvo; return C; }
 function bolasDoOnze(){ const gk=jogo.onze[0]&&jogo.onze[0].slot; return jogo.onze.map(o=>{ const e=o.slot===gk?ESTILOS.gr:ESTILOS.normal; return {slot:o.slot,cx:o.x,cy:o.y,r:1450,fs:12,fill:e.fill,stroke:e.stroke,sw:e.sw,color:e.color}; }); }
-const FUNDOS={"pitch-full":{campo:[1100,1100,90340,67480]},"b-meio":{campo:[640,8020,67870,62610]},"b-campo":{campo:[2740,11380,81400,63780]},"pitch":{campo:[2740,11380,81400,63780]}};
+const FUNDOS={"pitch-full":{campo:[1100,1100,90340,67480]},"pitch-setores":{campo:[1100,6400,90340,62200]},"b-meio":{campo:[640,8020,67870,62610]},"b-campo":{campo:[2740,11380,81400,63780]},"pitch":{campo:[2740,11380,81400,63780]}};
 const CORES_SETA=[["#000000","Preto"],["#C00000","Vermelho"],["#4F81BD","Azul"],["#9BBB59","Verde"],["#F79646","Laranja"],["#FFC000","Amarelo"]];
 let modoSeta=false, corSeta="#000000";
 const LOGO_A={x:82391,y:446,w:7254,h:6589}, LOGO_B={x:83111,y:1166,w:7254,h:6589};
@@ -56,6 +56,16 @@ function campo(svg,semCab,rect,dims){
     el("path",{d:`M ${cx+(dx||1)*r*(dx?1:0)} ${cy_} A ${r} ${r} 0 0 ${dx*dy>0?1:0} ${cx} ${cy_+dy*r}`,...L},g); });
   el("rect",{x:x0,y:y0,width:w,height:h,...L,"stroke-width":lw*1.3},g);
 }
+/* v112.8: campo com 5 corredores (limites da grande e da pequena área) e 3 terços, legendas por fora: em cima a organização ofensiva, em baixo a defensiva (atacamos para a direita) */
+const TERCOS_OF=["1.º terço · Construção","2.º terço · Ligação / Criação","3.º terço · Finalização / Decisão"];
+const TERCOS_DEF=["1.º terço · Defesa da baliza (bloco baixo)","2.º terço · Equilíbrio (bloco médio)","3.º terço · Pressão (bloco alto)"];
+function campoSetores(svg){ const R=FUNDOS["pitch-setores"].campo, [x0,y0,x1,y1]=R, w=x1-x0, h=y1-y0; campo(svg,true,R);
+  const g=el("g",{},svg), T={stroke:"#7F7F7F","stroke-width":120,"stroke-dasharray":"700 450",fill:"none"};
+  [1,2].forEach(k=>el("line",{x1:x0+k*w/3,x2:x0+k*w/3,y1:y0,y2:y1,...T,stroke:"#1B1A17","stroke-width":160},g));
+  [13.84,24.84,43.16,54.16].forEach(m=>{ const y=y0+m/68*h; el("line",{x1:x0,x2:x1,y1:y,y2:y,...T},g); });
+  const fs=11*PT, txt=(x,y,t,cor)=>{ el("text",{x,y,"text-anchor":"middle","font-size":fs,fill:cor,class:"lbl"},g).textContent=t; };
+  TERCOS_OF.forEach((t,k)=>txt(x0+(k+.5)*w/3,y0-fs*.75,t,"#C00000"));
+  TERCOS_DEF.forEach((t,k)=>txt(x0+(k+.5)*w/3,y1+fs*1.55,t,"#1F497D")); }
 function etiqueta(parent,x,y,txt,fs){ fs=fs||9*PT; const tw=textW(txt,fs,700)+700;
   el("rect",{x:x-tw/2,y,width:tw,height:fs*1.35,rx:300,fill:"rgba(27,26,23,.85)"},parent);
   el("text",{x,y:y+fs*1.0,"text-anchor":"middle","font-size":fs,fill:"#fff",class:"lbl"},parent).textContent=txt; }

@@ -954,10 +954,10 @@ if (n1 !== 13 || n2 !== 11) erros.push("Adversário: substituir o plantel import
     guardaJogo(J0); if (D0) { lancesDb.livre = D0; gravaDoc("lances/livre", D0); } else { delete lancesDb.livre; apagaDoc("lances/livre"); } guardaLocal(); render();
     return { ok, semTroca, fx, segueOnze, ajusta }; });
   if (!v1126.ok || !v1126.semTroca || !v1126.fx || v1126.segueOnze || v1126.ajusta) erros.push("Quadro (v112.6): Quadro Livre ligado ao jogo ou às trocas " + JSON.stringify(v1126));
-  const ecra = await pg.evaluate(() => { setTab("q"); curId = "livre"; render(); return { hint: $("hint").textContent.includes("Quadro livre"), painel: $("q-panel").hidden, tit: document.querySelector(".boardbar h2")?.textContent }; });
+  const ecra = await pg.evaluate(() => { setTab("q"); curId = "livre"; render(); return { hint: $("hint").textContent.includes("Quadro livre"), painel: $("q-panel").hidden, setores: ["Construção", "Pressão (bloco alto)"].every((t) => $("stage").textContent.includes(t)), tit: document.querySelector(".boardbar h2")?.textContent }; });
   await pg.screenshot({ path: join(cap, "quadro-livre.png") });
   await pg.evaluate(() => { curId = lances()[0].id; render(); }); const pVolta = await pg.evaluate(() => !$("q-panel").hidden);
-  if (!ecra.hint || !ecra.painel || !pVolta) erros.push("Quadro (v112.6): Quadro Livre sem a explicação no ecrã " + JSON.stringify(ecra)); }
+  if (!ecra.hint || !ecra.painel || !ecra.setores || !pVolta) erros.push("Quadro (v112.6): Quadro Livre sem a explicação no ecrã " + JSON.stringify(ecra)); }
 // v112.7: jogo arquivado — vídeo gravado no próprio arquivo e lances corrigíveis
 { await pg.evaluate(() => { relArq = "tz1127"; hist.tz1127 = { id: "tz1127", adversario: "Teste", data: "2026-01-01", onze: [{ n: "7", pos: "PL", nome: "Sete" }], suplentes: [], subsReais: [], analise: { regs: [{ id: "r1", parte: 1, seg: 60, eq: "nos", ac: "re", acao: "Remate enquadrado", j: "7", nome: "Sete", x: 0.5, y: 0.5 }], posse: {} } }; folhaVideo(hist.tz1127); });
   await pg.fill("#vd-u", "https://www.youtube.com/watch?v=dQw4w9WgXcQ"); await pg.fill("#vd-1", "0:10"); await pg.click("#vd-ok"); await pg.waitForTimeout(80);

@@ -5,7 +5,7 @@ function lerDoc(d){ const x=d.data(); return x?clone(x):null; }
 function lances(){
   const out=[]; const seen=new Set();
   ESPECIAIS.concat(DEF_LANCES).forEach(d0=>{ let d=d0;
-    if(d0.bolas===null){ d={...d0,bolas:bolasDoOnze()}; if(d0.campoV===2) d=mapaCampo({...d,campoV:1}); }
+    if(d0.bolas===null){ d={...d0,bolas:bolasDoOnze()}; if(d0.campoV===2) d=mapaCampo({...d,campoV:1},d0.fundo); }
     seen.add(d.id); let o=lancesDb[d.id]; if(o&&o.apagado) return;
     if(o&&o.bolas&&d.id==="intervalo"&&o.campoV!==2) o=mapaCampo(o);
     out.push(o&&o.bolas?{...d,...o,original:true}:{...d,original:true}); });

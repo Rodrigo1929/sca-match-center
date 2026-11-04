@@ -32,7 +32,7 @@ function desenha(L,opts={}){
   const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":`Esquema ${L.nome}`});
   const f=el("filter",{id:"sh",x:"-5%",y:"-10%",width:"110%",height:"140%"},el("defs",{},svg));
   el("feDropShadow",{dx:0,dy:300,stdDeviation:220,"flood-opacity":".35"},f);
-  if(L.fundo==="pitch"||L.fundo==="pitch-full") campo(svg,L.semCabecalho,FUNDOS[L.fundo].campo); else el("image",{href:`slides/${L.fundo}.jpg`,x:0,y:0,width:W,height:H,preserveAspectRatio:"none"},svg);
+  if(L.fundo==="pitch-setores") campoSetores(svg); else if(L.fundo==="pitch"||L.fundo==="pitch-full") campo(svg,L.semCabecalho,FUNDOS[L.fundo].campo); else el("image",{href:`slides/${L.fundo}.jpg`,x:0,y:0,width:W,height:H,preserveAspectRatio:"none"},svg);
   if(L.titulo) titulo(svg,L);
   (L.textos||[]).forEach((T,ti)=>desenhaTexto(svg,L,T,ti,opts));
   const {v,base:bv,dups}=calcula(L); cartoesCache=cartoes(); dupsAtual=dups||[];
