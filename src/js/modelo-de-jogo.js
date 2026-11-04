@@ -78,7 +78,7 @@ const M_LS="sca-modelo-v1";
 (function(){ try{ [["400","fonts/rc-400.ttf"],["700","fonts/rc-700.ttf"]].forEach(([w,f])=>{ if(!IMG_DATA[f]||!window.FontFace) return; const ff=new FontFace("RC Modelo",`url(${IMG_DATA[f]})`,{weight:w}); ff.load().then(x=>document.fonts.add(x)).catch(()=>{}); }); }catch(e){} })();
 
 let modelos={}; try{ modelos=JSON.parse(localStorage.getItem(M_LS)||"{}")||{}; }catch(e){ modelos={}; }
-let mCur=null, mT_=0, mEdit=false, mTool="mover", mSetaT="corrida", mZonaCor="#FFC000", mSel=null, mPl=null, mLoop=false, mMult=1, mUndo=[], mDrag=null, mTmp=null;
+let mCur=null, mT_=0, mEdit=false, mTool="mover", mSetaT="corrida", mZonaCor="#FFC000", mSel=null, mPl=null, mLoop=false, mMult=1, mUndo=[], mDrag=null, mTmp=null, mSelS=null;
 try{ mCur=localStorage.getItem("sca-modelo-cur")||null; }catch(e){}
 
 const mId=p=>(p||"m")+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -155,9 +155,15 @@ function vistaQ(Q){ const R=regiaoVista(Q), C=caixaCampo(Q), k=MV.k, dw=(R.rot?R
   const fwd=(bx,by)=>[m[0]*bx+m[2]*by+m[4],m[1]*bx+m[3]*by+m[5]], det=m[0]*m[3]-m[1]*m[2];
   const inv=(sx,sy)=>{ const x=sx-m[4], y=sy-m[5]; return [(m[3]*x-m[2]*y)/det,(-m[1]*x+m[0]*y)/det]; };
   return {...R,s,m,z:mClamp(s,1,1.6),P:(x,y)=>fwd(MX(x),MY(y)),M:(sx,sy)=>{ const [bx,by]=inv(sx,sy); return {x:(bx-MV.ox)/k,y:(by-MV.oy)/k}; },clip:[C.x-14,C.y-14,C.w+28,C.h+28]}; }
-function seta(o,x1,y1,x2,y2,cor,sw,dash,op,attr,zz=1){ const L=Math.hypot(x2-x1,y2-y1); if(L<MK(.8)*zz) return; const ux=(x2-x1)/L, uy=(y2-y1)/L, hl=Math.min(MK(1.7)*zz,L*.6), hw=MK(.65)*zz+sw*.6;
-  const bx=x2-ux*hl, by=y2-uy*hl; o.push({t:"line",x1,y1,x2:bx,y2:by,stroke:"rgba(255,255,255,.75)",sw:sw+MK(.3)*zz,dash,op,cap:"round"});
-  o.push({t:"line",x1,y1,x2:bx,y2:by,stroke:cor,sw,dash,op,cap:dash?"butt":"round",attr});
+/* q = [qx,qy]: ponto de controlo da curva (v112.9); a ponta segue a direção da curva no fim */
+/* ponto da curva no meio (onde fica a pega) e a curva que passa por um ponto M */
+const meioSetaM=s=>s.qx!=null?{x:.25*s.x1+.5*s.qx+.25*s.x2,y:.25*s.y1+.5*s.qy+.25*s.y2}:{x:(s.x1+s.x2)/2,y:(s.y1+s.y2)/2};
+const curvaPorM=(s,M)=>({qx:2*M.x-(s.x1+s.x2)/2,qy:2*M.y-(s.y1+s.y2)/2});
+function seta(o,x1,y1,x2,y2,cor,sw,dash,op,attr,zz=1,q=null){ const L=Math.hypot(x2-x1,y2-y1); if(L<MK(.8)*zz) return;
+  const tx=q?x2-q[0]:x2-x1, ty=q?y2-q[1]:y2-y1, tl=Math.hypot(tx,ty)||1, ux=tx/tl, uy=ty/tl, hl=Math.min(MK(1.7)*zz,L*.6), hw=MK(.65)*zz+sw*.6;
+  const bx=x2-ux*hl, by=y2-uy*hl, ln=(stroke,w,cap,at)=>q?{t:"qline",x1,y1,qx:q[0],qy:q[1],x2:bx,y2:by,stroke,sw:w,dash,op,cap,attr:at}:{t:"line",x1,y1,x2:bx,y2:by,stroke,sw:w,dash,op,cap,attr:at};
+  o.push(ln("rgba(255,255,255,.75)",sw+MK(.3)*zz,"round",undefined));
+  o.push(ln(cor,sw,dash?"butt":"round",attr));
   o.push({t:"poly",pts:[[x2,y2],[bx-uy*hw,by+ux*hw],[bx+uy*hw,by-ux*hw]],fill:cor,op,attr}); }
 /* campo igual ao dos quadros das bolas paradas: riscas brancas e cinzentas, linhas pretas.
    Desenhado em coordenadas base e levado para a vista pela transformação V (as linhas mantêm a grossura) */
@@ -228,9 +234,11 @@ function primsDinamicas(Q,t,ed){ const o=[], n=Q.passos.length; t=mClamp(t,0,n-1
       const [ax,ay]=V.P(a.x,a.y), [bx,by]=V.P(b.x,b.y), d=Math.hypot(bx-ax,by-ay), ux=(bx-ax)/d, uy=(by-ay)/d, rr=Z(pc.eq==="bola"?rb:r), st=pc.eq==="bola"?SETA_T.passe:SETA_T.corrida;
       const cor=pc.eq==="adv"?"#0070C0":st[1]; seta(o,ax+ux*rr,ay+uy*rr,bx-ux*Z(.3),by-uy*Z(.3),cor,Z(st[2]),st[3]?st[3].map(Z):null,opA*.9,null,V.z); }); }
   /* setas manuais do passo */
-  const S2=(s,st,op,attr)=>{ const [x1,y1]=V.P(s.x1,s.y1), [x2,y2]=V.P(s.x2,s.y2); seta(o,x1,y1,x2,y2,st[1],Z(st[2]),st[3]?st[3].map(Z):null,op,attr,V.z); return [x1,y1,x2,y2]; };
-  if(opA>0) A.setas.forEach(s=>{ const [x1,y1,x2,y2]=S2(s,SETA_T[s.t]||SETA_T.corrida,opA,ae?{"data-s":s.id}:null);
-    if(ae) o.push({t:"line",x1,y1,x2,y2,stroke:"rgba(0,0,0,0)",sw:Z(1.6),attr:{"data-s":s.id}}); });
+  const S2=(s,st,op,attr)=>{ const [x1,y1]=V.P(s.x1,s.y1), [x2,y2]=V.P(s.x2,s.y2), q=s.qx!=null?V.P(s.qx,s.qy):null; seta(o,x1,y1,x2,y2,st[1],Z(st[2]),st[3]?st[3].map(Z):null,op,attr,V.z,q); return [x1,y1,x2,y2,q]; };
+  if(opA>0) A.setas.forEach(s=>{ const [x1,y1,x2,y2,q]=S2(s,SETA_T[s.t]||SETA_T.corrida,opA,ae?{"data-s":s.id}:null);
+    if(ae) o.push(q?{t:"qline",x1,y1,qx:q[0],qy:q[1],x2,y2,stroke:"rgba(0,0,0,0)",sw:Z(1.6),attr:{"data-s":s.id}}:{t:"line",x1,y1,x2,y2,stroke:"rgba(0,0,0,0)",sw:Z(1.6),attr:{"data-s":s.id}});
+    /* v112.9: seta selecionada — pegas no início, no fim e no meio (curva) */
+    if(ae&&mSelS===s.id){ const M=meioSetaM(s), [mx,my]=V.P(M.x,M.y); [[x1,y1,1],[x2,y2,2],[mx,my,3]].forEach(([x,y,k])=>o.push({t:"circ",cx:x,cy:y,r:Z(k===3?.9:.75),fill:k===3?"#B8963F":"#FFFFFF",stroke:"#1B1A17",sw:Z(.18),attr:{"data-sh":s.id+":"+k}})); } });
   if(ed&&ed.tmpS) S2(ed.tmpS,SETA_T[mSetaT],.8,null);
   /* jogadores: adversários, jokers, nossos; bolas por cima */
   const ordem=[...Q.pecas.filter(p=>p.eq==="adv"),...Q.pecas.filter(p=>p.eq==="neutro"),...Q.pecas.filter(p=>p.eq==="nos"),...Q.pecas.filter(p=>p.eq==="bola")];
@@ -271,6 +279,7 @@ function primsSvg(L){ const at=p=>p.attr?Object.entries(p.attr).map(([k,v])=>` $
     case "rect": return `<rect x="${mA(p.x)}" y="${mA(p.y)}" width="${mA(p.w)}" height="${mA(p.h)}"${p.rx?` rx="${mA(p.rx)}"`:""} fill="${p.fill||"none"}"${p.fop!=null?` fill-opacity="${mA(p.fop*100)/100}"`:""}${p.stroke?` stroke="${p.stroke}" stroke-width="${mA(p.sw||1)}"`:""}${da(p)}${op(p)}${at(p)}/>`;
     case "circ": return `<circle cx="${mA(p.cx)}" cy="${mA(p.cy)}" r="${mA(p.r)}" fill="${p.fill||"none"}"${p.stroke?` stroke="${p.stroke}" stroke-width="${mA(p.sw||1)}"`:""}${op(p)}${at(p)}/>`;
     case "line": return `<line x1="${mA(p.x1)}" y1="${mA(p.y1)}" x2="${mA(p.x2)}" y2="${mA(p.y2)}" stroke="${p.stroke}" stroke-width="${mA(p.sw)}" stroke-linecap="${p.cap||"butt"}"${da(p)}${op(p)}${at(p)}/>`;
+    case "qline": return `<path d="M ${mA(p.x1)} ${mA(p.y1)} Q ${mA(p.qx)} ${mA(p.qy)} ${mA(p.x2)} ${mA(p.y2)}" fill="none" stroke="${p.stroke}" stroke-width="${mA(p.sw)}" stroke-linecap="${p.cap||"butt"}"${da(p)}${op(p)}${at(p)}/>`;
     case "poly": return `<polygon points="${p.pts.map(q=>mA(q[0])+","+mA(q[1])).join(" ")}" fill="${p.fill}"${p.stroke?` stroke="${p.stroke}" stroke-width="${mA(p.sw||1)}" stroke-linejoin="round"`:""}${op(p)}${at(p)}/>`;
     case "arc": { const x1=p.cx+p.r*Math.cos(p.a0), y1=p.cy+p.r*Math.sin(p.a0), x2=p.cx+p.r*Math.cos(p.a1), y2=p.cy+p.r*Math.sin(p.a1); return `<path d="M ${mA(x1)} ${mA(y1)} A ${mA(p.r)} ${mA(p.r)} 0 ${p.a1-p.a0>Math.PI?1:0} 1 ${mA(x2)} ${mA(y2)}" fill="none" stroke="${p.stroke}" stroke-width="${mA(p.sw)}"/>`; }
     case "text": return `<text x="${mA(p.x)}" y="${mA(p.y)}" font-size="${mA(p.fs)}" font-weight="${p.w||400}" font-family="${MFONT.replace(/"/g,"'")}" fill="${p.fill}"${p.anchor?` text-anchor="${p.anchor}"`:""}${op(p)} pointer-events="none">${esc(p.txt)}</text>`;
@@ -286,6 +295,7 @@ function primsCanvas(cx,L){ L.forEach(p=>{
       if(p.fill&&p.fill!=="none"){ cx.save(); if(p.fop!=null) cx.globalAlpha=p.fop; cx.fillStyle=p.fill; cx.fill(); cx.restore(); } if(p.stroke){ cx.lineWidth=p.sw||1; cx.strokeStyle=p.stroke; cx.stroke(); } break; }
     case "circ": cx.beginPath(); cx.arc(p.cx,p.cy,p.r,0,2*Math.PI); if(p.fill&&p.fill!=="none"){ cx.fillStyle=p.fill; cx.fill(); } if(p.stroke){ cx.lineWidth=p.sw||1; cx.strokeStyle=p.stroke; cx.stroke(); } break;
     case "line": cx.beginPath(); cx.moveTo(p.x1,p.y1); cx.lineTo(p.x2,p.y2); cx.lineCap=p.cap||"butt"; cx.lineWidth=p.sw; cx.strokeStyle=p.stroke; cx.stroke(); break;
+    case "qline": cx.beginPath(); cx.moveTo(p.x1,p.y1); cx.quadraticCurveTo(p.qx,p.qy,p.x2,p.y2); cx.lineCap=p.cap||"butt"; cx.lineWidth=p.sw; cx.strokeStyle=p.stroke; cx.stroke(); break;
     case "poly": cx.beginPath(); p.pts.forEach((q,i)=>i?cx.lineTo(q[0],q[1]):cx.moveTo(q[0],q[1])); cx.closePath(); cx.fillStyle=p.fill; cx.fill(); if(p.stroke){ cx.lineJoin="round"; cx.lineWidth=p.sw||1; cx.strokeStyle=p.stroke; cx.stroke(); } break;
     case "arc": cx.beginPath(); cx.arc(p.cx,p.cy,p.r,p.a0,p.a1); cx.lineWidth=p.sw; cx.strokeStyle=p.stroke; cx.stroke(); break;
     case "text": cx.font=`${p.w||400} ${p.fs}px ${MFONT}`; cx.textAlign=p.anchor==="middle"?"center":"left"; cx.textBaseline="alphabetic"; cx.fillStyle=p.fill; cx.fillText(p.txt,p.x,p.y); break;
@@ -372,26 +382,35 @@ function passoAtual(){ return Math.round(mT_); }
 function editaQ(fn,semRender){ const Q=clone(qAtual()); if(!Q) return; fn(Q); const N=guardaQ(Q); if(!semRender) renderModelo(); return N; }
 function mPt(e){ const p=svgPt(mPl.svg,e); return vistaQ(qAtual()).M(p.x,p.y); }
 function ligaEdicao(svg){
-  svg.addEventListener("pointerdown",e=>{ if(!mEdit||mPl.playing) return; const Q=qAtual(); if(!Q) return; const k=passoAtual(), m=mPt(e), alvo=e.target.closest("[data-p],[data-s],[data-z]");
-    if(alvo&&alvo.dataset.p&&(mTool==="mover"||mTool==="seta")){ const pid=alvo.dataset.p, P=Q.passos[k].pos[pid];
+  svg.addEventListener("pointerdown",e=>{ if(!mEdit||mPl.playing) return; const Q=qAtual(); if(!Q) return; const k=passoAtual(), m=mPt(e), alvo=e.target.closest("[data-sh],[data-p],[data-s],[data-z]");
+    /* v112.9: setas — pegas (início, fim, curva) e arrastar a seta inteira; tocar seleciona, tocar outra vez abre as opções */
+    if(alvo&&alvo.dataset.sh&&mTool==="mover"){ const [sid,qual]=alvo.dataset.sh.split(":"); mDrag={tipo:"setaH",sid,qual:+qual,q:clone(Q)}; }
+    else if(alvo&&alvo.dataset.s&&mTool==="mover"){ const S=Q.passos[k].setas.find(x=>x.id===alvo.dataset.s); if(!S) return; mDrag={tipo:"setaM",sid:S.id,ox:m.x,oy:m.y,s0:clone(S),mov:false,q:clone(Q)}; }
+    else if(alvo&&alvo.dataset.p&&(mTool==="mover"||mTool==="seta")){ const pid=alvo.dataset.p, P=Q.passos[k].pos[pid];
       if(mTool==="seta"){ mDrag={tipo:"seta",x1:P.x,y1:P.y}; mTmp={tmpS:{x1:P.x,y1:P.y,x2:m.x,y2:m.y}}; }
       else { mDrag={tipo:"peca",pid,dx:P.x-m.x,dy:P.y-m.y,ox:P.x,oy:P.y,mov:false,q:clone(Q)};
         /* iPad: dedo pressionado sem mexer = o mesmo menu do botão direito */
         if(e.pointerType!=="mouse"){ const ev={clientX:e.clientX,clientY:e.clientY,preventDefault(){}}; mDrag.lt=setTimeout(()=>{ if(mDrag&&mDrag.tipo==="peca"&&!mDrag.mov){ mDrag=null; menuPecaM(ev,pid); } },550); } }
-    } else if(alvo&&alvo.dataset.s&&mTool==="mover"){ folhaSetaM(alvo.dataset.s); return; }
-    else if(alvo&&alvo.dataset.z&&mTool==="mover"){ const z=Q.passos[k].zonas.find(z=>z.id===alvo.dataset.z); if(!z) return; mDrag={tipo:"zona",zid:z.id,dx:z.x-m.x,dy:z.y-m.y,ox:z.x,oy:z.y,mov:false,q:clone(Q)}; }
+    } else if(alvo&&alvo.dataset.z&&mTool==="mover"){ const z=Q.passos[k].zonas.find(z=>z.id===alvo.dataset.z); if(!z) return; mDrag={tipo:"zona",zid:z.id,dx:z.x-m.x,dy:z.y-m.y,ox:z.x,oy:z.y,mov:false,q:clone(Q)}; }
     else if(mTool==="seta"){ mDrag={tipo:"seta",x1:m.x,y1:m.y}; mTmp={tmpS:{x1:m.x,y1:m.y,x2:m.x,y2:m.y}}; }
     else if(mTool==="zona"){ mDrag={tipo:"zonaN",x1:m.x,y1:m.y}; mTmp={tmpZ:{x1:m.x,y1:m.y,x2:m.x,y2:m.y}}; }
-    else { if(mSel){ mSel=null; mPl.set(k); } return; }
+    else { if(mSel||mSelS){ mSel=null; mSelS=null; mPl.set(k); } return; }
     e.preventDefault(); try{ svg.setPointerCapture(e.pointerId); }catch(x){} });
   svg.addEventListener("pointermove",e=>{ if(!mDrag) return; e.preventDefault(); const m=mPt(e), k=passoAtual();
     if(mDrag.tipo==="peca"){ const Q=mDrag.q, x=mClamp(m.x+mDrag.dx,-3,108), y=mClamp(m.y+mDrag.dy,-2,70); if(Math.hypot(x-mDrag.ox,y-mDrag.oy)>.4) mDrag.mov=true; Q.passos[k].pos[mDrag.pid]={x,y}; mPl.setQ(Q); mPl.set(k); }
     else if(mDrag.tipo==="zona"){ const Q=mDrag.q, z=Q.passos[k].zonas.find(z=>z.id===mDrag.zid); z.x=mClamp(m.x+mDrag.dx,-5,105); z.y=mClamp(m.y+mDrag.dy,-5,68); if(Math.hypot(z.x-mDrag.ox,z.y-mDrag.oy)>.4) mDrag.mov=true; mPl.setQ(Q); mPl.set(k); }
     else if(mDrag.tipo==="seta"){ mTmp.tmpS.x2=m.x; mTmp.tmpS.y2=m.y; mPl.set(k); }
+    else if(mDrag.tipo==="setaH"||mDrag.tipo==="setaM"){ const Q=mDrag.q, S=Q.passos[k].setas.find(x=>x.id===mDrag.sid); if(!S) return;
+      if(mDrag.tipo==="setaH"){ if(mDrag.qual===1){ S.x1=m.x; S.y1=m.y; } else if(mDrag.qual===2){ S.x2=m.x; S.y2=m.y; } else Object.assign(S,curvaPorM(S,m)); }
+      else { const dx=m.x-mDrag.ox, dy=m.y-mDrag.oy, a=mDrag.s0; if(Math.hypot(dx,dy)>.4) mDrag.mov=true; S.x1=a.x1+dx; S.y1=a.y1+dy; S.x2=a.x2+dx; S.y2=a.y2+dy; if(a.qx!=null){ S.qx=a.qx+dx; S.qy=a.qy+dy; } }
+      mPl.setQ(Q); mPl.set(k); }
     else if(mDrag.tipo==="zonaN"){ mTmp.tmpZ.x2=m.x; mTmp.tmpZ.y2=m.y; mPl.set(k); } });
   const fim=e=>{ if(!mDrag) return; const D=mDrag, T=mTmp; mDrag=null; mTmp=null; const k=passoAtual(); if(D.lt) clearTimeout(D.lt);
     if(D.tipo==="peca"){ if(D.mov){ const P=D.q.passos[k].pos[D.pid]; editaQ(Q=>{ Q.passos[k].pos[D.pid]={x:Math.round(P.x*10)/10,y:Math.round(P.y*10)/10}; }); } else { mSel=D.pid; mPl.set(k); folhaPecaM(D.pid); } }
     else if(D.tipo==="zona"){ if(D.mov){ const z=D.q.passos[k].zonas.find(z=>z.id===D.zid); editaQ(Q=>{ const t=Q.passos[k].zonas.find(x=>x.id===D.zid); if(t){ t.x=z.x; t.y=z.y; } }); } else folhaZonaM(D.zid); }
+    else if(D.tipo==="setaM"&&!D.mov){ if(mSelS===D.sid) folhaSetaM(D.sid); else { mSelS=D.sid; mSel=null; mPl.set(k); toast("Seta selecionada · arrasta as pegas (pontas e curva) ou a seta; toca outra vez para opções"); } }
+    else if(D.tipo==="setaH"||D.tipo==="setaM"){ const S=D.q.passos[k].setas.find(x=>x.id===D.sid), r=v=>Math.round(v*10)/10; if(!S) return; mSelS=D.sid;
+      editaQ(Q=>{ const t=Q.passos[k].setas.find(x=>x.id===D.sid); if(!t) return; ["x1","y1","x2","y2"].forEach(c=>t[c]=r(S[c])); if(S.qx!=null){ t.qx=r(S.qx); t.qy=r(S.qy); } }); }
     else if(D.tipo==="seta"){ const s=T.tmpS; if(Math.hypot(s.x2-s.x1,s.y2-s.y1)>2) editaQ(Q=>Q.passos[k].setas.push({id:mId("s"),t:mSetaT,x1:s.x1,y1:s.y1,x2:s.x2,y2:s.y2})); else mPl.set(k); }
     else if(D.tipo==="zonaN"){ const z=T.tmpZ, w=Math.abs(z.x2-z.x1), h=Math.abs(z.y2-z.y1); if(w>2&&h>2) editaQ(Q=>Q.passos[k].zonas.push({id:mId("z"),x:Math.min(z.x1,z.x2),y:Math.min(z.y1,z.y2),w,h,cor:mZonaCor})); else mPl.set(k); } };
   svg.addEventListener("pointerup",fim); svg.addEventListener("pointercancel",fim);
@@ -464,7 +483,9 @@ function folhaPecaM(pid){ const Q=qAtual(), pc=Q&&Q.pecas.find(p=>p.id===pid); i
         if(sl){ const outro=Q.pecas.find(x=>x.id!==pid&&x.eq==="nos"&&x.slot===sl); if(outro){ if(p.slot) outro.slot=p.slot; else delete outro.slot; } p.slot=sl; p.n=""; } else { delete p.slot; p.n=n; } }); }; }); }
 function folhaSetaM(sid){ const Q=qAtual(), k=passoAtual(), S=Q.passos[k].setas.find(s=>s.id===sid); if(!S) return; let t=S.t||"corrida";
   folha(`<h3>Seta · passo ${k+1}</h3><h4>Tipo</h4><div class="seg" id="ms-t">${Object.entries(SETA_T).map(([k_,v])=>`<button data-k="${k_}">${v[0]}</button>`).join("")}</div>
-    <div class="actions"><button class="btn danger l" id="ms-del">Apagar seta</button><button class="btn" id="ms-inv">⇄ Inverter sentido</button><button class="btn primary" data-close>Fechar</button></div>`,(s,fecha)=>{
+    <div class="actions"><button class="btn danger l" id="ms-del">Apagar seta</button><button class="btn" id="ms-inv">⇄ Inverter sentido</button>${S.qx!=null?`<button class="btn" id="ms-reta">― Tirar a curva</button>`:""}<button class="btn primary" data-close>Fechar</button></div>
+    <p class="sub" style="margin:0">Para mexer na seta: com ela selecionada, arrasta as pegas brancas (início e fim) ou a dourada (curva), ou a própria seta para a mudar de sítio.</p>`,(s,fecha)=>{
+    if(s.querySelector("#ms-reta")) s.querySelector("#ms-reta").onclick=()=>{ fecha(); editaQ(Q=>{ const x=Q.passos[k].setas.find(x=>x.id===sid); if(x){ delete x.qx; delete x.qy; } }); };
     const pinta=()=>s.querySelectorAll("#ms-t button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===t)));
     s.querySelectorAll("#ms-t button").forEach(b=>b.onclick=()=>{ t=b.dataset.k; pinta(); editaQ(Q=>{ const x=Q.passos[k].setas.find(x=>x.id===sid); if(x) x.t=t; }); }); pinta();
     s.querySelector("#ms-inv").onclick=()=>editaQ(Q=>{ const x=Q.passos[k].setas.find(x=>x.id===sid); if(x){ [x.x1,x.y1,x.x2,x.y2]=[x.x2,x.y2,x.x1,x.y1]; } });
@@ -509,7 +530,7 @@ function apagaPasso(k0){ const k=k0!=null?k0:passoAtual(), Q=qAtual(); if(!Q||!Q
 function espelhaQ(Q){ const C=clone(Q), M={DD:"DE",DE:"DD",ED:"EE",EE:"ED",MD:"ME",ME:"MD"}; C.id=mId("q"); C.nome=trocaLado(Q.nome)!==Q.nome?trocaLado(Q.nome):Q.nome+" (espelhado)"; C.ordem=Q.ordem+.5;
   /* o jogador acompanha o lado: quem era DD passa a DE e fica com o lugar do DE do onze */
   const slotDe=pos=>{ const os=jogo.onze.filter(o=>o.pos===pos); return os.length===1?os[0].slot:null; };
-  C.pecas.forEach(p=>{ if(p.ang!=null) p.ang=(360-p.ang)%360; if(!M[p.pos]) return; p.pos=M[p.pos]; if(p.eq==="nos"&&p.slot){ const s=slotDe(p.pos); if(s) p.slot=s; } }); C.passos.forEach(P=>{ P.id=mId("p"); Object.values(P.pos).forEach(p=>p.y=68-p.y); P.setas.forEach(s=>{ s.id=mId("s"); s.y1=68-s.y1; s.y2=68-s.y2; }); P.zonas.forEach(z=>{ z.y=68-z.y-z.h; }); P.nota=trocaPal(P.nota||""); }); return C; }
+  C.pecas.forEach(p=>{ if(p.ang!=null) p.ang=(360-p.ang)%360; if(!M[p.pos]) return; p.pos=M[p.pos]; if(p.eq==="nos"&&p.slot){ const s=slotDe(p.pos); if(s) p.slot=s; } }); C.passos.forEach(P=>{ P.id=mId("p"); Object.values(P.pos).forEach(p=>p.y=68-p.y); P.setas.forEach(s=>{ s.id=mId("s"); s.y1=68-s.y1; s.y2=68-s.y2; if(s.qy!=null) s.qy=68-s.qy; }); P.zonas.forEach(z=>{ z.y=68-z.y-z.h; }); P.nota=trocaPal(P.nota||""); }); return C; }
 function moveNaLista(d){ const Q=qAtual(); if(!Q) return; const ls=listaModelos().filter(q=>q.mom===Q.mom&&q.sub===Q.sub), i=ls.findIndex(q=>q.id===Q.id), j=i+d; if(j<0||j>=ls.length) return;
   const A=clone(ls[i]), B=clone(ls[j]); let oa=A.ordem, ob=B.ordem; if(oa===ob){ oa=i; ob=j; } A.ordem=ob; B.ordem=oa; guardaQ(B,true); guardaQ(A); renderModelo(); }
 

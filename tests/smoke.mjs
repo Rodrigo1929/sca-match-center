@@ -214,6 +214,20 @@ await pg.mouse.move(a0.x, a0.y); await pg.mouse.down(); await pg.mouse.move(a0.x
 const a1 = await ecra(idN);
 if (Math.abs(a1.x - (a0.x + 60)) > 6 || Math.abs(a1.y - (a0.y - 40)) > 6) erros.push("Campo rodado: a peça não ficou onde foi largada " + JSON.stringify({ a0, a1 }));
 await pg.screenshot({ path: join(cap, "exercicio-meio-campo.png") });
+// v112.9: tocar numa seta seleciona-a; arrastar a pega do meio faz curva; arrastar a seta muda-a de sítio
+{ await pg.evaluate(() => { mTool = "mover"; editaQ((Q) => Q.passos[0].setas.push({ id: "sz1", t: "corrida", x1: 70, y1: 25, x2: 90, y2: 40 })); });
+  const ctr = async (sel) => { const b = await pg.locator(sel).first().boundingBox(); return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; };
+  const c0 = await ctr("#m-stage svg [data-s='sz1']"); await pg.mouse.click(c0.x, c0.y); await pg.waitForTimeout(120);
+  const sel = await pg.locator("#m-stage svg [data-sh='sz1:3']").count();
+  const h = await ctr("#m-stage svg [data-sh='sz1:3']"); await pg.mouse.move(h.x, h.y); await pg.mouse.down(); await pg.mouse.move(h.x + 40, h.y + 5, { steps: 6 }); await pg.mouse.up(); await pg.waitForTimeout(150);
+  const s1 = await pg.evaluate(() => ({ ...qAtual().passos[0].setas.find((x) => x.id === "sz1") }));
+  await pg.screenshot({ path: join(cap, "exercicio-seta-curva.png") });
+  const c1 = await pg.evaluate(() => { const Q = qAtual(), s = Q.passos[0].setas.find((x) => x.id === "sz1"), t = 0.25, b = (a, q, c) => (1 - t) * (1 - t) * a + 2 * (1 - t) * t * q + t * t * c;
+    const [sx, sy] = vistaQ(Q).P(b(s.x1, s.qx, s.x2), b(s.y1, s.qy, s.y2)), m = document.querySelector("#m-stage > svg").getScreenCTM(); return { x: m.a * sx + m.e, y: m.d * sy + m.f }; });
+  await pg.mouse.move(c1.x, c1.y); await pg.mouse.down(); await pg.mouse.move(c1.x + 30, c1.y + 30, { steps: 6 }); await pg.mouse.up(); await pg.waitForTimeout(150);
+  const s2 = await pg.evaluate(() => { const s = { ...qAtual().passos[0].setas.find((x) => x.id === "sz1") }; editaQ((Q) => { Q.passos[0].setas = Q.passos[0].setas.filter((x) => x.id !== "sz1"); }); mSelS = null; return s; });
+  if (!sel || s1.qx == null || Math.hypot(s1.qx - (s1.x1 + s1.x2) / 2, s1.qy - (s1.y1 + s1.y2) / 2) < 1 || Math.abs(s2.x1 - s1.x1) + Math.abs(s2.y1 - s1.y1) < 0.5 || s2.qx == null)
+    erros.push("Figuras (v112.9): selecionar, curvar ou mover a seta " + JSON.stringify({ sel, s1, s2 })); }
 await pg.click("#mf-volta"); await pg.waitForSelector("#x-stage > svg");
 const fg = await pg.evaluate(() => ({ pecas: Object.values(exercicios)[0].figura?.quadro?.pecas?.length, vista: Object.values(exercicios)[0].figura?.quadro?.vista, modelos: listaModelos().length, x: !document.getElementById("view-x").hidden, fig: mFig }));
 if (fg.pecas !== 11 || fg.vista !== "meio" || fg.modelos !== 1 || !fg.x || fg.fig) erros.push("Exercícios: figura mal gravada ou fora do sítio " + JSON.stringify(fg));
@@ -972,6 +986,18 @@ if (n1 !== 13 || n2 !== 11) erros.push("Adversário: substituir o plantel import
     const go = !!(r && r.go), norm = !!normAn(clone(an)).regs.find((x) => x.id === r.id).go, est = estatJogo(an.regs).t.nos.go, desc = descReg(r);
     guardaAn(A0); guardaVivo(V0); return { vv, ok, go, norm, est, desc }; });
   if (v1127g.vv !== 1 || !v1127g.ok || !v1127g.go || !v1127g.norm || v1127g.est < 1 || !/Grande oportunidade/.test(v1127g.desc)) erros.push("Pós-jogo (v112.7): grandes oportunidades " + JSON.stringify(v1127g)); }
+// v112.9: pesquisa de exercícios por palavras soltas (sem acentos, plurais), mais palavras e nome primeiro
+{ const v1129 = await pg.evaluate(() => { const F0 = { ...xFiltro }, base = { formato: "", espaco: { txt: "" }, objetivos: "", objEsp: [], comportamentos: [], condicionantes: [], variantes: [], material: [], tipo: "", momento: "" };
+    exercicios.zt1 = { ...base, id: "zt1", nome: "Rondo de pressão 6×2", descricao: "" }; exercicios.zt2 = { ...base, id: "zt2", nome: "Jogo reduzido", descricao: "Muita pressao alta" }; exercicios.zt3 = { ...base, id: "zt3", nome: "Corrida contínua", descricao: "aeróbio" };
+    Object.assign(xFiltro, { q: "Rondos pressão", mom: "", tipo: "", pr: "" }); const ids = exFiltrados().map((E) => E.id); Object.assign(xFiltro, { q: "6x2" }); const fx = exFiltrados().map((E) => E.id);
+    ["zt1", "zt2", "zt3"].forEach((k) => delete exercicios[k]); Object.assign(xFiltro, F0); return { ids: ids.filter((i) => i.startsWith("zt")), fx: fx.includes("zt1") }; });
+  if (v1129.ids[0] !== "zt1" || !v1129.ids.includes("zt2") || v1129.ids.includes("zt3") || !v1129.fx) erros.push("Exercícios (v112.9): pesquisa por palavras " + JSON.stringify(v1129)); }
+// v112.9: setas das figuras com curva (desenho em curva, pegas na seta selecionada, a curva passa pelo ponto arrastado)
+{ const v1129s = await pg.evaluate(() => { const Q = normQ({ id: "fx:t", nome: "t", cab: null, fig: true, vista: "inteiro", pecas: [], passos: [{ id: "p1", nota: "", pos: {}, setas: [{ id: "s1", t: "corrida", x1: 10, y1: 10, x2: 40, y2: 30, qx: 30, qy: 5 }], zonas: [] }], trocas: [] });
+    const S0 = mSelS; mSelS = "s1"; const svg = primsSvg(primsDinamicas(Q, 0, { edit: true })); mSelS = S0;
+    const s = { x1: 0, y1: 0, x2: 20, y2: 0 }, M = { x: 10, y: 6 }, c = { ...s, ...curvaPorM(s, M) }, mm = meioSetaM(c);
+    return { curva: /<path d="M [^"]* Q /.test(svg), pegas: ["s1:1", "s1:2", "s1:3"].every((k) => svg.includes(`data-sh="${k}"`)), passa: Math.abs(mm.x - 10) < 1e-6 && Math.abs(mm.y - 6) < 1e-6 }; });
+  if (!v1129s.curva || !v1129s.pegas || !v1129s.passa) erros.push("Figuras (v112.9): setas com curva " + JSON.stringify(v1129s)); }
 // v112.4: mudar o nº passa também a convocatória, o onze e o Encaixe do jogo atual (sem repetidos); com registos no Ao vivo com o nº antigo, o jogo fica como está
 { const v1124 = await pg.evaluate(() => { const J0 = clone(jogo), on = J0.onze.map((o, i) => i ? o : { ...o, n: "93" });
     guardaJogo({ ...J0, eventos: [], subs: [], onze: on, suplentes: ["91", "92"], encaixe: { nos: { 93: { x: 1, y: 1 } }, adv: {} } });

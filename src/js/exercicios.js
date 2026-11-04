@@ -120,11 +120,17 @@ function folhaImagemEx(id){ const E=exercicios[id]; if(!E) return; const im=E.fi
 function xPara(){ if(xPl&&xPl.playing) xPl.pause(); }
 
 /* ---------- lista, pesquisa e filtros ---------- */
-function exFiltrados(){ const q=xFiltro.q.trim().toLowerCase(), fp=xFiltro.pr||"";
+/* v112.9: pesquisa por palavras soltas (sem acentos, plurais, «x» = «×»); aparecem os que têm alguma palavra, primeiro os que têm mais e no nome */
+const pesqNorm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/×/g,"x");
+const PAL_VAZIAS=new Set(["de","da","do","das","dos","com","sem","em","no","na","nos","nas","e","a","o","as","os","um","uma","para","por","ao"]);
+const palavrasPesq=q=>pesqNorm(q).split(/[^a-z0-9x+]+/).filter(w=>w.length>=2&&!PAL_VAZIAS.has(w)).map(w=>w.length>4?w.replace(/(oes|aes|es|s)$/,""):w);
+function pontosPesq(E,ws){ const C=[[5,[E.nome]],[3,[E.formato,catEx(E),rotuloDe(TIPOS_EX,E.tipo)]],[2,[E.objetivos,...E.objEsp]],[1,[E.espaco.txt,E.descricao,...E.comportamentos,...E.condicionantes,...E.variantes,...E.material]]].map(([p,t])=>[p,pesqNorm(t.join(" "))]);
+  let n=0, pts=0; ws.forEach(w=>{ const m=C.find(([,t])=>t.includes(w)); if(m){ n++; pts+=m[0]; } }); return n*100+pts; }
+function exFiltrados(){ const ws=palavrasPesq(xFiltro.q), fp=xFiltro.pr||"", pt={};
   return Object.values(exercicios).filter(E=>(!xFiltro.mom||E.momento===xFiltro.mom)&&(!xFiltro.tipo||E.tipo===xFiltro.tipo)
     &&(!fp||(fp==="-"?prVazio(E.princ):Object.keys(codsLinha(normPr(E.princ))).includes(fp)))
-    &&(!q||[E.nome,E.formato,E.espaco.txt,E.descricao,E.objetivos,...E.objEsp,rotuloDe(TIPOS_EX,E.tipo),catEx(E),...E.comportamentos,...E.variantes,...E.material].join(" ").toLowerCase().includes(q)))
-    .sort((a,b)=>a.nome.localeCompare(b.nome,"pt")); }
+    &&(!ws.length||(pt[E.id]=pontosPesq(E,ws))>0))
+    .sort((a,b)=>(pt[b.id]||0)-(pt[a.id]||0)||a.nome.localeCompare(b.nome,"pt")); }
 function guardaFiltro(){ try{ localStorage.setItem("sca-ex-filtro",JSON.stringify(xFiltro)); }catch(e){} }
 function renderExFiltros(){ const bx=$("x-filtros"); if($("x-q")) return;
   bx.innerHTML=`<input type="search" id="x-q" placeholder="Pesquisar exercícios…" aria-label="Pesquisar exercícios">
