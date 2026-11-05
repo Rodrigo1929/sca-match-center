@@ -242,6 +242,13 @@ await pg.screenshot({ path: join(cap, "exercicio-figura.png") });
 await pg.click("#x-dup"); await pg.waitForTimeout(150);
 const nEx = () => pg.evaluate(() => Object.keys(exercicios).length);
 if ((await nEx()) !== 2) erros.push("Exercícios: Duplicar devia criar uma cópia");
+// v112.19: setas anterior / seguinte andam pela ordem da lista, sem scroll
+{ const ordem = await pg.evaluate(() => [...document.querySelectorAll("#x-nav button[data-id]")].map((b) => b.dataset.id));
+  await pg.evaluate((id) => abreEx(id), ordem[0]);
+  const a0 = await pg.evaluate(() => ({ ant: $("x-ant").disabled, seg: $("x-seg").disabled }));
+  await pg.click("#x-seg"); const c1 = await pg.evaluate(() => xCur);
+  await pg.click("#x-ant"); const c0 = await pg.evaluate(() => xCur);
+  if (ordem.length !== 2 || !a0.ant || a0.seg || c1 !== ordem[1] || c0 !== ordem[0]) erros.push("Exercícios (v112.19): setas anterior/seguinte " + JSON.stringify({ ordem, a0, c1, c0 })); }
 await pg.click("#x-nav button[aria-current='true']", { button: "right" }); await pg.click(".mmenu button.perigo"); await pg.waitForTimeout(150);
 if ((await nEx()) !== 1) erros.push("Exercícios: o botão direito devia apagar");
 await pg.click(".toast button"); await pg.waitForTimeout(150);

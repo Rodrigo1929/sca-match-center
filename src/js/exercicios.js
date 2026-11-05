@@ -213,16 +213,19 @@ function renderExNav(ls,E){ const nav=$("x-nav"), tot=Object.keys(exercicios).le
 function renderEx(){ const v=$("view-x"); if(!v||v.hidden) return; renderExFiltros();
   const ls=exFiltrados(); let E=exercicios[xCur]||null; if(!E){ E=ls[0]||Object.values(exercicios)[0]||null; xCur=E?E.id:null; }
   try{ localStorage.setItem("sca-ex-cur",xCur||""); }catch(e){}
-  renderExNav(ls,E); renderExFicha(E); renderExFigura(E); renderExPainel(E); }
+  renderExNav(ls,E); renderExFicha(E,PARTES.flatMap(([pk])=>ls.filter(x=>x.parte===pk))); renderExFigura(E); renderExPainel(E); }
 function abreEx(id){ if(exercicios[id]) xCur=id; renderEx(); }
 const linhasHtml=(a,ord)=>a.length?`<${ord?"ol":"ul"}>${a.map(x=>`<li>${esc(x)}</li>`).join("")}</${ord?"ol":"ul"}>`:"";
-function renderExFicha(E){ const bx=$("x-ficha"), bar=$("x-bar"), tg=$("x-tag");
+function renderExFicha(E,ordem=[]){ const bx=$("x-ficha"), bar=$("x-bar"), tg=$("x-tag");
   if(!E){ $("x-tit").textContent="Exercícios"; tg.hidden=true; bar.innerHTML="";
     bx.innerHTML=`<div class="m-vazio"><b>Ainda não há exercícios no repositório.</b><span>Cada exercício tem a ficha da Unidade de Treino: espaço, duração, objetivos, descrição, variantes e figura. Mais tarde, as UT vão buscar os exercícios aqui.</span><button class="btn primary" id="x-novo2">+ Criar o primeiro exercício</button></div>`;
     $("x-novo2").onclick=()=>folhaEx(null); return; }
   const P=parteDe(E.parte);
   $("x-tit").textContent=E.nome; tg.hidden=false; tg.textContent=P[1].toUpperCase(); tg.style.background=P[2];
-  bar.innerHTML=`<button class="btn sm" id="x-ed">✎ Editar ficha</button><button class="btn sm" id="x-fig">✎ ${temFigura(E)?"Editar":"Desenhar"} figura</button><button class="btn sm" id="x-img">🖼 Imagem</button><button class="btn sm" id="x-dup">⧉ Duplicar</button><button class="btn sm" id="x-pdf">⬇ PDF</button>`;
+  /* v112.19: anterior / seguinte pela ordem da lista (com os filtros), sem andar com o scroll */
+  const i=ordem.findIndex(x=>x.id===E.id), ant=i>0?ordem[i-1]:null, seg=i>=0&&i<ordem.length-1?ordem[i+1]:null;
+  bar.innerHTML=`<button class="btn sm" id="x-ant" aria-label="Exercício anterior" title="${ant?esc(ant.nome):""}"${ant?"":" disabled"}>‹ Anterior</button><button class="btn sm" id="x-seg" aria-label="Exercício seguinte" title="${seg?esc(seg.nome):""}"${seg?"":" disabled"}>Seguinte ›</button>${i>=0?`<span class="sub" style="align-self:center">${i+1} de ${ordem.length}</span>`:""}<button class="btn sm" id="x-ed">✎ Editar ficha</button><button class="btn sm" id="x-fig">✎ ${temFigura(E)?"Editar":"Desenhar"} figura</button><button class="btn sm" id="x-img">🖼 Imagem</button><button class="btn sm" id="x-dup">⧉ Duplicar</button><button class="btn sm" id="x-pdf">⬇ PDF</button>`;
+  $("x-ant").onclick=()=>{ if(ant){ xCur=ant.id; renderEx(); } }; $("x-seg").onclick=()=>{ if(seg){ xCur=seg.id; renderEx(); } };
   $("x-ed").onclick=()=>folhaEx(E.id); $("x-fig").onclick=()=>{ xPara(); mEntraFig(E.id); }; $("x-img").onclick=()=>folhaImagemEx(E.id); $("x-dup").onclick=()=>duplicaEx(E.id);
   $("x-pdf").onclick=e=>guardaPdfEx(E.id,e.currentTarget);
   bx.innerHTML=fichaHtml(E,E.n?"· Nº "+E.n:""); }
