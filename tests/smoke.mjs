@@ -700,6 +700,13 @@ const rjc = await pg.evaluate(async () => { const G = hist.Jtestearq, R = relJog
   for (const k of js) soma += (await pdfRelJog(G, k, R)).getNumberOfPages(); const c = await pdfCompletoRelJog(G, R); return { np: c.getNumberOfPages(), soma, js: js.length }; });
 const [dPdfC] = await Promise.all([pg.waitForEvent("download", { timeout: 120000 }), pg.click("#rp-pdf")]);
 if (rjc.np !== rjc.soma || rjc.js < 1 || !/relatorio_completo.*\.pdf$/.test(dPdfC.suggestedFilename())) erros.push("Relatório para jogadores (v112.10): PDF completo " + JSON.stringify({ ...rjc, f: dPdfC.suggestedFilename() }));
+// v112.15: na pré-visualização, exportar só o jogador escolhido (PDF e ecrãs)
+await pg.evaluate(() => { const i = [null, ...jogadoresRel(hist.Jtestearq)].indexOf("9"); document.querySelector(`#rp-q [data-i="${i}"]`).click(); });
+await pg.waitForFunction(() => $("rp-1p").textContent.includes("só de 9"));
+const [d1p] = await Promise.all([pg.waitForEvent("download", { timeout: 120000 }), pg.click("#rp-1p")]);
+const [d1e] = await Promise.all([pg.waitForEvent("download", { timeout: 120000 }), pg.click("#rp-1e")]);
+const n9 = await pg.evaluate(() => nomeFichRel(hist.Jtestearq, alcunhaRel(hist.Jtestearq, "9")));
+if (d1p.suggestedFilename() !== n9 + ".pdf" || d1e.suggestedFilename() !== n9 + "_ecras.zip") erros.push("Relatório para jogadores (v112.15): só um jogador " + JSON.stringify({ p: d1p.suggestedFilename(), e: d1e.suggestedFilename(), n9 }));
 const [dZip] = await Promise.all([pg.waitForEvent("download", { timeout: 120000 }), (async () => { await pg.click("#rp-ok"); await pg.click("#rp-ok"); })()]);
 await pg.waitForTimeout(300);
 const rjx = await pg.evaluate(() => { const R = relJogDe(hist.Jtestearq); return R.exportado.map((x) => x.versao + ":" + (x.n > 2)).join(","); });

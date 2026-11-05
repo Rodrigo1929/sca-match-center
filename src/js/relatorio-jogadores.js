@@ -192,15 +192,25 @@ function folhaPreviewRelJog(G,id){ const R=relJogs[id]||normRelJog({id}), js=jog
   const rot=k=>k?`${k} ${alcunhaRel(G,k)}`:"Grupo";
   folha(`<h3>Pré-visualização · vs ${esc(G.adversario||"")}</h3><p class="sub" style="margin:0">Vê os ecrãs do grupo e de cada jogador (o PDF tem o mesmo conteúdo). ✓ = já visto.</p>
     <div class="chips" id="rp-q">${quem.map((k,i)=>`<button class="chip" data-i="${i}">${esc(rot(k))}</button>`).join("")}</div>
+    <div class="actions" style="justify-content:flex-start;margin:0"><button class="btn sm" id="rp-1p">⬇ PDF só do grupo</button><button class="btn sm" id="rp-1e">⬇ Ecrãs só do grupo</button></div>
     <div id="rp-v" class="rp-v"><p class="sub">A preparar…</p></div><p class="sub" id="rp-st" style="margin:0"></p>
-    <div class="actions"><button class="btn" id="rp-volta">Voltar</button><button class="btn" id="rp-x" hidden>Cancelar</button><button class="btn" id="rp-pdf">⬇ PDF completo (equipa + todos os jogadores)</button><button class="btn primary" id="rp-ok">✓ Aprovar e exportar</button></div>`,(s,fecha)=>{
+    <div class="actions"><button class="btn" id="rp-volta">Voltar</button><button class="btn" id="rp-x" hidden>Cancelar</button><button class="btn" id="rp-pdf">⬇ PDF completo (equipa técnica: grupo + todos)</button><button class="btn primary" id="rp-ok">✓ Aprovar e exportar</button></div>`,(s,fecha)=>{
     const q=x=>s.querySelector(x);
-    const mostra=async i=>{ cur=i; const k=quem[i]; s.querySelectorAll("#rp-q .chip").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.i===i))); q("#rp-v").innerHTML=`<p class="sub">A preparar ${esc(rot(k))}…</p>`;
+    const mostra=async i=>{ cur=i; const k=quem[i], so=k?"só de "+rot(k):"só do grupo"; q("#rp-1p").textContent="⬇ PDF "+so; q("#rp-1e").textContent="⬇ Ecrãs "+so; s.querySelectorAll("#rp-q .chip").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.i===i))); q("#rp-v").innerHTML=`<p class="sub">A preparar ${esc(rot(k))}…</p>`;
       try{ if(!cache[i]) cache[i]=(await ecrasRelJog(G,k,R)).map(cv=>cv.toDataURL("image/jpeg",.7)); if(cur!==i) return;
         q("#rp-v").innerHTML=cache[i].map((u,j)=>`<img src="${u}" alt="${esc(rot(k))} · ecrã ${j+1}">`).join(""); vistos.add(i);
         const b=s.querySelector(`#rp-q [data-i="${i}"]`); if(b&&!b.textContent.startsWith("✓")) b.textContent="✓ "+b.textContent; }
       catch(e){ q("#rp-v").innerHTML=`<p class="sub">Não consegui preparar (${esc(e&&e.message||"erro")}).</p>`; } };
     s.querySelectorAll("#rp-q .chip").forEach(b=>b.onclick=()=>mostra(+b.dataset.i)); mostra(0);
+    /* v112.15: só o jogador escolhido (para lhe enviar o individual); o completo fica para a equipa técnica */
+    const um=async ecras=>{ const k=quem[cur], st=q("#rp-st"), bs=[q("#rp-1p"),q("#rp-1e")], base=nomeFichRel(G,k?alcunhaRel(G,k):"grupo"); bs.forEach(b=>b.disabled=true); st.textContent=`A preparar ${rot(k)}…`;
+      try{ if(ecras){ const ec=await ecrasRelJog(G,k,R), fs=[]; for(let j=0;j<ec.length;j++) fs.push({nome:`${base}_${j+1}.jpg`,dados:await blobBytes(await cvJpeg(ec[j]))});
+          await guardaFicheiro(base+"_ecras.zip",zipFicheiros(fs),"application/zip"); }
+        else await guardaFicheiro(base+".pdf",new Uint8Array((await pdfRelJog(G,k,R)).output("arraybuffer")),"application/pdf");
+        st.textContent=`${rot(k)}: ${ecras?"ecrãs":"PDF"} guardado.`; }
+      catch(e){ st.textContent=e&&e.code==="declined"?"":"Não foi possível ("+((e&&(e.code||e.message))||"erro")+")."; }
+      bs.forEach(b=>b.disabled=false); };
+    q("#rp-1p").onclick=()=>um(false); q("#rp-1e").onclick=()=>um(true);
     q("#rp-volta").onclick=()=>{ if(ctl) ctl.cancelado=true; fecha(); folhaRelJog(G); };
     q("#rp-x").onclick=()=>{ if(ctl) ctl.cancelado=true; };
     q("#rp-pdf").onclick=async()=>{ ctl={cancelado:false}; const b=q("#rp-pdf"), st=q("#rp-st"); b.disabled=true; q("#rp-x").hidden=false;
