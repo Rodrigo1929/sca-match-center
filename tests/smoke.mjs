@@ -677,6 +677,11 @@ await pg.click("#rj-g [data-k='per']"); await pg.waitForSelector("#rj-l [data-r]
 await pg.click("#rj-g [data-k='golo']"); await pg.waitForTimeout(50); if (await pg.locator("#rj-l [data-r]").count()) await pg.locator("#rj-l [data-r]").first().click();
 await pg.fill("#rj-i textarea[data-k='9']", "Boa pressão. Atenção às receções."); await pg.screenshot({ path: join(cap, "relatorio-jogadores-folha.png") });
 await pg.click("#rj-ok"); await pg.waitForTimeout(100);
+// v112.12: escolher todos os lances de uma vez (e tirar todos com 2 toques), sem guardar
+{ await pg.click("#a-jpdf"); await pg.waitForSelector("#rj-ta"); const n = () => pg.evaluate(() => +(document.querySelector("#rj-c").textContent.match(/\d+/) || [0])[0]);
+  const tot = await pg.evaluate(() => +document.querySelector("#rj-ta").textContent.match(/\((\d+)\)/)[1]); await pg.click("#rj-ta"); const a1 = await n();
+  await pg.click("#rj-tn"); await pg.click("#rj-tn"); const a2 = await n(); await pg.click("#sheet-root [data-close]"); await pg.waitForTimeout(80);
+  if (!tot || a1 !== tot || a2 !== 0) erros.push("Relatório para jogadores (v112.12): selecionar todos os lances " + JSON.stringify({ tot, a1, a2 })); }
 const rj = await pg.evaluate(async () => { const G = hist.Jtestearq, R = relJogDe(G), outrosNomes = (G.onze || []).filter((o) => o.n !== "9" && o.nome).map((o) => o.nome);
   G.video = { url: "https://www.youtube.com/watch?v=abcdefghijk", k1: 30, k2: 3000, antes: 10 };
   const g = await pdfRelJog(G, null, R), i = await pdfRelJog(G, "9", R), gt = g.output(), it = i.output();
@@ -1010,6 +1015,15 @@ if (n1 !== 13 || n2 !== 11) erros.push("Adversário: substituir o plantel import
   const v11210 = await pg.evaluate(({ ut, lid, ex, cop }) => { const l = uts[ut].exercicios.find((x) => x.id === lid), r = { nome: l.copia.nome, fmt: l.copia.formato, repo: exercicios[ex] && exercicios[ex].nome, aj: AJUSTES_DIA.includes("nome") };
     editaUT((U) => { const x = U.exercicios.find((y) => y.id === lid); x.copia = cop; }); return r; }, l0);
   if (v11210.nome !== "Título só desta UT" || v11210.fmt !== "GR+7×7+GR" || v11210.repo !== l0.nome || !v11210.aj) erros.push("UT (v112.10): título e formato nesta UT " + JSON.stringify(v11210)); } }
+// v112.12: PDF «Ações por atleta» — índice + uma página por atleta (por nº), coletivo e adversário no fim, com ligação ao vídeo
+{ const ap = await pg.evaluate(async () => { const R0 = relArq; const rg = (id, parte, seg, eq, ac, j, go) => ({ id, parte, seg, eq, ac, acao: ac, j, nome: j === "7" ? "Sete" : j ? "Dez" : "", x: .5, y: .5, ...(go ? { go: true } : {}) });
+    hist.tz11212 = { id: "tz11212", adversario: "Teste AP", data: "2026-01-02", resultado: { nos: "2", eles: "1" }, onze: [{ n: "7", nome: "Sete" }, { n: "10", nome: "Dez" }], suplentes: [], subsReais: [], video: { url: "https://youtu.be/abcdefghijk", k1: 30, k2: 3000 },
+      analise: { regs: [rg("a", 1, 60, "nos", "re", "10"), rg("b", 1, 30, "nos", "golo", "7", true), rg("c", 2, 90, "nos", "re", "7"), rg("d", 1, 100, "nos", "pd", ""), rg("e", 2, 10, "eles", "re", "")], posse: {} } };
+    relArq = "tz11212"; const F = fonteRel(), doc = await acoesAtletaPdf(F), raw = doc.output(), i7 = raw.includes("Sete");
+    relArq = R0; return { n: doc.getNumberOfPages(), sete: i7, dez: raw.includes("Dez"), ordem: raw.indexOf("Dez") > raw.indexOf("Sete"), video: (raw.match(/youtu/g) || []).length >= 5, adv: raw.includes("Teste AP"), col: raw.includes("Coletivo") }; });
+  const [dAp] = await Promise.all([pg.waitForEvent("download", { timeout: 120000 }), pg.evaluate(() => { relArq = "tz11212"; const F = fonteRel(); return guardaAcoesAtleta(F); })]);
+  await pg.evaluate(() => { delete hist.tz11212; relArq = ""; });
+  if (ap.n !== 5 || !ap.sete || !ap.dez || !ap.video || !ap.adv || !ap.col || !/^Acoes_por_atleta_SCA_vs_Teste_AP_2026-01-02\.pdf$/.test(dAp.suggestedFilename())) erros.push("Relatório (v112.12): PDF ações por atleta " + JSON.stringify({ ...ap, f: dAp.suggestedFilename() })); }
 // v112.11: Quadro Livre com fases; Quadro Dinâmico (zonas pelas linhas do adversário, refeitas ao arrastar); variações da figura por formato
 { const qd = await pg.evaluate(() => { setTab("q"); curId = "livre"; render(); const fases = ["1.ª fase · Construção", "1.ª fase · Pressão (bloco alto)", "3.ª fase · Defesa da baliza"].every((t) => $("stage").textContent.includes(t));
     const ids = lances().map((l) => l.id); curId = "espacos"; render(); const L = lanceAtual();

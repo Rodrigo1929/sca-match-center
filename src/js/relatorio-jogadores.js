@@ -170,7 +170,8 @@ function folhaRelJog(G){ if(!G){ toast("Sem jogo."); return; } const R=clone(rel
     <p class="sub" style="margin:0">Coletivo para o grupo e um individual por jogador (PDF A4 e ecrãs 1080×1920 para o WhatsApp, tudo num .zip). Nunca saem quadros, Modelo de Jogo, adversário, notas nem dados de treino.${R.exportado.length?` <b>Última exportação: versão ${R.exportado[R.exportado.length-1].versao} a ${esc(dataHora(R.exportado[R.exportado.length-1].em))}.</b>`:""}</p>
     <label class="f">Mensagem da equipa técnica (3 a 4 pontos-chave)<textarea id="rj-m" rows="4" placeholder="• …">${esc(R.msg)}</textarea></label>
     <h4 style="margin-bottom:0">Lances em vídeo <span class="sub" id="rj-c"></span></h4>${G.video&&ytId(G.video.url)?"":`<p class="mc-av" style="margin:0">Este jogo não tem vídeo do YouTube configurado: os lances saem sem QR.</p>`}
-    <div class="seg" id="rj-g">${grupos.map(([k,n])=>`<button data-k="${k}">${n}</button>`).join("")}</div><div id="rj-l" class="lv-lista"></div>
+    <div class="seg" id="rj-g">${grupos.map(([k,n])=>`<button data-k="${k}">${n}</button>`).join("")}</div>
+    <div class="actions" style="justify-content:flex-start;margin:0"><button class="btn sm" id="rj-tg">✓ Todos deste tipo</button><button class="btn sm" id="rj-ta">✓ Todos os lances (${regs.length})</button><button class="btn sm ghost" id="rj-tn">✕ Tirar todos</button></div><div id="rj-l" class="lv-lista"></div>
     <h4 style="margin-bottom:0">Mensagens individuais <span class="sub">(opcional)</span></h4><div id="rj-i" class="rj-ind">${js.map(k=>`<label class="f"><span><b>${esc(k)}</b> ${esc(nomeJogRel(G,k))} · ${minutosDe(G,k)}'</span><textarea rows="2" data-k="${esc(k)}">${esc(R.msgInd[k]||"")}</textarea></label>`).join("")||`<p class="sub">Sem jogadores neste jogo.</p>`}</div>
     <div class="actions"><button class="btn" data-close>Fechar</button><button class="btn" id="rj-ok">Guardar</button><button class="btn primary" id="rj-pv">👁 Pré-visualizar e exportar</button></div>`,(s,fecha)=>{
     const q=x=>s.querySelector(x);
@@ -181,6 +182,10 @@ function folhaRelJog(G){ if(!G){ toast("Sem jogo."); return; } const R=clone(rel
       q("#rj-l").querySelectorAll("[data-r]").forEach(c=>c.onchange=()=>{ const id=c.dataset.r; if(c.checked) R.lances.push({rid:id,titulo:""}); else R.lances=R.lances.filter(y=>y.rid!==id); pinta(); });
       q("#rj-l").querySelectorAll("[data-t]").forEach(t=>t.oninput=()=>{ const l=R.lances.find(y=>y.rid===t.dataset.t); if(l) l.titulo=t.value; }); };
     s.querySelectorAll("#rj-g button").forEach(b=>b.onclick=()=>{ gr=b.dataset.k; pinta(); }); pinta();
+    /* v112.12: escolher todos de uma vez (os já escolhidos mantêm o título) */
+    const poe=ls=>{ ls.forEach(x=>{ if(!R.lances.some(y=>y.rid===x.id)) R.lances.push({rid:x.id,titulo:""}); }); R.lances.sort((a,b)=>{ const A=regs.find(x=>x.id===a.rid), B=regs.find(x=>x.id===b.rid); return !A||!B?0:(A.parte-B.parte)||(A.seg-B.seg); }); pinta(); };
+    q("#rj-tg").onclick=()=>poe(regs.filter(grupos.find(g=>g[0]===gr)[2])); q("#rj-ta").onclick=()=>poe(regs);
+    confirma2(q("#rj-tn"),"Toca outra vez para tirar todos",()=>{ R.lances=[]; pinta(); });
     q("#rj-ok").onclick=()=>{ le(); fecha(); toast("Relatório guardado"); };
     q("#rj-pv").onclick=()=>{ const N=le(); fecha(); folhaPreviewRelJog(G,N.id); }; }); }
 function folhaPreviewRelJog(G,id){ const R=relJogs[id]||normRelJog({id}), js=jogadoresRel(G), quem=[null,...js], vistos=new Set(), cache={}; let cur=null, ctl=null;

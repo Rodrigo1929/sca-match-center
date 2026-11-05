@@ -52,14 +52,49 @@ async function relatorioPdf(G){
   if(G.obs){ titulo("Observações"); doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(...INK); const ls=doc.splitTextToSize(G.obs,PW-2*M); doc.text(ls,M,y); y+=ls.length*12; }
   const np=doc.getNumberOfPages(); for(let i=1;i<=np;i++){ doc.setPage(i); T(`SC Angrense · Relatório de jogo vs ${G.adversario||""} · ${i}/${np}`,PW/2,820,{s:7.5,c:MUT,al:"center"}); }
   return doc; }
-async function guardaRelatorio(G,botao){ if(botao) botao.disabled=true; toast("A gerar o relatório…");
-  try{ const doc=await relatorioPdf(G); const buf=doc.output("arraybuffer");
-    const nomeF=`Relatorio_SCA_vs_${(G.adversario||"jogo").replace(/[^\wÀ-ÿ-]+/g,"_")}_${G.data||new Date().toISOString().slice(0,10)}.pdf`;
+async function guardaRelatorio(G,botao){ return guardaPdfRel(()=>relatorioPdf(G),`Relatorio_SCA_vs_${(G.adversario||"jogo").replace(/[^\wÀ-ÿ-]+/g,"_")}_${G.data||new Date().toISOString().slice(0,10)}.pdf`,botao); }
+async function guardaPdfRel(gera,nomeF,botao){ if(botao) botao.disabled=true; toast("A gerar o relatório…");
+  try{ const doc=await gera(); const buf=doc.output("arraybuffer");
     let dl=null; try{ dl=await window.claude.use("downloads"); }catch(e){}
     if(!dl){ const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([buf],{type:"application/pdf"})); a.download=nomeF; document.body.appendChild(a); a.click(); a.remove(); }
     else { await dl.save({filename:nomeF,data:new Uint8Array(buf)}); toast("Relatório guardado"); } }
   catch(e){ if(e?.code!=="declined") toast(e?.message==="script"?"Não consegui carregar o gerador de PDF. Verifica a internet.":"Não foi possível gerar o relatório ("+(e?.code||e?.message||"erro")+")"); }
   finally{ if(botao) botao.disabled=false; } }
+/* v112.12: todas as ações do Pós-jogo partidas por atleta (uma página por atleta, para enviar aos jogadores; podem ver os colegas).
+   F = fonteRel() (jogo atual ou arquivado). Índice na 1.ª página com ligação para cada atleta; no fim, ações coletivas (sem jogador) e do adversário. */
+async function acoesAtletaPdf(F){
+  if(!window.jspdf) await carregaScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+  if(!window.jspdf.jsPDF.API.autoTable) await carregaScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js");
+  const doc=new window.jspdf.jsPDF({unit:"pt",format:"a4"}), PW=595.28, M=36, RED=[192,0,0], INK=[27,26,23], MUT=[110,106,98];
+  const T=(txt,x,y,o={})=>{ doc.setFont("helvetica",o.b?"bold":"normal"); doc.setFontSize(o.s||10); doc.setTextColor(...(o.c||INK)); doc.text(String(txt),x,y,o.al?{align:o.al}:undefined); };
+  const R=F.arq?F.arq.resultado:placar(), res=R&&(R.nos!==""||R.eles!=="")?`${R.nos??"-"} - ${R.eles??"-"}`:"-", jogoTxt=`SC Angrense ${res} ${F.adversario||"Adversário"}`, data=F.data?new Date(F.data+"T12:00").toLocaleDateString("pt-PT"):"";
+  const regs=F.regs.slice().sort((a,b)=>a.parte-b.parte||a.seg-b.seg), nomeA=id=>F.acao(id).nome;
+  const grupos=[...new Set(regs.filter(r_=>r_.eq!=="eles"&&r_.j).map(r_=>r_.j))].sort(byNum).map(k=>({tit:`${k} · ${F.nome(k)||""}`.replace(/ · $/,""),ls:regs.filter(r_=>r_.eq!=="eles"&&r_.j===k)}));
+  const col=regs.filter(r_=>r_.eq!=="eles"&&!r_.j), adv=regs.filter(r_=>r_.eq==="eles");
+  if(col.length) grupos.push({tit:"Coletivo (sem jogador)",ls:col}); if(adv.length) grupos.push({tit:F.adversario||"Adversário",ls:adv,adv:true});
+  const cab=(t,sub,h)=>{ doc.setFillColor(...RED); doc.rect(0,0,PW,h,"F"); T(sub,M,24,{b:1,s:8.5,c:[255,225,225]}); T(t,M,h-18,{b:1,s:h>80?22:18,c:[255,255,255]}); };
+  cab(jogoTxt,`AÇÕES POR ATLETA${data?"  ·  "+data:""}`,92);
+  const conta=ls=>{ const c={}; ls.forEach(r_=>{ const n=nomeA(r_.ac); c[n]=(c[n]||0)+1; }); return Object.entries(c).sort((a,b)=>b[1]-a[1]); };
+  const paginas=[];
+  grupos.forEach(G=>{ doc.addPage(); paginas.push(doc.getNumberOfPages()); cab(G.tit,`${G.adv?"ADVERSÁRIO":"AÇÕES DO ATLETA"}  ·  ${jogoTxt}${data?"  ·  "+data:""}`,70);
+    const go=G.ls.filter(r_=>r_.go).length, resumo=conta(G.ls).map(([n,v])=>`${n} ${v}`).join("  ·  ")+(go?`  ·  ⭐ Grandes oportunidades ${go}`:"");
+    doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...INK); const ls=doc.splitTextToSize(`${G.ls.length} ${G.ls.length===1?"ação":"ações"}:  ${resumo.replace(/⭐ /g,"")}`,PW-2*M); doc.text(ls,M,92); const y0=92+ls.length*11+6;
+    const lk=G.ls.map(r_=>F.video?linkVideoModo({t:minutoReg(r_),parte:r_.parte},F.video,"web"):null);
+    doc.autoTable({startY:y0,head:[["Min","Parte","Ação","Tipo","Origem","G. oport.","Vídeo"]],body:G.ls.map((r_,i)=>[minutoReg(r_),r_.parte+".ª",nomeA(r_.ac),r_.tipo||"",ORIG[r_.or||"org"]+(r_.or==="bp"&&r_.bpl?" · "+nomeBpl(r_.bpl):""),r_.go?"Sim":"",lk[i]?"Ver lance":""]),
+      margin:{left:M,right:M,top:M},theme:"grid",styles:{font:"helvetica",fontSize:8.5,cellPadding:3,textColor:INK,lineColor:[220,216,206],lineWidth:.5},headStyles:{fillColor:[245,243,238],textColor:MUT,fontStyle:"bold",fontSize:7.5},
+      columnStyles:{0:{cellWidth:42},1:{cellWidth:34},5:{cellWidth:46,halign:"center"},6:{cellWidth:52,textColor:RED,fontStyle:"bold"}},
+      didDrawCell:d=>{ if(d.section==="body"&&d.column.index===6&&lk[d.row.index]) doc.link(d.cell.x,d.cell.y,d.cell.width,d.cell.height,{url:lk[d.row.index]}); } }); });
+  /* índice na 1.ª página (tocar no nome abre a página do atleta) */
+  doc.setPage(1);
+  if(!grupos.length) T("Este jogo ainda não tem ações registadas no Pós-jogo.",M,124,{s:10,c:MUT});
+  else { T("ÍNDICE",M,124,{b:1,s:10,c:RED}); doc.setDrawColor(...RED); doc.setLineWidth(1.2); doc.line(M,128,PW-M,128);
+    doc.autoTable({startY:136,head:[["Atleta","Ações","Grandes oport.","Página"]],body:grupos.map((G,i)=>[G.tit,G.ls.length,G.ls.filter(r_=>r_.go).length||"",paginas[i]]),margin:{left:M,right:M},theme:"grid",
+      styles:{font:"helvetica",fontSize:9,cellPadding:4,textColor:INK,lineColor:[220,216,206],lineWidth:.5},headStyles:{fillColor:[245,243,238],textColor:MUT,fontStyle:"bold",fontSize:7.5},columnStyles:{1:{halign:"right",cellWidth:50},2:{halign:"right",cellWidth:80},3:{halign:"right",cellWidth:50}},
+      didDrawCell:d=>{ if(d.section==="body") doc.link(d.cell.x,d.cell.y,d.cell.width,d.cell.height,{pageNumber:paginas[d.row.index]}); } });
+    if(!F.video) T("Sem vídeo do jogo configurado: as ações saem sem ligação ao lance.",M,doc.lastAutoTable.finalY+16,{s:8,c:MUT}); }
+  const np=doc.getNumberOfPages(); for(let i=1;i<=np;i++){ doc.setPage(i); T(`SC Angrense · Ações por atleta vs ${F.adversario||""} · ${i}/${np}`,PW/2,820,{s:7.5,c:MUT,al:"center"}); }
+  return doc; }
+function guardaAcoesAtleta(F,botao){ return guardaPdfRel(()=>acoesAtletaPdf(F),`Acoes_por_atleta_SCA_vs_${(F.adversario||"jogo").replace(/[^\wÀ-ÿ-]+/g,"_")}_${F.data||new Date().toISOString().slice(0,10)}.pdf`,botao); }
 /* jogadores do jogo: titulares, quem entrou e quem tem ações registadas */
 function jogadoresRel(G){ return [...new Set([...(G.onze||[]).map(o=>o.n),...(G.subsReais||[]).map(l=>l.entra),...((G.analise?.regs)||[]).filter(x=>x.eq==="nos"&&x.j).map(x=>x.j)])].filter(Boolean).sort(byNum); }
 const nomeJogRel=(G,k)=>{ const p=(G.onze||[]).concat(G.suplentes||[]).find(x=>x.n===k); return p?.nome||nome(k)||""; };

@@ -114,6 +114,7 @@ async function exportaXlsx(F=fonteRel()){
 }
 $("a-xlsx").onclick=()=>exportaXlsx(fonteRel());
 $("a-rpdf").onclick=e=>{ const F=fonteRel(); guardaRelatorio(F.arq||jogoAtualRel(),e.currentTarget); };
+$("a-apdf").onclick=e=>guardaAcoesAtleta(fonteRel(),e.currentTarget);
 $("a-jpdf").onclick=()=>{ const F=fonteRel(); folhaRelJog(F.arq||jogoAtualRel()); };
 $("r-jogo").onchange=e=>{ relArq=e.target.value; renderRelatorio(); };
 $("a-limpar").onclick=e=>{ if(fonteRel().arq) return; const b=e.currentTarget; if(b.dataset.c!=="1"){ b.dataset.c="1"; b.textContent="Confirmar: limpar tudo"; setTimeout(()=>{ b.dataset.c=""; b.textContent="Limpar análise"; },4000); return; }
