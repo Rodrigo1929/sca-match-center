@@ -186,9 +186,15 @@ await pg.screenshot({ path: join(cap, "exercicio-ficha.png") });
 await pg.click("#x-fig2"); await pg.waitForSelector("#mf-volta");
 for (const eq of ["nos", "nos", "adv", "neutro", "bola", "bola", "cone", "minib"]) await pg.click(`#m-panel [data-eq='${eq}']`);
 await pg.waitForTimeout(150);
-const f1 = await pg.evaluate(() => { const Q = qAtual(); return { rot: Q.rot, fig: Q.fig, bolas: Q.pecas.filter((p) => p.eq === "bola").length, txt: [...document.querySelectorAll("#m-stage > svg .mdin text")].length }; });
-if (f1.rot !== "nada" || !f1.fig || f1.bolas !== 2 || f1.txt !== 0) erros.push("Figura: devia começar só com bolinhas, sem texto, e aceitar várias bolas " + JSON.stringify(f1));
+const f1 = await pg.evaluate(() => { const Q = qAtual(); return { rot: Q.rot, fig: Q.fig, bolas: Q.pecas.filter((p) => p.eq === "bola").length, txt: [...document.querySelectorAll("#m-stage > svg .mdin text")].length,
+  tam: [...new Set(Q.pecas.filter((p) => p.eq !== "minib").map((p) => p.tam))].join(), tamB: Q.pecas.find((p) => p.eq === "minib")?.tam }; });   // v112.18: peças novas a 75%, balizas a 100%
+if (f1.rot !== "nada" || !f1.fig || f1.bolas !== 2 || f1.txt !== 0 || f1.tam !== "0.75" || f1.tamB != null) erros.push("Figura: devia começar só com bolinhas, sem texto, e aceitar várias bolas " + JSON.stringify(f1));
 await pg.screenshot({ path: join(cap, "exercicio-editor-figura.png") });
+// v112.18: a mini-baliza roda 45° de cada vez
+{ const mb = await pg.evaluate(() => qAtual().pecas.find((p) => p.eq === "minib").id);
+  await pg.evaluate((id) => folhaPecaM(id), mb); await pg.click("#mp-rod"); await pg.click(".sheet [data-close]"); await pg.waitForTimeout(120);
+  const ang = await pg.evaluate((id) => qAtual().pecas.find((p) => p.id === id).ang, mb);
+  if (ang !== 225) erros.push("Mini-baliza (v112.18): devia rodar 45° (180 → 225) " + JSON.stringify({ ang })); }
 // material de treino: menu por grupos, escada longa e etiqueta com número; rodar 45° e mudar a cor; todos os tipos desenham-se
 await pg.click("#me-mat"); await pg.waitForSelector(".sheet [data-mat='escadaL']");
 await pg.screenshot({ path: join(cap, "exercicio-material-menu.png") });

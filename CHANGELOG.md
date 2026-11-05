@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| 112.18 | **Exercícios · figura:** as peças novas (jogadores, bolas, cones, material) nascem com tamanho 75%; as balizas e mini-balizas continuam no tamanho real. Os quadros do Modelo de Jogo não mudam (100%) e as figuras já desenhadas ficam como estão. As mini-balizas rodam 45° de cada vez (antes 90°); a baliza grande continua a 90°. **Relatório para jogadores:** os mapas da equipa desenham-se uma vez e servem a todos os individuais, para a exportação completa não ficar lenta depois da v112.17. |
 | 112.17 | **Relatório para jogadores · individual:** no fim, numa página nova, «A equipa neste jogo» com os dados gerais da equipa (estatística, perdas de bola por tipo e mapas de perdas, remates e passes-chave), sem nomes de colegas (sem marcadores) e sem os lances da equipa. Os ecrãs para o WhatsApp levam os mesmos 3 ecrãs da equipa no fim. |
 | 112.16 | **Relatório para jogadores:** na pré-visualização, «Vários jogadores» deixa escolher os atletas (ou «✓ Todos») e «⬇ PDFs dos escolhidos» gera um PDF individual para cada um, juntos num .zip (com 1 só escolhido, sai o PDF direto). |
 | 112.15 | **Relatório para jogadores:** na pré-visualização, depois de escolher um jogador, «⬇ PDF só de …» e «⬇ Ecrãs só de …» exportam só o individual desse atleta (para lhe enviar); com «Grupo» escolhido, só o coletivo. O «PDF completo» passa a dizer «equipa técnica: grupo + todos». |

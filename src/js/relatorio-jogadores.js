@@ -44,7 +44,10 @@ function lancesRel(G,R,so){ const regs=(G.analise&&G.analise.regs)||[];
     return {x,titulo:l.titulo||tituloAuto(G,x),min:minutoReg(x),url,j:x.j||null}; }).filter(Boolean).filter(l=>!so||String(l.j)===String(so))
     .sort((a,b)=>(a.x.parte-b.x.parte)||(a.x.seg-b.x.seg)); }
 const pontosMapa=(rs,cor)=>rs.map(x=>({x:x.x,y:x.y,...(x.x2!=null?{x2:x.x2,y2:x.y2,lw:180}:{}),cor:cor(x),r:850,op:.9}));
-async function mapaRel(pts,larg=1600){ return svgParaJpeg(campoAnalise(null,pts),await cssFontes(),larg); }
+/* v112.18: os mapas da equipa são iguais em todos os individuais: desenham-se uma vez e reutilizam-se (a exportação completa ficava muito lenta) */
+const MAPAS_REL=new Map();
+async function mapaRel(pts,larg=1600){ const k=larg+JSON.stringify(pts); if(MAPAS_REL.has(k)) return MAPAS_REL.get(k); if(MAPAS_REL.size>60) MAPAS_REL.clear();
+  const p=svgParaJpeg(campoAnalise(null,pts),await cssFontes(),larg); MAPAS_REL.set(k,p); p.catch(()=>MAPAS_REL.delete(k)); return p; }
 async function emblemaAdvRel(G){ try{ if(typeof listaJogosCal!=="function") return null; const j=listaJogosCal().find(c=>c.data===G.data&&c.emblema); return j?await blobDataUrl(srcImagem(j.emblema)):null; }catch(e){ return null; } }
 function acoesJogador(D,k){ const rs=D.nos.filter(x=>String(x.j)===String(k)), tipos=[...new Set(rs.map(x=>x.ac+"|"+(x.tipo||"")))];
   return {rs,linhas:tipos.map(t=>{ const [ac,tp]=t.split("|"), q=rs.filter(x=>x.ac===ac&&(x.tipo||"")===tp); return [(q[0].acao||acaoDe(ac).nome)+(tp?" ("+tp+")":""),q.filter(x=>x.parte===1).length,q.filter(x=>x.parte===2).length,q.length]; })}; }

@@ -453,10 +453,10 @@ function menuPecaM(e,pid){ const Q=qAtual(), pc=Q&&Q.pecas.find(p=>p.id===pid); 
     [`🗑 Apagar ${pc.eq==="bola"?"bola":"peça"}`,()=>{ const antes=clone(qAtual()); mSel=null; editaQ(Q=>{ Q.pecas=Q.pecas.filter(p=>p.id!==pid); Q.passos.forEach(P=>delete P.pos[pid]); });
       toast(`${nomePeca(pc)} apagad${["bola","baliza","minib"].includes(pc.eq)?"a":"o"}`,()=>{ guardaQ(antes); renderModelo(); }); },"perigo"]]); }
 function folhaPecaM(pid){ const Q=qAtual(), pc=Q&&Q.pecas.find(p=>p.id===pid); if(!pc) return;
-  const jog=["nos","adv","neutro"].includes(pc.eq), bal=!!BALIZAS[pc.eq], M=pc.eq==="mat"?MAT[pc.tipo]:null, roda=M&&M[3];
+  const jog=["nos","adv","neutro"].includes(pc.eq), bal=!!BALIZAS[pc.eq], M=pc.eq==="mat"?MAT[pc.tipo]:null, roda=M&&M[3], gb=pc.eq==="minib"?45:90;   // v112.18: mini-balizas rodam 45° de cada vez
   const temCor=jog||pc.eq==="cone"||pc.eq==="minib"||(M&&M[2]), corAt=pc.cor||(pc.eq==="cone"?"laranja":M?M[2]:"");
   folha(`<h3>${esc(nomePeca(pc))}</h3>${pc.eq==="bola"?`<p class="sub" style="margin:0">Arrasta a bola no quadro para a mudar de sítio em cada passo.</p>`:""}
-    ${bal?`<p class="sub" style="margin:0">Arrasta para mudar de sítio. Roda 90° de cada vez para virar a abertura.</p><div class="actions" style="justify-content:flex-start"><button class="btn" id="mp-rod">↻ Rodar 90°</button></div>`:""}
+    ${bal?`<p class="sub" style="margin:0">Arrasta para mudar de sítio. Roda ${gb}° de cada vez para virar a abertura.</p><div class="actions" style="justify-content:flex-start"><button class="btn" id="mp-rod">↻ Rodar ${gb}°</button></div>`:""}
     ${roda?`<p class="sub" style="margin:0">Arrasta para mudar de sítio. Roda 45° de cada vez.</p><div class="actions" style="justify-content:flex-start"><button class="btn" id="mp-rod">↻ Rodar 45°</button></div>`:""}
     <h4>Tamanho</h4><div class="row mp-tam"><button class="btn" id="mp-menos" aria-label="Diminuir">−</button><b id="mp-tv">${Math.round(tamPc(pc)*100)}%</b><button class="btn" id="mp-mais" aria-label="Aumentar">+</button><button class="btn ghost" id="mp-t1">100%</button></div>
     ${jog?`<h4>Texto desta bolinha</h4><div class="seg" id="mp-lb"><button data-k="">Como o quadro (${esc(ROT_M[Q.rot])})</button>${Object.entries(ROT_M).map(([k_,n])=>`<button data-k="${k_}">${n[0].toUpperCase()+n.slice(1)}</button>`).join("")}</div>`:""}
@@ -476,7 +476,7 @@ function folhaPecaM(pid){ const Q=qAtual(), pc=Q&&Q.pecas.find(p=>p.id===pid); i
     /* cor e rodar aplicam-se logo, como nas zonas */
     let cor=corAt; const pintaC=()=>s.querySelectorAll("#mp-c button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.c===cor)));
     s.querySelectorAll("#mp-c button").forEach(b=>b.onclick=()=>{ cor=b.dataset.c; pintaC(); editaQ(Q=>{ const p=Q.pecas.find(p=>p.id===pid); if(!p) return; if(cor) p.cor=cor; else delete p.cor; }); }); pintaC();
-    const rd=s.querySelector("#mp-rod"); if(rd) rd.onclick=()=>editaQ(Q=>{ const p=Q.pecas.find(p=>p.id===pid); if(p) p.ang=roda?((p.ang||0)+45)%360:((p.ang==null?180:p.ang)+90)%360; });
+    const rd=s.querySelector("#mp-rod"); if(rd) rd.onclick=()=>editaQ(Q=>{ const p=Q.pecas.find(p=>p.id===pid); if(p) p.ang=roda?((p.ang||0)+45)%360:((p.ang==null?180:p.ang)+gb)%360; });
     const et=s.querySelector("#mp-et"); if(et) et.onchange=()=>editaQ(Q=>{ const p=Q.pecas.find(p=>p.id===pid); if(p) p.n=et.value.trim()||"1"; });
     const ss=s.querySelector("#mp-s"), nl=s.querySelector("#mp-nl"); if(ss){ const mostra=()=>nl.hidden=!!ss.value; ss.onchange=mostra; mostra(); }
     const ok=s.querySelector("#mp-ok"); if(ok) ok.onclick=()=>{ const pos=s.querySelector("#mp-p").value.trim().toUpperCase(), n=s.querySelector("#mp-n").value.trim(), sl=ss?ss.value:""; fecha();
@@ -507,7 +507,8 @@ function forasDaVista(Q,k){ const R=regiaoVista(Q), P=Q.passos[k]; if(!P) return
 /* peça nova a meio da vista; várias bolas são permitidas (exercícios) */
 function addPeca(eq,tipo){ const Q=qAtual(); if(!Q) return; const R=regiaoVista(Q), id=mId({adv:"a",bola:"b",cone:"c",minib:"g",baliza:"g",neutro:"j",mat:"k"}[eq]||"n"), nN=Q.pecas.filter(p=>p.eq===eq).length;
   const x=R.x0+R.w*({nos:.32,adv:.68,neutro:.5,bola:.5,cone:.2,minib:.85,baliza:.9,mat:.4}[eq]??.5), y=R.y0+R.h*(.5+((nN%5)-2)*.08);
-  const pc={id,eq,pos:eq==="adv"?String(nN+1):eq==="nos"?"J"+(nN+1):eq==="neutro"?"J":"",n:""}; if(BALIZAS[eq]) pc.ang=180; if(eq==="cone") pc.cor="laranja";
+  const pc={id,eq,pos:eq==="adv"?String(nN+1):eq==="nos"?"J"+(nN+1):eq==="neutro"?"J":"",n:""}; if(BALIZAS[eq]) pc.ang=180; else if(mFig) pc.tam=.75;   // v112.18: nas figuras dos exercícios as peças novas nascem a 75% (balizas no tamanho real)
+  if(eq==="cone") pc.cor="laranja";
   if(eq==="mat"){ const M=MAT[tipo]; if(!M) return; pc.tipo=tipo; if(M[2]) pc.cor=M[2]; if(M[3]) pc.ang=0; if(tipo==="numero") pc.n=String(Q.pecas.filter(p=>p.tipo==="numero").length+1); }
   editaQ(Q=>{ Q.pecas.push(pc); Q.passos.forEach(P=>P.pos[id]={x:Math.round(x*10)/10,y:Math.round(y*10)/10}); });
   mSel=id; renderModelo(); toast(eq==="mat"?`${nomePeca(pc)} · arrasta para o sítio; toca para ${[MAT[tipo][2]&&"mudar a cor",MAT[tipo][3]&&"rodar",tipo==="numero"&&"mudar o número","apagar"].filter(Boolean).join(", ").replace(/, (?=[^,]*$)/," ou ")}`:`${NOME_EQ[eq]} adicionad${["bola","baliza","minib"].includes(eq)?"a":"o"} · arrasta para o sítio; toca para ${["nos","adv","neutro"].includes(eq)?"mudar o colete ou a posição":"mais opções"}`); }
