@@ -90,17 +90,30 @@ function movePecas(F,mov){ const rr=it=>(it.r||1450)*1.6, novo=new Map(mov.map((
 /* peças de C que seguem B (todas as chaves comuns menos `fora`) → movimentos para o sítio de B */
 const paraBase=(C,B,fora=[])=>{ const PB=pecasPos(B), PC=pecasPos(C); return Object.keys(PC).filter(k=>PB[k]&&!fora.includes(k)).map(k=>[PC[k],PB[k].cx,PB[k].cy]); };
 /* o slide inicial mudou (velho → novo): devolve [antes, depois] de cada lance que o segue e mudou */
+/* v112.14: destaque de uma peça = estilo (cores) + luz. Mudá-lo no slide inicial muda-o nos lances que o seguem;
+   mudá-lo num lance ligado fica só nesse lance (`destProprio`, como as `soltas` para as posições) */
+const DEST_K=["fill","stroke","sw","color","luz"], destDe=p=>DEST_K.map(k=>p[k]??"").join("|");
+const destProprioDe=L=>Array.isArray(L.destProprio)?L.destProprio:[];
+function poeDest(dst,src){ DEST_K.forEach(k=>{ if(src[k]!=null&&src[k]!=="") dst[k]=src[k]; else delete dst[k]; }); }
 function acompanhaBase(velho,novo){ if(!velho||novo.base) return []; const P0=pecasPos(velho), P1=pecasPos(novo);
-  const mex=Object.keys(P1).filter(k=>P0[k]&&(P0[k].cx!==P1[k].cx||P0[k].cy!==P1[k].cy)); if(!mex.length) return [];
-  const out=[]; seguidoresDe(novo.id).forEach(F=>{ const A=copiaLance(F), C=copiaLance(F), PF=pecasPos(C), so=soltasDe(C);
-    if(movePecas(C,mex.filter(k=>!so.includes(k)&&PF[k]).map(k=>[PF[k],P1[k].cx,P1[k].cy]))) out.push([A,C]); });
+  const mex=Object.keys(P1).filter(k=>P0[k]&&(P0[k].cx!==P1[k].cx||P0[k].cy!==P1[k].cy)), dst=Object.keys(P1).filter(k=>P0[k]&&!k.startsWith("bj")&&destDe(P0[k])!==destDe(P1[k]));
+  if(!mex.length&&!dst.length) return [];
+  const out=[]; seguidoresDe(novo.id).forEach(F=>{ const A=copiaLance(F), C=copiaLance(F), PF=pecasPos(C), so=soltasDe(C), dp=destProprioDe(C);
+    let m=movePecas(C,mex.filter(k=>!so.includes(k)&&PF[k]).map(k=>[PF[k],P1[k].cx,P1[k].cy]));
+    dst.forEach(k=>{ if(PF[k]&&!dp.includes(k)&&destDe(PF[k])!==destDe(P1[k])){ poeDest(PF[k],P1[k]); m=true; } });
+    if(m) out.push([A,C]); });
   return out; }
+/* destaque mudado à mão num lance ligado: fica só nesse lance */
+function destMexidas(velho,C){ if(!C.base||!velho) return []; const P0=pecasPos(velho), P1=pecasPos(C), dp=destProprioDe(C);
+  const novas=Object.keys(P1).filter(k=>P0[k]&&!k.startsWith("bj")&&!dp.includes(k)&&destDe(P0[k])!==destDe(P1[k])); if(novas.length) C.destProprio=[...dp,...novas]; return novas; }
+function voltaDestBase(L,k){ const B=baseDe(L); if(!B) return; const C=copiaLance(L), PB=pecasPos(B), PC=pecasPos(C);
+  if(PB[k]&&PC[k]) poeDest(PC[k],PB[k]); C.destProprio=destProprioDe(C).filter(x=>x!==k); if(!C.destProprio.length) delete C.destProprio; guardaLance(C,{segue:true}); toast(`Destaque como no «${B.nome}»`); }
 /* peças mexidas num lance ligado ficam soltas; devolve as que se soltaram agora */
 function soltaMexidas(velho,C){ if(!C.base||!velho) return []; const P0=pecasPos(velho), P1=pecasPos(C), so=soltasDe(C);
   const novas=Object.keys(P1).filter(k=>P0[k]&&!so.includes(k)&&(P0[k].cx!==P1[k].cx||P0[k].cy!==P1[k].cy)); if(novas.length) C.soltas=[...so,...novas]; return novas; }
 /* ligar C ao slide inicial B (v108.2): a posição inicial fica igual à de B; depois, o que se arrastar neste lance fica solto */
-function ligaBase(C,B){ movePecas(C,paraBase(C,B)); igualaJogadores(C,B); C.base=B.id; C.soltas=[]; return []; }
-function desligaBase(C){ delete C.base; delete C.soltas; }
+function ligaBase(C,B){ movePecas(C,paraBase(C,B)); igualaJogadores(C,B); C.base=B.id; C.soltas=[]; const PB=pecasPos(B), PC=pecasPos(C); Object.keys(PC).forEach(k=>{ if(PB[k]&&!k.startsWith("bj")) poeDest(PC[k],PB[k]); }); delete C.destProprio; return []; }
+function desligaBase(C){ delete C.base; delete C.soltas; delete C.destProprio; }
 /* v110: nos lances ligados, a mesma posição tem o mesmo jogador do slide inicial (as tarefas, setas e textos continuam de cada lance).
    Exceção: um lance marcado como variante (`variante: true`, ex.: «Pés Trocados») mantém as suas trocas; a troca feita no slide inicial
    passa-lhe como troca de pessoas (quem era X passa a Y). */

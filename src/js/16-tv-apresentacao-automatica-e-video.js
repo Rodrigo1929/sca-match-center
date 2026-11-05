@@ -243,7 +243,7 @@ function desfazQuadro(){ const it=undoQ.pop(); if(!it){ toast("Nada para desfaze
 function guardaLance(L,op={}){ const antesDe=id=>lancesDb[id]?clone(lancesDb[id]):null, C=clone(L); delete C.original;
   if(C.livre) C.fixo=vDoLance(C);   // v112.6: o quadro livre guarda os seus jogadores (deixa de seguir o onze)
   /* v108: posição inicial ligada — mexer num lance ligado solta a peça; mexer no slide inicial leva os que o seguem */
-  const velho=aDesfazer?null:lances().find(x=>x.id===C.id), soltou=op.segue?[]:soltaMexidas(velho,C), segue=acompanhaBase(velho,C);
+  const velho=aDesfazer?null:lances().find(x=>x.id===C.id), soltou=op.segue?[]:soltaMexidas(velho,C), destP=op.segue?[]:destMexidas(velho,C), segue=acompanhaBase(velho,C);
   /* op.junto: outros lances já alterados (ex.: troca de jogador no slide inicial) que se gravam com este e se desfazem juntos */
   (op.junto||[]).forEach(F=>{ const k=segue.findIndex(([,x])=>x.id===F.id); if(k>=0) segue[k]=[null,F]; else segue.push([null,F]); });
   /* v110: um lance ligado fica com os jogadores do slide inicial (exceto variantes); mudar os jogadores do slide inicial muda-os nos que o seguem */

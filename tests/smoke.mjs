@@ -1064,6 +1064,15 @@ if (n1 !== 13 || n2 !== 11) erros.push("Adversário: substituir o plantel import
   const s1 = await pg.evaluate(({ k, slot }) => { const L = lanceAtual(), b = L.bolas.find((x) => x.slot === slot && !eAlternativa(x)), a = L.setas[k], r = { sai: Math.hypot(a.x1 - b.cx, a.y1 - b.cy) < 50, x2: a.x2 };
     if (window.D0_11213) { lancesDb["9"] = window.D0_11213; gravaDoc("lances/9", window.D0_11213); } else { delete lancesDb["9"]; apagaDoc("lances/9"); } guardaLocal(); render(); return r; }, s0);
   if (!s1.sai || s1.x2 !== s0.x2) erros.push("Quadro (v112.13): a seta não acompanhou o atleta arrastado " + JSON.stringify({ s0, s1 })); }
+// v112.14: destaque (estilo e luz) do slide inicial passa aos lances que o seguem; tirado à mão num deles fica só nesse; «Destaque como no…» volta a seguir
+{ const d = await pg.evaluate(() => { const g = (id) => lances().find((l) => l.id === id), D8 = lancesDb["8"] ? clone(lancesDb["8"]) : null, D10 = lancesDb["10"] ? clone(lancesDb["10"]) : null, r = { liga: g("10").base === "8" };
+    const k = Object.keys(pecasPos(g("8"))).find((x) => !x.includes("~") && !x.startsWith("bj") && !/^a\d/.test(x) && pecasPos(g("10"))[x]);
+    let C = copiaLance(g("8")); pecasPos(C)[k].luz = "#FFE14D"; guardaLance(C); r.passa = pecasPos(g("10"))[k].luz === "#FFE14D";
+    C = copiaLance(g("10")); delete pecasPos(C)[k].luz; guardaLance(C); r.proprio = destProprioDe(g("10")).includes(k) && !pecasPos(g("10"))[k].luz && pecasPos(g("8"))[k].luz === "#FFE14D";
+    C = copiaLance(g("8")); Object.assign(pecasPos(C)[k], { fill: ESTILOS.destaque.fill, stroke: ESTILOS.destaque.stroke }); guardaLance(C); r.naoMuda = pecasPos(g("10"))[k].stroke !== ESTILOS.destaque.stroke;
+    voltaDestBase(g("10"), k); r.volta = destDe(pecasPos(g("10"))[k]) === destDe(pecasPos(g("8"))[k]) && !destProprioDe(g("10")).length;
+    [["8", D8], ["10", D10]].forEach(([id, D]) => { if (D) { lancesDb[id] = D; gravaDoc("lances/" + id, D); } else { delete lancesDb[id]; apagaDoc("lances/" + id); } }); guardaLocal(); render(); return { k, ...r }; });
+  if (!d.liga || !d.passa || !d.proprio || !d.naoMuda || !d.volta) erros.push("Quadro (v112.14): destaque ligado ao slide inicial " + JSON.stringify(d)); }
 // v112.4: mudar o nº passa também a convocatória, o onze e o Encaixe do jogo atual (sem repetidos); com registos no Ao vivo com o nº antigo, o jogo fica como está
 { const v1124 = await pg.evaluate(() => { const J0 = clone(jogo), on = J0.onze.map((o, i) => i ? o : { ...o, n: "93" });
     guardaJogo({ ...J0, eventos: [], subs: [], onze: on, suplentes: ["91", "92"], encaixe: { nos: { 93: { x: 1, y: 1 } }, adv: {} } });

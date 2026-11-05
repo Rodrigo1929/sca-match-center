@@ -68,7 +68,7 @@ function miniBola(st){ return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" 
 /* editar bolinha */
 function folhaBola(L,i){
   const B=L.bolas[i], LB=baseDe(L), solta=LB&&!eAlternativa(B)&&soltasDe(L).includes(B.slot);
-  const nSeg=seguidoresDe(L.id).length;
+  const nSeg=seguidoresDe(L.id).length, kD=(Object.entries(pecasPos(L)).find(([,p])=>p===B)||[])[0];   // v112.14: chave da peça (destaque ligado)
   /* v110: num lance ligado (não variante) o jogador vem do slide inicial: troca-se lá */
   const preso=LB&&!eVariante(L)&&slotsDe(LB).includes(B.slot);
   folha(`<h3>Bolinha</h3><label class="f">Jogador nesta bolinha (${preso?`vem do «${esc(LB.nome)}»`:nSeg?`neste lance e nos ${nSeg} que o seguem`:"neste lance"})<select id="s-jog"${preso?" disabled":""}></select></label>
@@ -77,10 +77,12 @@ function folhaBola(L,i){
     ${LB&&!eAlternativa(B)?`<p class="sub" style="margin:0">${solta?`Posição própria neste lance (não segue o «${esc(LB.nome)}»).`:`Segue a posição do «${esc(LB.nome)}». Arrastá-la aqui deixa-a no seu sítio só neste lance.`}</p>${solta?`<button class="btn" id="s-segue">↺ Voltar a seguir o «${esc(LB.nome)}»</button>`:""}`:""}
     <h4>Estilo</h4><div class="styles" id="s-est"></div>
     <h4>Destaque (luz)</h4><div id="s-luz"></div>
+    ${kD&&LB?`<p class="sub" style="margin:0">${destProprioDe(L).includes(kD)?`Destaque próprio neste lance (não segue o «${esc(LB.nome)}»).`:`O estilo e a luz seguem o «${esc(LB.nome)}». Mudá-los aqui fica só neste lance.`}</p>${destProprioDe(L).includes(kD)?`<button class="btn" id="s-dseg">↺ Destaque como no «${esc(LB.nome)}»</button>`:""}`:nSeg&&kD?`<p class="sub" style="margin:0">O estilo e a luz passam também para os ${nSeg} lances que seguem este (exceto onde foram mudados à mão).</p>`:""}
     <div class="actions"><button class="btn danger l" id="s-rem">Remover bolinha</button><button class="btn" id="s-dup">Duplicar</button><button class="btn dark" data-close>Fechar</button></div>`,(s,fecha)=>{
     opcSlots(s.querySelector("#s-slot"),B.slot,L);
     { const sg=s.querySelector("#s-segue"); if(sg) sg.onclick=()=>{ fecha(); voltaSeguir(L,B.slot); }; }
     { const ib=s.querySelector("#s-irbase"); if(ib) ib.onclick=()=>{ fecha(); curId=LB.id; render(); }; }
+    { const ds=s.querySelector("#s-dseg"); if(ds) ds.onclick=()=>{ fecha(); voltaDestBase(L,kD); }; }
     { const sj=s.querySelector("#s-jog"), v=calcula(L).v, atual=v[B.slot];
       const lista=[...new Set([...est.plantel.map(p=>p.n).filter(Boolean),atual])].sort(byNum);
       sj.innerHTML=lista.map(n=>{ const onde=Object.entries(v).find(([sl,x])=>x===n&&sl!==B.slot&&L.bolas.some(b=>b.slot===sl&&!eAlternativa(b))); return `<option value="${esc(n)}">${esc(n)}${nome(n)?" · "+esc(nome(n)):""}${onde?" — já está neste lance (troca)":""}</option>`; }).join(""); sj.value=atual;
