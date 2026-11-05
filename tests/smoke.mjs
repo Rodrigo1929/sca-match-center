@@ -4,7 +4,7 @@
 //      npm run test:ipad → o mesmo no WebKit (motor do Safari) com ecrã e toque de iPad; capturas em tests/capturas/ipad/
 //      (precisa de: npx playwright install webkit)
 import { chromium, webkit, devices } from "playwright";
-import { mkdirSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -707,6 +707,14 @@ const [d1p] = await Promise.all([pg.waitForEvent("download", { timeout: 120000 }
 const [d1e] = await Promise.all([pg.waitForEvent("download", { timeout: 120000 }), pg.click("#rp-1e")]);
 const n9 = await pg.evaluate(() => nomeFichRel(hist.Jtestearq, alcunhaRel(hist.Jtestearq, "9")));
 if (d1p.suggestedFilename() !== n9 + ".pdf" || d1e.suggestedFilename() !== n9 + "_ecras.zip") erros.push("Relatório para jogadores (v112.15): só um jogador " + JSON.stringify({ p: d1p.suggestedFilename(), e: d1e.suggestedFilename(), n9 }));
+// v112.16: vários jogadores → um PDF individual para cada, num .zip
+const nJs = await pg.evaluate(() => jogadoresRel(hist.Jtestearq).length);
+await pg.click("#rp-sa");
+const [dSel] = await Promise.all([pg.waitForEvent("download", { timeout: 120000 }), pg.click("#rp-sp")]);
+const zSel = readFileSync(await dSel.path()).toString("latin1");
+const nPdf = zSel.split("PK\x01\x02").length - 1;   // entradas no diretório central do .zip
+if ((nJs > 1 ? !dSel.suggestedFilename().endsWith("_individuais.zip") || nPdf !== nJs : !dSel.suggestedFilename().endsWith(".pdf")))
+  erros.push("Relatório para jogadores (v112.16): vários jogadores " + JSON.stringify({ f: dSel.suggestedFilename(), nJs, nPdf }));
 const [dZip] = await Promise.all([pg.waitForEvent("download", { timeout: 120000 }), (async () => { await pg.click("#rp-ok"); await pg.click("#rp-ok"); })()]);
 await pg.waitForTimeout(300);
 const rjx = await pg.evaluate(() => { const R = relJogDe(hist.Jtestearq); return R.exportado.map((x) => x.versao + ":" + (x.n > 2)).join(","); });

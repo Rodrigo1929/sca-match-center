@@ -193,6 +193,9 @@ function folhaPreviewRelJog(G,id){ const R=relJogs[id]||normRelJog({id}), js=jog
   folha(`<h3>Pré-visualização · vs ${esc(G.adversario||"")}</h3><p class="sub" style="margin:0">Vê os ecrãs do grupo e de cada jogador (o PDF tem o mesmo conteúdo). ✓ = já visto.</p>
     <div class="chips" id="rp-q">${quem.map((k,i)=>`<button class="chip" data-i="${i}">${esc(rot(k))}</button>`).join("")}</div>
     <div class="actions" style="justify-content:flex-start;margin:0"><button class="btn sm" id="rp-1p">⬇ PDF só do grupo</button><button class="btn sm" id="rp-1e">⬇ Ecrãs só do grupo</button></div>
+    <p class="sub" style="margin:6px 0 0"><b>Vários jogadores</b> · um PDF individual para cada (num .zip)</p>
+    <div class="chips" id="rp-s">${js.map(k=>`<button class="chip" data-k="${esc(k)}" aria-pressed="false">${esc(rot(k))}</button>`).join("")}</div>
+    <div class="actions" style="justify-content:flex-start;margin:0"><button class="btn sm" id="rp-sa">✓ Todos</button><button class="btn sm ghost" id="rp-sn">✕ Nenhum</button><button class="btn sm primary" id="rp-sp" disabled>⬇ PDFs dos escolhidos (0)</button></div>
     <div id="rp-v" class="rp-v"><p class="sub">A preparar…</p></div><p class="sub" id="rp-st" style="margin:0"></p>
     <div class="actions"><button class="btn" id="rp-volta">Voltar</button><button class="btn" id="rp-x" hidden>Cancelar</button><button class="btn" id="rp-pdf">⬇ PDF completo (equipa técnica: grupo + todos)</button><button class="btn primary" id="rp-ok">✓ Aprovar e exportar</button></div>`,(s,fecha)=>{
     const q=x=>s.querySelector(x);
@@ -211,6 +214,17 @@ function folhaPreviewRelJog(G,id){ const R=relJogs[id]||normRelJog({id}), js=jog
       catch(e){ st.textContent=e&&e.code==="declined"?"":"Não foi possível ("+((e&&(e.code||e.message))||"erro")+")."; }
       bs.forEach(b=>b.disabled=false); };
     q("#rp-1p").onclick=()=>um(false); q("#rp-1e").onclick=()=>um(true);
+    /* v112.16: vários jogadores → um PDF individual para cada (1 só = o PDF; mais = .zip) */
+    const sel=new Set(), pintaSel=()=>{ s.querySelectorAll("#rp-s .chip").forEach(b=>b.setAttribute("aria-pressed",String(sel.has(b.dataset.k)))); const b=q("#rp-sp"); b.disabled=!sel.size; b.textContent=`⬇ PDFs dos escolhidos (${sel.size})`; };
+    s.querySelectorAll("#rp-s .chip").forEach(b=>b.onclick=()=>{ const k=b.dataset.k; if(sel.has(k)) sel.delete(k); else sel.add(k); pintaSel(); });
+    q("#rp-sa").onclick=()=>{ js.forEach(k=>sel.add(String(k))); pintaSel(); }; q("#rp-sn").onclick=()=>{ sel.clear(); pintaSel(); };
+    q("#rp-sp").onclick=async()=>{ const ks=js.filter(k=>sel.has(String(k))), b=q("#rp-sp"), st=q("#rp-st"); ctl={cancelado:false}; b.disabled=true; q("#rp-x").hidden=false;
+      try{ const fs=[]; for(let i=0;i<ks.length;i++){ if(ctl.cancelado) throw new Error("cancelado"); st.textContent=`PDF ${i+1} de ${ks.length}: ${rot(ks[i])}…`;
+          fs.push({nome:nomeFichRel(G,alcunhaRel(G,ks[i]))+".pdf",dados:new Uint8Array((await pdfRelJog(G,ks[i],R)).output("arraybuffer"))}); }
+        if(fs.length===1) await guardaFicheiro(fs[0].nome,fs[0].dados,"application/pdf"); else await guardaFicheiro(nomeFichRel(G,"individuais")+".zip",zipFicheiros(fs),"application/zip");
+        st.textContent=fs.length===1?"1 PDF individual guardado.":`${fs.length} PDFs individuais guardados (.zip).`; }
+      catch(e){ st.textContent=e&&e.message==="cancelado"?"Cancelado.":e&&e.code==="declined"?"":"Não foi possível ("+((e&&(e.code||e.message))||"erro")+")."; }
+      b.disabled=!sel.size; q("#rp-x").hidden=true; };
     q("#rp-volta").onclick=()=>{ if(ctl) ctl.cancelado=true; fecha(); folhaRelJog(G); };
     q("#rp-x").onclick=()=>{ if(ctl) ctl.cancelado=true; };
     q("#rp-pdf").onclick=async()=>{ ctl={cancelado:false}; const b=q("#rp-pdf"), st=q("#rp-st"); b.disabled=true; q("#rp-x").hidden=false;
