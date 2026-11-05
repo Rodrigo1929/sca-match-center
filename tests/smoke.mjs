@@ -1010,6 +1010,36 @@ if (n1 !== 13 || n2 !== 11) erros.push("Adversário: substituir o plantel import
   const v11210 = await pg.evaluate(({ ut, lid, ex, cop }) => { const l = uts[ut].exercicios.find((x) => x.id === lid), r = { nome: l.copia.nome, fmt: l.copia.formato, repo: exercicios[ex] && exercicios[ex].nome, aj: AJUSTES_DIA.includes("nome") };
     editaUT((U) => { const x = U.exercicios.find((y) => y.id === lid); x.copia = cop; }); return r; }, l0);
   if (v11210.nome !== "Título só desta UT" || v11210.fmt !== "GR+7×7+GR" || v11210.repo !== l0.nome || !v11210.aj) erros.push("UT (v112.10): título e formato nesta UT " + JSON.stringify(v11210)); } }
+// v112.11: Quadro Livre com fases; Quadro Dinâmico (zonas pelas linhas do adversário, refeitas ao arrastar); variações da figura por formato
+{ const qd = await pg.evaluate(() => { setTab("q"); curId = "livre"; render(); const fases = ["1.ª fase · Construção", "1.ª fase · Pressão (bloco alto)", "3.ª fase · Defesa da baliza"].every((t) => $("stage").textContent.includes(t));
+    const ids = lances().map((l) => l.id); curId = "espacos"; render(); const L = lanceAtual();
+    return { fases, aposLivre: ids.indexOf("espacos") === ids.indexOf("livre") + 1, adv: (L.adv || []).length, zonas: document.querySelectorAll("#stage g.espacos polygon").length, livre: ehLivre("espacos"), ajusta: lancesAjustaveis().some((l) => l.id === "espacos"), hint: $("hint").textContent.includes("Quadro dinâmico") }; });
+  const z0 = await pg.evaluate(() => document.querySelector("#stage g.espacos polygon:nth-child(2)").getAttribute("points"));
+  const pe = await pg.evaluate(() => { const g = [...document.querySelectorAll("#stage svg g.bola")].find((x) => x.querySelectorAll("circle").length === 2 && !x.querySelector("text") && x.querySelectorAll("circle")[1].getAttribute("cx") < 50000 && x.querySelectorAll("circle")[1].getAttribute("cx") > 40000) || [...document.querySelectorAll("#stage svg g.bola")][9];
+    const c = g.querySelectorAll("circle")[1].getBoundingClientRect(); return { x: c.x + c.width / 2, y: c.y + c.height / 2 }; });
+  await pg.mouse.move(pe.x, pe.y); await pg.mouse.down(); await pg.mouse.move(pe.x - 40, pe.y, { steps: 4 });
+  const zMeio = await pg.evaluate(() => document.querySelector("#stage g.espacos polygon:nth-child(2)").getAttribute("points")); await pg.mouse.up(); await pg.waitForTimeout(100);
+  const gr = await pg.evaluate(() => { const r = { grav: !!lancesDb.espacos, adv: lancesDb.espacos && lancesDb.espacos.adv.length }; delete lancesDb.espacos; apagaDoc("lances/espacos"); guardaLocal(); render(); return r; });
+  await pg.screenshot({ path: join(cap, "quadro-dinamico.png") });
+  if (!qd.fases || !qd.aposLivre || qd.adv !== 11 || qd.zonas !== 6 || !qd.livre || qd.ajusta || !qd.hint || z0 === zMeio || !gr.grav || gr.adv !== 11) erros.push("Quadro (v112.11): Quadro Dinâmico / fases " + JSON.stringify({ ...qd, mexeu: z0 !== zMeio, ...gr })); }
+{ await pg.evaluate(() => { const pos = {}, pecas = []; for (let i = 0; i < 6; i++) { pecas.push({ eq: "nos", n: "", pos: "", id: "n" + i }, { eq: "adv", n: "", pos: "", cor: "branco", id: "a" + i }); pos["n" + i] = { x: 30 + i * 3, y: 20 + i * 4 }; pos["a" + i] = { x: 50 + i * 3, y: 20 + i * 4 }; }
+    pecas.push({ eq: "nos", n: "", pos: "GR", id: "g1" }); pos.g1 = { x: 5, y: 34 };
+    const E = guardaEx({ id: "tx11211", nome: "Teste formatos", formato: "GR+6×6+GR", parte: "fundamental", figura: { quadro: { rot: "nada", vista: "inteiro", pecas, passos: [{ pos, setas: [], zonas: [] }] }, usa: "quadro" } }, true);
+    const U = guardaUT({ id: "tu11211", numero: 991, data: "2026-01-01", exercicios: [{ id: "tl1", exId: E.id, copia: clone(E) }] }, true); uCur = U.id; setTab("u"); folhaAjusteUT(U.id, "tl1"); });
+  await pg.fill("#uj-f", "GR+7×7+GR"); await pg.waitForTimeout(50); const temBt = await pg.isVisible("#uj-fe"); await pg.click("#uj-ok"); await pg.waitForTimeout(80);
+  const r1 = await pg.evaluate(() => { const q = uts.tu11211.exercicios[0].copia.figura.quadro; return { n: q.pecas.filter((p) => p.eq === "nos" && p.pos !== "GR").length, a: q.pecas.filter((p) => p.eq === "adv").length, repo: exercicios.tx11211.figura.quadro.pecas.length }; });
+  await pg.evaluate(() => folhaAjusteUT("tu11211", "tl1")); await pg.click("#uj-fe"); await pg.waitForTimeout(150);
+  await pg.screenshot({ path: join(cap, "figura-variacao-7x7.png") });
+  const r2 = await pg.evaluate(() => { const Q = qAtual(), nova = Q.pecas.find((p) => p.id.startsWith("v0")); const C = clone(Q); C.passos[0].pos[nova.id] = { x: 99, y: 60 }; guardaQ(C);
+    const r = { mFig, varN: !!(exercicios.tx11211.varN && exercicios.tx11211.varN["7x7"]), ut: uts.tu11211.exercicios[0].copia.figura.quadro.passos[0].pos[nova.id], volta: $("mf-volta") && $("mf-volta").textContent, id: nova.id };
+    voltaAoExercicio(); r.tab = !$("view-u").hidden; r.uCur = uCur; return r; });
+  await pg.evaluate(() => folhaAjusteUT("tu11211", "tl1")); await pg.fill("#uj-f", "6x6"); await pg.click("#uj-ok"); await pg.waitForTimeout(60);
+  const r3 = await pg.evaluate(() => uts.tu11211.exercicios[0].copia.figura.quadro.pecas.length);
+  await pg.evaluate(() => folhaAjusteUT("tu11211", "tl1")); await pg.fill("#uj-f", "GR+7×7+GR"); await pg.click("#uj-ok"); await pg.waitForTimeout(60);
+  const r4 = await pg.evaluate((id) => { const q = uts.tu11211.exercicios[0].copia.figura.quadro, p = q.passos[0].pos[id], aviso = mudouNoRepo(uts.tu11211.exercicios[0]);
+    delete uts.tu11211; apagaDoc("uts/tu11211"); delete exercicios.tx11211; apagaDoc("exercicios/tx11211"); guardaUTLocal(); guardaExLocal(); uCur = null; return { p, aviso }; }, r2.id);
+  if (!temBt || r1.n !== 7 || r1.a !== 7 || r1.repo !== 13 || !r2.varN || !r2.ut || r2.ut.x !== 99 || !/UT/.test(r2.volta || "") || !r2.tab || r3 !== 13 || !r4.p || r4.p.x !== 99 || r4.aviso)
+    erros.push("UT (v112.11): variação da figura por formato " + JSON.stringify({ temBt, r1, r2, r3, r4 })); }
 // v112.4: mudar o nº passa também a convocatória, o onze e o Encaixe do jogo atual (sem repetidos); com registos no Ao vivo com o nº antigo, o jogo fica como está
 { const v1124 = await pg.evaluate(() => { const J0 = clone(jogo), on = J0.onze.map((o, i) => i ? o : { ...o, n: "93" });
     guardaJogo({ ...J0, eventos: [], subs: [], onze: on, suplentes: ["91", "92"], encaixe: { nos: { 93: { x: 1, y: 1 } }, adv: {} } });

@@ -25,7 +25,7 @@ function normUT(d){ const s=v=>String(v??"").trim(), L=v=>(Array.isArray(v)?v.ma
     grupos,
     /* cada exercício da UT é uma cópia do exercício no dia: mudar o repositório depois não mexe nas UT antigas. As ligações (vídeos) nunca vêm para a UT.
        Na linha: pai (complementar de), conta (estatística de tempos só nesta UT), grupos (ids dos grupos de trabalho) e rot (rotação, no principal) — ver tempos.js */
-    exercicios:arrumaLinhas((Array.isArray(d.exercicios)?d.exercicios:[]).filter(e=>e&&e.copia).map(e=>{ const c=normEx({...e.copia,id:s(e.exId)||s(e.copia.id)}); delete c.links;
+    exercicios:arrumaLinhas((Array.isArray(d.exercicios)?d.exercicios:[]).filter(e=>e&&e.copia).map(e=>{ const c=normEx({...e.copia,id:s(e.exId)||s(e.copia.id)}); delete c.links; delete c.varN;
       const l={id:s(e.id)||uId("l"),exId:s(e.exId),copia:c}; if(s(e.pai)) l.pai=s(e.pai); if(typeof e.conta==="boolean") l.conta=e.conta;
       if(Array.isArray(e.grupos)) l.grupos=L(e.grupos); if(e.rot&&typeof e.rot==="object") l.rot=e.rot;
       if(["","liga","champions"].includes(e.comp)) l.comp=e.comp; if(typeof e.meinho==="boolean") l.meinho=e.meinho; if(e.mhSemGR===true) l.mhSemGR=true; const pr=typeof normPr==="function"?(e.princ===null?null:normPr(e.princ)):undefined; if(e.princ===null||pr) l.princ=pr||null; return l; }),grupos),
@@ -156,11 +156,11 @@ function renderUTCorpo(U){ const bx=$("u-corpo"), bar=$("u-bar"), tg=$("u-tag");
       else if(a==="at") b.onclick=()=>folhaAtualizaUT(U.id,lid);
       else if(a==="x") confirma2(b,"Tirar?",()=>tiraExUT(lid)); }); }); }
 /* para comparar cópia e repositório sem contar quem alterou e quando */
-const semAutoria=E=>{ const c={...E}; ["criadoPor","criadoEm","alteradoPor","alteradoEm","links","contaTempo","n","princ"].forEach(k=>delete c[k]); return c; };
+const semAutoria=E=>{ const c={...E}; ["criadoPor","criadoEm","alteradoPor","alteradoEm","links","contaTempo","n","princ","varN"].forEach(k=>delete c[k]); return c; };
 /* só avisa se o exercício foi alterado no repositório depois de entrar na UT: a cópia guarda a data de alteração que o exercício tinha nesse dia
    (os ajustes do dia, como a duração ou a figura, não contam) */
-function mudouNoRepo(l){ const R=exercicios[l.exId]; if(!R) return false;
-  return (R.alteradoEm||"")>(l.copia.alteradoEm||"")&&JSON.stringify(semAutoria(R))!==JSON.stringify(semAutoria(l.copia)); }
+function mudouNoRepo(l){ const R=exercicios[l.exId]; if(!R) return false; const outroFmt=chaveFmt(R.formato)!==chaveFmt(l.copia.formato), f=E=>{ const c=semAutoria(E); if(outroFmt) delete c.figura; return c; };   // v112.11: com outro formato a figura é a variação
+  return (R.alteradoEm||"")>(l.copia.alteradoEm||"")&&JSON.stringify(f(R))!==JSON.stringify(f(l.copia)); }
 /* ↻ Atualizar: traz a versão do repositório; por defeito mantém os ajustes do dia (os mesmos campos do "Ajustar nesta UT") */
 const AJUSTES_DIA=["parte","espaco","duracao","variantes","nome","formato"];   // v112.10: também o título e o formato desta UT
 function folhaAtualizaUT(id,lid){ const U=uts[id], l=U&&U.exercicios.find(x=>x.id===lid), R=l&&exercicios[l.exId]; if(!R) return; const C=l.copia;
@@ -168,7 +168,7 @@ function folhaAtualizaUT(id,lid){ const U=uts[id], l=U&&U.exercicios.find(x=>x.i
     <p class="sub" style="margin:0"><b>${esc(R.nome)}</b> foi alterado no repositório${R.alteradoEm?` a ${esc(dataHora(R.alteradoEm))}`:""}.</p>
     <p style="margin:0">Vem do repositório: nome, textos, classificação, figura e material.<br>Fica desta UT: ${esc(parteDe(C.parte)[1].toLowerCase())}, espaço ${esc(C.espaco.txt||"–")}, duração ${totalEx(C)?fmtTempo(totalEx(C)):"–"} e variantes.</p>
     <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn" id="uat-tudo">Substituir tudo</button><button class="btn primary" id="uat-ok">Atualizar e manter os ajustes</button></div>`,(s,fecha)=>{
-    const vai=tudo=>{ fecha(); editaUT(U=>{ const x=U.exercicios.find(y=>y.id===lid), N=clone(exercicios[x.exId]); if(!tudo) AJUSTES_DIA.forEach(k=>{ N[k]=clone(x.copia[k]); }); x.copia=N; },
+    const vai=tudo=>{ fecha(); editaUT(U=>{ const x=U.exercicios.find(y=>y.id===lid), N=clone(exercicios[x.exId]); if(!tudo) AJUSTES_DIA.forEach(k=>{ N[k]=clone(x.copia[k]); }); if(!tudo&&N.figura) N.figura=figuraDoFormato(exercicios[x.exId],N.formato); delete N.varN; x.copia=N; },
       tudo?"Exercício substituído pela versão do repositório":"Exercício atualizado · ajustes desta UT mantidos"); };
     s.querySelector("#uat-ok").onclick=()=>vai(false); confirma2(s.querySelector("#uat-tudo"),"Toca outra vez",()=>vai(true)); }); }
 function tiraExUT(lid){ const U=uts[uCur], l=U&&U.exercicios.find(x=>x.id===lid); if(!l) return; const nC=U.exercicios.filter(x=>x.pai===lid).length;
@@ -324,6 +324,7 @@ function folhaAjusteUT(id,lid){ const U=uts[id], l=U&&U.exercicios.find(x=>x.id=
   let cp=typeof l.comp==="string"?(l.comp||"-"):"", mh=typeof l.meinho==="boolean"?(l.meinho?"1":"0"):"", armado=false;
   folha(`<h3>Ajustar nesta UT</h3><p class="sub" style="margin:0"><b>${esc(E.nome)}</b> · as mudanças ficam só na UT${U.numero}; o exercício do repositório não muda.</p>
     <div class="fields"><label class="f">Título nesta UT<input type="text" id="uj-n" value="${esc(E.nome)}"></label><label class="f">Formato (nº de jogadores)<input type="text" id="uj-f" value="${esc(E.formato||"")}" placeholder="Ex.: GR+6×6+GR"></label></div>
+    <div id="uj-fig"></div>
     <h4>Parte</h4><div class="seg" id="uj-p">${PARTES.map(p=>`<button data-k="${p[0]}">${p[1]}</button>`).join("")}</div>
     <label class="f">Espaço<input type="text" id="uj-e" value="${esc(E.espaco.txt)}"></label>
     <div class="xe-dur"><label class="f">Séries / reps.<input type="text" inputmode="numeric" id="uj-se" value="${D.series||""}"></label><label class="f">Tempo prática<input type="text" id="uj-pr" value="${tt(D.pratica)}"></label><label class="f">Pausa<input type="text" id="uj-pa" value="${tt(D.pausa)}"></label><label class="f">Total<input type="text" id="uj-to" value="${tt(D.total)}" placeholder="Conta: ${fmtTempo(contaDur(D))}"></label></div>
@@ -341,11 +342,21 @@ function folhaAjusteUT(id,lid){ const U=uts[id], l=U&&U.exercicios.find(x=>x.id=
     const pintaM=()=>{ s.querySelectorAll("#uj-c button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===cp))); s.querySelectorAll("#uj-m button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===mh)));
       const p=perde(); q("#uj-av").innerHTML=p.length?`<b style="color:var(--red)">Há ${esc(p.join(" e "))}:</b> deixam de contar (não se apagam) e voltam se reativares.`:""; armado=false; q("#uj-ok").textContent="Guardar"; q("#uj-ok").style.background=""; };
     s.querySelectorAll("#uj-c button").forEach(b=>b.onclick=()=>{ cp=b.dataset.k; pintaM(); }); s.querySelectorAll("#uj-m button").forEach(b=>b.onclick=()=>{ mh=b.dataset.k; pintaM(); }); pintaM();
-    q("#uj-ok").onclick=()=>{ if(perde().length&&!armado){ armado=true; q("#uj-ok").textContent="Toca outra vez para anular"; q("#uj-ok").style.background="#C00000"; return; }
+    /* v112.11: figura por formato — outro nº de jogadores usa a variação guardada no exercício (ou acrescenta/tira bolinhas); editável e guardada para a próxima vez */
+    let refazFig=false; const R=exercicios[l.exId], figBox=()=>{ const k=chaveFmt(q("#uj-f").value), b=q("#uj-fig");
+      if(!R||!temFigura(R)||usaImagem(R)||!k||k===chaveFmt(R.formato)){ b.innerHTML=""; return; } const tem=!!(R.varN&&R.varN[k]);
+      b.innerHTML=`<p class="sub" style="margin:0">Figura para <b>${esc(k)}</b>: ${tem?"a variação guardada neste exercício":`a do repositório (${esc(chaveFmt(R.formato)||R.formato||"sem formato")}) com bolinhas ${(numsFmt(k)||[]).reduce((a,v)=>a+v,0)>(numsFmt(chaveFmt(R.formato))||[]).reduce((a,v)=>a+v,0)?"acrescentadas":"tiradas"}`}.</p>
+        <div class="actions" style="justify-content:flex-start;margin-top:6px"><button class="btn sm" id="uj-fe">✎ Editar a figura de ${esc(k)}</button>${tem?`<button class="btn sm ghost" id="uj-fx">↺ Voltar à automática</button>`:""}</div>`;
+      q("#uj-fe").onclick=()=>{ if(guarda()) mEntraFig(R.id+"@"+k,{ut:id,lid}); };
+      const fx=q("#uj-fx"); if(fx) confirma2(fx,"Toca outra vez para apagar a variação",()=>{ tiraVariacao(R.id,k); refazFig=true; figBox(); }); };
+    q("#uj-f").addEventListener("input",figBox); figBox();
+    const guarda=()=>{ if(perde().length&&!armado){ armado=true; q("#uj-ok").textContent="Toca outra vez para anular"; q("#uj-ok").style.background="#C00000"; return false; }
       const d={series:Math.max(0,parseInt(q("#uj-se").value)||0),pratica:lerDur(q("#uj-pr").value),pausa:lerDur(q("#uj-pa").value),total:lerDur(q("#uj-to").value)};
-      if(["pratica","pausa","total"].some(k=>isNaN(d[k]))){ toast("Corrige os tempos da duração."); return; } fecha();
-      editaUT(U=>{ const x=U.exercicios.find(y=>y.id===lid); x.copia={...x.copia,nome:q("#uj-n").value.trim()||x.copia.nome,formato:q("#uj-f").value.trim(),parte,espaco:{...x.copia.espaco,txt:q("#uj-e").value},duracao:{...d,total:d.total||null},variantes:q("#uj-v").value};
-        if(cp==="") delete x.comp; else x.comp=cp==="-"?"":cp; if(mh==="") delete x.meinho; else x.meinho=mh==="1"; },"Ajustado nesta UT"); }; }); }
+      if(["pratica","pausa","total"].some(k=>isNaN(d[k]))){ toast("Corrige os tempos da duração."); return false; } fecha(); const fmt=q("#uj-f").value.trim();
+      editaUT(U=>{ const x=U.exercicios.find(y=>y.id===lid), fig=R&&(refazFig||chaveFmt(fmt)!==chaveFmt(x.copia.formato))?figuraDoFormato(R,fmt):null;
+        x.copia={...x.copia,...(fig?{figura:fig}:{}),nome:q("#uj-n").value.trim()||x.copia.nome,formato:fmt,parte,espaco:{...x.copia.espaco,txt:q("#uj-e").value},duracao:{...d,total:d.total||null},variantes:q("#uj-v").value};
+        if(cp==="") delete x.comp; else x.comp=cp==="-"?"":cp; if(mh==="") delete x.meinho; else x.meinho=mh==="1"; },"Ajustado nesta UT"); return true; };
+    q("#uj-ok").onclick=guarda; }); }
 /* folha larga e botões compactos: com 24+ presentes, a grelha antiga (4 colunas, nomes em 2 linhas) deixava os últimos escondidos por baixo (v109) */
 function folhaGrupoUT(id,gid){ const U=uts[id]; if(!U) return; const G=gid?U.grupos.find(g=>g.id===gid):null, sel=new Set(G?G.jogadores:[]); let estr=G&&G.estr?clone(G.estr):null;
   folha(`<h3>${G?"Grupo de trabalho":"Novo grupo de trabalho"}</h3>

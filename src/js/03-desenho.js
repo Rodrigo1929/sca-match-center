@@ -32,7 +32,8 @@ function desenha(L,opts={}){
   const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":`Esquema ${L.nome}`});
   const f=el("filter",{id:"sh",x:"-5%",y:"-10%",width:"110%",height:"140%"},el("defs",{},svg));
   el("feDropShadow",{dx:0,dy:300,stdDeviation:220,"flood-opacity":".35"},f);
-  if(L.fundo==="pitch-setores") campoSetores(svg); else if(L.fundo==="pitch"||L.fundo==="pitch-full") campo(svg,L.semCabecalho,FUNDOS[L.fundo].campo); else el("image",{href:`slides/${L.fundo}.jpg`,x:0,y:0,width:W,height:H,preserveAspectRatio:"none"},svg);
+  if(L.fundo==="pitch-setores") campoSetores(svg); else if(L.fundo==="pitch-espacos"){ campo(svg,true,FUNDOS[L.fundo].campo); legendaEspacos(svg); } else if(L.fundo==="pitch"||L.fundo==="pitch-full") campo(svg,L.semCabecalho,FUNDOS[L.fundo].campo); else el("image",{href:`slides/${L.fundo}.jpg`,x:0,y:0,width:W,height:H,preserveAspectRatio:"none"},svg);
+  if(L.espacos) desenhaEspacos(svg,L.adv);
   if(L.titulo) titulo(svg,L);
   (L.textos||[]).forEach((T,ti)=>desenhaTexto(svg,L,T,ti,opts));
   const {v,base:bv,dups}=calcula(L); cartoesCache=cartoes(); dupsAtual=dups||[];
@@ -188,12 +189,19 @@ function folhaAdv(L,i){
   folha(`<h3>Peça (adversário / zona)</h3><h4>Cor</h4><div class="styles" id="ad-c"></div>
     <h4>Transparência</h4><div class="styles" id="ad-t"></div>
     <h4>Destaque (luz)</h4><div id="ad-luz"></div>
-    <div class="actions"><button class="btn danger l" id="ad-del">Apagar</button><button class="btn" id="ad-dup">Duplicar</button><button class="btn dark" data-close>Fechar</button></div>`,(s,fecha)=>{
+    ${L.espacos?`<h4>Linha do adversário</h4><p class="sub" style="margin:0">Automática = a app escolhe pela posição. Escolhe à mão quando um jogador está entre linhas.</p><div class="styles" id="ad-l"></div>`:""}
+    <div class="actions"><button class="btn danger l" id="ad-del">Apagar</button>${L.espacos?`<button class="btn" id="ad-rep">Repor o onze do adversário</button>`:""}<button class="btn" id="ad-dup">Duplicar</button><button class="btn dark" data-close>Fechar</button></div>`,(s,fecha)=>{
     s.querySelector("#ad-luz").appendChild(linhaLuz(L.adv[i].luz,c=>{ const C=clone(L); if(c) C.adv[i].luz=c; else delete C.adv[i].luz; guardaLance(C); fecha(); }));
     [["#0070C0","Azul"],["#000000","Preto"],["#FFFFFF","Branco"],["#70AD47","Verde"]].forEach(([c,n])=>{ const b=document.createElement("button"); b.innerHTML=`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="${c}" stroke="#000"/></svg><span>${n}</span>`;
       b.onclick=()=>{ const C=clone(L); C.adv[i].fill=c; guardaLance(C); fecha(); }; s.querySelector("#ad-c").appendChild(b); });
     [["Opaca",1],["Meio transparente",0.5],["Muito transparente",0.3]].forEach(([n,v])=>{ const b=document.createElement("button"); b.setAttribute("aria-pressed",String((L.adv[i].fa??1)===v)); b.innerHTML=`<span>${n}</span>`;
       b.onclick=()=>{ const C=clone(L); C.adv[i].fa=v; guardaLance(C); fecha(); }; s.querySelector("#ad-t").appendChild(b); });
+    if(L.espacos){ const at=L.adv[i].gr?"gr":(L.adv[i].linha||"");
+      [["","Automática"],["1","1.ª linha de pressão"],["2","2.ª linha"],["3","Última linha"],["gr","Guarda-redes"]].forEach(([v,n])=>{ const b=document.createElement("button"); b.setAttribute("aria-pressed",String(at===v)); b.innerHTML=`<span>${n}</span>`;
+        b.onclick=()=>{ const C=clone(L), x=C.adv[i]; delete x.gr; delete x.linha;
+          if(v==="gr") C.adv.forEach(o=>{ delete o.gr; if(o.linha==="gr") delete o.linha; }), x.gr=true; else if(v) x.linha=v;
+          guardaLance(C); fecha(); }; s.querySelector("#ad-l").appendChild(b); });
+      s.querySelector("#ad-rep").onclick=()=>{ const C=clone(L); C.adv=advEspacos(); guardaLance(C); fecha(); toast("Adversário reposto",()=>guardaLance(L)); }; }
     s.querySelector("#ad-del").onclick=()=>{ const C=clone(L); C.adv.splice(i,1); guardaLance(C); fecha(); toast("Adversário apagado",()=>guardaLance(L)); };
     s.querySelector("#ad-dup").onclick=()=>{ const C=clone(L); const d=clone(C.adv[i]); d.cx+=d.r*3; C.adv.push(d); guardaLance(C); fecha(); };
   });
@@ -350,7 +358,9 @@ function liga(g,svg,L,kind,i,num,o_){
     if(!start) return;
     const p=svgPt(svg,e), dx=p.x-start.x, dy=p.y-start.y;
     if(Math.hypot(dx,dy)>350) moved=true;
-    if(moved){ g.setAttribute("transform",`translate(${dx} ${dy})`); if(kind==="bolas"||kind==="adv"){ const lz=svg.querySelector(`g.luz[data-bi="${kind==="adv"?"a"+i:i}"]`); if(lz) lz.setAttribute("transform",`translate(${dx} ${dy})`); } }
+    if(moved){ g.setAttribute("transform",`translate(${dx} ${dy})`);
+      if(kind==="adv"&&L.espacos){ const zg=svg.querySelector("g.espacos"); if(zg) desenhaEspacos(svg,L.adv.map((a,k)=>k===i?{...a,cx:orig.cx+dx,cy:orig.cy+dy}:a),zg); }
+      if(kind==="bolas"||kind==="adv"){ const lz=svg.querySelector(`g.luz[data-bi="${kind==="adv"?"a"+i:i}"]`); if(lz) lz.setAttribute("transform",`translate(${dx} ${dy})`); } }
   });
   const end=e=>{
     if(!start) return;

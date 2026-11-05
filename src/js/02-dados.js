@@ -6,6 +6,7 @@ function lances(){
   const out=[]; const seen=new Set();
   ESPECIAIS.concat(DEF_LANCES).forEach(d0=>{ let d=d0;
     if(d0.bolas===null){ d={...d0,bolas:bolasDoOnze()}; if(d0.campoV===2) d=mapaCampo({...d,campoV:1},d0.fundo); }
+    if(d0.espacos&&!(lancesDb[d0.id]&&lancesDb[d0.id].bolas)) d.adv=advEspacos();
     seen.add(d.id); let o=lancesDb[d.id]; if(o&&o.apagado) return;
     if(o&&o.bolas&&d.id==="intervalo"&&o.campoV!==2) o=mapaCampo(o);
     out.push(o&&o.bolas?{...d,...o,original:true}:{...d,original:true}); });
@@ -13,6 +14,7 @@ function lances(){
   const ord={JOGO:-1,DEF:0,OF:1,REF:2};
   let OL=((est&&est.ordem)||[]).slice(); if(OL.length&&!OL.includes("estat")){ const k=OL.indexOf("intervalo"); OL.splice(k>=0?k+1:OL.length,0,"estat"); }
   if(OL.length&&!OL.includes("livre")){ const k=OL.indexOf("intervalo"); OL.splice(k>=0?k+1:OL.length,0,"livre"); }
+  if(OL.length&&!OL.includes("espacos")){ const k=OL.indexOf("livre"); OL.splice(k>=0?k+1:OL.length,0,"espacos"); }
   if(OL.length&&!OL.includes("encaixe")){ const k=OL.indexOf("onze"); OL.splice(k+1,0,"encaixe"); }
   const io=id=>{ const i=OL.indexOf(id); return i<0?1e6:i; };
   return out.sort((a,b)=>(ord[a.tipo]??1)-(ord[b.tipo]??1)||io(a.id)-io(b.id)||(a.ordem||0)-(b.ordem||0));
@@ -21,7 +23,7 @@ function lanceAtual(){ const L=lances(); return L.find(l=>l.id===curId)||L[0]; }
 function baseOf(slot){ const o=jogo.onze.find(o=>o.slot===slot); return o?o.n:slot; }
 function posOf(slot){ const o=jogo.onze.find(o=>o.slot===slot); return o?o.pos:""; }
 /* v112.5: uma troca feita no slide inicial vale também para os lances que o seguem (base); o quadro livre (v112.6) não recebe trocas */
-const ehLivre=id=>id==="livre"||!!(lancesDb[id]&&lancesDb[id].livre);
+const ehLivre=id=>ESPECIAIS.some(e=>e.id===id&&e.livre)||!!(lancesDb[id]&&lancesDb[id].livre);
 function aplica(l,id){ if(ehLivre(id)) return false; const b=(lancesDb[id]||{}).base; return l.modo==="todos"||(l.lances||[]).some(x=>x===id||(b&&x===b)); }
 function calcula(L){
   const slots=[...new Set([...L.bolas,...L.legs].map(x=>x.slot))];

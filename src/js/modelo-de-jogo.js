@@ -104,7 +104,7 @@ function listaModelos(){ const oM=k=>MOMENTOS.findIndex(m=>m[0]===k), oS=Q=>momD
   return Object.values(modelos).sort((a,b)=>oM(a.mom)-oM(b.mom)||oS(a)-oS(b)||a.ordem-b.ordem||String(a.nome).localeCompare(b.nome)); }
 function guardaModLocal(){ try{ localStorage.setItem(M_LS,JSON.stringify(modelos)); }catch(e){} }
 /* este editor também desenha a figura de um exercício (separador Exercícios): id "fx:<id do exercício>", gravada dentro do exercício */
-let mFig=null;
+let mFig=null, mFigUT=null;   // v112.11: mFig "<exercício>@<formato>" = variação; mFigUT = linha da UT de onde se abriu {ut, lid}
 const eFig=id=>String(id||"").startsWith("fx:");
 function mLe(id){ return eFig(id)?(typeof figuraQ==="function"?figuraQ(id.slice(3)):null):modelos[id]; }
 function mGrava(id,Q){ if(eFig(id)){ guardaFigura(id.slice(3),Q); return; } modelos[id]=Q; guardaModLocal(); gravaDoc("modelo/"+id,Q); }
@@ -114,9 +114,11 @@ function desfazModelo(){ const u=mUndo.pop(); if(!u){ toast("Nada para desfazer.
   if(u.antes){ mGrava(u.id,u.antes); if(!eFig(u.id)) mCur=u.id; mT_=Math.min(Math.round(mT_),u.antes.passos.length-1); }
   else if(!eFig(u.id)){ delete modelos[u.id]; apagaDoc("modelo/"+u.id); guardaModLocal(); if(mCur===u.id) mCur=null; }
   renderModelo(); toast("Desfeito"); }
-function mEntraFig(exId){ mPara(); if(mPl){ mPl.pause(); mPl=null; } mFig=exId; mEdit=true; mT_=0; mSel=null; mTool="mover"; setTab("m"); }
-function mSaiFig(){ if(!mFig) return; mPara(); if(mPl){ mPl.pause(); mPl=null; } mFig=null; mEdit=false; mSel=null; mT_=0; mUndo=mUndo.filter(u=>!eFig(u.id)); }
-function voltaAoExercicio(){ const id=mFig; mSaiFig(); setTab("x"); if(typeof abreEx==="function") abreEx(id); }
+function mEntraFig(exId,ut){ mPara(); if(mPl){ mPl.pause(); mPl=null; } mFig=exId; mFigUT=ut||null; mEdit=true; mT_=0; mSel=null; mTool="mover"; setTab("m"); }
+function mSaiFig(){ if(!mFig) return; mPara(); if(mPl){ mPl.pause(); mPl=null; } mFig=null; mFigUT=null; mEdit=false; mSel=null; mT_=0; mUndo=mUndo.filter(u=>!eFig(u.id)); }
+function voltaAoExercicio(){ const id=String(mFig).split("@")[0], o=mFigUT; mSaiFig();
+  if(o&&typeof uts!=="undefined"&&uts[o.ut]){ uModo="ut"; uCur=o.ut; setTab("u"); renderUT(); return; } setTab("x"); if(typeof abreEx==="function") abreEx(id); }
+const txtVolta=()=>mFigUT?"↩ Voltar à UT":"↩ Voltar ao exercício";
 function repoeModelos(M){ Object.keys(modelos).forEach(id=>{ if(!M[id]) apagaDoc("modelo/"+id); }); modelos={}; Object.entries(M||{}).forEach(([id,Q])=>{ modelos[id]=normQ({...Q,id}); gravaDoc("modelo/"+id,modelos[id]); }); guardaModLocal(); renderModelo(); }
 
 /* ---------- tempo da animação ---------- */
@@ -549,7 +551,7 @@ function renderModelo(){ const view=$("view-m"); if(!view||view.hidden) return; 
   stage.classList.toggle("editing",mEdit);
   if(!mPl.playing){ if(mEdit) mT_=Math.round(mT_); mPl.set(mT_); }
   const M=momDe(Q.mom); $("m-tit").textContent=Q.nome; const tg=$("m-tag"); tg.hidden=false; tg.textContent=mFig?"FIGURA DO EXERCÍCIO":subNome(Q.mom,Q.sub).toUpperCase(); tg.style.background=mFig?"#1B1A17":M[2];
-  const volta=mFig?`<button class="btn sm primary" id="mf-volta">↩ Voltar ao exercício</button>`:"";
+  const volta=mFig?`<button class="btn sm primary" id="mf-volta">${txtVolta()}</button>`:"";
   $("m-bar").innerHTML=mEdit?`<button class="btn sm" id="m-und" title="Desfazer (Ctrl+Z)"${mUndo.length?"":" disabled"}>↶ Desfazer</button><button class="btn sm dark" id="m-ed">✓ Concluir</button>${volta}`:`<button class="btn sm" id="m-rot" title="Bolinhas com número, posição ou sem texto">Bolinhas: ${ROT_M[Q.rot]}</button><button class="btn sm" id="m-ed">✎ Editar</button>${mFig?volta:`<button class="btn sm" id="m-fs" title="Apresentar os quadros do Modelo de Jogo">⛶ Apresentar</button><button class="btn sm" id="m-vid" title="Exportar a animação deste quadro em vídeo MP4">⬇ Vídeo</button>`}`;
   if($("mf-volta")) $("mf-volta").onclick=voltaAoExercicio;
   $("m-ed").onclick=()=>{ mEdit=!mEdit; mSel=null; mTool="mover"; if(mEdit) mPara(); renderModelo(); };
@@ -568,7 +570,7 @@ function renderModelo(){ const view=$("view-m"); if(!view||view.hidden) return; 
     else sb.hidden=true; }
   renderModeloControlos(); renderModeloPainel(Q); }
 function renderModeloNav(Q){ const nav=$("m-nav"), ls=listaModelos();
-  if(mFig){ nav.innerHTML=`<div class="mfig-aviso"><b>A desenhar a figura de um exercício</b><span></span><button class="btn sm primary" id="mf-volta2">↩ Voltar ao exercício</button></div>`;
+  if(mFig){ nav.innerHTML=`<div class="mfig-aviso"><b>A desenhar a figura de um exercício${mFigUT?" · variação deste formato (fica guardada no exercício)":""}</b><span></span><button class="btn sm primary" id="mf-volta2">${txtVolta()}</button></div>`;
     nav.querySelector("span").textContent=Q?Q.nome:""; $("mf-volta2").onclick=voltaAoExercicio; return; }
   let h=modosModeloHtml()+`<button class="newl" id="m-novo">+ Novo quadro</button>`;
   MOMENTOS.forEach(([mk,mn,cor,subs])=>{ const q=ls.filter(x=>x.mom===mk); h+=`<div class="grp"><h3><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cor};margin-right:6px"></i>${mn}</h3><ul>`;

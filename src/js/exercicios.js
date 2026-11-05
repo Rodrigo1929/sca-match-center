@@ -50,6 +50,7 @@ function normEx(d){ const s=v=>String(v??"").trim(), L=v=>(Array.isArray(v)?v.ma
     if(d.figura.quadro&&typeof d.figura.quadro==="object") F.quadro=d.figura.quadro;
     const im=d.figura.imagem; if(im&&/^[\w-]{8,64}$/.test(String(im.id||""))) F.imagem={id:String(im.id),w:n(im.w)||1600,h:n(im.h)||900};
     if(F.quadro||F.imagem){ F.usa=F.imagem&&(d.figura.usa==="imagem"||!F.quadro)?"imagem":"quadro"; E.figura=F; } }
+  if(d.varN&&typeof d.varN==="object"){ const V={}; Object.entries(d.varN).forEach(([k,q])=>{ const c=chaveFmt(k); if(c&&q&&typeof q==="object"&&Array.isArray(q.pecas)) V[c]=q; }); if(Object.keys(V).length) E.varN=V; }   // v112.11
   return E; }
 Object.keys(exercicios).forEach(id=>{ try{ exercicios[id]=normEx({...exercicios[id],id}); }catch(e){ delete exercicios[id]; } });
 
@@ -80,9 +81,41 @@ function cabFigura(E){ return `${parteDe(E.parte)[1]}${E.formato?" · "+E.format
 /* figura nova: só bolinhas (sem números nem posições), sem onze; fig = sem painel do passo */
 /* figuraQde serve também as cópias de exercícios guardadas nas UT */
 function figuraQde(E){ return normQ({...(temFigura(E)?E.figura.quadro:{rot:"nada",auto:true,sis:"",pecas:[]}),id:"fx:"+E.id,nome:E.nome,cab:cabFigura(E),fig:true}); }
-function figuraQ(id){ const E=exercicios[id]; return E?figuraQde(E):null; }
-function guardaFigura(id,Q){ const E=exercicios[id]; if(!E) return; const q=clone(Q); delete q.id; delete q.nome; delete q.cab; delete q.fig;
-  guardaEx({...clone(E),figura:{...(E.figura||{}),quadro:q,usa:"quadro"}},true); }
+/* v112.11: variações da figura por nº de jogadores. Chave do formato "6x6" ou "5x5+2J" (os GR não contam); guardadas no repositório em varN.
+   A UT com outro formato usa a variação guardada; sem ela, a figura do repositório com bolinhas a mais ou a menos (figuraAuto). id do editor: "<exercício>@<chave>" */
+function chaveFmt(f){ const t=String(f||"").replace(/×/g,"x"), m=t.match(/(\d+)\s*[xv]\s*(\d+)/i); if(!m) return ""; const j=t.match(/\+\s*(\d+)\s*J/i); return `${+m[1]}x${+m[2]}${j?`+${+j[1]}J`:""}`; }
+function numsFmt(k){ const m=String(k).match(/^(\d+)x(\d+)(?:\+(\d+)J)?$/); return m?[+m[1],+m[2],+(m[3]||0)]:null; }
+/* equipas da figura: peças nos/adv por cor (sem GR), a nossa primeiro; jokers = neutros */
+function equipasFig(q){ const g={}; (q.pecas||[]).forEach(p=>{ if(!["nos","adv","neutro"].includes(p.eq)||p.pos==="GR") return; const k=p.eq+"|"+(p.cor||""); (g[k]=g[k]||[]).push(p); });
+  const ks=Object.keys(g), eq=ks.filter(k=>!k.startsWith("neutro")).sort((a,b)=>(a.startsWith("nos")?0:1)-(b.startsWith("nos")?0:1)||g[b].length-g[a].length);
+  return [g[eq[0]]||[],g[eq[1]]||[],ks.filter(k=>k.startsWith("neutro")).map(k=>g[k]).sort((a,b)=>b.length-a.length)[0]||[]]; }
+/* bolinha nova: perto da sua equipa, no sítio mais afastado das outras peças */
+function lugarLivre(T,todas){ const xs=T.map(p=>p.x), ys=T.map(p=>p.y), ax=todas.map(p=>p.x), ay=todas.map(p=>p.y);
+  const lim=[Math.max(Math.min(...ax),Math.min(...xs)-4),Math.min(Math.max(...ax),Math.max(...xs)+4),Math.max(Math.min(...ay),Math.min(...ys)-4),Math.min(Math.max(...ay),Math.max(...ys)+4)];
+  const cx=xs.reduce((a,b)=>a+b,0)/xs.length, cy=ys.reduce((a,b)=>a+b,0)/ys.length; let best=null, bs=-1e9;
+  for(let x=lim[0];x<=lim[1]+.01;x+=1) for(let y=lim[2];y<=lim[3]+.01;y+=1){ const d=Math.min(...todas.map(p=>Math.hypot(p.x-x,p.y-y))), sc=Math.min(d,6)-.12*Math.hypot(x-cx,y-cy); if(sc>bs){ bs=sc; best={x:Math.round(x*10)/10,y:Math.round(y*10)/10}; } }
+  return best||{x:cx+2,y:cy+2}; }
+function figuraAuto(q0,de,para){ const q=clone(q0), a=numsFmt(chaveFmt(de)), b=numsFmt(chaveFmt(para)); if(!b||!Array.isArray(q.pecas)||!q.pecas.length) return q;
+  q.passos=Array.isArray(q.passos)&&q.passos.length?q.passos:[{pos:{},setas:[],zonas:[]}];
+  equipasFig(q).forEach((lst,k)=>{ const n=a?lst.length+b[k]-a[k]:b[k], d=Math.max(0,n)-lst.length; if(!d||(!lst.length&&k<2)) return;
+    if(d<0){ const fora=new Set(lst.slice(d).map(p=>p.id)); q.pecas=q.pecas.filter(p=>!fora.has(p.id)); q.passos.forEach(P=>fora.forEach(id=>{ if(P.pos) delete P.pos[id]; })); return; }
+    const mod=lst[lst.length-1]||{eq:"neutro",cor:"amarelo",tam:(q.pecas.find(p=>p.tam)||{}).tam};
+    for(let i=0;i<d;i++){ const id=`v${k}n${lst.length}`, nova={eq:mod.eq,n:"",pos:"",id,...(mod.cor?{cor:mod.cor}:{}),...(mod.tam?{tam:mod.tam}:{})};
+      q.passos.forEach(P=>{ P.pos=P.pos||{}; const ps=Object.entries(P.pos).filter(([pid])=>q.pecas.some(p=>p.id===pid)).map(([pid,v])=>({...v,pid})), eq=lst.map(p=>P.pos[p.id]).filter(Boolean);
+        P.pos[id]=ps.length?lugarLivre(eq.length?eq:ps,ps):{x:52.5,y:34}; });
+      q.pecas.push(nova); lst.push(nova); } });
+  return q; }
+/* figura de um exercício do repositório para um formato (null se não houver figura desenhada) */
+function figuraDoFormato(R,fmt){ if(!R||!R.figura) return null; const k=chaveFmt(fmt); if(usaImagem(R)||!temFigura(R)||!k||k===chaveFmt(R.formato)) return clone(R.figura);
+  return {...clone(R.figura),quadro:clone(R.varN&&R.varN[k]?R.varN[k]:figuraAuto(R.figura.quadro,R.formato,fmt)),usa:"quadro"}; }
+function figuraQ(id){ const [ex,k]=String(id).split("@"), E=exercicios[ex]; if(!E) return null; if(!k) return figuraQde(E);
+  const F=figuraDoFormato(E,k); return F&&F.quadro?normQ({...F.quadro,id:"fx:"+id,nome:E.nome,cab:cabFigura({...E,formato:k}),fig:true}):null; }
+function guardaFigura(id,Q){ const [ex,k]=String(id).split("@"), E=exercicios[ex]; if(!E) return; const q=clone(Q); delete q.id; delete q.nome; delete q.cab; delete q.fig;
+  if(!k){ guardaEx({...clone(E),figura:{...(E.figura||{}),quadro:q,usa:"quadro"}},true); return; }
+  /* variação: grava no repositório sem mudar a data de alteração (não é «mudou no repositório») e passa para a linha da UT de onde se abriu */
+  const N=normEx({...clone(E),varN:{...(E.varN||{}),[k]:q}}); exercicios[ex]=N; guardaExLocal(); gravaDoc("exercicios/"+ex,N);
+  const o=typeof mFigUT!=="undefined"&&mFigUT, U=o&&uts[o.ut]; if(U){ const C=clone(U), x=C.exercicios.find(y=>y.id===o.lid); if(x&&chaveFmt(x.copia.formato)===k){ x.copia.figura={...(x.copia.figura||{}),quadro:clone(q),usa:"quadro"}; guardaUT(C,true); } } }
+function tiraVariacao(ex,k){ const E=exercicios[ex]; if(!E||!E.varN||!E.varN[k]) return; const V={...E.varN}; delete V[k]; const N=normEx({...clone(E),varN:V}); if(!Object.keys(V).length) delete N.varN; exercicios[ex]=N; guardaExLocal(); gravaDoc("exercicios/"+ex,N); }
 
 /* ---------- figura por imagem: guardada no armazenamento de ficheiros do link (assets); o exercício guarda só o id ---------- */
 let xAssets; const xImgUrl={};
