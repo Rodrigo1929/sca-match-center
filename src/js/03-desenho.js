@@ -353,12 +353,15 @@ function liga(g,svg,L,kind,i,num,o_){
     e.preventDefault(); g.setPointerCapture(e.pointerId);
     start=svgPt(svg,e); moved=false; dragging=true;
     const it=kind==="notas"?L.notas:L[kind][i]; orig=(kind==="bolas"||kind==="adv"||kind==="bj")?{cx:it.cx,cy:it.cy}:{x:it.x,y:it.y};
+    /* v112.13: setas que saem desta peça (para as acompanhar enquanto se arrasta; o destino fica) */
+    orig.setas=(kind==="bolas"||kind==="adv"||kind==="bj")?(L.setas||[]).map((s,k)=>Math.hypot(s.x1-it.cx,s.y1-it.cy)<=(it.r||1450)*1.6?k:-1).filter(k=>k>=0):[];
   });
   g.addEventListener("pointermove",e=>{
     if(!start) return;
     const p=svgPt(svg,e), dx=p.x-start.x, dy=p.y-start.y;
     if(Math.hypot(dx,dy)>350) moved=true;
     if(moved){ g.setAttribute("transform",`translate(${dx} ${dy})`);
+      if(orig.setas.length){ const gs=svg.querySelectorAll("g.seta"); orig.setas.forEach(k=>{ const s=L.setas[k], b={...s,x1:s.x1+dx,y1:s.y1+dy,...(s.qx!=null?{qx:s.qx+dx/2,qy:s.qy+dy/2}:{})}; gs[k]&&gs[k].querySelectorAll("path").forEach(pa=>pa.setAttribute("d",caminho(b))); }); }
       if(kind==="adv"&&L.espacos){ const zg=svg.querySelector("g.espacos"); if(zg) desenhaEspacos(svg,L.adv.map((a,k)=>k===i?{...a,cx:orig.cx+dx,cy:orig.cy+dy}:a),zg); }
       if(kind==="bolas"||kind==="adv"){ const lz=svg.querySelector(`g.luz[data-bi="${kind==="adv"?"a"+i:i}"]`); if(lz) lz.setAttribute("transform",`translate(${dx} ${dy})`); } }
   });
@@ -368,7 +371,7 @@ function liga(g,svg,L,kind,i,num,o_){
     if(moved){
       justDragged=true; setTimeout(()=>{justDragged=false;},400);
       const C=clone(L), it=kind==="notas"?C.notas:C[kind][i];
-      if(kind==="bolas"||kind==="adv"||kind==="bj"){ it.cx=Math.round(Math.min(W,Math.max(0,orig.cx+dx))); it.cy=Math.round(Math.min(H,Math.max(0,orig.cy+dy))); }
+      if(kind==="bolas"||kind==="adv"||kind==="bj") movePecas(C,[[it,Math.round(Math.min(W,Math.max(0,orig.cx+dx))),Math.round(Math.min(H,Math.max(0,orig.cy+dy)))]]);   // v112.13: a seta que sai dele vai com ele
       else { it.x=Math.round(orig.x+dx); it.y=Math.round(orig.y+dy); }
       guardaLance(C);
     } else if(limpo) { /* apresentação: só arrastar */

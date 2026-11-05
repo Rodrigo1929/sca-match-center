@@ -6,7 +6,7 @@
 const RJ_LS="sca-reljog-v1";
 let relJogs={}; try{ relJogs=JSON.parse(localStorage.getItem(RJ_LS)||"{}")||{}; }catch(e){}
 function normRelJog(d){ const s=v=>String(v??"").trim(), mi={}; Object.entries(d.msgInd||{}).forEach(([k,v])=>{ if(s(k)&&s(v)) mi[s(k)]=s(v); });
-  return {id:s(d.id)||"atual",msg:s(d.msg),msgInd:mi,lances:(Array.isArray(d.lances)?d.lances:[]).filter(x=>x&&s(x.rid)).map(x=>({rid:s(x.rid),titulo:s(x.titulo)})).slice(0,40),
+  return {id:s(d.id)||"atual",msg:s(d.msg),msgInd:mi,lances:(Array.isArray(d.lances)?d.lances:[]).filter(x=>x&&s(x.rid)).map(x=>({rid:s(x.rid),titulo:s(x.titulo)})).slice(0,500),   // v112.12.1: antes 40 — «Todos os lances» ficava cortado e jogadores sem lances no individual
     exportado:(Array.isArray(d.exportado)?d.exportado:[]).filter(x=>x&&x.em).map(x=>({em:s(x.em),por:s(x.por),versao:Math.round(+x.versao)||1,n:Math.round(+x.n)||0})).slice(-30),
     alteradoPor:s(d.alteradoPor),alteradoEm:s(d.alteradoEm)}; }
 Object.keys(relJogs).forEach(id=>{ try{ relJogs[id]=normRelJog({...relJogs[id],id}); }catch(e){ delete relJogs[id]; } });

@@ -681,7 +681,8 @@ await pg.click("#rj-ok"); await pg.waitForTimeout(100);
 { await pg.click("#a-jpdf"); await pg.waitForSelector("#rj-ta"); const n = () => pg.evaluate(() => +(document.querySelector("#rj-c").textContent.match(/\d+/) || [0])[0]);
   const tot = await pg.evaluate(() => +document.querySelector("#rj-ta").textContent.match(/\((\d+)\)/)[1]); await pg.click("#rj-ta"); const a1 = await n();
   await pg.click("#rj-tn"); await pg.click("#rj-tn"); const a2 = await n(); await pg.click("#sheet-root [data-close]"); await pg.waitForTimeout(80);
-  if (!tot || a1 !== tot || a2 !== 0) erros.push("Relatório para jogadores (v112.12): selecionar todos os lances " + JSON.stringify({ tot, a1, a2 })); }
+  const cap = await pg.evaluate(() => normRelJog({ id: "x", lances: [...Array(166)].map((_, i) => ({ rid: "r" + i })) }).lances.length);   // v112.12.1: sem corte nos 40
+  if (!tot || a1 !== tot || a2 !== 0 || cap !== 166) erros.push("Relatório para jogadores (v112.12): selecionar todos os lances " + JSON.stringify({ cap }) + " " + JSON.stringify({ tot, a1, a2 })); }
 const rj = await pg.evaluate(async () => { const G = hist.Jtestearq, R = relJogDe(G), outrosNomes = (G.onze || []).filter((o) => o.n !== "9" && o.nome).map((o) => o.nome);
   G.video = { url: "https://www.youtube.com/watch?v=abcdefghijk", k1: 30, k2: 3000, antes: 10 };
   const g = await pdfRelJog(G, null, R), i = await pdfRelJog(G, "9", R), gt = g.output(), it = i.output();
@@ -1054,6 +1055,15 @@ if (n1 !== 13 || n2 !== 11) erros.push("Adversário: substituir o plantel import
     delete uts.tu11211; apagaDoc("uts/tu11211"); delete exercicios.tx11211; apagaDoc("exercicios/tx11211"); guardaUTLocal(); guardaExLocal(); uCur = null; return { p, aviso }; }, r2.id);
   if (!temBt || r1.n !== 7 || r1.a !== 7 || r1.repo !== 13 || !r2.varN || !r2.ut || r2.ut.x !== 99 || !/UT/.test(r2.volta || "") || !r2.tab || r3 !== 13 || !r4.p || r4.p.x !== 99 || r4.aviso)
     erros.push("UT (v112.11): variação da figura por formato " + JSON.stringify({ temBt, r1, r2, r3, r4 })); }
+// v112.13: arrastar um atleta num lance leva a seta que sai dele (o destino fica)
+{ const s0 = await pg.evaluate(() => { setTab("q"); editing = false; curId = "9"; const L = lanceAtual(), C = copiaLance(L), b = C.bolas.find((x) => !eAlternativa(x)); window.D0_11213 = lancesDb["9"] ? clone(lancesDb["9"]) : null;
+    C.setas = [...(C.setas || []), { x1: b.cx, y1: b.cy, x2: b.cx + 6000, y2: b.cy + 3000, c: "#000", w: 120, fim: true }]; guardaLance(C); render();
+    const i = lanceAtual().bolas.indexOf(lanceAtual().bolas.find((x) => x.slot === b.slot && !eAlternativa(x))), g = [...document.querySelectorAll("#stage svg g.bola")].filter((x) => !x.classList.contains("bj"))[(lanceAtual().adv || []).length + i];
+    const r = g.querySelectorAll("circle")[2].getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2, k: lanceAtual().setas.length - 1, slot: b.slot, x2: b.cx + 6000 }; });
+  await pg.mouse.move(s0.x, s0.y); await pg.mouse.down(); await pg.mouse.move(s0.x + 30, s0.y + 20, { steps: 4 }); await pg.mouse.up(); await pg.waitForTimeout(100);
+  const s1 = await pg.evaluate(({ k, slot }) => { const L = lanceAtual(), b = L.bolas.find((x) => x.slot === slot && !eAlternativa(x)), a = L.setas[k], r = { sai: Math.hypot(a.x1 - b.cx, a.y1 - b.cy) < 50, x2: a.x2 };
+    if (window.D0_11213) { lancesDb["9"] = window.D0_11213; gravaDoc("lances/9", window.D0_11213); } else { delete lancesDb["9"]; apagaDoc("lances/9"); } guardaLocal(); render(); return r; }, s0);
+  if (!s1.sai || s1.x2 !== s0.x2) erros.push("Quadro (v112.13): a seta não acompanhou o atleta arrastado " + JSON.stringify({ s0, s1 })); }
 // v112.4: mudar o nº passa também a convocatória, o onze e o Encaixe do jogo atual (sem repetidos); com registos no Ao vivo com o nº antigo, o jogo fica como está
 { const v1124 = await pg.evaluate(() => { const J0 = clone(jogo), on = J0.onze.map((o, i) => i ? o : { ...o, n: "93" });
     guardaJogo({ ...J0, eventos: [], subs: [], onze: on, suplentes: ["91", "92"], encaixe: { nos: { 93: { x: 1, y: 1 } }, adv: {} } });
