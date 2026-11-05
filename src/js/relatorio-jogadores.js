@@ -73,12 +73,15 @@ async function pdfRelJog(G,k,R,base){ if(!window.jspdf) await carregaScript("htt
   if(k){ T(`${k} · ${nomeJogRel(G,k)}`,PW/2,104,{b:1,s:13,c:[255,255,255],al:"center"}); const fj=typeof fotoCirculo==="function"?await fotoCirculo(String(k),300,12,"#FFFFFF"):null; if(fj) doc.addImage(fj.toDataURL("image/png"),"PNG",PW-M-110,14,86,86); }
   y=(k?120:104)+22;
   const lances=lancesRel(G,R,k);
-  if(!k){
+  /* dados gerais da equipa (sem nomes): no coletivo e, desde a v112.17, também no fim do individual */
+  const equipa=async()=>{
     titulo("Estatística da equipa"); tabela(["","1.ª parte","2.ª parte","Total"],D.estat);
     titulo("Perdas de bola por tipo"); tabela(["Tipo","1.ª parte","2.ª parte","Total"],D.perdas);
     await mapa("Perdas de bola (atacamos para a direita)",pontosMapa(D.nos.filter(x=>x.ac==="per"),x=>COR_PERDA[x.tipo]||"#C00000"),Object.entries(COR_PERDA));
     await mapa("Remates",pontosMapa(D.nos.filter(x=>COR_REMATE[x.ac]),x=>COR_REMATE[x.ac]),[["À baliza",COR_REMATE.re],["Ao lado",COR_REMATE.rd],["Bloqueado",COR_REMATE.rb],["Golo",COR_REMATE.golo]]);
-    await mapa("Passes-chave",pontosMapa(D.nos.filter(x=>x.ac==="pc"),()=>"#2E8B57"),[["Passe-chave","#2E8B57"]]);
+    await mapa("Passes-chave",pontosMapa(D.nos.filter(x=>x.ac==="pc"),()=>"#2E8B57"),[["Passe-chave","#2E8B57"]]); };
+  if(!k){
+    await equipa();
     if(R.msg){ titulo("Mensagem da equipa técnica"); texto(R.msg,{s:10.5}); } }
   else {
     const mn=minutosDe(G,k), gl=D.ev.filter(e=>e.tipo==="golo"&&String(e.n)===String(k)).length, ct=cartoesDe(D,k);
@@ -91,6 +94,7 @@ async function pdfRelJog(G,k,R,base){ if(!window.jspdf) await carregaScript("htt
     for(let i=0;i<lances.length;i+=por){ novaSe(lado+40); lances.slice(i,i+por).forEach((l,j)=>{ const x=M+j*(lado+40);
       if(l.url){ qrNoPdf(doc,l.url,x,y,lado); doc.link(x,y,lado,lado,{url:l.url}); } else { doc.setDrawColor(...MUT); doc.rect(x,y,lado,lado); T("sem vídeo",x+lado/2,y+lado/2,{s:7,c:MUT,al:"center"}); }
       doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.setTextColor(...INK); doc.text(doc.splitTextToSize(pdfTxt(`${l.min} · ${l.titulo}`),lado+34).slice(0,2),x+lado/2,y+lado+10,{align:"center"}); }); y+=lado+34; } }
+  if(k){ novaSe(9999); titulo("A equipa neste jogo"); await equipa(); }   // depois do que é do jogador, numa página nova
   const np=doc.getNumberOfPages(); for(let i=p0;i<=np;i++){ doc.setPage(i); T(`SC Angrense · Pós-jogo vs ${G.adversario||""}${k?" · "+nomeJogRel(G,k):""} · ${i-p0+1}/${np-p0+1}`,PW/2,PH-16,{s:7.5,c:MUT,al:"center"}); }
   return doc; }
 /* um só PDF: relatório da equipa e, a seguir, o de cada jogador (cada um com a sua numeração de páginas) */
@@ -128,13 +132,16 @@ async function ecrasRelJog(G,k,R){ const D=dadosRel(G), FW=1080, FH=1920, RED="#
         txt(c,`${l.min} · ${l.titulo}`,x+lado/2,yy+lado+42,28,INK,"center",true,FW/2-60); });
       i+=cabe; txt(c,"Aponta a câmara ao código para ver o lance",FW/2,FH-50,28,MUT,"center",false); } };
   const lances=lancesRel(G,R,k);
-  if(!k){
-    let c=novo(); await cab(c,"RELATÓRIO DA EQUIPA"); let y=480; if(D.golos.length){ y=linhas(c,"⚽ "+D.golos.join("  ·  "),60,y,36,FW-120,INK,true)+20; }
+  /* ecrãs da equipa; no individual (v112.17) sem marcadores nem a mensagem do grupo */
+  const equipaC=async ind=>{
+    let c=novo(); await cab(c,ind?"A EQUIPA NESTE JOGO":"RELATÓRIO DA EQUIPA"); let y=480; if(!ind&&D.golos.length){ y=linhas(c,"⚽ "+D.golos.join("  ·  "),60,y,36,FW-120,INK,true)+20; }
     y=tituloC(c,"Estatística da equipa",y+20); y=tabelaC(c,y,["","1.ª","2.ª","Total"],D.estat); y=tituloC(c,"Perdas de bola por tipo",y+10); tabelaC(c,y,["","1.ª","2.ª","Total"],D.perdas);
     c=novo(); await cab(c,"PERDAS DE BOLA E REMATES"); y=tituloC(c,"Perdas de bola",500); y=await mapaC(c,pontosMapa(D.nos.filter(x=>x.ac==="per"),x=>COR_PERDA[x.tipo]||RED),y,Object.entries(COR_PERDA));
     y=tituloC(c,"Remates",y+20); await mapaC(c,pontosMapa(D.nos.filter(x=>COR_REMATE[x.ac]),x=>COR_REMATE[x.ac]),y,[["À baliza",COR_REMATE.re],["Ao lado",COR_REMATE.rd],["Bloqueado",COR_REMATE.rb],["Golo",COR_REMATE.golo]]);
-    c=novo(); await cab(c,"PASSES-CHAVE E MENSAGEM"); y=tituloC(c,"Passes-chave",500); y=await mapaC(c,pontosMapa(D.nos.filter(x=>x.ac==="pc"),()=>"#2E8B57"),y,[["Passe-chave","#2E8B57"]]);
-    if(R.msg){ y=tituloC(c,"Mensagem da equipa técnica",y+20); linhas(c,R.msg,60,y+10,40,FW-120,INK,false,1.35); }
+    c=novo(); await cab(c,ind?"PASSES-CHAVE":"PASSES-CHAVE E MENSAGEM"); y=tituloC(c,"Passes-chave",500); y=await mapaC(c,pontosMapa(D.nos.filter(x=>x.ac==="pc"),()=>"#2E8B57"),y,[["Passe-chave","#2E8B57"]]);
+    if(!ind&&R.msg){ y=tituloC(c,"Mensagem da equipa técnica",y+20); linhas(c,R.msg,60,y+10,40,FW-120,INK,false,1.35); } };
+  if(!k){
+    await equipaC(false);
     if(lances.length) await lancesC(lances,"RELATÓRIO DA EQUIPA",""); }
   else {
     const c=novo(); await cab(c,"O TEU RELATÓRIO"); const fj=typeof fotoCirculo==="function"?await fotoCirculo(String(k),300,10,"#FFFFFF"):null;
@@ -144,7 +151,8 @@ async function ecrasRelJog(G,k,R){ const D=dadosRel(G), FW=1080, FH=1920, RED="#
     const A=acoesJogador(D,k); y=tituloC(c,"As tuas ações",y+10);
     if(A.linhas.length){ y=tabelaC(c,y,["","1.ª","2.ª","Total"],A.linhas.slice(0,8)); const larg=Math.min(FW-120,(FH-40-y)/PROP_CAMPO); if(A.rs.length&&larg>=520) await mapaC(c,pontosMapa(A.rs,x=>acaoDe(x.ac).cor),y,[],larg); }
     else txt(c,"Sem ações registadas para ti neste jogo.",60,y+30,34,MUT,"left",false);
-    if(R.msgInd[k]||lances.length) await lancesC(lances,"O TEU RELATÓRIO",R.msgInd[k]||""); }
+    if(R.msgInd[k]||lances.length) await lancesC(lances,"O TEU RELATÓRIO",R.msgInd[k]||"");
+    await equipaC(true); }
   return ecras; }
 
 /* ---------- ZIP (sem compressão; pastas Grupo e Individuais) ---------- */

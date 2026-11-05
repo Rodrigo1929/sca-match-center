@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| 112.17 | **Relatório para jogadores · individual:** no fim, numa página nova, «A equipa neste jogo» com os dados gerais da equipa (estatística, perdas de bola por tipo e mapas de perdas, remates e passes-chave), sem nomes de colegas (sem marcadores) e sem os lances da equipa. Os ecrãs para o WhatsApp levam os mesmos 3 ecrãs da equipa no fim. |
 | 112.16 | **Relatório para jogadores:** na pré-visualização, «Vários jogadores» deixa escolher os atletas (ou «✓ Todos») e «⬇ PDFs dos escolhidos» gera um PDF individual para cada um, juntos num .zip (com 1 só escolhido, sai o PDF direto). |
 | 112.15 | **Relatório para jogadores:** na pré-visualização, depois de escolher um jogador, «⬇ PDF só de …» e «⬇ Ecrãs só de …» exportam só o individual desse atleta (para lhe enviar); com «Grupo» escolhido, só o coletivo. O «PDF completo» passa a dizer «equipa técnica: grupo + todos». |
 | 112.14 | **Quadro · lances ligados:** o destaque de um jogador (estilo — ex.: «Destaque» — e luz) mudado no slide inicial passa também para os lances que o seguem, como as posições. Tirá-lo ou mudá-lo à mão num desses lances fica só nesse lance (deixa de seguir o slide inicial nesse jogador); na folha da bolinha, «↺ Destaque como no «…»» volta a seguir. Vale também para os adversários. Ao ligar um lance a um slide inicial, o destaque fica igual ao dele. Dado novo opcional: `destProprio` no lance (peças com destaque próprio). |

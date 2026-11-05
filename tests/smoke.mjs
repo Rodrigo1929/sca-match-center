@@ -689,7 +689,7 @@ const rj = await pg.evaluate(async () => { const G = hist.Jtestearq, R = relJogD
   const eg = await ecrasRelJog(G, null, R), ei = await ecrasRelJog(G, "9", R), ls = lancesRel(G, R), li = lancesRel(G, R, "9");
   const zip = zipFicheiros([{ nome: "Grupo/a.pdf", dados: new Uint8Array([1, 2, 3]) }, { nome: "Individuais/b.jpg", dados: new Uint8Array([4]) }]), zb = new Uint8Array(await zip.arrayBuffer());
   const zs = new TextDecoder().decode(zb);
-  return { msg: R.msg, ind: R.msgInd["9"], lances: R.lances.length, gMsg: gt.includes("Pressão alta"), gInd: gt.includes("Atenção às receções"), iInd: it.includes("Atenção às receções"),
+  return { msg: R.msg, ind: R.msgInd["9"], lances: R.lances.length, gMsg: gt.includes("Pressão alta"), gInd: gt.includes("Atenção às receções"), iInd: it.includes("Atenção às receções"), iEq: it.includes("PERDAS DE BOLA POR TIPO"),
     iOutros: outrosNomes.some((n) => it.includes(n)), iNotas: it.includes("Notas") || gt.includes("Notas do jogo"), url: ls[0] && ls[0].url, li: li.every((l) => String(l.j) === "9"),
     eg: eg.map((c) => c.width + "x" + c.height).join(","), ei: ei.length, zip: zb[0] === 0x50 && zb[1] === 0x4b && zs.includes("Grupo/a.pdf") && zs.includes("Individuais/b.jpg"),
     nome: nomeFichRel(G, alcunhaRel(G, "9")) }; });
@@ -718,7 +718,7 @@ if ((nJs > 1 ? !dSel.suggestedFilename().endsWith("_individuais.zip") || nPdf !=
 const [dZip] = await Promise.all([pg.waitForEvent("download", { timeout: 120000 }), (async () => { await pg.click("#rp-ok"); await pg.click("#rp-ok"); })()]);
 await pg.waitForTimeout(300);
 const rjx = await pg.evaluate(() => { const R = relJogDe(hist.Jtestearq); return R.exportado.map((x) => x.versao + ":" + (x.n > 2)).join(","); });
-if (rj.msg !== "• Pressão alta\n• Ataque à profundidade" || rj.ind !== "Boa pressão. Atenção às receções." || rj.lances < 1 || !rj.gMsg || rj.gInd || !rj.iInd || rj.iOutros || rj.iNotas || !/youtube\.com\/watch\?v=abcdefghijk&t=\d+s/.test(rj.url || "") || !rj.li
+if (rj.msg !== "• Pressão alta\n• Ataque à profundidade" || rj.ind !== "Boa pressão. Atenção às receções." || rj.lances < 1 || !rj.gMsg || rj.gInd || !rj.iInd || !rj.iEq || rj.ei < 4 || rj.iOutros || rj.iNotas || !/youtube\.com\/watch\?v=abcdefghijk&t=\d+s/.test(rj.url || "") || !rj.li
   || !rj.eg.startsWith("1080x1920") || rj.ei < 1 || !rj.zip || !/_jogo|Arquivado_FC/.test(rj.nome) || !dZip.suggestedFilename().endsWith("_relatorio_jogadores.zip") || rjx !== "1:true")
   erros.push("Relatório para jogadores: errado " + JSON.stringify({ rj, rjx, z: dZip.suggestedFilename() }));
 await pg.selectOption("#r-jogo", ""); await pg.waitForTimeout(100);
