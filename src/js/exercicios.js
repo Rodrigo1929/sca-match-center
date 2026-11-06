@@ -215,7 +215,9 @@ function renderEx(){ const v=$("view-x"); if(!v||v.hidden) return; renderExFiltr
   try{ localStorage.setItem("sca-ex-cur",xCur||""); }catch(e){}
   renderExNav(ls,E); renderExFicha(E,PARTES.flatMap(([pk])=>ls.filter(x=>x.parte===pk))); renderExFigura(E); renderExPainel(E); }
 function abreEx(id){ if(exercicios[id]) xCur=id; renderEx(); }
-const linhasHtml=(a,ord)=>a.length?`<${ord?"ol":"ul"}>${a.map(x=>`<li>${esc(x)}</li>`).join("")}</${ord?"ol":"ul"}>`:"";
+/* v112.20: numa lista com linhas «- …»/«• …», as linhas sem traço são subtítulos; sem nenhum traço, tudo tópicos (como antes) */
+const partesLista=a=>{ const top=x=>/^\s*[-•]/.test(x), mist=a.some(top); return a.map(x=>({sub:mist&&!top(x),t:x.replace(/^\s*[-•]\s*/,"")})); };
+const linhasHtml=(a,ord)=>a.length?(ord?`<ol>${a.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`:`<ul>${partesLista(a).map(p=>`<li${p.sub?' class="sub-l"':""}>${esc(p.t)}</li>`).join("")}</ul>`):"";
 function renderExFicha(E,ordem=[]){ const bx=$("x-ficha"), bar=$("x-bar"), tg=$("x-tag");
   if(!E){ $("x-tit").textContent="Exercícios"; tg.hidden=true; bar.innerHTML="";
     bx.innerHTML=`<div class="m-vazio"><b>Ainda não há exercícios no repositório.</b><span>Cada exercício tem a ficha da Unidade de Treino: espaço, duração, objetivos, descrição, variantes e figura. Mais tarde, as UT vão buscar os exercícios aqui.</span><button class="btn primary" id="x-novo2">+ Criar o primeiro exercício</button></div>`;
@@ -395,12 +397,12 @@ function fichaExPdf(doc,E,x0,y0,W,o={}){ const k=o.k||1, fim=o.hMax?y0+o.hMax:1e
   /* escreve linhas numa coluna até ao fim do bloco; a última que não cabe vira "…" */
   const coluna=(xc,ref)=>(txt,op={})=>{ const s=op.s||8.5, lh=(s+2.5)*k; for(const l of linhas(txt,metade-2*pad-(op.ind||0)*k,s,op.b)){ if(ref.cheio) return;
       if(ref.y+lh>fim-pad*.5){ ref.cheio=true; T("…",xc+pad,Math.min(ref.y+lh,fim-2),s,{b:1,c:MUT}); return; } ref.y+=lh; T(l,xc+pad+(op.ind||0)*k,ref.y,s,op); } };
-  const L={y:yL}, bloco=coluna(x0,L);
+  const L={y:yL}, bloco=coluna(x0,L), lista=a=>partesLista(a).forEach(p=>p.sub?(L.y+=1.5*k,bloco(p.t,{b:1,i:1})):bloco("• "+p.t,{ind:4}));
   bloco(E.nome+(E.formato&&!E.nome.includes(E.formato)?" - "+E.formato:""),{b:1,s:10,c:RED});
   if(E.objetivos){ L.y+=2*k; bloco(E.objetivos); }
-  if(E.objEsp.length&&!o.semEsp){ L.y+=3*k; bloco("Objetivos específicos:",{b:1}); E.objEsp.forEach(c=>bloco("• "+c.replace(/^[-•]\s*/,""),{ind:4})); }
-  if(E.comportamentos.length){ L.y+=3*k; bloco("Comportamentos-chave:",{b:1}); E.comportamentos.forEach(c=>bloco("• "+c,{ind:4})); }
-  if(E.condicionantes.length){ L.y+=3*k; bloco("Condicionantes:",{b:1}); E.condicionantes.forEach(c=>bloco("• "+c,{ind:4})); }
+  if(E.objEsp.length&&!o.semEsp){ L.y+=3*k; bloco("Objetivos específicos:",{b:1}); lista(E.objEsp); }
+  if(E.comportamentos.length){ L.y+=3*k; bloco("Comportamentos-chave:",{b:1}); lista(E.comportamentos); }
+  if(E.condicionantes.length){ L.y+=3*k; bloco("Condicionantes:",{b:1}); lista(E.condicionantes); }
   /* coluna direita: descrição e variantes */
   const R={y:cab("DESCRIÇÃO",xR,y,metade)+pad}, blocoR=coluna(xR,R);
   if(E.descricao) String(E.descricao).split(/\n/).forEach(p=>blocoR(p||" ")); else blocoR("Sem descrição.",{c:MUT});
