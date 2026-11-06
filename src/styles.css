@@ -366,7 +366,7 @@ details.more summary{cursor:pointer;color:var(--muted);font-size:14px;padding:4p
 .exf-txt{padding:8px 12px;white-space:normal}
 .exf-txt p{margin:0 0 6px;white-space:pre-wrap}
 .exf-txt ul,.exf-txt ol{margin:2px 0 6px;padding-left:20px}
-.exf-txt li.sub-l{list-style:none;margin:6px 0 2px -20px;font-weight:700}
+.exf-txt li.sub-l{list-style:none;margin:6px 0 2px -20px;text-decoration:underline}
 .exf-tit{display:block;color:#C00000;font-family:var(--f-display);font-size:15px;margin-bottom:4px}
 dl.exd{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0;padding:12px 14px;font-size:14px}
 dl.exd dt{color:var(--muted);font-size:12.5px}dl.exd dd{margin:0;font-weight:600}

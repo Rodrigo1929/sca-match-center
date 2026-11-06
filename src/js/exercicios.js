@@ -396,8 +396,8 @@ function fichaExPdf(doc,E,x0,y0,W,o={}){ const k=o.k||1, fim=o.hMax?y0+o.hMax:1e
   yL+=4*rh; yL=cab("OBJETIVOS E CONDICIONANTES",x0,yL,metade)+pad;
   /* escreve linhas numa coluna até ao fim do bloco; a última que não cabe vira "…" */
   const coluna=(xc,ref)=>(txt,op={})=>{ const s=op.s||8.5, lh=(s+2.5)*k; for(const l of linhas(txt,metade-2*pad-(op.ind||0)*k,s,op.b)){ if(ref.cheio) return;
-      if(ref.y+lh>fim-pad*.5){ ref.cheio=true; T("…",xc+pad,Math.min(ref.y+lh,fim-2),s,{b:1,c:MUT}); return; } ref.y+=lh; T(l,xc+pad+(op.ind||0)*k,ref.y,s,op); } };
-  const L={y:yL}, bloco=coluna(x0,L), lista=a=>partesLista(a).forEach(p=>p.sub?(L.y+=1.5*k,bloco(p.t,{b:1,i:1})):bloco("• "+p.t,{ind:4}));
+      if(ref.y+lh>fim-pad*.5){ ref.cheio=true; T("…",xc+pad,Math.min(ref.y+lh,fim-2),s,{b:1,c:MUT}); return; } ref.y+=lh; const xl=xc+pad+(op.ind||0)*k; T(l,xl,ref.y,s,op); if(op.u){ doc.setDrawColor(...(op.c||INK)); doc.setLineWidth(.5*k); doc.line(xl,ref.y+1.3*k,xl+doc.getTextWidth(pdfTxt(l)),ref.y+1.3*k); } } };
+  const L={y:yL}, bloco=coluna(x0,L), lista=a=>partesLista(a).forEach(p=>p.sub?(L.y+=1.5*k,bloco(p.t,{u:1})):bloco("• "+p.t,{ind:4}));
   bloco(E.nome+(E.formato&&!E.nome.includes(E.formato)?" - "+E.formato:""),{b:1,s:10,c:RED});
   if(E.objetivos){ L.y+=2*k; bloco(E.objetivos); }
   if(E.objEsp.length&&!o.semEsp){ L.y+=3*k; bloco("Objetivos específicos:",{b:1}); lista(E.objEsp); }
