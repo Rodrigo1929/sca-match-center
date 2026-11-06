@@ -65,14 +65,15 @@ const TERCOS_OF=["1.ª fase · Construção","2.ª fase · Ligação / Criação
 /* v112.11: na defesa a 1.ª fase é a pressão (lê-se ao contrário) */
 const TERCOS_DEF=["3.ª fase · Defesa da baliza (bloco baixo)","2.ª fase · Equilíbrio (bloco médio)","1.ª fase · Pressão (bloco alto)"];
 /* v112.23: as linhas dos 3 terços e dos 5 corredores servem também de fundo ao Quadro Dinâmico */
-function gridSetores(svg,R){ const [x0,y0,x1,y1]=R, w=x1-x0, h=y1-y0, g=el("g",{"pointer-events":"none"},svg), T={stroke:"#7F7F7F","stroke-width":120,"stroke-dasharray":"700 450",fill:"none"};
+function gridSetores(svg,R,fs){ const [x0,y0,x1,y1]=R, w=x1-x0, h=y1-y0, g=el("g",{"pointer-events":"none"},svg), T={stroke:"#7F7F7F","stroke-width":120,"stroke-dasharray":"700 450",fill:"none"};
   [1,2].forEach(k=>el("line",{x1:x0+k*w/3,x2:x0+k*w/3,y1:y0,y2:y1,...T,stroke:"#1B1A17","stroke-width":160},g));
   [13.84,24.84,43.16,54.16].forEach(m=>{ const y=y0+m/68*h; el("line",{x1:x0,x2:x1,y1:y,y2:y,...T},g); });
+  /* títulos das fases por fora do campo: em cima a ofensiva, em baixo a defensiva */
+  const txt=(x,y,t,cor)=>{ el("text",{x,y,"text-anchor":"middle","font-size":fs,fill:cor,class:"lbl"},g).textContent=t; };
+  TERCOS_OF.forEach((t,k)=>txt(x0+(k+.5)*w/3,y0-Math.min(fs*.75,y0-fs*.75),t,"#C00000"));
+  TERCOS_DEF.forEach((t,k)=>txt(x0+(k+.5)*w/3,y1+fs*1.55,t,"#1F497D"));
   return g; }
-function campoSetores(svg){ const R=FUNDOS["pitch-setores"].campo, [x0,y0,x1,y1]=R, w=x1-x0; campo(svg,true,R);
-  const g=gridSetores(svg,R), fs=11*PT, txt=(x,y,t,cor)=>{ el("text",{x,y,"text-anchor":"middle","font-size":fs,fill:cor,class:"lbl"},g).textContent=t; };
-  TERCOS_OF.forEach((t,k)=>txt(x0+(k+.5)*w/3,y0-fs*.75,t,"#C00000"));
-  TERCOS_DEF.forEach((t,k)=>txt(x0+(k+.5)*w/3,y1+fs*1.55,t,"#1F497D")); }
+function campoSetores(svg){ const R=FUNDOS["pitch-setores"].campo; campo(svg,true,R); gridSetores(svg,R,11*PT); }
 /* v112.11: Quadro Dinâmico — espaços em relação às linhas do adversário (atacamos para a direita, o adversário defende a baliza da direita).
    Linhas: peças com «linha» escolhida à mão (1, 2, 3, gr); as outras repartem-se pelas 2 maiores distâncias em x (de trás para a frente: 1.ª linha de pressão = a mais perto da nossa baliza) */
 /* cores escolhidas pelo Rodrigo (05/11/2026): verde, amarelo, azul, laranja, roxo */
@@ -97,12 +98,12 @@ function desenhaEspacos(svg,adv,velho){ const R=FUNDOS["pitch-espacos"].campo, [
   if(!Z){ el("text",{x:(x0+x1)/2,y:(y0+y1)/2,"text-anchor":"middle","font-size":fs,fill:"#1B1A17",class:"lbl"},g).textContent="Põe pelo menos 3 adversários de campo para ver os espaços"; return g; }
   Z.z.forEach(([k,z])=>{ el("polygon",{points:z.pts.map(p=>p.map(Math.round).join(",")).join(" "),fill:ESPACOS[k][2],"fill-opacity":.28,stroke:"none"},g); });
   Z.L.forEach(l=>{ const n=24, d=[...Array(n+1)].map((_,k)=>{ const y=Z.yA+(Z.yB-Z.yA)*k/n; return `${k?"L":"M"} ${Math.round(xDaLinha(l,y))} ${Math.round(y)}`; }).join(" ");
-    el("path",{d,fill:"none",stroke:"#1B1A17","stroke-width":150,"stroke-dasharray":"600 380"},g); });
+    el("path",{d,fill:"none",stroke:"#C00000","stroke-width":170,"stroke-dasharray":"600 380"},g); });   // v112.24: a vermelho, para não se confundirem com o grid (preto/cinzento)
   Z.z.forEach(([k,z])=>{ if(z.w<2500||z.h<2500) return; const f2=Math.min(fs,z.w/(textW(ESPACOS[k][0],fs,700)/fs)*.9);
     el("text",{x:Math.round(z.cx),y:Math.round(z.cy+f2*.35),"text-anchor":"middle","font-size":f2,fill:"#1B1A17",stroke:"#FFFFFF","stroke-width":f2*.18,"paint-order":"stroke",class:"lbl"},g).textContent=ESPACOS[k][0]; });
   return g; }
 function legendaEspacos(svg){ const [x0,,x1,y1]=FUNDOS["pitch-espacos"].campo, n=ESPACOS.length, w=(x1-x0)/n, fs=9.5*PT, g=el("g",{"pointer-events":"none"},svg);
-  ESPACOS.forEach(([nm,def,c],k)=>{ const x=x0+k*w, y=y1+2300; el("rect",{x:x+200,y:y-fs*.8,width:fs*.9,height:fs*.9,fill:c,"fill-opacity":.55,stroke:c,"stroke-width":60},g);
+  ESPACOS.forEach(([nm,def,c],k)=>{ const x=x0+k*w, y=y1+4000; el("rect",{x:x+200,y:y-fs*.8,width:fs*.9,height:fs*.9,fill:c,"fill-opacity":.55,stroke:c,"stroke-width":60},g);
     const t=el("text",{x:x+200+fs*1.25,y,"font-size":fs,class:"lbl"},g); el("tspan",{fill:"#1B1A17","font-weight":800},t).textContent=nm; el("tspan",{x:x+200+fs*1.25,dy:fs*1.15,fill:"#55524B","font-weight":400,"font-size":fs*.82},t).textContent=def; }); }
 /* posições de partida: o onze do adversário do jogo atual (como no Encaixe) ou um 1-4-4-2 */
 function advEspacos(){ const R=FUNDOS["pitch-espacos"].campo, [x0,y0,x1,y1]=R, mx=m=>Math.round(x0+m/105*(x1-x0)), my=m=>Math.round(y0+m/68*(y1-y0));
