@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| 112.27 | **Apresentação · tinta:** 8 cores (vermelho, preto, amarelo, branco, azul, verde, laranja, roxo), em 2 colunas na barra; a seta fica mais fina (a ponta continua bem visível). |
 | 112.26 | **Apresentação (Quadro e Modelo de Jogo):** barra à esquerda para desenhar por cima do slide, como no PowerPoint — **laser** (ligado ao abrir: o rato passa a ponto vermelho a brilhar; as bolinhas continuam a arrastar-se), **caneta** (mão livre), **seta** (carregar, arrastar, largar), cores vermelho/preto/amarelo e **🧽 apagar**. Teclas: L laser, P caneta, A seta, E apagar, Esc volta ao laser (2.º Esc fecha). O desenho não grava nem mexe no lance e desaparece ao mudar de slide. No iPad desenha-se com o dedo ou a caneta; com a caneta/seta escolhida, deslizar não muda de slide (no Modelo, tocar não anima). Teste: `npm run test:tinta` (`-- --ipad`). |
 | 112.25 | **Quadro Dinâmico:** as linhas de pressão do adversário passam a linha cheia (antes tracejada), para se distinguirem ainda melhor do grid. |
 | 112.24 | **Quadro Dinâmico:** títulos das fases como no Quadro Livre (em cima a organização ofensiva, em baixo a defensiva), em letra um pouco mais pequena porque o campo é maior; a legenda dos espaços desce para lhes dar lugar. As linhas de pressão do adversário passam a vermelho, para não se confundirem com o grid (preto/cinzento). O campo não mudou de tamanho — as posições guardadas continuam certas. |

@@ -207,11 +207,11 @@ document.addEventListener("keydown",e=>{ if(!presentOpen) return; if(e.key==="Ar
 /* v112.26: tinta da apresentação (Quadro e Modelo de Jogo), como no PowerPoint — laser, caneta e setas por cima do slide.
    Não grava nada nem mexe no lance; o desenho fica até «Apagar» ou até mudar de slide. Teclas: L laser, P caneta, A seta, E apagar, Esc volta ao laser */
 let tinta={modo:"laser",cor:"#E00000"}, tintaMem={k:null,tr:[]}, tintaAt=null;
-const TINTA_CORES=[["#E00000","Vermelho"],["#111111","Preto"],["#FFD400","Amarelo"]];
+const TINTA_CORES=[["#E00000","Vermelho"],["#111111","Preto"],["#FFD400","Amarelo"],["#FFFFFF","Branco"],["#0070C0","Azul"],["#1E9E4A","Verde"],["#F7841E","Laranja"],["#8E44AD","Roxo"]];
 function tintaInicio(){ tinta.modo="laser"; tintaMem={k:null,tr:[]}; }
 function tintaTraco(t,par){ const [a,b]=[t.p[0],t.p[t.p.length-1]], A={stroke:t.cor,"stroke-width":t.w,"stroke-linecap":"round","stroke-linejoin":"round",fill:"none"};
   if(t.tipo!=="seta") return el("polyline",{points:t.p.map(q=>q.join(",")).join(" "),...A},par);
-  const g=el("g",{},par), ang=Math.atan2(b[1]-a[1],b[0]-a[0]), hl=t.w*4.2, pt=d=>[b[0]-Math.cos(ang+d)*hl,b[1]-Math.sin(ang+d)*hl];
+  const g=el("g",{},par), ang=Math.atan2(b[1]-a[1],b[0]-a[0]), hl=t.w*5.5, pt=d=>[b[0]-Math.cos(ang+d)*hl,b[1]-Math.sin(ang+d)*hl];
   el("line",{x1:a[0],y1:a[1],x2:b[0]-Math.cos(ang)*hl*.7,y2:b[1]-Math.sin(ang)*hl*.7,...A},g);
   el("polygon",{points:[b,pt(.42),pt(-.42)].map(q=>q.join(",")).join(" "),fill:t.cor,stroke:t.cor,"stroke-width":t.w*.4,"stroke-linejoin":"round"},g); return g; }
 /* root = .present; svg = o slide; k = identifica o slide (outro k = tinta nova) */
@@ -221,7 +221,7 @@ function tintaLiga(root,svg,k){ if(tintaMem.k!==k) tintaMem={k,tr:[]};
   const redesenha=()=>{ gt.innerHTML=""; tintaMem.tr.forEach(t=>tintaTraco(t,gt)); };
   let cur=null; const p=e=>{ const q=svgPt(svg,e); return [Math.round(q.x*10)/10,Math.round(q.y*10)/10]; };
   cap.addEventListener("pointerdown",e=>{ if(e.button===2) return; e.preventDefault(); e.stopPropagation(); try{ cap.setPointerCapture(e.pointerId); }catch(x){}
-    const seta=tinta.modo==="seta"; cur={tipo:seta?"seta":"caneta",cor:tinta.cor,w:u*(seta?6:4.5),p:[p(e),p(e)]}; tintaMem.tr.push(cur); redesenha(); });
+    const seta=tinta.modo==="seta"; cur={tipo:seta?"seta":"caneta",cor:tinta.cor,w:u*(seta?3.5:4.5),p:[p(e),p(e)]}; tintaMem.tr.push(cur); redesenha(); });
   cap.addEventListener("pointermove",e=>{ if(!cur) return; const q=p(e); if(cur.tipo==="seta") cur.p[1]=q; else cur.p.push(q); gt.lastChild&&gt.lastChild.remove(); tintaTraco(cur,gt); });
   const fim=()=>{ if(!cur) return; const [a,b]=[cur.p[0],cur.p[cur.p.length-1]]; if(cur.tipo==="seta"&&Math.hypot(b[0]-a[0],b[1]-a[1])<u*15){ tintaMem.tr.pop(); redesenha(); } cur=null; };
   cap.addEventListener("pointerup",fim); cap.addEventListener("pointercancel",fim);
@@ -230,7 +230,7 @@ function tintaLiga(root,svg,k){ if(tintaMem.k!==k) tintaMem={k,tr:[]};
   /* barra de ferramentas e ponto laser: uma vez por apresentação */
   if(!root.querySelector(".ptinta")){ const b=document.createElement("div"); b.className="ptinta"; b.setAttribute("role","toolbar"); b.setAttribute("aria-label","Desenhar na apresentação");
     b.innerHTML=[["laser",'<b class="lz"></b>',"Laser (L)"],["caneta","✎","Caneta (P)"],["seta","➚","Seta (A)"]].map(([m,i,t])=>`<button data-m="${m}" title="${t}" aria-label="${t}">${i}</button>`).join("")
-      +TINTA_CORES.map(([c,n])=>`<button data-c="${c}" title="${n}" aria-label="Cor: ${n}"><i style="background:${c}"></i></button>`).join("")+`<button data-x title="Apagar o desenho (E)" aria-label="Apagar o desenho (E)">🧽</button>`;
+      +`<div class="pcores">${TINTA_CORES.map(([c,n])=>`<button data-c="${c}" title="${n}" aria-label="Cor: ${n}"><i style="background:${c}"></i></button>`).join("")}</div>`+`<button data-x title="Apagar o desenho (E)" aria-label="Apagar o desenho (E)">🧽</button>`;
     b.addEventListener("click",e=>{ const x=e.target.closest("button"); if(!x) return; if(x.dataset.m) tintaModo(x.dataset.m); else if(x.dataset.c){ tinta.cor=x.dataset.c; if(tinta.modo==="laser") tintaModo("caneta"); else tintaModo(tinta.modo); } else tintaApaga(); });
     root.appendChild(b); const lz=document.createElement("div"); lz.className="plaser"; root.appendChild(lz);
     const st=root.querySelector(".pstage"), mostra=(e,on)=>{ const v=on&&tinta.modo==="laser"; lz.style.display=v?"block":"none"; if(v){ lz.style.left=e.clientX+"px"; lz.style.top=e.clientY+"px"; } };
