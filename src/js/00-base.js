@@ -64,11 +64,13 @@ function campo(svg,semCab,rect,dims){
 const TERCOS_OF=["1.ª fase · Construção","2.ª fase · Ligação / Criação","3.ª fase · Finalização / Decisão"];
 /* v112.11: na defesa a 1.ª fase é a pressão (lê-se ao contrário) */
 const TERCOS_DEF=["3.ª fase · Defesa da baliza (bloco baixo)","2.ª fase · Equilíbrio (bloco médio)","1.ª fase · Pressão (bloco alto)"];
-function campoSetores(svg){ const R=FUNDOS["pitch-setores"].campo, [x0,y0,x1,y1]=R, w=x1-x0, h=y1-y0; campo(svg,true,R);
-  const g=el("g",{},svg), T={stroke:"#7F7F7F","stroke-width":120,"stroke-dasharray":"700 450",fill:"none"};
+/* v112.23: as linhas dos 3 terços e dos 5 corredores servem também de fundo ao Quadro Dinâmico */
+function gridSetores(svg,R){ const [x0,y0,x1,y1]=R, w=x1-x0, h=y1-y0, g=el("g",{"pointer-events":"none"},svg), T={stroke:"#7F7F7F","stroke-width":120,"stroke-dasharray":"700 450",fill:"none"};
   [1,2].forEach(k=>el("line",{x1:x0+k*w/3,x2:x0+k*w/3,y1:y0,y2:y1,...T,stroke:"#1B1A17","stroke-width":160},g));
   [13.84,24.84,43.16,54.16].forEach(m=>{ const y=y0+m/68*h; el("line",{x1:x0,x2:x1,y1:y,y2:y,...T},g); });
-  const fs=11*PT, txt=(x,y,t,cor)=>{ el("text",{x,y,"text-anchor":"middle","font-size":fs,fill:cor,class:"lbl"},g).textContent=t; };
+  return g; }
+function campoSetores(svg){ const R=FUNDOS["pitch-setores"].campo, [x0,y0,x1,y1]=R, w=x1-x0; campo(svg,true,R);
+  const g=gridSetores(svg,R), fs=11*PT, txt=(x,y,t,cor)=>{ el("text",{x,y,"text-anchor":"middle","font-size":fs,fill:cor,class:"lbl"},g).textContent=t; };
   TERCOS_OF.forEach((t,k)=>txt(x0+(k+.5)*w/3,y0-fs*.75,t,"#C00000"));
   TERCOS_DEF.forEach((t,k)=>txt(x0+(k+.5)*w/3,y1+fs*1.55,t,"#1F497D")); }
 /* v112.11: Quadro Dinâmico — espaços em relação às linhas do adversário (atacamos para a direita, o adversário defende a baliza da direita).
