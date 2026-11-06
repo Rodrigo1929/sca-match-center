@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| 112.25 | **Quadro Dinâmico:** as linhas de pressão do adversário passam a linha cheia (antes tracejada), para se distinguirem ainda melhor do grid. |
 | 112.24 | **Quadro Dinâmico:** títulos das fases como no Quadro Livre (em cima a organização ofensiva, em baixo a defensiva), em letra um pouco mais pequena porque o campo é maior; a legenda dos espaços desce para lhes dar lugar. As linhas de pressão do adversário passam a vermelho, para não se confundirem com o grid (preto/cinzento). O campo não mudou de tamanho — as posições guardadas continuam certas. |
 | 112.23 | **Quadro Dinâmico:** o fundo passa a ter o grid do Quadro Livre — as linhas dos 3 terços e dos 5 corredores (limites da grande e da pequena área), por baixo das cores dos espaços. Os títulos das fases não entram (não há espaço por cima do campo e em baixo está a legenda dos espaços). |
 | 112.22 | **Quadro Dinâmico e Quadro Livre:** botão «Posições» (ao lado de «Nomes») — as bolinhas mostram a posição do lugar no Onze (GR, DE, DC, MC, PL…) em vez do número, para os treinos explicados por posição. A posição é a do lugar (muda-se no Onze do jogo), não a do jogador; fica guardado neste aparelho, como «Nomes». Os outros lances continuam com números. Teste: `npm run test:posicoes`. |

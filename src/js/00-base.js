@@ -98,7 +98,7 @@ function desenhaEspacos(svg,adv,velho){ const R=FUNDOS["pitch-espacos"].campo, [
   if(!Z){ el("text",{x:(x0+x1)/2,y:(y0+y1)/2,"text-anchor":"middle","font-size":fs,fill:"#1B1A17",class:"lbl"},g).textContent="Põe pelo menos 3 adversários de campo para ver os espaços"; return g; }
   Z.z.forEach(([k,z])=>{ el("polygon",{points:z.pts.map(p=>p.map(Math.round).join(",")).join(" "),fill:ESPACOS[k][2],"fill-opacity":.28,stroke:"none"},g); });
   Z.L.forEach(l=>{ const n=24, d=[...Array(n+1)].map((_,k)=>{ const y=Z.yA+(Z.yB-Z.yA)*k/n; return `${k?"L":"M"} ${Math.round(xDaLinha(l,y))} ${Math.round(y)}`; }).join(" ");
-    el("path",{d,fill:"none",stroke:"#C00000","stroke-width":170,"stroke-dasharray":"600 380"},g); });   // v112.24: a vermelho, para não se confundirem com o grid (preto/cinzento)
+    el("path",{d,fill:"none",stroke:"#C00000","stroke-width":170,"stroke-linejoin":"round"},g); });   // v112.24/25: vermelho e cheio, para não se confundirem com o grid (preto/cinzento, tracejado)
   Z.z.forEach(([k,z])=>{ if(z.w<2500||z.h<2500) return; const f2=Math.min(fs,z.w/(textW(ESPACOS[k][0],fs,700)/fs)*.9);
     el("text",{x:Math.round(z.cx),y:Math.round(z.cy+f2*.35),"text-anchor":"middle","font-size":f2,fill:"#1B1A17",stroke:"#FFFFFF","stroke-width":f2*.18,"paint-order":"stroke",class:"lbl"},g).textContent=ESPACOS[k][0]; });
   return g; }
