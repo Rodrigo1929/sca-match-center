@@ -35,6 +35,8 @@ const LOGO_A={x:82391,y:446,w:7254,h:6589}, LOGO_B={x:83111,y:1166,w:7254,h:6589
 function logo(svg,L){ if(L&&L.semCabecalho) return; const p=(L&&(["3","4","5"].includes(String(L.id))||["b-meio","s03","s04","s05"].includes(L.fundo)))?LOGO_A:LOGO_B;
   el("image",{href:"slides/logo.png",x:p.x,y:p.y,width:p.w,height:p.h,preserveAspectRatio:"xMidYMid meet","pointer-events":"none"},svg); }
 let nomesOn=false; try{ nomesOn=localStorage.getItem("sca-nomes")==="1"; }catch(e){}
+/* v112.22: quadros livres (Livre / Dinâmico) mostram a posição do lugar no Onze em vez do número */
+let posOn=false; try{ posOn=localStorage.getItem("sca-pos")==="1"; }catch(e){}
 /* campo inteiro desenhado (105x70 m) */
 function campo(svg,semCab,rect,dims){
   if(!semCab) el("image",{href:"slides/b-head.jpg",x:0,y:0,width:W,height:H,preserveAspectRatio:"none"},svg);

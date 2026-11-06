@@ -49,6 +49,7 @@ function renderBoard(){
     $("b-pos").textContent=`${i+1} / ${all.length}`; $("prev").title="Anterior: "+nm(-1); $("next").title="Seguinte: "+nm(1); }
   $("btn-edit").textContent=editing?"✓ Concluir":"✎ Editar lance";
   $("btn-nomes").setAttribute("aria-pressed",String(nomesOn)); $("btn-nomes").textContent=nomesOn?"✓ Nomes":"Nomes";
+  $("btn-pos").hidden=!L.livre; $("btn-pos").setAttribute("aria-pressed",String(posOn)); $("btn-pos").textContent=posOn?"✓ Posições":"Posições";
   $("editbar").hidden=!editing;
   $("e-reset").hidden=!(L.original&&lancesDb[L.id]);
   const din=L.dinamico==="onze"||L.dinamico==="notas"||L.dinamico==="encaixe";
@@ -175,5 +176,6 @@ $("btn-nota").onclick=()=>folhaNota(null);
 setInterval(()=>{ const t=tempoJogo(); $("rel-t").textContent=t==null?"0:00":fmt(t); $("btn-rel").classList.toggle("dark",!!(jogo.relogio&&jogo.relogio.correr)); },1000);
 function setNomes(v){ nomesOn=v; try{ localStorage.setItem("sca-nomes",v?"1":"0"); }catch(e){} render(); }
 $("btn-nomes").onclick=()=>setNomes(!nomesOn);
+$("btn-pos").onclick=()=>{ posOn=!posOn; try{ localStorage.setItem("sca-pos",posOn?"1":"0"); }catch(e){} render(); };
 $("btn-edit").onclick=()=>{ editing=!editing; renderBoard(); };
 $("e-done").onclick=()=>{ editing=false; renderBoard(); };

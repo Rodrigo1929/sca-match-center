@@ -1,0 +1,27 @@
+// Teste do botão «Posições» nos quadros livres — v112.22. Uso: npm run build && node tests/posicoes.mjs
+import { chromium } from "playwright";
+import { join, dirname } from "node:path";
+import { mkdirSync } from "node:fs";
+import { fileURLToPath, pathToFileURL } from "node:url";
+const raiz = join(dirname(fileURLToPath(import.meta.url)), ".."), cap = join(raiz, "tests/capturas/editor"); mkdirSync(cap, { recursive: true });
+const browser = await chromium.launch(), pg = await browser.newPage({ viewport: { width: 1366, height: 900 } });
+const erros = []; pg.on("pageerror", (e) => { const s = String(e); if (!/Fetch API cannot load file:/.test(s)) erros.push(s); });
+let falhas = 0; const ok = (c, m) => { console.log((c ? "✓ " : "✗ ") + m); if (!c) falhas++; };
+await pg.goto(pathToFileURL(join(raiz, "dist/index.html")).href); await pg.waitForTimeout(800);
+await pg.click("#tab-q"); await pg.waitForTimeout(200);
+const vai = (id) => pg.evaluate((id) => { curId = id; render(); }, id);
+const txts = () => pg.evaluate(() => [...document.querySelectorAll("#stage text.num")].map((t) => t.textContent));
+await vai("espacos");
+ok(await pg.isVisible("#btn-pos"), "Quadro Dinâmico mostra o botão Posições");
+const n0 = await txts(); ok(n0.includes("1") && n0.includes("11"), "por omissão mostra números: " + n0.join(" "));
+await pg.click("#btn-pos"); await pg.waitForTimeout(150);
+const p1 = await txts(), esp = await pg.evaluate(() => jogo.onze.map((o) => o.pos));
+ok(JSON.stringify([...p1].sort()) === JSON.stringify([...esp].sort()), "com Posições mostra as posições do Onze: " + p1.join(" "));
+await pg.screenshot({ path: join(cap, "quadro-posicoes.png") });
+await vai("livre"); ok((await txts()).includes("GR"), "Quadro Livre também mostra posições");
+await vai(await pg.evaluate(() => lances().find((l) => !l.livre && !l.dinamico && l.bolas.length).id));
+ok(!(await pg.isVisible("#btn-pos")) && !(await txts()).includes("GR"), "lances normais continuam com números e sem o botão");
+await pg.reload(); await pg.waitForTimeout(800); await pg.click("#tab-q"); await vai("espacos");
+ok((await txts()).includes("GR"), "a escolha fica guardada neste aparelho");
+ok(!erros.length, "sem erros de JavaScript" + (erros.length ? ": " + erros.join(" / ") : ""));
+await browser.close(); process.exit(falhas ? 1 : 0);

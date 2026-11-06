@@ -82,8 +82,8 @@ function desenha(L,opts={}){
     el("circle",{cx:B.cx,cy:B.cy,r:B.r*1.7,fill:"transparent"},g);
     el("circle",{cx:B.cx,cy:B.cy,r:B.r*1.24,fill:"none",stroke:mod?"#C99A2E":"transparent","stroke-width":mod?260:0},g);
     el("circle",{cx:B.cx,cy:B.cy,r:B.r,fill:B.fill||"#C00000",stroke:B.stroke||"none","stroke-width":B.sw||94},g);
-    const fs=(B.fs||12)*PT*(num.length>2?.82:1);
-    el("text",{x:B.cx,y:B.cy+fs*.35,"text-anchor":"middle","font-size":fs,fill:B.color||"#fff",class:"num"},g).textContent=num;
+    const lbl=(posOn&&L.livre&&posOf(B.slot))||num, fs=(B.fs||12)*PT*(lbl.length>3?.64:lbl.length>2?.82:1);
+    el("text",{x:B.cx,y:B.cy+fs*.35,"text-anchor":"middle","font-size":fs,fill:B.color||"#fff",class:"num"},g).textContent=lbl;
     if(nomesOn&&nome(num)) etiqueta(g,B.cx,B.cy+B.r+180,nome(num),8*PT);
     { const c=cartoesCache[num]; if(c&&(c.am||c.verm)){ el("rect",{x:B.cx+B.r*.45,y:B.cy-B.r*1.25,width:B.r*.62,height:B.r*.86,rx:B.r*.1,fill:c.verm?"#E00000":"#FFD54A",stroke:"#000","stroke-width":70,transform:`rotate(12 ${B.cx+B.r*.76} ${B.cy-B.r*.82})`},g); } }
     if(!opts.clean&&dupsAtual.includes(num)&&!eAlternativa(B)){ el("circle",{cx:B.cx,cy:B.cy,r:B.r*1.42,fill:"none",stroke:"#FF8A00","stroke-width":240,"stroke-dasharray":"420 260","pointer-events":"none"},g); }
