@@ -265,6 +265,15 @@ details.more summary{cursor:pointer;color:var(--muted);font-size:14px;padding:4p
 
 .present{position:fixed;inset:0;background:#0E0D0C;z-index:50;display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
 .present .pstage{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;padding:8px}
+/* v112.26: tinta da apresentação — barra à esquerda, ponto laser no lugar do rato */
+.present .ptinta{position:absolute;left:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px;padding:6px;background:rgba(42,40,37,.82);border-radius:12px;z-index:2}
+.present .ptinta button{width:44px;height:44px;border:0;border-radius:9px;background:transparent;color:#fff;font-size:20px;display:grid;place-items:center;cursor:pointer}
+.present .ptinta button[aria-pressed="true"]{background:#5A5650;box-shadow:inset 0 0 0 2px #fff}
+.present .ptinta button b.lz{width:12px;height:12px;border-radius:50%;background:#FF1E1E;box-shadow:0 0 6px 3px rgba(255,30,30,.7)}
+.present .ptinta button i{width:20px;height:20px;border-radius:50%;border:2px solid #fff}
+.present .plaser{position:fixed;left:0;top:0;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;pointer-events:none;z-index:3;display:none;background:radial-gradient(circle,#fff 0 18%,#FF1E1E 34%,rgba(255,0,0,.55) 58%,rgba(255,0,0,0) 72%);box-shadow:0 0 12px 5px rgba(255,30,30,.55)}
+.present.laser .pstage,.present.laser .pstage *{cursor:none!important}
+.present.caneta .pstage,.present.caneta .pstage *{cursor:crosshair!important}
 .present .pstage>svg{max-width:100%;max-height:100%;width:auto;height:100%;background:#fff;border-radius:4px}
 .present .pbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;color:#ddd}
 .present .pbar button:disabled{opacity:.4}

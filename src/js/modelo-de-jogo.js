@@ -706,12 +706,12 @@ async function videoQuadro(id,btn){ if(btn) btn.disabled=true;
 /* ---------- apresentar (como nas bolas paradas: avanças tu, quadro a quadro) ---------- */
 let mApr=null;
 function apresentaModelo(id0){ const ls=listaModelos(); if(!ls.length){ toast("Ainda não há quadros do Modelo de Jogo."); return; } mPara(); if(mApr) mApr.fecha();
-  let i=Math.max(0,ls.findIndex(q=>q.id===(id0||mCur))), pl=null;
+  let i=Math.max(0,ls.findIndex(q=>q.id===(id0||mCur))), pl=null; tintaInicio();
   const root=document.createElement("div"); root.className="present"; root.setAttribute("role","dialog"); root.setAttribute("aria-label","Apresentação do Modelo de Jogo");
   root.innerHTML=`<div class="pstage"></div><div class="pbar"><button id="ma-a">‹ Anterior</button><button id="ma-ini" aria-label="Voltar ao passo 1">⏮</button><button id="ma-pl" style="min-width:120px">▶ Animar</button><div class="t"></div><button id="ma-rot" title="Bolinhas com número, posição ou sem texto">Bolinhas</button><button id="ma-v">⬇ Vídeo</button><button id="ma-b">Seguinte ›</button><button id="ma-x">Fechar</button></div>`;
   document.body.appendChild(root); const st=root.querySelector(".pstage"), tt=root.querySelector(".t"), bp=root.querySelector("#ma-pl");
   const estado=()=>{ const Q=modelos[ls[i].id]||ls[i]; bp.textContent=pl&&pl.playing?"⏸ Pausa":"▶ Animar"; tt.textContent=`${i+1}/${ls.length} · ${Q.nome} · passo ${passoVisivel(Q,pl?pl.t:0)+1}/${Q.passos.length}`; };
-  const mostra=()=>{ if(pl) pl.pause(); const Q=modelos[ls[i].id]||ls[i]; st.innerHTML=""; pl=playerModelo(Q,{onT:estado,onEnd:estado}); st.appendChild(pl.svg); estado(); };
+  const mostra=()=>{ if(pl) pl.pause(); const Q=modelos[ls[i].id]||ls[i]; st.innerHTML=""; pl=playerModelo(Q,{onT:estado,onEnd:estado}); st.appendChild(pl.svg); tintaLiga(root,pl.svg,"m:"+ls[i].id); estado(); };
   const anda=d=>{ i=(i+d+ls.length)%ls.length; mostra(); };
   const animar=()=>{ if(pl.playing) pl.pause(); else pl.play(pl.t>=(modelos[ls[i].id]||ls[i]).passos.length-1-1e-6?0:pl.t); estado(); };
   const kd=e=>{ if($("sheet-root").innerHTML) return; if(e.key==="Escape") fecha(); else if(e.key==="ArrowRight"){ e.preventDefault(); anda(1); } else if(e.key==="ArrowLeft"){ e.preventDefault(); anda(-1); } else if(e.key===" "){ e.preventDefault(); animar(); } };

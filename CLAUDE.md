@@ -49,6 +49,7 @@ Os 4 scripts partilham o âmbito global: uma `function` repetida noutro script s
 - `npm run test:ipad` → o mesmo teste no WebKit (motor do Safari) com ecrã e toque de iPad (precisa de `npx playwright install webkit`)
 - `npm run test:editor` → build + teste do editor das figuras e das caixas de texto do Quadro (clique/arrasto, peça mais perto, zonas com pegas, botão direito); `node tests/editor.mjs --ipad` no WebKit
 - `npm run test:posicoes` → build + teste do botão «Posições» nos quadros livres (Dinâmico / Livre)
+- `npm run test:tinta` → build + teste da tinta da apresentação (laser, caneta, seta, apagar, Esc); `node tests/tinta.mjs --ipad` no WebKit
 
 ## Publicação — regra crítica
 A app vive num **único link**: https://claude.ai/artifact/3uVFyLVzJvF5z8upFHkJqN
