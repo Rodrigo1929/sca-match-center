@@ -78,7 +78,7 @@ const M_LS="sca-modelo-v1";
 (function(){ try{ [["400","fonts/rc-400.ttf"],["700","fonts/rc-700.ttf"]].forEach(([w,f])=>{ if(!IMG_DATA[f]||!window.FontFace) return; const ff=new FontFace("RC Modelo",`url(${IMG_DATA[f]})`,{weight:w}); ff.load().then(x=>document.fonts.add(x)).catch(()=>{}); }); }catch(e){} })();
 
 let modelos={}; try{ modelos=JSON.parse(localStorage.getItem(M_LS)||"{}")||{}; }catch(e){ modelos={}; }
-let mCur=null, mT_=0, mEdit=false, mTool="mover", mSetaT="corrida", mZonaCor="#FFC000", mSel=null, mPl=null, mLoop=false, mMult=1, mUndo=[], mDrag=null, mTmp=null, mSelS=null;
+let mCur=null, mT_=0, mEdit=false, mTool="mover", mSetaT="corrida", mZonaCor="#FFC000", mSel=null, mPl=null, mLoop=false, mMult=1, mUndo=[], mDrag=null, mTmp=null, mSelS=null, mSelZ=null, mZonaForma="ret";
 try{ mCur=localStorage.getItem("sca-modelo-cur")||null; }catch(e){}
 
 const mId=p=>(p||"m")+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -211,10 +211,15 @@ function primsDinamicas(Q,t,ed){ const o=[], n=Q.passos.length; t=mClamp(t,0,n-1
   o.push({t:"gon",clip:V.clip});
   /* zonas */ const zB=new Map(B.zonas.map(z=>[z.id,z])), zA=new Set(A.zonas.map(z=>z.id));
   const zona=(z,op,attr)=>{ const c=corZ(z.cor), [x1,y1]=V.P(z.x,z.y), [x2,y2]=V.P(z.x+z.w,z.y+z.h);
-    o.push({t:"rect",x:Math.min(x1,x2),y:Math.min(y1,y2),w:Math.abs(x2-x1),h:Math.abs(y2-y1),rx:Z(.9),fill:c,fop:.2*op,stroke:c,sw:Z(.22),dash:[Z(1),Z(.7)],op:.85*op,attr}); };
+    o.push({t:"rect",x:Math.min(x1,x2),y:Math.min(y1,y2),w:Math.abs(x2-x1),h:Math.abs(y2-y1),rx:Z(.9),elip:z.forma==="elip",fill:c,fop:.2*op,stroke:c,sw:Z(.22),dash:[Z(1),Z(.7)],op:.85*op,attr}); };
   A.zonas.forEach(z=>{ const zb=k2>k?zB.get(z.id):z; if(zb){ const I=(p,q)=>p+(q-p)*e; zona({...z,x:I(z.x,zb.x),y:I(z.y,zb.y),w:I(z.w,zb.w),h:I(z.h,zb.h)},1,ae?{"data-z":z.id}:null); } else zona(z,1-e,null); });
   if(k2>k) B.zonas.forEach(z=>{ if(!zA.has(z.id)) zona(z,e,null); });
-  if(ed&&ed.tmpZ){ const z=ed.tmpZ; zona({x:Math.min(z.x1,z.x2),y:Math.min(z.y1,z.y2),w:Math.abs(z.x2-z.x1),h:Math.abs(z.y2-z.y1),cor:mZonaCor},1,null); }
+  if(ed&&ed.tmpZ){ const z=ed.tmpZ; zona({x:Math.min(z.x1,z.x2),y:Math.min(z.y1,z.y2),w:Math.abs(z.x2-z.x1),h:Math.abs(z.y2-z.y1),cor:mZonaCor,forma:mZonaForma},1,null); }
+  /* v112.21: zona selecionada — contorno e 8 pegas (cantos e lados) para mudar o tamanho, como uma caixa do Word */
+  if(ae&&mSelZ){ const z=A.zonas.find(x=>x.id===mSelZ); if(z){ const [a1,b1]=V.P(z.x,z.y), [a2,b2]=V.P(z.x+z.w,z.y+z.h);
+    o.push({t:"rect",x:Math.min(a1,a2),y:Math.min(b1,b2),w:Math.abs(a2-a1),h:Math.abs(b2-b1),fill:"none",stroke:"#B8963F",sw:Z(.2),dash:[Z(.6),Z(.4)]});
+    [0,1,2].forEach(fx=>[0,1,2].forEach(fy=>{ if(fx===1&&fy===1) return; const [hx,hy]=V.P(z.x+z.w*fx/2,z.y+z.h*fy/2), hs=Z(1.1);
+      o.push({t:"circ",cx:hx,cy:hy,r:Z(1.7),fill:"rgba(0,0,0,0)",attr:{"data-zh":z.id+":"+fx+fy}}); o.push({t:"rect",x:hx-hs/2,y:hy-hs/2,w:hs,h:hs,rx:Z(.15),fill:"#FFFFFF",stroke:"#1B1A17",sw:Z(.15),attr:{"data-zh":z.id+":"+fx+fy}}); })); } }
   /* balizas e cones (por baixo dos jogadores) */
   const sel=ed&&ed.edit, toque=(cx,cy,rr,id)=>{ if(!ed) return; if(sel&&mSel===id) o.push({t:"circ",cx,cy,r:rr+Z(.5),fill:"none",stroke:"#F79646",sw:Z(.35)}); o.push({t:"circ",cx,cy,r:rr+Z(.8),fill:"rgba(0,0,0,0)",attr:{"data-p":id}}); };
   Q.pecas.filter(p=>BALIZAS[p.eq]).forEach(pc=>{ const p=pos[pc.id], W=BALIZAS[pc.eq][0]*tamPc(pc), D=BALIZAS[pc.eq][1]*tamPc(pc), a=(pc.ang==null?180:pc.ang)*Math.PI/180, ux=Math.cos(a), uy=Math.sin(a), vx=-uy, vy=ux;
@@ -278,7 +283,8 @@ function primsSvg(L){ const at=p=>p.attr?Object.entries(p.attr).map(([k,v])=>` $
     /* grupo recortado à caixa do campo (svg interior, sem ids) e, se houver, transformado pela vista */
     case "gon": { const [x,y,w,h]=p.clip.map(mA); abertos.push(!!p.m); return `<svg x="${x}" y="${y}" width="${w}" height="${h}" viewBox="${x} ${y} ${w} ${h}" overflow="hidden">${p.m?`<g transform="matrix(${p.m.map(v=>Math.round(v*1e4)/1e4).join(" ")})">`:""}`; }
     case "goff": return (abertos.pop()?"</g>":"")+"</svg>";
-    case "rect": return `<rect x="${mA(p.x)}" y="${mA(p.y)}" width="${mA(p.w)}" height="${mA(p.h)}"${p.rx?` rx="${mA(p.rx)}"`:""} fill="${p.fill||"none"}"${p.fop!=null?` fill-opacity="${mA(p.fop*100)/100}"`:""}${p.stroke?` stroke="${p.stroke}" stroke-width="${mA(p.sw||1)}"`:""}${da(p)}${op(p)}${at(p)}/>`;
+    case "rect": if(p.elip) return `<ellipse cx="${mA(p.x+p.w/2)}" cy="${mA(p.y+p.h/2)}" rx="${mA(p.w/2)}" ry="${mA(p.h/2)}" fill="${p.fill||"none"}"${p.fop!=null?` fill-opacity="${mA(p.fop*100)/100}"`:""}${p.stroke?` stroke="${p.stroke}" stroke-width="${mA(p.sw||1)}"`:""}${da(p)}${op(p)}${at(p)}/>`;
+      return `<rect x="${mA(p.x)}" y="${mA(p.y)}" width="${mA(p.w)}" height="${mA(p.h)}"${p.rx?` rx="${mA(p.rx)}"`:""} fill="${p.fill||"none"}"${p.fop!=null?` fill-opacity="${mA(p.fop*100)/100}"`:""}${p.stroke?` stroke="${p.stroke}" stroke-width="${mA(p.sw||1)}"`:""}${da(p)}${op(p)}${at(p)}/>`;
     case "circ": return `<circle cx="${mA(p.cx)}" cy="${mA(p.cy)}" r="${mA(p.r)}" fill="${p.fill||"none"}"${p.stroke?` stroke="${p.stroke}" stroke-width="${mA(p.sw||1)}"`:""}${op(p)}${at(p)}/>`;
     case "line": return `<line x1="${mA(p.x1)}" y1="${mA(p.y1)}" x2="${mA(p.x2)}" y2="${mA(p.y2)}" stroke="${p.stroke}" stroke-width="${mA(p.sw)}" stroke-linecap="${p.cap||"butt"}"${da(p)}${op(p)}${at(p)}/>`;
     case "qline": return `<path d="M ${mA(p.x1)} ${mA(p.y1)} Q ${mA(p.qx)} ${mA(p.qy)} ${mA(p.x2)} ${mA(p.y2)}" fill="none" stroke="${p.stroke}" stroke-width="${mA(p.sw)}" stroke-linecap="${p.cap||"butt"}"${da(p)}${op(p)}${at(p)}/>`;
@@ -293,7 +299,7 @@ function primsCanvas(cx,L){ L.forEach(p=>{
   if(p.t==="goff"){ cx.restore(); return; }
   cx.save(); cx.globalAlpha=p.op!=null?p.op:1; cx.setLineDash(p.dash||[]);
   switch(p.t){
-    case "rect": { cx.beginPath(); if(p.rx&&cx.roundRect) cx.roundRect(p.x,p.y,p.w,p.h,p.rx); else cx.rect(p.x,p.y,p.w,p.h);
+    case "rect": { cx.beginPath(); if(p.elip) cx.ellipse(p.x+p.w/2,p.y+p.h/2,p.w/2,p.h/2,0,0,2*Math.PI); else if(p.rx&&cx.roundRect) cx.roundRect(p.x,p.y,p.w,p.h,p.rx); else cx.rect(p.x,p.y,p.w,p.h);
       if(p.fill&&p.fill!=="none"){ cx.save(); if(p.fop!=null) cx.globalAlpha=p.fop; cx.fillStyle=p.fill; cx.fill(); cx.restore(); } if(p.stroke){ cx.lineWidth=p.sw||1; cx.strokeStyle=p.stroke; cx.stroke(); } break; }
     case "circ": cx.beginPath(); cx.arc(p.cx,p.cy,p.r,0,2*Math.PI); if(p.fill&&p.fill!=="none"){ cx.fillStyle=p.fill; cx.fill(); } if(p.stroke){ cx.lineWidth=p.sw||1; cx.strokeStyle=p.stroke; cx.stroke(); } break;
     case "line": cx.beginPath(); cx.moveTo(p.x1,p.y1); cx.lineTo(p.x2,p.y2); cx.lineCap=p.cap||"butt"; cx.lineWidth=p.sw; cx.strokeStyle=p.stroke; cx.stroke(); break;
@@ -384,39 +390,53 @@ function passoAtual(){ return Math.round(mT_); }
 function editaQ(fn,semRender){ const Q=clone(qAtual()); if(!Q) return; fn(Q); const N=guardaQ(Q); if(!semRender) renderModelo(); return N; }
 function mPt(e){ const p=svgPt(mPl.svg,e); return vistaQ(qAtual()).M(p.x,p.y); }
 function ligaEdicao(svg){
-  svg.addEventListener("pointerdown",e=>{ if(!mEdit||mPl.playing) return; const Q=qAtual(); if(!Q) return; const k=passoAtual(), m=mPt(e), alvo=e.target.closest("[data-sh],[data-p],[data-s],[data-z]");
+  /* v112.21: com várias peças debaixo do dedo, fica a que tem o centro mais perto (antes ficava a de cima: jogador por cima do cone, bola por cima do jogador) */
+  const pecaPerto=(e,Q,k,m)=>{ let best=null, bd=1e9; (document.elementsFromPoint?document.elementsFromPoint(e.clientX,e.clientY):[e.target]).forEach(x=>{ const id=x.dataset&&x.dataset.p; if(!id) return; const P=Q.passos[k].pos[id]||{x:52.5,y:34}, d=Math.hypot(P.x-m.x,P.y-m.y); if(d<bd){ bd=d; best=id; } }); return best; };
+  const menuDe=(e,Q,k,m,alvo)=>{ if(alvo.dataset.p) return ()=>menuPecaM(e,pecaPerto(e,Q,k,m)||alvo.dataset.p); const zid=alvo.dataset.z||(alvo.dataset.zh||"").split(":")[0]; if(zid) return ()=>menuZonaM(e,zid);
+    const sid=alvo.dataset.s||(alvo.dataset.sh||"").split(":")[0]; return sid?()=>menuSetaM(e,sid):null; };
+  svg.addEventListener("pointerdown",e=>{ if(!mEdit||mPl.playing||e.button===2) return; const Q=qAtual(); if(!Q) return; const k=passoAtual(), m=mPt(e), alvo=e.target.closest("[data-sh],[data-zh],[data-p],[data-s],[data-z]"), base={sx:e.clientX,sy:e.clientY,t0:Date.now(),mov:false,q:clone(Q)};
     /* v112.9: setas — pegas (início, fim, curva) e arrastar a seta inteira; tocar seleciona, tocar outra vez abre as opções */
-    if(alvo&&alvo.dataset.sh&&mTool==="mover"){ const [sid,qual]=alvo.dataset.sh.split(":"); mDrag={tipo:"setaH",sid,qual:+qual,q:clone(Q)}; }
-    else if(alvo&&alvo.dataset.s&&mTool==="mover"){ const S=Q.passos[k].setas.find(x=>x.id===alvo.dataset.s); if(!S) return; mDrag={tipo:"setaM",sid:S.id,ox:m.x,oy:m.y,s0:clone(S),mov:false,q:clone(Q)}; }
-    else if(alvo&&alvo.dataset.p&&(mTool==="mover"||mTool==="seta")){ const pid=alvo.dataset.p, P=Q.passos[k].pos[pid];
+    if(alvo&&alvo.dataset.sh&&mTool==="mover"){ const [sid,qual]=alvo.dataset.sh.split(":"); mDrag={...base,tipo:"setaH",sid,qual:+qual}; }
+    else if(alvo&&alvo.dataset.zh&&mTool==="mover"){ const [zid,f]=alvo.dataset.zh.split(":"), z=Q.passos[k].zonas.find(z=>z.id===zid); if(!z) return; mDrag={...base,tipo:"zonaH",zid,fx:+f[0],fy:+f[1],z0:{...z}}; }
+    else if(alvo&&alvo.dataset.s&&mTool==="mover"){ const S=Q.passos[k].setas.find(x=>x.id===alvo.dataset.s); if(!S) return; mDrag={...base,tipo:"setaM",sid:S.id,ox:m.x,oy:m.y,s0:clone(S)}; }
+    else if(alvo&&alvo.dataset.p&&(mTool==="mover"||mTool==="seta")){ const pid=pecaPerto(e,Q,k,m)||alvo.dataset.p, P=Q.passos[k].pos[pid]||{x:52.5,y:34};
       if(mTool==="seta"){ mDrag={tipo:"seta",x1:P.x,y1:P.y}; mTmp={tmpS:{x1:P.x,y1:P.y,x2:m.x,y2:m.y}}; }
-      else { mDrag={tipo:"peca",pid,dx:P.x-m.x,dy:P.y-m.y,ox:P.x,oy:P.y,mov:false,q:clone(Q)};
-        /* iPad: dedo pressionado sem mexer = o mesmo menu do botão direito */
-        if(e.pointerType!=="mouse"){ const ev={clientX:e.clientX,clientY:e.clientY,preventDefault(){}}; mDrag.lt=setTimeout(()=>{ if(mDrag&&mDrag.tipo==="peca"&&!mDrag.mov){ mDrag=null; menuPecaM(ev,pid); } },550); } }
-    } else if(alvo&&alvo.dataset.z&&mTool==="mover"){ const z=Q.passos[k].zonas.find(z=>z.id===alvo.dataset.z); if(!z) return; mDrag={tipo:"zona",zid:z.id,dx:z.x-m.x,dy:z.y-m.y,ox:z.x,oy:z.y,mov:false,q:clone(Q)}; }
+      else mDrag={...base,tipo:"peca",pid,dx:P.x-m.x,dy:P.y-m.y,ox:P.x,oy:P.y}; }
+    else if(alvo&&alvo.dataset.z&&mTool==="mover"){ const z=Q.passos[k].zonas.find(z=>z.id===alvo.dataset.z); if(!z) return; mDrag={...base,tipo:"zona",zid:z.id,dx:z.x-m.x,dy:z.y-m.y,ox:z.x,oy:z.y}; }
     else if(mTool==="seta"){ mDrag={tipo:"seta",x1:m.x,y1:m.y}; mTmp={tmpS:{x1:m.x,y1:m.y,x2:m.x,y2:m.y}}; }
     else if(mTool==="zona"){ mDrag={tipo:"zonaN",x1:m.x,y1:m.y}; mTmp={tmpZ:{x1:m.x,y1:m.y,x2:m.x,y2:m.y}}; }
-    else { if(mSel||mSelS){ mSel=null; mSelS=null; mPl.set(k); } return; }
+    else { if(mSel||mSelS||mSelZ){ mSel=null; mSelS=null; mSelZ=null; mPl.set(k); } return; }
+    /* iPad: dedo pressionado sem mexer = o mesmo menu do botão direito */
+    if(e.pointerType!=="mouse"&&mDrag.t0&&alvo){ const ev={clientX:e.clientX,clientY:e.clientY,preventDefault(){}}, abre=menuDe(ev,Q,k,m,alvo), D=mDrag; if(abre) D.lt=setTimeout(()=>{ if(mDrag===D&&!D.mov){ mDrag=null; abre(); } },550); }
     e.preventDefault(); try{ svg.setPointerCapture(e.pointerId); }catch(x){} });
   svg.addEventListener("pointermove",e=>{ if(!mDrag) return; e.preventDefault(); const m=mPt(e), k=passoAtual();
-    if(mDrag.tipo==="peca"){ const Q=mDrag.q, x=mClamp(m.x+mDrag.dx,-3,108), y=mClamp(m.y+mDrag.dy,-2,70); if(Math.hypot(x-mDrag.ox,y-mDrag.oy)>.4) mDrag.mov=true; Q.passos[k].pos[mDrag.pid]={x,y}; mPl.setQ(Q); mPl.set(k); }
-    else if(mDrag.tipo==="zona"){ const Q=mDrag.q, z=Q.passos[k].zonas.find(z=>z.id===mDrag.zid); z.x=mClamp(m.x+mDrag.dx,-5,105); z.y=mClamp(m.y+mDrag.dy,-5,68); if(Math.hypot(z.x-mDrag.ox,z.y-mDrag.oy)>.4) mDrag.mov=true; mPl.setQ(Q); mPl.set(k); }
+    /* v112.21: só é arrasto depois de ~5 px no ecrã; menos do que isso conta como clique */
+    if(mDrag.t0&&!mDrag.mov){ if(Math.hypot(e.clientX-mDrag.sx,e.clientY-mDrag.sy)<5) return; mDrag.mov=true; if(mDrag.lt) clearTimeout(mDrag.lt); }
+    if(mDrag.tipo==="peca"){ const Q=mDrag.q, x=mClamp(m.x+mDrag.dx,-3,108), y=mClamp(m.y+mDrag.dy,-2,70); Q.passos[k].pos[mDrag.pid]={x,y}; mPl.setQ(Q); mPl.set(k); }
+    else if(mDrag.tipo==="zona"){ const Q=mDrag.q, z=Q.passos[k].zonas.find(z=>z.id===mDrag.zid); z.x=mClamp(m.x+mDrag.dx,-5,105); z.y=mClamp(m.y+mDrag.dy,-5,68); mPl.setQ(Q); mPl.set(k); }
+    else if(mDrag.tipo==="zonaH"){ const Q=mDrag.q, z=Q.passos[k].zonas.find(z=>z.id===mDrag.zid); Object.assign(z,caixaPorPega(mDrag.z0,mDrag.fx,mDrag.fy,m)); mPl.setQ(Q); mPl.set(k); }
     else if(mDrag.tipo==="seta"){ mTmp.tmpS.x2=m.x; mTmp.tmpS.y2=m.y; mPl.set(k); }
     else if(mDrag.tipo==="setaH"||mDrag.tipo==="setaM"){ const Q=mDrag.q, S=Q.passos[k].setas.find(x=>x.id===mDrag.sid); if(!S) return;
       if(mDrag.tipo==="setaH"){ if(mDrag.qual===1){ S.x1=m.x; S.y1=m.y; } else if(mDrag.qual===2){ S.x2=m.x; S.y2=m.y; } else Object.assign(S,curvaPorM(S,m)); }
-      else { const dx=m.x-mDrag.ox, dy=m.y-mDrag.oy, a=mDrag.s0; if(Math.hypot(dx,dy)>.4) mDrag.mov=true; S.x1=a.x1+dx; S.y1=a.y1+dy; S.x2=a.x2+dx; S.y2=a.y2+dy; if(a.qx!=null){ S.qx=a.qx+dx; S.qy=a.qy+dy; } }
+      else { const dx=m.x-mDrag.ox, dy=m.y-mDrag.oy, a=mDrag.s0; S.x1=a.x1+dx; S.y1=a.y1+dy; S.x2=a.x2+dx; S.y2=a.y2+dy; if(a.qx!=null){ S.qx=a.qx+dx; S.qy=a.qy+dy; } }
       mPl.setQ(Q); mPl.set(k); }
     else if(mDrag.tipo==="zonaN"){ mTmp.tmpZ.x2=m.x; mTmp.tmpZ.y2=m.y; mPl.set(k); } });
-  const fim=e=>{ if(!mDrag) return; const D=mDrag, T=mTmp; mDrag=null; mTmp=null; const k=passoAtual(); if(D.lt) clearTimeout(D.lt);
-    if(D.tipo==="peca"){ if(D.mov){ const P=D.q.passos[k].pos[D.pid]; editaQ(Q=>{ Q.passos[k].pos[D.pid]={x:Math.round(P.x*10)/10,y:Math.round(P.y*10)/10}; }); } else { mSel=D.pid; mPl.set(k); folhaPecaM(D.pid); } }
-    else if(D.tipo==="zona"){ if(D.mov){ const z=D.q.passos[k].zonas.find(z=>z.id===D.zid); editaQ(Q=>{ const t=Q.passos[k].zonas.find(x=>x.id===D.zid); if(t){ t.x=z.x; t.y=z.y; } }); } else folhaZonaM(D.zid); }
-    else if(D.tipo==="setaM"&&!D.mov){ if(mSelS===D.sid) folhaSetaM(D.sid); else { mSelS=D.sid; mSel=null; mPl.set(k); toast("Seta selecionada · arrasta as pegas (pontas e curva) ou a seta; toca outra vez para opções"); } }
-    else if(D.tipo==="setaH"||D.tipo==="setaM"){ const S=D.q.passos[k].setas.find(x=>x.id===D.sid), r=v=>Math.round(v*10)/10; if(!S) return; mSelS=D.sid;
+  const fim=e=>{ if(!mDrag) return; const D=mDrag, T=mTmp; mDrag=null; mTmp=null; const k=passoAtual(), r=v=>Math.round(v*10)/10; if(D.lt) clearTimeout(D.lt);
+    if(e.type==="pointercancel"&&D.t0){ mPl.setQ(qAtual()); mPl.set(k); return; }
+    const clique=!!D.t0&&!D.mov&&Date.now()-D.t0<600;   // clique a sério: largar logo, sem mexer
+    if(D.tipo==="peca"){ if(D.mov){ const P=D.q.passos[k].pos[D.pid]; editaQ(Q=>{ Q.passos[k].pos[D.pid]={x:r(P.x),y:r(P.y)}; }); } else { mSel=D.pid; mSelS=null; mSelZ=null; mPl.set(k); if(clique) folhaPecaM(D.pid); } }
+    else if(D.tipo==="zona"){ if(D.mov){ const z=D.q.passos[k].zonas.find(z=>z.id===D.zid); editaQ(Q=>{ const t=Q.passos[k].zonas.find(x=>x.id===D.zid); if(t){ t.x=r(z.x); t.y=r(z.y); } }); }
+      else if(mSelZ===D.zid){ if(clique) folhaZonaM(D.zid); } else { mSelZ=D.zid; mSel=null; mSelS=null; mPl.set(k); } }
+    else if(D.tipo==="zonaH"){ if(D.mov){ const z=D.q.passos[k].zonas.find(z=>z.id===D.zid); editaQ(Q=>{ const t=Q.passos[k].zonas.find(x=>x.id===D.zid); if(t) ["x","y","w","h"].forEach(c=>t[c]=r(z[c])); }); } }
+    else if(D.tipo==="setaM"&&!D.mov){ if(mSelS===D.sid){ if(clique) folhaSetaM(D.sid); } else { mSelS=D.sid; mSel=null; mSelZ=null; mPl.set(k); toast("Seta selecionada · arrasta as pegas (pontas e curva) ou a seta; toca outra vez para opções"); } }
+    else if(D.tipo==="setaH"||D.tipo==="setaM"){ const S=D.q.passos[k].setas.find(x=>x.id===D.sid); if(!S) return; mSelS=D.sid; if(!D.mov) return;
       editaQ(Q=>{ const t=Q.passos[k].setas.find(x=>x.id===D.sid); if(!t) return; ["x1","y1","x2","y2"].forEach(c=>t[c]=r(S[c])); if(S.qx!=null){ t.qx=r(S.qx); t.qy=r(S.qy); } }); }
     else if(D.tipo==="seta"){ const s=T.tmpS; if(Math.hypot(s.x2-s.x1,s.y2-s.y1)>2) editaQ(Q=>Q.passos[k].setas.push({id:mId("s"),t:mSetaT,x1:s.x1,y1:s.y1,x2:s.x2,y2:s.y2})); else mPl.set(k); }
-    else if(D.tipo==="zonaN"){ const z=T.tmpZ, w=Math.abs(z.x2-z.x1), h=Math.abs(z.y2-z.y1); if(w>2&&h>2) editaQ(Q=>Q.passos[k].zonas.push({id:mId("z"),x:Math.min(z.x1,z.x2),y:Math.min(z.y1,z.y2),w,h,cor:mZonaCor})); else mPl.set(k); } };
+    else if(D.tipo==="zonaN"){ const z=T.tmpZ, w=Math.abs(z.x2-z.x1), h=Math.abs(z.y2-z.y1); if(w>2&&h>2){ const id=mId("z"); mSelZ=id; editaQ(Q=>Q.passos[k].zonas.push({id,x:Math.min(z.x1,z.x2),y:Math.min(z.y1,z.y2),w,h,cor:mZonaCor,...(mZonaForma==="elip"?{forma:"elip"}:{})})); } else mPl.set(k); } };
   svg.addEventListener("pointerup",fim); svg.addEventListener("pointercancel",fim);
-  svg.addEventListener("contextmenu",e=>{ if(!mEdit||mPl.playing) return; const alvo=e.target.closest("[data-p]"); if(!alvo) return; if(mDrag&&mDrag.lt) clearTimeout(mDrag.lt); mDrag=null; menuPecaM(e,alvo.dataset.p); });
+  /* botão direito: peças, zonas e setas (Duplicar, Apagar…) */
+  svg.addEventListener("contextmenu",e=>{ if(!mEdit||mPl.playing) return; const Q=qAtual(), alvo=e.target.closest("[data-sh],[data-zh],[data-p],[data-s],[data-z]"); if(!alvo||!Q) return;
+    if(mDrag&&mDrag.lt) clearTimeout(mDrag.lt); mDrag=null; const abre=menuDe(e,Q,passoAtual(),mPt(e),alvo); if(abre) abre(); else e.preventDefault(); });
   /* fora da edição: tocar num jogador SCA abre a troca, como nas bolas paradas */
   svg.addEventListener("click",e=>{ if(mEdit||mPl.playing) return; const alvo=e.target.closest("[data-p]"), Q=qAtual(); if(!alvo||!Q) return;
     const pc=Q.pecas.find(p=>p.id===alvo.dataset.p); if(pc&&pc.eq==="nos") folhaSubM(pc.id); }); }
@@ -493,15 +513,25 @@ function folhaSetaM(sid){ const Q=qAtual(), k=passoAtual(), S=Q.passos[k].setas.
     s.querySelector("#ms-inv").onclick=()=>editaQ(Q=>{ const x=Q.passos[k].setas.find(x=>x.id===sid); if(x){ [x.x1,x.y1,x.x2,x.y2]=[x.x2,x.y2,x.x1,x.y1]; } });
     s.querySelector("#ms-del").onclick=()=>{ fecha(); editaQ(Q=>{ Q.passos[k].setas=Q.passos[k].setas.filter(x=>x.id!==sid); }); }; }); }
 function folhaZonaM(zid){ const Q=qAtual(), k=passoAtual(), Z=Q.passos[k].zonas.find(z=>z.id===zid); if(!Z) return;
-  folha(`<h3>Zona · passo ${k+1}</h3><p class="sub" style="margin:0">Arrasta a zona no quadro para a mexer. No passo seguinte ela é copiada e desliza se a mexeres.</p>
+  folha(`<h3>Zona · passo ${k+1}</h3><p class="sub" style="margin:0">Arrasta a zona para a mexer e as pegas brancas (cantos e lados) para mudar o tamanho. No passo seguinte ela é copiada e desliza se a mexeres.</p>
+    <h4>Forma</h4><div class="seg" id="mz-f"><button data-f="ret">▭ Retângulo</button><button data-f="elip">◯ Círculo / oval</button></div>
     <h4>Cor</h4><div class="seg" id="mz-c">${CORES_ZONA.map(([c,n])=>`<button data-c="${c}">${n}</button>`).join("")}</div>
-    <h4>Tamanho</h4><div class="seg"><button data-d="w-">Largura −</button><button data-d="w+">Largura +</button><button data-d="h-">Altura −</button><button data-d="h+">Altura +</button></div>
-    <div class="actions"><button class="btn danger l" id="mz-del">Apagar zona</button><button class="btn primary" data-close>Fechar</button></div>`,(s,fecha)=>{
-    let cor=Z.cor; const pinta=()=>s.querySelectorAll("#mz-c button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.c===cor)));
+    <div class="actions"><button class="btn danger l" id="mz-del">Apagar zona</button><button class="btn" id="mz-dup">⧉ Duplicar</button><button class="btn primary" data-close>Fechar</button></div>`,(s,fecha)=>{
+    let cor=Z.cor, fm=Z.forma==="elip"?"elip":"ret"; const pinta=()=>{ s.querySelectorAll("#mz-c button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.c===cor))); s.querySelectorAll("#mz-f button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.f===fm))); };
     s.querySelectorAll("#mz-c button").forEach(b=>b.onclick=()=>{ cor=b.dataset.c; pinta(); editaQ(Q=>{ const z=Q.passos[k].zonas.find(z=>z.id===zid); if(z) z.cor=cor; }); }); pinta();
-    s.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>editaQ(Q=>{ const z=Q.passos[k].zonas.find(z=>z.id===zid); if(!z) return; const [d,sg]=[b.dataset.d[0],b.dataset.d[1]], v=sg==="+"?2:-2;
-      if(d==="w"){ const nw=mClamp(z.w+v,2,110); z.x-=(nw-z.w)/2; z.w=nw; } else { const nh=mClamp(z.h+v,2,72); z.y-=(nh-z.h)/2; z.h=nh; } }));
-    s.querySelector("#mz-del").onclick=()=>{ fecha(); editaQ(Q=>{ Q.passos[k].zonas=Q.passos[k].zonas.filter(z=>z.id!==zid); }); }; }); }
+    s.querySelectorAll("#mz-f button").forEach(b=>b.onclick=()=>{ fm=b.dataset.f; pinta(); editaQ(Q=>{ const z=Q.passos[k].zonas.find(z=>z.id===zid); if(!z) return; if(fm==="elip") z.forma="elip"; else delete z.forma; }); });
+    s.querySelector("#mz-dup").onclick=()=>{ fecha(); duplicaZona(zid); };
+    s.querySelector("#mz-del").onclick=()=>{ fecha(); apagaZona(zid); }; }); }
+/* v112.21: caixa nova ao arrastar a pega (fx, fy = 0 lado esquerdo/de cima, 1 meio, 2 lado direito/de baixo); o lado oposto fica parado */
+function caixaPorPega(z,fx,fy,m){ let x1=z.x, y1=z.y, x2=z.x+z.w, y2=z.y+z.h;
+  if(fx===0) x1=m.x; else if(fx===2) x2=m.x; if(fy===0) y1=m.y; else if(fy===2) y2=m.y;
+  const w=Math.max(2,Math.abs(x2-x1)), h=Math.max(2,Math.abs(y2-y1)); return {x:Math.min(x1,x2),y:Math.min(y1,y2),w,h}; }
+function duplicaZona(zid){ const k=passoAtual(), id=mId("z"); editaQ(Q=>{ const z=Q.passos[k].zonas.find(z=>z.id===zid); if(z) Q.passos[k].zonas.push({...clone(z),id,x:z.x+2,y:z.y+2}); }); mSelZ=id; mSel=null; mSelS=null; mPl.set(k); toast("Zona duplicada"); }
+function apagaZona(zid){ const k=passoAtual(); if(mSelZ===zid) mSelZ=null; editaQ(Q=>{ Q.passos[k].zonas=Q.passos[k].zonas.filter(z=>z.id!==zid); }); toast("Zona apagada",desfazModelo); }
+function duplicaSeta(sid){ const k=passoAtual(), id=mId("s"); editaQ(Q=>{ const S=Q.passos[k].setas.find(x=>x.id===sid); if(!S) return; const N={...clone(S),id}; ["x1","x2","qx"].forEach(c=>{ if(N[c]!=null) N[c]+=2; }); ["y1","y2","qy"].forEach(c=>{ if(N[c]!=null) N[c]+=2; }); Q.passos[k].setas.push(N); }); mSelS=id; mSel=null; mSelZ=null; mPl.set(k); toast("Seta duplicada"); }
+function apagaSeta(sid){ const k=passoAtual(); if(mSelS===sid) mSelS=null; editaQ(Q=>{ Q.passos[k].setas=Q.passos[k].setas.filter(x=>x.id!==sid); }); toast("Seta apagada",desfazModelo); }
+function menuZonaM(e,zid){ mSelZ=zid; mSel=null; mSelS=null; mPl.set(passoAtual()); menuContexto(e,[["⧉ Duplicar",()=>duplicaZona(zid)],["✎ Editar…",()=>folhaZonaM(zid)],["🗑 Apagar zona",()=>apagaZona(zid),"perigo"]]); }
+function menuSetaM(e,sid){ mSelS=sid; mSel=null; mSelZ=null; mPl.set(passoAtual()); menuContexto(e,[["⧉ Duplicar",()=>duplicaSeta(sid)],["✎ Editar…",()=>folhaSetaM(sid)],["🗑 Apagar seta",()=>apagaSeta(sid),"perigo"]]); }
 /* peças do passo k fora da vista escolhida (ao mudar de campo inteiro para meio campo, por exemplo) */
 function forasDaVista(Q,k){ const R=regiaoVista(Q), P=Q.passos[k]; if(!P) return []; return Q.pecas.filter(pc=>{ const p=P.pos[pc.id]; return p&&(p.x<R.x0||p.x>R.x0+R.w||p.y<R.y0||p.y>R.y0+R.h); }).map(pc=>pc.id); }
 /* peça nova a meio da vista; várias bolas são permitidas (exercícios) */
@@ -567,7 +597,7 @@ function renderModelo(){ const view=$("view-m"); if(!view||view.hidden) return; 
     eb.querySelectorAll("#m-tool button").forEach(b=>{ b.setAttribute("aria-pressed",String(b.dataset.k===mTool)); b.onclick=()=>{ mTool=b.dataset.k; renderModelo(); }; });
     const sb=eb.querySelector("#m-sub");
     if(mTool==="seta"){ sb.innerHTML=Object.entries(SETA_T).map(([k,v])=>`<button data-k="${k}" aria-pressed="${k===mSetaT}"><i style="display:inline-block;width:18px;height:4px;background:${v[1]};border:1px solid #0003;vertical-align:middle;margin-right:5px"></i>${v[0]}</button>`).join(""); sb.querySelectorAll("button").forEach(b=>b.onclick=()=>{ mSetaT=b.dataset.k; renderModelo(); }); }
-    else if(mTool==="zona"){ sb.innerHTML=CORES_ZONA.map(([c,n])=>`<button data-c="${c}" aria-pressed="${c===mZonaCor}"><i style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${c};border:1px solid #0004;vertical-align:-1px;margin-right:5px"></i>${n}</button>`).join(""); sb.querySelectorAll("button").forEach(b=>b.onclick=()=>{ mZonaCor=b.dataset.c; renderModelo(); }); }
+    else if(mTool==="zona"){ sb.innerHTML=[["ret","▭ Retângulo"],["elip","◯ Círculo"]].map(([f,t])=>`<button data-f="${f}" aria-pressed="${f===mZonaForma}">${t}</button>`).join("")+CORES_ZONA.map(([c,n])=>`<button data-c="${c}" aria-pressed="${c===mZonaCor}"><i style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${c};border:1px solid #0004;vertical-align:-1px;margin-right:5px"></i>${n}</button>`).join(""); sb.querySelectorAll("button").forEach(b=>b.onclick=()=>{ if(b.dataset.f) mZonaForma=b.dataset.f; else mZonaCor=b.dataset.c; renderModelo(); }); }
     else sb.hidden=true; }
   renderModeloControlos(); renderModeloPainel(Q); }
 function renderModeloNav(Q){ const nav=$("m-nav"), ls=listaModelos();

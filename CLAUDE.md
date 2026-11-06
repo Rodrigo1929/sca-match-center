@@ -47,6 +47,7 @@ Os 4 scripts partilham o âmbito global: uma `function` repetida noutro script s
 - `npm test` → build + teste no browser (precisa de `npm install` e `npx playwright install chromium`)
 - `npm run test:obs` → build + teste no browser da app de observação (PC e telemóvel; `-- --ipad` para WebKit)
 - `npm run test:ipad` → o mesmo teste no WebKit (motor do Safari) com ecrã e toque de iPad (precisa de `npx playwright install webkit`)
+- `npm run test:editor` → build + teste do editor das figuras e das caixas de texto do Quadro (clique/arrasto, peça mais perto, zonas com pegas, botão direito); `node tests/editor.mjs --ipad` no WebKit
 
 ## Publicação — regra crítica
 A app vive num **único link**: https://claude.ai/artifact/3uVFyLVzJvF5z8upFHkJqN
