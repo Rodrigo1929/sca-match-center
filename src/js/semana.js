@@ -52,7 +52,7 @@ Object.keys(calendario).forEach(id=>{ try{ calendario[id]=normJogoCal({...calend
 
 /* cores dos jogos (v105, como no plano do clube): em casa vermelho claro, fora azul claro, com texto branco.
    O estágio e a viagem levam a cor do jogo a que se ligam. As cores mudam-se em Micro › ⚙ Padrão MD › Regimes e cores. */
-const COR_CASA="#F28E86", COR_FORA="#B3CEFB";
+const COR_CASA="#F28E86", COR_FORA="#003F82";   // fora: azul do plano do clube (v112.28)
 const corJogo=j=>{ const k=j&&j.casa?"casa":"fora"; return typeof corBloco==="function"?corBloco(k):(k==="casa"?COR_CASA:COR_FORA); };
 /* jogo a que um estágio ou viagem se liga: o do dia, o seguinte até 2 dias depois, ou o da véspera (regresso) */
 function jogoLigado(d){ const js=listaJogosCal(); return js.find(j=>j.data===d)||js.find(j=>j.data>d&&j.data<=diaMais(d,2))||js.filter(j=>j.data<d&&j.data>=diaMais(d,-1)).pop()||null; }
@@ -302,7 +302,9 @@ async function pdfSemana(S){
   const ds=diasDaSemana(S.inicio), fim=ds[6];
   /* cabeçalho */
   let y=44; const hA=26, hB=18, hC=15, hD=17.5, hE=26.5, hM=147, hL=26.5;
-  box(X0,y,cl,hA+hB+hC,BR); try{ doc.addImage(IMG_DATA["slides/af.png"],"PNG",X0+cl/2-17,y+4,34,43); }catch(e){}
+  /* semana com jogo do Campeonato de Futebol dos Açores: símbolo do CFA no lugar do da AFAH (v112.28) */
+  const cfa=IMG_DATA["slides/cfa.png"]&&listaJogosCal().some(j=>j.data>=S.inicio&&j.data<=fim&&siglaJogo(j)==="CFA");
+  box(X0,y,cl,hA+hB+hC,BR); try{ if(cfa) doc.addImage(IMG_DATA["slides/cfa.png"],"PNG",X0+cl/2-24,y+5.5,48,48); else doc.addImage(IMG_DATA["slides/af.png"],"PNG",X0+cl/2-17,y+4,34,43); }catch(e){}
   box(xc(0),y,cw*1.5,hA,RED); box(xc(1.5),y,cw*3,hA,BR); T("PLANEAMENTO SEMANAL",xc(1.5)+cw*1.5,y+hA/2,11,{b:1});
   box(xc(4.5),y,cw*1.5,hA,RED); T("SC ANGRENSE",xc(4.5)+cw*.75,y+hA/2,11,{c:BR});
   box(xc(6),y,cw,hA+hB+hC,BR); try{ doc.addImage(IMG_DATA["slides/logo.png"],"PNG",xc(6)+cw/2-27,y+3,54,52); }catch(e){}

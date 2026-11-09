@@ -125,9 +125,27 @@ const srcImagem=im=>xImgUrl[im.id]||"/_blob/"+im.id;
 async function reduzImagem(file,max=1600,png=false){ const url=URL.createObjectURL(file);   // png: mantém o fundo transparente (emblemas)
   try{ const img=new Image(); await new Promise((ok,ko)=>{ img.onload=ok; img.onerror=()=>ko(new Error("imagem")); img.src=url; });
     const f=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight)), w=Math.max(1,Math.round(img.naturalWidth*f)), h=Math.max(1,Math.round(img.naturalHeight*f));
-    const cv=document.createElement("canvas"); cv.width=w; cv.height=h; const cx=cv.getContext("2d"); if(!png){ cx.fillStyle="#fff"; cx.fillRect(0,0,w,h); } cx.drawImage(img,0,0,w,h);
-    const blob=await new Promise(ok=>png?cv.toBlob(ok,"image/png"):cv.toBlob(ok,"image/jpeg",.85)); if(!blob) throw new Error("imagem"); return {blob,w,h}; }
+    let cv=document.createElement("canvas"); cv.width=w; cv.height=h; const cx=cv.getContext("2d"); if(!png){ cx.fillStyle="#fff"; cx.fillRect(0,0,w,h); } cx.drawImage(img,0,0,w,h);
+    if(png) cv=tiraFundo(cv);
+    const blob=await new Promise(ok=>png?cv.toBlob(ok,"image/png"):cv.toBlob(ok,"image/jpeg",.85)); if(!blob) throw new Error("imagem"); return {blob,w:cv.width,h:cv.height}; }
   finally{ URL.revokeObjectURL(url); } }
+/* emblemas: tira o fundo liso ligado às margens (cor das margens, com tolerância e borda suave) e corta à volta do símbolo.
+   shortcut: só fundos de uma cor; fundos com degradê ou fotografia ficam, nesse caso carregar um PNG já sem fundo */
+function tiraFundo(cv){ const w=cv.width, h=cv.height, cx=cv.getContext("2d"), D=cx.getImageData(0,0,w,h), p=D.data, N=w*h;
+  const borda=[]; for(let x=0;x<w;x++) borda.push(x,(h-1)*w+x); for(let y=1;y<h-1;y++) borda.push(y*w,y*w+w-1);
+  const op=borda.filter(i=>p[i*4+3]>200); if(op.length<borda.length*.6) return cortaCanvas(cv,D);   // já tem fundo transparente
+  const med=k=>{ const v=op.map(i=>p[i*4+k]).sort((a,b)=>a-b); return v[v.length>>1]; }, R=med(0), G=med(1), B=med(2);
+  const dist=i=>Math.hypot(p[i*4]-R,p[i*4+1]-G,p[i*4+2]-B), T0=28, T1=70;
+  if(op.filter(i=>dist(i)<T1).length<op.length*.6) return cortaCanvas(cv,D);   // margens sem cor de fundo comum: não mexe
+  const vis=new Uint8Array(N), pilha=[]; for(const i of borda) if(dist(i)<T1){ vis[i]=1; pilha.push(i); }
+  while(pilha.length){ const i=pilha.pop(), d=dist(i); p[i*4+3]=Math.round(p[i*4+3]*Math.max(0,Math.min(1,(d-T0)/(T1-T0))));
+    if(d>=T0) continue;   // borda suave: não passa por pixels já do símbolo
+    const x=i%w; for(const j of [x>0?i-1:-1,x<w-1?i+1:-1,i-w,i+w]) if(j>=0&&j<N&&!vis[j]&&dist(j)<T1){ vis[j]=1; pilha.push(j); } }
+  cx.putImageData(D,0,0); return cortaCanvas(cv,D); }
+function cortaCanvas(cv,D){ const w=cv.width, h=cv.height, p=D.data; let x0=w, y0=h, x1=-1, y1=-1;
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++) if(p[(y*w+x)*4+3]>16){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+  if(x1<0||(x0===0&&y0===0&&x1===w-1&&y1===h-1)) return cv;
+  const c=document.createElement("canvas"); c.width=x1-x0+1; c.height=y1-y0+1; c.getContext("2d").drawImage(cv,-x0,-y0); return c; }
 const ERR_ASSETS={too_large:"A imagem é demasiado grande.",unsupported_type:"Esse tipo de ficheiro não é aceite. Usa uma foto ou imagem (JPG ou PNG).",quota_or_state:"O espaço para imagens do link está cheio.",rate_limited:"Muitas tentativas seguidas. Espera um pouco e tenta de novo.",upstream_auth:"Sessão expirada. Recarrega a página.",not_granted:"Sem permissão para carregar imagens neste link."};
 function folhaImagemEx(id){ const E=exercicios[id]; if(!E) return; const im=E.figura&&E.figura.imagem;
   folha(`<h3>Imagem da figura</h3><p class="sub" style="margin:0">Uma foto ou print da figura (por exemplo, das UT antigas). Fica guardada no link para toda a equipa. É reduzida para no máximo 1600 px. Precisa de internet para carregar.</p>
