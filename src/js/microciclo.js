@@ -8,7 +8,7 @@
    microResumo/{seg}        = { estado: "rascunho"|"fechado", fechadoEm, fechadoPor, hist: [{acao, em, por}] } */
 const MD_LINHAS=["MD+1","MD+2","MD-6","MD-5","MD-4","MD-3","MD-2","MD-1","MD"];
 const NIVEIS_VOL=["Baixo","Baixo/Moderado","Moderado","Moderado/Alto","Alto"];
-const BLOCOS_MC=[["folga","FOLGA","#F4E690"],["casa","JOGO EM CASA (e o estágio)","#F28E86"],["fora","JOGO FORA (e a viagem)","#003F82"]];   // v105: cores do plano do clube; fora mais escuro na v112.28
+const BLOCOS_MC=[["folga","FOLGA","#F4E690"],["casa","JOGO EM CASA (e o estágio)","#F28E86"],["fora","JOGO FORA (e a viagem)","#003F82"]];   // v105: cores do plano do clube; fora mais escuro na v113.4
 const PARTES_MC=[["pi","inicial","Parte inicial"],["pf","fundamental","Parte fundamental"],["pfin","final","Parte final"]];
 const FINAIS_MC=[["analise","Análise do jogo anterior e observações"],["perf","Análise da performance dos jogadores no último jogo"],["positivos","Pontos positivos"],["melhorar","Pontos a melhorar"]];
 const DIAS_MC=["2ª","3ª","4ª","5ª","6ª","Sáb","Dom"], DIAS_MC_PDF=["2ª Feira","3ª Feira","4ª Feira","5ª Feira","6ª Feira","Sábado","Domingo"];
