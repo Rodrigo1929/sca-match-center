@@ -227,6 +227,7 @@ $("btn-dup")&&($("btn-dup").onclick=folhaDup);
 $("btn-undo").onclick=desfazQuadro;
 document.addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&(e.key==="z"||e.key==="Z")&&$("view-a").hidden&&$("view-v").hidden&&$("view-m").hidden&&$("view-x").hidden&&$("view-u").hidden&&!$("sheet-root").innerHTML){ const t=e.target.tagName||""; if(/INPUT|TEXTAREA|SELECT/.test(t)||e.target.isContentEditable) return; e.preventDefault(); desfazQuadro(); } });
 $("btn-pdf")&&($("btn-pdf").onclick=folhaPdf);
+$("btn-setups")&&($("btn-setups").onclick=folhaSetups);
 $("btn-tv").onclick=()=>folhaTV();
 /* desfazer alterações nos quadros (bolinhas, setas, textos, onze…) */
 let undoQ=[], aDesfazer=false;
