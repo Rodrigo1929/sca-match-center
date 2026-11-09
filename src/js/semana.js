@@ -304,7 +304,7 @@ async function pdfSemana(S){
   let y=44; const hA=26, hB=18, hC=15, hD=17.5, hE=26.5, hM=147, hL=26.5;
   /* semana com jogo do Campeonato de Futebol dos Açores: símbolo do CFA no lugar do da AFAH (v113.4) */
   const cfa=IMG_DATA["slides/cfa.png"]&&listaJogosCal().some(j=>j.data>=S.inicio&&j.data<=fim&&siglaJogo(j)==="CFA");
-  box(X0,y,cl,hA+hB+hC,BR); try{ if(cfa) doc.addImage(IMG_DATA["slides/cfa.png"],"PNG",X0+cl/2-24,y+5.5,48,48); else doc.addImage(IMG_DATA["slides/af.png"],"PNG",X0+cl/2-17,y+4,34,43); }catch(e){}
+  box(X0,y,cl,hA+hB+hC,BR); try{ if(cfa) doc.addImage(IMG_DATA["slides/cfa.png"],"PNG",X0+cl/2-19,y+3,38,38);   /* só a zona branca acima de «SEMANA DE» (hA+hB = 44) se vê */ else doc.addImage(IMG_DATA["slides/af.png"],"PNG",X0+cl/2-17,y+4,34,43); }catch(e){}
   box(xc(0),y,cw*1.5,hA,RED); box(xc(1.5),y,cw*3,hA,BR); T("PLANEAMENTO SEMANAL",xc(1.5)+cw*1.5,y+hA/2,11,{b:1});
   box(xc(4.5),y,cw*1.5,hA,RED); T("SC ANGRENSE",xc(4.5)+cw*.75,y+hA/2,11,{c:BR});
   box(xc(6),y,cw,hA+hB+hC,BR); try{ doc.addImage(IMG_DATA["slides/logo.png"],"PNG",xc(6)+cw/2-27,y+3,54,52); }catch(e){}

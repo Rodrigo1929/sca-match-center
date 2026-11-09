@@ -2,6 +2,7 @@
 
 | Versão | Alteração |
 |---|---|
+| 113.4.2 | **PDF do plano semanal:** símbolo do CFA mais pequeno e centrado na zona branca do canto (antes ficava cortado pela faixa «SEMANA DE»). Dados: emblema do SC Lusitânia (jogo de 15/11) trocado pela versão sem fundo (tinha sido carregado antes da v113.4). |
 | 113.4.1 | **PDF do plano semanal:** símbolo do Campeonato de Futebol dos Açores (`assets/slides/cfa.png`, enviado pelo Rodrigo) no lugar do da AFAH nas semanas com jogo do CFA. |
 | 113.4 | **Plano semanal, Micro e PDF:** jogos fora (e a viagem/estágio ligados) passam ao azul do plano do clube `#003F82`, com texto branco (antes azul claro `#B3CEFB`). **Emblema do adversário (Calendário):** ao carregar, o fundo liso à volta do símbolo é retirado (fica transparente) e a imagem é cortada à volta do símbolo; o branco dentro do símbolo fica. Emblemas já carregados não mudam (carregar de novo). **PDF do plano semanal:** em semanas com jogo do Campeonato de Futebol dos Açores (CFA), o símbolo do CFA substitui o da AFAH (precisa de `assets/slides/cfa.png`; sem ele fica a AFAH). Teste: `npm run test:fundo`. |
 | 113–113.3 | **Quadro · 🖨 Setups:** PDF A4 horizontal com as posições iniciais das bolas paradas (ofensivos só bolas e números, com painel «Variantes e sinais» lido das caixas de texto; defensivos com o quadro completo); lances ligados com metade ou mais das peças soltas contam como setup próprio; nos cantos ofensivos entra o Cristo Rei do mesmo lado. Publicado no link noutro sítio; código trazido para o repositório na v113.4. |
