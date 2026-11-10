@@ -1,9 +1,12 @@
 /* ---------- exportar PDF dos quadros ---------- */
-/* v113.5: as bibliotecas vêm embutidas na app (<script type="text/plain" id="lib-…">): funcionam sem rede. A CDN só fica para o caso de a cópia faltar. */
-const LIB_EMB=[[/jspdf-autotable/,"lib-autotable"],[/jspdf\//,"lib-jspdf"],[/xlsx/,"lib-xlsx"],[/mp4-muxer/,"lib-mp4"]], libFeita={};
-function carregaScript(src){ const e=LIB_EMB.find(([re])=>re.test(src)), el=e&&document.getElementById(e[1]);
-  if(el&&el.textContent.length>1000){ if(!libFeita[e[1]]){ const s_=document.createElement("script"); s_.textContent=el.textContent; document.head.appendChild(s_); libFeita[e[1]]=true; } return Promise.resolve(); }
-  return new Promise((ok,ko)=>{ const s_=document.createElement("script"); s_.src=src; s_.onload=ok; s_.onerror=()=>ko(new Error("script")); document.head.appendChild(s_); }); }
+/* v113.5: cada script carrega-se uma só vez (pedidos ao mesmo tempo esperam pelo mesmo); se falhar, o pedido seguinte tenta outra vez.
+   O gerador de PDF (jsPDF + AutoTable) carrega-se logo ao abrir a app, enquanto há rede: se a rede cair depois (banco, balneário), os PDF funcionam.
+   Não se embute no ficheiro: +0,4 a 1,4 MB de texto na página deixava-a a encalhar no teste (toBlob e cliques). */
+const _scripts={};
+function carregaScript(src){ return _scripts[src]||(_scripts[src]=new Promise((ok,ko)=>{ const s_=document.createElement("script"); s_.src=src; s_.onload=ok; s_.onerror=()=>{ s_.remove(); delete _scripts[src]; ko(new Error("script")); }; document.head.appendChild(s_); })); }
+const LIB_JSPDF="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js", LIB_AUTOTABLE="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js";
+function preCarregaPdf(){ if(window.jspdf&&window.jspdf.jsPDF.API.autoTable) return Promise.resolve(); return carregaScript(LIB_JSPDF).then(()=>carregaScript(LIB_AUTOTABLE)).catch(()=>{}); }
+setTimeout(preCarregaPdf,3000);
 const _dataUrl={};
 async function paraDataUrl(u){ if(IMG_DATA[u]) return IMG_DATA[u]; if(_dataUrl[u]) return _dataUrl[u]; const bl=await (await fetch(u)).blob();
   const d=await new Promise((ok,ko)=>{ const fr=new FileReader(); fr.onload=()=>ok(fr.result); fr.onerror=ko; fr.readAsDataURL(bl); }); _dataUrl[u]=d; return d; }

@@ -221,5 +221,6 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - **Ir arquivar** abre o Histórico (aí, «Arquivar jogo atual»). Para um jogo que não teve ficha na app, manda o link da ficha da FPF ao Claude, que o arquiva por ti.
 - **Não arquivar** tira esse jogo do aviso para toda a equipa (pode desfazer-se logo a seguir). Jogos-treino não entram no aviso.
 
-## PDF, Excel e vídeo sem internet (v113.5)
-- Os geradores de PDF, Excel e vídeo vêm dentro da app: funcionam no banco ou no balneário sem rede, desde que a app já esteja aberta.
+## PDF sem internet (v113.5)
+- O gerador de PDF carrega-se nos primeiros segundos depois de abrir a app (com rede). Se a rede cair depois, no banco ou no balneário, todos os PDF continuam a funcionar. Abre a app antes de sair de onde há rede.
+- O Excel e o vídeo da TV continuam a precisar de internet.
