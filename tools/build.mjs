@@ -40,7 +40,8 @@ html = troca(html, "{{PPTX_LIB}}", ler("src/vendor/pptxgen.min.js"));
 // jsPDF, AutoTable (MIT), SheetJS (Apache-2.0) e mp4-muxer (MIT) também embutidos como texto, para os PDF, o Excel e o vídeo funcionarem sem rede (carregaScript usa-os).
 // "<!--" e "<script" dentro de um <script> mudam a forma como o HTML o lê: \x3c é o mesmo "<" nas strings e regex onde aparecem.
 for (const [marca, f] of [["{{JSPDF_LIB}}", "jspdf.umd.min.js"], ["{{AUTOTABLE_LIB}}", "jspdf.plugin.autotable.min.js"], ["{{XLSX_LIB}}", "xlsx.full.min.js"], ["{{MP4_LIB}}", "mp4-muxer.js"]]) {
-  const js = ler("src/vendor/" + f).replace(/<!--/g, "\\x3c!--").replace(/<script/gi, "\\x3cscript");
+  // o SheetJS tem U+FFFD de propósito nas tabelas de codificação (dentro de strings); escrito como \ufffd é o mesmo carácter e o publicador aceita
+  const js = ler("src/vendor/" + f).replace(/<!--/g, "\\x3c!--").replace(/<script/gi, "\\x3cscript").replace(/\uFFFD/g, "\\ufffd");
   if (/<\/script/i.test(js)) throw new Error(f + " tem </script>");
   html = troca(html, marca, js);
 }
