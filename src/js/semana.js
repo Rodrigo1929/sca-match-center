@@ -45,6 +45,7 @@ function normJogoCal(d){ const s=v=>String(v??"").trim(), im=d.emblema, casa=d.c
   return {id:s(d.id)||uId("j"),data:/^\d{4}-\d{2}-\d{2}$/.test(s(d.data))?s(d.data):isoDia(new Date()),hora:horaOk(d.hora),adversario:s(d.adversario),casa,
     competicao:s(d.competicao),jornada:s(d.jornada),local:s(d.local),localidade:s(d.localidade),ilha:ILHAS.includes(s(d.ilha))?s(d.ilha):"",nota:s(d.nota),
     deslocacao:!casa&&!!d.deslocacao, destino:s(d.destino),     // jogo fora da ilha (viagem de ida na véspera e regresso depois do jogo)
+    ...(d.semArquivo?{semArquivo:true}:{}),                       // v113.5: «Não arquivar este» (o aviso de jogo por arquivar deixa de o mostrar)
     ...(im&&/^[\w-]{8,64}$/.test(String(im.id||""))?{emblema:{id:String(im.id),w:Math.round(+im.w)||200,h:Math.round(+im.h)||200}}:{}),
     criadoPor:s(d.criadoPor),criadoEm:s(d.criadoEm),alteradoPor:s(d.alteradoPor),alteradoEm:s(d.alteradoEm)}; }
 Object.keys(semanas).forEach(id=>{ try{ semanas[id]=normSemana({...semanas[id],id}); }catch(e){ delete semanas[id]; } });
@@ -364,5 +365,21 @@ function ligaSemDb(){ if(!db) return;
     q.docs.forEach(d=>{ const x=lerDoc(d); if(x){ const c={...x}; delete c.atualizadoEm; try{ m[d.id]=norm({...c,id:d.id}); }catch(e){} } });
     mergeCol(col+"/",m,get()); if(JSON.stringify(m)!==JSON.stringify(get())){ set(m); local(); if(!$("sheet-root").innerHTML) renderUT(); } },()=>{});
   liga("semanas",normSemana,()=>semanas,m=>{ semanas=m; },guardaSemLocal);
-  liga("calendario",normJogoCal,()=>calendario,m=>{ calendario=m; },guardaCalLocal); }
+  liga("calendario",normJogoCal,()=>calendario,m=>{ calendario=m; avisoArquivo(); },guardaCalLocal); }
+
+/* ---------- aviso de jogo por arquivar (v113.5, auditoria 0.4) ----------
+   Jogos oficiais do calendário com data anterior a hoje sem jogo no Histórico com a mesma data, e o jogo atual
+   com data passada e registos ainda por arquivar. «Não arquivar este» grava semArquivo no jogo do calendário (vale para todos). */
+function jogosPorArquivar(){ const hoje=isoDia(new Date()), hs=Object.values(hist||{}), arq=d=>hs.some(J=>J.data===d);
+  const cal=listaJogosCal().filter(j=>j.data<hoje&&!j.semArquivo&&compDeCal(j)!=="livre"&&!arq(j.data)).map(j=>({id:j.id,data:j.data,adv:j.adversario}));
+  const temReg=(jogo.eventos||[]).length||(notas.itens||[]).length||(an.regs||[]).length;
+  const atual=jogo.data&&jogo.data<hoje&&temReg&&!arq(jogo.data)&&!cal.some(j=>j.data===jogo.data)?[{id:"",data:jogo.data,adv:jogo.adversario,atual:true}]:[];
+  return [...cal,...atual].sort((a,b)=>a.data.localeCompare(b.data)); }
+function avisoArquivo(){ const el=$("aviso-arq"); if(!el) return; let L=[]; try{ L=jogosPorArquivar(); }catch(e){}
+  el.hidden=!L.length; if(!L.length){ el.innerHTML=""; return; }
+  el.innerHTML=`<b>${L.length===1?"1 jogo por arquivar":L.length+" jogos por arquivar"}</b>`+L.map(x=>`<span class="aa-j">${esc(dataPt(x.data).slice(0,5))} vs ${esc(x.adv||"(sem adversário)")}${x.atual?" · jogo atual com registos":""}${x.id?`<button class="btn sm ghost" data-nao="${esc(x.id)}" title="Este jogo não vai ser arquivado: o aviso deixa de o mostrar (para toda a equipa)">Não arquivar</button>`:""}</span>`).join("")+`<button class="btn sm primary" id="aa-ir">Ir arquivar</button>`;
+  el.querySelector("#aa-ir").onclick=()=>setTab("h");
+  el.querySelectorAll("[data-nao]").forEach(b=>b.onclick=()=>{ const J=calendario[b.dataset.nao]; if(!J) return; guardaJogoCal({...J,semArquivo:true}); avisoArquivo();
+    toast(`Jogo vs ${J.adversario||"adversário"} fora do aviso`,()=>{ const A=calendario[J.id]; if(A){ const N={...A}; delete N.semArquivo; guardaJogoCal(N); } avisoArquivo(); }); }); }
+setTimeout(avisoArquivo,0);
 (()=>{ let n=0; const t=setInterval(()=>{ n++; if(db){ clearInterval(t); try{ ligaSemDb(); }catch(e){} } else if(n>80) clearInterval(t); },250); })();

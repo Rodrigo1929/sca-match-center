@@ -119,7 +119,7 @@ $("a-jpdf").onclick=()=>{ const F=fonteRel(); folhaRelJog(F.arq||jogoAtualRel())
 $("r-jogo").onchange=e=>{ relArq=e.target.value; renderRelatorio(); };
 $("a-limpar").onclick=e=>{ if(fonteRel().arq) return; const b=e.currentTarget; if(b.dataset.c!=="1"){ b.dataset.c="1"; b.textContent="Confirmar: limpar tudo"; setTimeout(()=>{ b.dataset.c=""; b.textContent="Limpar análise"; },4000); return; }
   const prev=JSON.parse(JSON.stringify(an)); guardaAn({regs:[],ataque:an.ataque}); toast("Análise limpa",()=>guardaAn(prev)); };
-function renderHist(){ infoCopia();
+function renderHist(){ infoCopia(); if(typeof avisoArquivo==="function") avisoArquivo();
   const box=$("h-lista"); if(!box) return; box.innerHTML="";
   const js=Object.values(hist).sort((a,b)=>String(b.data||b.arquivadoEm).localeCompare(String(a.data||a.arquivadoEm)));
   if(!js.length){ box.innerHTML=`<p class="foot"><b>Ainda sem jogos arquivados.</b> No fim de cada jogo, toca em “Arquivar jogo atual”.</p>`; return; }

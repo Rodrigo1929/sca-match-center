@@ -18,6 +18,7 @@ src/js/modelo-de-jogo.js separador Modelo de Jogo (2.º <script>); o editor tamb
 src/js/principios.js     Modelo de Jogo › Princípios (dados, vistas, edição, tempo treinado, escolha de princípios, propostas) (2.º <script>, depois do modelo-de-jogo)
 src/js/modelo-pptx.js    PowerPoint do modelo a partir dos dados (2.º <script>, depois de principios.js)
 src/vendor/pptxgen.min.js PptxGenJS 4.0.1 (MIT), embutido como texto (`lib-pptx`) e só carregado ao exportar; usa um JSZip próprio (`ZipPptx`, sobre `zipFicheiros`)
+src/vendor/*.js          jsPDF 2.5.1, AutoTable 3.8.2 (MIT), SheetJS 0.18.5 (Apache-2.0) e mp4-muxer 5.1.3 (MIT), embutidos como texto (`lib-jspdf`, `lib-autotable`, `lib-xlsx`, `lib-mp4`)
 src/js/exercicios.js     separador Exercícios, repositório para as UT (3.º <script>)
 src/js/treino.js         separador Treino, Unidades de Treino e PDF da UT (4.º <script>)
 src/js/semana.js         Plano semanal e calendário de jogos (no separador Treino; junta-se ao 4.º <script>)
@@ -51,6 +52,8 @@ Os 4 scripts partilham o âmbito global: uma `function` repetida noutro script s
 - `npm run test:posicoes` → build + teste do botão «Posições» nos quadros livres (Dinâmico / Livre)
 - `npm run test:fundo` → teste de `tiraFundo` (emblemas do adversário sem fundo, cortados à volta)
 - `npm run test:tinta` → build + teste da tinta da apresentação (laser, caneta, seta, apagar, Esc); `node tests/tinta.mjs --ipad` no WebKit
+- `npm run test:sem-rede` → build + PDF, Excel e vídeo com todos os pedidos à internet cortados (bibliotecas embutidas); `node tests/sem-rede.mjs --ipad` no WebKit
+- `npm run test:aviso` → build + teste do aviso de jogo por arquivar; `node tests/aviso-arquivo.mjs --ipad` no WebKit
 
 ## Publicação — regra crítica
 A app vive num **único link**: https://claude.ai/artifact/3uVFyLVzJvF5z8upFHkJqN
@@ -84,7 +87,7 @@ Capacidades desde a Obs. 23: `db` (6 regras; `base` escreve `interact` desde a O
 - **Fila offline**: as escritas passam pela fila `pendentes` (sobrevive a falhas de rede e a recarregar). Não escrever na base de dados por fora dessa fila.
 - Dados lidos da base de dados passam sempre por uma função `norm*` antes de serem usados.
 - Não colocar dados de exemplo fixos no código.
-- Sem pedidos a sites externos, exceto os scripts de CDN que já existem (jsPDF, jsPDF-AutoTable, SheetJS e mp4-muxer). Imagens e letras ficam embutidas (resolveu os "campos azuis com ?" no iPad).
+- Sem pedidos a sites externos. Desde a v113.5 jsPDF, jsPDF-AutoTable, SheetJS e mp4-muxer vêm embutidos (`src/vendor`, `<script type="text/plain" id="lib-…">`, lidos por `carregaScript`); a CDN só é usada se a cópia faltar. Biblioteca nova = embutir também. Imagens e letras ficam embutidas (resolveu os "campos azuis com ?" no iPad).
 - Confirmações destrutivas: **2 toques** (`confirma2` ou o padrão equivalente), nunca escrever texto para confirmar.
 - Alvos de toque com pelo menos ~40 px de altura.
 - Desfazer: Ctrl+Z nos Quadros e no Modelo de Jogo; cada separador tem o seu.

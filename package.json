@@ -1,6 +1,6 @@
 {
   "name": "sca-match-center",
-  "version": "113.4.2",
+  "version": "113.5",
   "private": true,
   "description": "SCA Performance — app da equipa técnica do SC Angrense (bolas paradas, jogo, ao vivo, pós-jogo, modelo de jogo).",
   "type": "module",
@@ -13,6 +13,8 @@
     "test:posicoes": "node tools/build.mjs && node tests/posicoes.mjs",
     "test:tinta": "node tools/build.mjs && node tests/tinta.mjs",
     "test:fundo": "node tests/tira-fundo.mjs",
+    "test:sem-rede": "node tools/build.mjs && node tests/sem-rede.mjs",
+    "test:aviso": "node tools/build.mjs && node tests/aviso-arquivo.mjs",
     "test:obs": "node tools/build.mjs && node tests/observacao.mjs"
   },
   "devDependencies": {

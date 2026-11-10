@@ -1,5 +1,9 @@
 /* ---------- exportar PDF dos quadros ---------- */
-function carregaScript(src){ return new Promise((ok,ko)=>{ const s_=document.createElement("script"); s_.src=src; s_.onload=ok; s_.onerror=()=>ko(new Error("script")); document.head.appendChild(s_); }); }
+/* v113.5: as bibliotecas vêm embutidas na app (<script type="text/plain" id="lib-…">): funcionam sem rede. A CDN só fica para o caso de a cópia faltar. */
+const LIB_EMB=[[/jspdf-autotable/,"lib-autotable"],[/jspdf\//,"lib-jspdf"],[/xlsx/,"lib-xlsx"],[/mp4-muxer/,"lib-mp4"]], libFeita={};
+function carregaScript(src){ const e=LIB_EMB.find(([re])=>re.test(src)), el=e&&document.getElementById(e[1]);
+  if(el&&el.textContent.length>1000){ if(!libFeita[e[1]]){ const s_=document.createElement("script"); s_.textContent=el.textContent; document.head.appendChild(s_); libFeita[e[1]]=true; } return Promise.resolve(); }
+  return new Promise((ok,ko)=>{ const s_=document.createElement("script"); s_.src=src; s_.onload=ok; s_.onerror=()=>ko(new Error("script")); document.head.appendChild(s_); }); }
 const _dataUrl={};
 async function paraDataUrl(u){ if(IMG_DATA[u]) return IMG_DATA[u]; if(_dataUrl[u]) return _dataUrl[u]; const bl=await (await fetch(u)).blob();
   const d=await new Promise((ok,ko)=>{ const fr=new FileReader(); fr.onload=()=>ok(fr.result); fr.onerror=ko; fr.readAsDataURL(bl); }); _dataUrl[u]=d; return d; }

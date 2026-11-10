@@ -215,3 +215,11 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - **Quadro · lances ligados:** cada posição tem o jogador do slide inicial. Troca-se o jogador no slide inicial e muda em todos os lances que o seguem. Um lance com jogadores próprios (ex.: pés trocados) marca-se como **Variante** em ✎ Lance. Se um lance ligado tiver jogadores diferentes, aparece o botão «Igualar os jogadores».
 - **Meinho:** a folha rola toda no telemóvel e no iPad (todos os nomes se tocam), tem pesquisa pelo nome e o botão «🧤 GR participam / não participam».
 - **Liga / Champions:** «Golo que vale 2» ao escolher o marcador; «👥 Jogadores neste jogo» para tirar alguém ou juntar um reforço de outra equipa só nesse jogo; todos os jogos aparecem na lista com «▶ Jogar» ou «✎ Corrigir»; «✎ Equipas deste jogo» e «+ Jogo extra» na Liga. Os tempos do exercício passam a vir dos jogos terminados. Em Treino › Competição aparecem todos os jogos do filtro (toca para abrir).
+
+## Aviso de jogo por arquivar (v113.5)
+- No topo da app aparece «N jogos por arquivar» quando um jogo **oficial** do calendário (Campeonato, Taças, Supertaça) já passou (a partir do dia seguinte) e não há jogo no Histórico com a mesma data. Também aparece quando o **jogo atual** tem data passada e registos (golos, cartões, notas ou ações) e ainda não foi arquivado.
+- **Ir arquivar** abre o Histórico (aí, «Arquivar jogo atual»). Para um jogo que não teve ficha na app, manda o link da ficha da FPF ao Claude, que o arquiva por ti.
+- **Não arquivar** tira esse jogo do aviso para toda a equipa (pode desfazer-se logo a seguir). Jogos-treino não entram no aviso.
+
+## PDF, Excel e vídeo sem internet (v113.5)
+- Os geradores de PDF, Excel e vídeo vêm dentro da app: funcionam no banco ou no balneário sem rede, desde que a app já esteja aberta.
