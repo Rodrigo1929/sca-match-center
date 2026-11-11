@@ -229,3 +229,7 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - **Número:** escreve o nº do repositório (63, #63 ou nº 63) e aparece só esse exercício.
 - **Palavras:** aparecem só os exercícios com **todas** as palavras no nº, nome, formato, categoria ou estrutura (ex.: «jogo reduzido», «rondo 4x2», «2x2+4»). Sem acentos e plurais tanto faz. Os textos do exercício (descrição, objetivos…) não entram na pesquisa.
 - A lista do repositório é uma só, ordenada pelo nº. A parte da UT (inicial, fundamental, final) continua na ficha de cada exercício.
+
+## Setas das figuras (v113.7)
+- Tipos: **Passe** (a cheio, fino), **Remate** (a cheio, grosso), **Corrida** (tracejada), **Condução** (aos S) e **Pressão** (aos pontinhos).
+- **Cor:** na barra da ferramenta Seta escolhe o tipo e a cor antes de desenhar («Cor do tipo» usa a cor habitual de cada tipo). Para mudar uma seta já feita, toca nela duas vezes (ou botão direito / dedo pressionado › opções) e escolhe o tipo e a cor.

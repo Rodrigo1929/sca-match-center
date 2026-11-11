@@ -53,6 +53,7 @@ Os 4 scripts partilham o âmbito global: uma `function` repetida noutro script s
 - `npm run test:tinta` → build + teste da tinta da apresentação (laser, caneta, seta, apagar, Esc); `node tests/tinta.mjs --ipad` no WebKit
 - `npm run test:sem-rede` → build + abre com rede, corta a rede e gera PDF (gerador carregado ao abrir); precisa de internet; `node tests/sem-rede.mjs --ipad` no WebKit
 - `npm run test:aviso` → build + teste do aviso de jogo por arquivar; `node tests/aviso-arquivo.mjs --ipad` no WebKit
+- `npm run test:setas` → build + setas do editor de figuras (estilos por tipo, remate, cor por seta); `node tests/setas.mjs --ipad` no WebKit
 
 ## Publicação — regra crítica
 A app vive num **único link**: https://claude.ai/artifact/3uVFyLVzJvF5z8upFHkJqN
