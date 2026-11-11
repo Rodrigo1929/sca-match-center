@@ -224,3 +224,8 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 ## PDF sem internet (v113.5)
 - O gerador de PDF carrega-se nos primeiros segundos depois de abrir a app (com rede). Se a rede cair depois, no banco ou no balneário, todos os PDF continuam a funcionar. Abre a app antes de sair de onde há rede.
 - O Excel e o vídeo da TV continuam a precisar de internet.
+
+## Pesquisa de exercícios (v113.6)
+- **Número:** escreve o nº do repositório (63, #63 ou nº 63) e aparece só esse exercício.
+- **Palavras:** aparecem só os exercícios com **todas** as palavras no nº, nome, formato, categoria ou estrutura (ex.: «jogo reduzido», «rondo 4x2», «2x2+4»). Sem acentos e plurais tanto faz. Os textos do exercício (descrição, objetivos…) não entram na pesquisa.
+- A lista do repositório é uma só, ordenada pelo nº. A parte da UT (inicial, fundamental, final) continua na ficha de cada exercício.

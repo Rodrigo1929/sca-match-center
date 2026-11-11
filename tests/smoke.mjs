@@ -1025,12 +1025,16 @@ if (n1 !== 13 || n2 !== 11) erros.push("Adversário: substituir o plantel import
     const go = !!(r && r.go), norm = !!normAn(clone(an)).regs.find((x) => x.id === r.id).go, est = estatJogo(an.regs).t.nos.go, desc = descReg(r);
     guardaAn(A0); guardaVivo(V0); return { vv, ok, go, norm, est, desc }; });
   if (v1127g.vv !== 1 || !v1127g.ok || !v1127g.go || !v1127g.norm || v1127g.est < 1 || !/Grande oportunidade/.test(v1127g.desc)) erros.push("Pós-jogo (v112.7): grandes oportunidades " + JSON.stringify(v1127g)); }
-// v112.9: pesquisa de exercícios por palavras soltas (sem acentos, plurais), mais palavras e nome primeiro
-{ const v1129 = await pg.evaluate(() => { const F0 = { ...xFiltro }, base = { formato: "", espaco: { txt: "" }, objetivos: "", objEsp: [], comportamentos: [], condicionantes: [], variantes: [], material: [], tipo: "", momento: "" };
-    exercicios.zt1 = { ...base, id: "zt1", nome: "Rondo de pressão 6×2", descricao: "" }; exercicios.zt2 = { ...base, id: "zt2", nome: "Jogo reduzido", descricao: "Muita pressao alta" }; exercicios.zt3 = { ...base, id: "zt3", nome: "Corrida contínua", descricao: "aeróbio" };
-    Object.assign(xFiltro, { q: "Rondos pressão", mom: "", tipo: "", pr: "" }); const ids = exFiltrados().map((E) => E.id); Object.assign(xFiltro, { q: "6x2" }); const fx = exFiltrados().map((E) => E.id);
-    ["zt1", "zt2", "zt3"].forEach((k) => delete exercicios[k]); Object.assign(xFiltro, F0); return { ids: ids.filter((i) => i.startsWith("zt")), fx: fx.includes("zt1") }; });
-  if (v1129.ids[0] !== "zt1" || !v1129.ids.includes("zt2") || v1129.ids.includes("zt3") || !v1129.fx) erros.push("Exercícios (v112.9): pesquisa por palavras " + JSON.stringify(v1129)); }
+// v113.6: pesquisa de exercícios — nº do repositório, todas as palavras (nome, formato, categoria, estrutura; textos não entram), frase no nome primeiro
+{ const v1136 = await pg.evaluate(() => { const F0 = { ...xFiltro }, base = { formato: "", espaco: { txt: "" }, objetivos: "", objEsp: [], comportamentos: [], condicionantes: [], variantes: [], material: [], tipo: "", momento: "" };
+    exercicios.zt1 = { ...base, id: "zt1", n: 9901, nome: "Rondo de pressão 6×2", descricao: "" }; exercicios.zt2 = { ...base, id: "zt2", n: 9902, nome: "Ativação com bola", descricao: "Muita pressão alta, rondo", tipo: "reduzido" };
+    exercicios.zt3 = { ...base, id: "zt3", n: 9903, nome: "Jogo dos 4 em linha", descricao: "jogo reduzido" }; exercicios.zt4 = { ...base, id: "zt4", n: 9904, nome: "Jogo reduzido 4×4", formato: "4x4+GR" }; exercicios.zt5 = { ...base, id: "zt5", n: 990, nome: "Outro" };
+    const q = (t) => { Object.assign(xFiltro, { q: t, mom: "", tipo: "", pr: "" }); return exFiltrados().map((E) => E.id).filter((i) => i.startsWith("zt")); };
+    const r = { pressao: q("Rondos pressão"), num: q("9903"), num990: q("990"), cardinal: q("#9904"), fx: q("6x2"), jr: q("jogo reduzido"), estr: q("4x4") };
+    ["zt1", "zt2", "zt3", "zt4", "zt5"].forEach((k) => delete exercicios[k]); Object.assign(xFiltro, F0); return { ...r }; });
+  const jrOk = JSON.stringify(v1136.jr) === '["zt4","zt2"]';
+  if (JSON.stringify(v1136.pressao) !== '["zt1"]' || JSON.stringify(v1136.num) !== '["zt3"]' || JSON.stringify(v1136.num990) !== '["zt5"]' || JSON.stringify(v1136.cardinal) !== '["zt4"]' || JSON.stringify(v1136.fx) !== '["zt1"]' || !jrOk || JSON.stringify(v1136.estr) !== '["zt4"]')
+    erros.push("Exercícios (v113.6): pesquisa " + JSON.stringify(v1136)); }
 // v112.9: setas das figuras com curva (desenho em curva, pegas na seta selecionada, a curva passa pelo ponto arrastado)
 { const v1129s = await pg.evaluate(() => { const Q = normQ({ id: "fx:t", nome: "t", cab: null, fig: true, vista: "inteiro", pecas: [], passos: [{ id: "p1", nota: "", pos: {}, setas: [{ id: "s1", t: "corrida", x1: 10, y1: 10, x2: 40, y2: 30, qx: 30, qy: 5 }], zonas: [] }], trocas: [] });
     const S0 = mSelS; mSelS = "s1"; const svg = primsSvg(primsDinamicas(Q, 0, { edit: true })); mSelS = S0;

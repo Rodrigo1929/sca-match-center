@@ -171,20 +171,24 @@ function folhaImagemEx(id){ const E=exercicios[id]; if(!E) return; const im=E.fi
 function xPara(){ if(xPl&&xPl.playing) xPl.pause(); }
 
 /* ---------- lista, pesquisa e filtros ---------- */
-/* v112.9: pesquisa por palavras soltas (sem acentos, plurais, «x» = «×»); aparecem os que têm alguma palavra, primeiro os que têm mais e no nome */
+/* v113.6: pesquisa simples. Um número sozinho («63», «#63») = o exercício com esse nº do repositório.
+   Palavras (sem acentos, plurais, «x» = «×»): aparecem só os que têm TODAS, procuradas no nº, nome, formato, categoria e estrutura
+   (os textos — descrição, objetivos, comportamentos… — não entram). Primeiro os que têm a frase toda no nome, depois as palavras no nome. */
 const pesqNorm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/×/g,"x");
 const PAL_VAZIAS=new Set(["de","da","do","das","dos","com","sem","em","no","na","nos","nas","e","a","o","as","os","um","uma","para","por","ao"]);
 const palavrasPesq=q=>pesqNorm(q).split(/[^a-z0-9x+]+/).filter(w=>w.length>=2&&!PAL_VAZIAS.has(w)).map(w=>w.length>4?w.replace(/(oes|aes|es|s)$/,""):w);
-function pontosPesq(E,ws){ const C=[[5,[E.nome]],[3,[E.formato,catEx(E),rotuloDe(TIPOS_EX,E.tipo)]],[2,[E.objetivos,...E.objEsp]],[1,[E.espaco.txt,E.descricao,...E.comportamentos,...E.condicionantes,...E.variantes,...E.material]]].map(([p,t])=>[p,pesqNorm(t.join(" "))]);
-  let n=0, pts=0; ws.forEach(w=>{ const m=C.find(([,t])=>t.includes(w)); if(m){ n++; pts+=m[0]; } }); return n*100+pts; }
-function exFiltrados(){ const ws=palavrasPesq(xFiltro.q), fp=xFiltro.pr||"", pt={};
+const numPesq=q=>{ const m=String(q||"").trim().match(/^(?:n[ºo.]?\s*|#)?(\d{1,4})$/i); return m?+m[1]:null; };
+function pontosPesq(E,ws,frase){ const nome=pesqNorm(E.nome), resto=pesqNorm([E.n||"",rotuloDe(TIPOS_EX,E.tipo),catEx(E),E.formato].join(" "));
+  if(!ws.every(w=>nome.includes(w)||resto.includes(w))) return 0;
+  return 1+(ws.every(w=>nome.includes(w))?10:0)+(frase&&nome.includes(frase)?100:0); }
+function exFiltrados(){ const nq=numPesq(xFiltro.q), ws=nq==null?palavrasPesq(xFiltro.q):[], frase=pesqNorm(xFiltro.q).trim(), fp=xFiltro.pr||"", pt={};
   return Object.values(exercicios).filter(E=>(!xFiltro.mom||E.momento===xFiltro.mom)&&(!xFiltro.tipo||E.tipo===xFiltro.tipo)
     &&(!fp||(fp==="-"?prVazio(E.princ):Object.keys(codsLinha(normPr(E.princ))).includes(fp)))
-    &&(!ws.length||(pt[E.id]=pontosPesq(E,ws))>0))
-    .sort((a,b)=>(pt[b.id]||0)-(pt[a.id]||0)||a.nome.localeCompare(b.nome,"pt")); }
+    &&(nq!=null?E.n===nq:(!ws.length||(pt[E.id]=pontosPesq(E,ws,frase))>0)))
+    .sort((a,b)=>(pt[b.id]||0)-(pt[a.id]||0)||(a.n||9999)-(b.n||9999)||a.nome.localeCompare(b.nome,"pt")); }
 function guardaFiltro(){ try{ localStorage.setItem("sca-ex-filtro",JSON.stringify(xFiltro)); }catch(e){} }
 function renderExFiltros(){ const bx=$("x-filtros"); if($("x-q")) return;
-  bx.innerHTML=`<input type="search" id="x-q" placeholder="Pesquisar exercícios…" aria-label="Pesquisar exercícios">
+  bx.innerHTML=`<input type="search" id="x-q" placeholder="Nº ou nome do exercício…" aria-label="Pesquisar exercícios pelo número, nome, formato ou categoria">
     <select id="x-fm" aria-label="Categoria"><option value="">Todas as categorias</option>${MOM_EX.map(m=>`<option value="${m[0]}">${m[1]}</option>`).join("")}</select>
     <select id="x-ft" aria-label="Formato do exercício"><option value="">Todos os formatos</option>${TIPOS_EX.map(t=>`<option value="${t[0]}">${t[1]}</option>`).join("")}</select>
     ${typeof temPrinc==="function"&&temPrinc()?`<select id="x-fpr" aria-label="Princípio"><option value="">Todos os princípios</option><option value="-">Sem princípios</option>${princLista().filter(P=>P.nivel!=="rot").map(P=>`<option value="${esc(P.cod)}">${P.nivel==="micro"?"\u00a0\u00a0":""}${esc(P.cod)} ${esc(P.nome)}</option>`).join("")}</select>`:""}
@@ -219,10 +223,11 @@ function folhaPropostas(){ let ids=propsPorRever(); if(!ids.length){ toast("Não
     pinta(); }); }
 function renderExNav(ls,E){ const nav=$("x-nav"), tot=Object.keys(exercicios).length;
   $("x-n").textContent=tot?(ls.length===tot?`${tot} ${tot===1?"exercício":"exercícios"}`:`${ls.length} de ${tot}`):"";
-  let h=""; PARTES.forEach(([pk,pn,cor])=>{ const q=ls.filter(x=>x.parte===pk); h+=`<div class="grp"><h3><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cor};margin-right:6px"></i>${pn}</h3><ul>`;
-    if(!q.length) h+=`<li><span class="m-nada">${tot?"Nenhum com estes filtros":"Sem exercícios"}</span></li>`;
-    q.forEach((x,i)=>{ const t=totalEx(x); h+=`<li><button data-id="${esc(x.id)}" aria-current="${!!E&&x.id===E.id}"><span class="n" title="Nº do repositório">${x.n||"–"}</span><span class="m-nm">${esc(x.nome)}<small>${esc([rotuloDe(TIPOS_EX,x.tipo),x.formato,t?fmtTempo(t):""].filter(Boolean).join(" · "))}</small></span></button></li>`; });
-    h+=`</ul></div>`; });
+  /* v113.6: uma só lista (sem «Parte inicial / fundamental / final»; a parte continua na ficha do exercício) */
+  let h=`<div class="grp"><ul>`;
+    if(!ls.length) h+=`<li><span class="m-nada">${tot?"Nenhum com esta pesquisa ou filtros":"Sem exercícios"}</span></li>`;
+    ls.forEach((x,i)=>{ const t=totalEx(x); h+=`<li><button data-id="${esc(x.id)}" aria-current="${!!E&&x.id===E.id}"><span class="n" title="Nº do repositório">${x.n||"–"}</span><span class="m-nm">${esc(x.nome)}<small>${esc([rotuloDe(TIPOS_EX,x.tipo),x.formato,t?fmtTempo(t):""].filter(Boolean).join(" · "))}</small></span></button></li>`; });
+    h+=`</ul></div>`;
   nav.innerHTML=h;
   nav.querySelectorAll("button[data-id]").forEach(b=>{ b.onclick=()=>{ xCur=b.dataset.id; renderEx(); };
     b.oncontextmenu=e=>{ const X=exercicios[b.dataset.id]; if(X) menuContexto(e,[["⧉ Duplicar",()=>duplicaEx(X.id)],[`🗑 Apagar “${X.nome}”`,()=>apagaEx(X.id),"perigo"]]); }; }); }
@@ -231,7 +236,7 @@ function renderExNav(ls,E){ const nav=$("x-nav"), tot=Object.keys(exercicios).le
 function renderEx(){ const v=$("view-x"); if(!v||v.hidden) return; renderExFiltros();
   const ls=exFiltrados(); let E=exercicios[xCur]||null; if(!E){ E=ls[0]||Object.values(exercicios)[0]||null; xCur=E?E.id:null; }
   try{ localStorage.setItem("sca-ex-cur",xCur||""); }catch(e){}
-  renderExNav(ls,E); renderExFicha(E,PARTES.flatMap(([pk])=>ls.filter(x=>x.parte===pk))); renderExFigura(E); renderExPainel(E); }
+  renderExNav(ls,E); renderExFicha(E,ls); renderExFigura(E); renderExPainel(E); }
 function abreEx(id){ if(exercicios[id]) xCur=id; renderEx(); }
 /* v112.20: numa lista com linhas «- …»/«• …», as linhas sem traço são subtítulos; sem nenhum traço, tudo tópicos (como antes) */
 const partesLista=a=>{ const top=x=>/^\s*[-•]/.test(x), mist=a.some(top); return a.map(x=>({sub:mist&&!top(x),t:x.replace(/^\s*[-•]\s*/,"")})); };
