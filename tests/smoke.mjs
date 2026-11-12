@@ -615,7 +615,7 @@ await pg.click(".u-modo button[data-m='comp']"); await pg.waitForSelector("table
 const [dCp] = await Promise.all([pg.waitForEvent("download", { timeout: 30000 }), pg.click("#cp-csv")]);
 const vc = await pg.evaluate(() => ({ linhas: document.querySelectorAll("table.cptab tbody tr").length, pend: document.querySelector("#u-panel").textContent.includes("sem resultado") }));
 await pg.click(".u-modo button[data-m='ut']"); await pg.waitForTimeout(100);
-const pdfB = await pg.evaluate(async () => { const t = (await pdfUT(uts.ta)).output(); return t.includes("LIGA") && t.includes("MEINHO"); });
+const pdfB = await pg.evaluate(async () => { const t = (await pdfUT(uts.ta)).output(); return t.includes("LIGA") && t.includes("MEINHO") && t.includes("JOGOS DA LIGA") && !t.includes("SOMBREADO = JOGA"); });
 if (un1 !== 2 || rk.regs !== 2 || rk.m !== "1,1,1" || !rk.reis[0].includes("partilham") || !rk.reis[1] || !dRk.suggestedFilename().startsWith("Meinho_SCA_26-27") || !dCp.suggestedFilename().startsWith("Competicao_SCA_26-27") || !vc.linhas || !vc.pend || !pdfB)
   erros.push("Meinho / Rankings / Competição: errado " + JSON.stringify({ un1, rk, vc, pdfB, f: [dRk.suggestedFilename(), dCp.suggestedFilename()] }));
 // histórico do Excel: soma à classificação, aos GR e aos rankings pela data (sem jogos nem equipas)

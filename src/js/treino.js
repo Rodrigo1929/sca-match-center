@@ -541,12 +541,21 @@ async function pdfUT(U){
   const linhasLista=(P,w)=>{ const R=P.rot, cs=U.exercicios.filter(c=>c.pai===P.id); doc.setFont("helvetica","normal"); doc.setFontSize(6);
     return R.grelha.map(r=>{ const em=v=>r.map((x,j)=>x===v?nomeEquipa(U,R,j).replace(/\s*·\s*/g," "):null).filter(Boolean).join(", ")||"-";
       return doc.splitTextToSize(pdfTxt(cs.length?[["p",nums[P.id]],...cs.map(c=>[c.id,nums[c.id]])].map(([v,n])=>`${n}: ${em(v)}`).join("   ·   "):em("p")),w-34); }); };
-  const alturaRot=(P,w)=>{ if(usaLista(P,w)) return 14+linhasLista(P,w).reduce((a,l)=>a+Math.max(1,l.length)*7.2+2,0); const C=cabGrelha(P.rot,w); return 13+C.n*(C.s+1.6)+3+P.rot.grelha.length*9; };
+  /* v113.8: Liga/Champions com jogos gerados → no PDF a tabela dos jogos pela ordem dos jogos (a grelha da rotação tem outra ordem); sem resultados (coluna em branco).
+     Com complementares fica a grelha (é ela que diz que complementar faz cada equipa). */
+  const jogosP=P=>{ if(!compDe(P)||U.exercicios.some(c=>c.pai===P.id)) return null; const js=jogosDe(U.id,P.id); return js.length?js:null; };   // todos os jogos (os por acabar ficam sem resultado)
+  const jogosPdf=(P,js,x,y,w)=>{ caixa(x,y,w,10,INK,`JOGOS DA ${rotComp(compDe(P)).toUpperCase()}  ·  ${nums[P.id]}`,{s:5.6});
+    const c0=26, cr=34, rh=9; let yy=y+10; doc.setDrawColor(...LN); doc.setLineWidth(.4);
+    T("JOGO",x+c0/2,yy+6.4,5.2,{b:1,c:MUT,al:"center"}); T("EQUIPAS",x+c0+(w-c0-cr)/2,yy+6.4,5.2,{b:1,c:MUT,al:"center"}); T("RES.",x+w-cr/2,yy+6.4,5.2,{b:1,c:MUT,al:"center"}); yy+=rh;
+    js.forEach((J,i)=>{ doc.line(x,yy,x+w,yy); T(String(i+1),x+c0/2,yy+rh*.72,6,{b:1,c:RED,al:"center"});
+      T(`${nomeGrupoUT(U,J.a)} x ${nomeGrupoUT(U,J.b)}`,x+c0+(w-c0-cr)/2,yy+rh*.72,6.2,{b:1,al:"center"}); doc.line(x+w-cr,yy,x+w-cr,yy+rh); yy+=rh; });   // RES. em branco: a UT vai para o treino antes dos jogos (escreve-se à mão)
+    doc.rect(x,y,w,yy-y); };
+  const alturaRot=(P,w)=>{ const sj=jogosP(P); if(sj) return 10+9+sj.length*9+2; if(usaLista(P,w)) return 14+linhasLista(P,w).reduce((a,l)=>a+Math.max(1,l.length)*7.2+2,0); const C=cabGrelha(P.rot,w); return 13+C.n*(C.s+1.6)+3+P.rot.grelha.length*9; };
   const listaPdf=(P,x,y,w)=>{ const R=P.rot; caixa(x,y,w,10,INK,R.modo==="periodos"?`GRUPOS POR PERÍODO  ·  ${nums[P.id]}`:`ROTAÇÃO  ·  ${nums[P.id]}`,{s:5.6});
     let yy=y+10; doc.setDrawColor(...LN); doc.setLineWidth(.4);
     linhasLista(P,w).forEach((ls,i)=>{ const hh=Math.max(1,ls.length)*7.2+2; if(i) doc.line(x,yy,x+w,yy); T(`Série ${i+1}`,x+4,yy+7,6,{b:1,c:RED}); ls.forEach((t,k)=>T(t,x+30,yy+7+k*7.2,6)); yy+=hh; });
     doc.rect(x,y,w,yy-y); };
-  const grelhaPdf=(P,x,y,w,h)=>{ if(usaLista(P,w)){ listaPdf(P,x,y,w); return; } const R=P.rot, cs=U.exercicios.filter(c=>c.pai===P.id), S=R.grelha.length, C=cabGrelha(R,w), hc=C.n*(C.s+1.6)+3, rh=Math.min(9,(h-11-hc)/S), c0=26, cwid=(w-c0)/R.nEq;
+  const grelhaPdf=(P,x,y,w,h)=>{ const sj=jogosP(P); if(sj){ jogosPdf(P,sj,x,y,w); return; } if(usaLista(P,w)){ listaPdf(P,x,y,w); return; } const R=P.rot, cs=U.exercicios.filter(c=>c.pai===P.id), S=R.grelha.length, C=cabGrelha(R,w), hc=C.n*(C.s+1.6)+3, rh=Math.min(9,(h-11-hc)/S), c0=26, cwid=(w-c0)/R.nEq;
     caixa(x,y,w,10,INK,R.modo==="periodos"?"GRUPOS POR PERÍODO  ·  SOMBREADO = JOGA NESSA SÉRIE":cs.length?`ROTAÇÃO  ${nums[P.id]} + ${cs.map(c=>nums[c.id]).join(" + ")}  ·  ${R.nJogo} ${R.nJogo===1?"EQUIPA":"EQUIPAS"} AO MESMO TEMPO NO ${nums[P.id]}`:`ROTAÇÃO  ·  ${R.nJogo} ${R.nJogo===1?"EQUIPA":"EQUIPAS"} AO MESMO TEMPO  ·  SOMBREADO = JOGA`,{s:5.6});
     let yy=y+10; doc.setDrawColor(...LN); doc.setLineWidth(.4); T("SÉRIE",x+c0/2,yy+hc/2+1.8,5.2,{b:1,c:MUT,al:"center"});
     C.ls.forEach((l,j)=>{ const ln=l.slice(0,3), y1=yy+(hc-ln.length*(C.s+1.6))/2+C.s; ln.forEach((t,i)=>T(t,x+c0+j*cwid+cwid/2,y1+i*(C.s+1.6),C.s,{b:1,al:"center"})); });
