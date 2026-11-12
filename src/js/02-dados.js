@@ -62,6 +62,13 @@ const subVivoDe=l=>!l.pre&&l.modo==="todos"?subsReais().lista.find(s=>s.sai===l.
 const lancesAjustaveis=()=>lances().filter(L=>L.bolas&&L.bolas.length&&!L.dinamico&&!L.livre);
 const slotsDe=L=>[...new Set([...L.bolas,...L.legs].map(x=>x.slot))];
 const vDoLance=L=>Object.fromEntries(slotsDe(L).map(s=>[s,(L.fixo&&L.fixo[s])||baseOf(s)]));
+/* v113.10: Quadro Dinâmico — «Pôr quem está a jogar». O quadro guarda os seus jogadores (fixo) e não recebe trocas; o botão reescreve-os com quem
+   está em campo agora: o onze do jogo com as substituições do Ao vivo e as trocas «todos os lances» do Quadro, como nos outros quadros. As posições não mudam. */
+function quemJogaAgora(L){ return calcula({...L,id:"~jogo",fixo:undefined,livre:false}).v; }
+function difQuemJoga(L){ const v0=vDoLance(L), v=quemJogaAgora(L); return Object.keys(v).filter(s=>v[s]!==v0[s]).map(s=>({s,sai:v0[s],entra:v[s]})); }
+function poeQuemJoga(){ const L=lanceAtual(); if(!L||!L.espacos) return; const d=difQuemJoga(L); if(!d.length){ toast("O quadro já está com quem está a jogar."); return; }
+  const C=copiaLance(L); C.fixo={...quemJogaAgora(L)}; const fora=new Set(Object.values(C.fixo)), tr=d.filter(x=>!fora.has(x.sai));
+  guardaLance(C,{msg:`Quadro com quem está a jogar${tr.length?" · "+tr.map(x=>`entra ${x.entra} por ${x.sai}`).join(", "):" · lugares acertados"}`}); }
 function gravaLances(novos,msg){ if(!novos.length) return 0;
   /* v110: depois de mudanças em vários lances (substituições, «Pôr quem está a jogar»), os lances ligados ficam com os jogadores do slide inicial */
   novos.slice().forEach(([,C])=>{ if(C.base){ const x=novos.find(([,y])=>y.id===C.base), B=x?x[1]:baseDe(C); if(B) igualaJogadores(C,B); } else { const x=novos.find(([,y])=>y.id===C.id); novos.push(...igualaSeguidores(C,novos,x&&x[0])); } });

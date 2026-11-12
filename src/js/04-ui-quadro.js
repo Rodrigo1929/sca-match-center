@@ -65,7 +65,7 @@ function renderBoard(){
   $("hint").innerHTML=din?`<span><b>Arrasta</b> as peças ou <b>toca</b> numa para mudar o titular ou a posição. É o mesmo quadro do separador Jogo.</span>`
     :!editing?`<span><b>Arrasta</b> as bolas e as legendas para as mover. <b>Toca</b> numa legenda para a editar e numa bola para ${est.fase==="pre"?"definir quem faz essa tarefa":"substituir"}.</span><span class="legend-chip"><i></i>trocado durante o jogo</span>`:editing?`<span><b>Arrasta</b> para mover. <b>Toca</b> numa bolinha para mudar o estilo ou a posição do onze; numa legenda para escrever a tarefa.</span>`
     :`<span><b>Toca numa bolinha</b> para trocar o jogador.</span><span class="legend-chip"><i></i>trocado durante o jogo</span>`;
-  if(L.espacos&&!editing) $("hint").innerHTML=`<span><b>Quadro dinâmico:</b> arrasta os adversários e os espaços (Construção, Ligação, Criação, Largura, Profundidade) acompanham as linhas deles. Em <b>Editar</b>, toca num adversário para escolher a linha dele à mão.</span>`;
+  if(L.espacos&&!editing) $("hint").innerHTML=`<span><b>Quadro dinâmico:</b> arrasta os adversários e os espaços (Construção, Ligação, Criação, Largura, Profundidade) acompanham as linhas deles. Em <b>Editar</b>, toca num adversário para escolher a linha dele à mão. <b>🔁 Pôr quem está a jogar</b> (em cima) passa para as bolinhas as substituições do jogo.</span>`;
   else if(L.livre&&!editing) $("hint").innerHTML=`<span><b>Quadro livre:</b> não depende do jogo, das trocas nem dos outros lances. <b>Arrasta</b> as peças; <b>toca</b> numa bolinha para escolher o jogador. Usa <b>Duplicar</b> para outra opção.</span>`;
   /* v108: posição inicial ligada */
   { const L_=lanceAtual(), B_=baseDe(L_), sg=L_.dinamico?[]:seguidoresDe(L_.id);
@@ -75,6 +75,8 @@ function renderBoard(){
   { const L_=lanceAtual(); if(!L_.dinamico){ const d=calcula(L_).dups||[]; if(d.length) $("hint").innerHTML=`<span style="color:#B45F00"><b>⚠ ${d.map(n=>"Nº "+esc(n)).join(", ")} repetido neste lance</b> (anel laranja). Toca numa dessas bolinhas e escolhe quem faz essa tarefa. Para mostrar o mesmo jogador noutro sítio de propósito, usa o estilo <b>Alternativa</b> (bola branca).</span>`+$("hint").innerHTML; } }
   /* v107.2: o clique liga-se no fim (os avisos reescrevem o texto e perdiam a ligação) */
   { const qa=$("q-aus"); if(qa) qa.onclick=corrigeAusentes; }
+  /* v113.10: Quadro Dinâmico — botão na barra de cima; vermelho com o nº de bolinhas a mudar, ✓ quando já está certo */
+  { const qj=$("q-joga"), L_=lanceAtual(), nd=L_.espacos?difQuemJoga(L_).length:0; qj.hidden=!L_.espacos; qj.onclick=poeQuemJoga; qj.classList.toggle("primary",nd>0); qj.dataset.n=nd; qj.textContent=nd?`🔁 Pôr quem está a jogar (${nd})`:"✓ Com quem está a jogar"; }
   { const qi=$("q-iguala"); if(qi) qi.onclick=()=>{ const L_=lanceAtual(), B_=baseDe(L_); if(B_) guardaLance(copiaLance(L_),{segue:true,msg:`Jogadores iguais ao «${B_.nome}»`}); }; }
 }
 function renderRows(){

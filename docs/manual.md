@@ -236,3 +236,6 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 
 ## Quadro Dinâmico · Largura (v113.9)
 - A zona **Largura** começa no adversário mais largo e acaba no **nosso jogador mais aberto** desse lado (entre as linhas do adversário). Colado à linha lateral, a Largura vai até à linha; mais por dentro, fica mais pequena; se nenhum dos nossos estiver mais aberto que o adversário, não há Largura desse lado. Arrasta os nossos jogadores e a zona acompanha.
+
+## Quadro Dinâmico · Pôr quem está a jogar (v113.10)
+- O Quadro Dinâmico fica com os jogadores com que foi gravado. Depois de substituições no jogo, o botão **🔁 Pôr quem está a jogar** (barra de cima, a vermelho com o nº de bolinhas a mudar) passa para as bolinhas quem está em campo, sem mexer nas posições. Quando está certo mostra «✓ Com quem está a jogar». Engano: **Desfazer**.
