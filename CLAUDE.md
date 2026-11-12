@@ -27,6 +27,7 @@ src/js/microciclo.js     Resumo do microciclo (Treino › Micro), Padrão MD, re
 src/js/livro.js          Livro de exercícios em PDF (coleção livros, filtros, versão interna / para fora) (3.º <script>, depois de exercicios.js e qr.js)
 src/js/qr.js             Gerador de QR code próprio (modo byte, nível M, v1–20); verificado por tests/qr-verifica.py
 src/js/relatorio-jogadores.js Relatório pós-jogo para jogadores: coletivo e individual em PDF e ecrãs 1080×1920, ZIP (1.º <script>, depois do 13-)
+src/js/imagens.js        Pós-jogo › Imagens: editor de prints do jogo (coleção imagens, peças com propriedades, ficha, PNG) (1.º <script>, depois do relatorio-jogadores)
 src/js/fotos.js          Fotos dos atletas (coleção fotos, folha para escolher e enquadrar, bolinhas) (1.º <script>, antes do plantel)
 src/js/balneario.js      PDF da tabela completa dos rankings e cartaz do balneário A3 (4.º <script>, depois de competicao.js)
 src/js/competicao.js     Competição interna (Liga/Champions) e Meinho: registo na UT e vistas Competição e Rankings (4.º <script>, depois de tempos.js)
@@ -54,6 +55,7 @@ Os 4 scripts partilham o âmbito global: uma `function` repetida noutro script s
 - `npm run test:sem-rede` → build + abre com rede, corta a rede e gera PDF (gerador carregado ao abrir); precisa de internet; `node tests/sem-rede.mjs --ipad` no WebKit
 - `npm run test:aviso` → build + teste do aviso de jogo por arquivar; `node tests/aviso-arquivo.mjs --ipad` no WebKit
 - `npm run test:quem-joga` → build + botão «Pôr quem está a jogar» do Quadro Dinâmico; `node tests/quem-joga.mjs --ipad` no WebKit
+- `npm run test:imagens` → build + editor de imagens do Pós-jogo (carregar, peças, propriedades, pegas, desfazer, recortar, ficha, PNG, arquivar); `node tests/imagens.mjs --ipad` no WebKit
 - `npm run test:setas` → build + setas do editor de figuras (estilos por tipo, remate, cor por seta); `node tests/setas.mjs --ipad` no WebKit
 
 ## Publicação — regra crítica
@@ -116,6 +118,8 @@ Ver `docs/regras.md`. As principais:
 - Resumo do microciclo (v101): semana = segunda a domingo; liga-se a `semanas/{seg}` e `ciclos/micro-{seg}` pela segunda-feira (nº do microciclo = nº do plano semanal). Tudo o que vem das UT, do plano semanal e do calendário calcula-se na hora; gravam-se só os campos escritos ou acertados à mão, um documento por campo (`microCampo/{seg}~{campo}`), e o estado (`microResumo/{seg}`, fechar/reabrir com 2 toques e histórico). Padrão MD (`mdPadrao/{MD}`) e regimes com cores (`regimes/{id}`, também as cores dos blocos) configuram-se em ⚙ Padrão MD. MD automático só pelos jogos oficiais (jogo-treino = sigla JT não conta), em toda a app; o MD de cada dia pode acertar-se à mão no resumo. Volume = soma do tempo das UT do dia (sem complementares) + nível escolhido. Dia sem treino no plano nem UT fica sem textos do Padrão MD. Redação por IA (v102, capacidade `sample`): só ao tocar num botão, um pedido por dia (`sample.json`, `cache:false`), resultado como rascunho (`microCampo.ia: true`, etiqueta IA) até ser editado ou aprovado; nunca por cima de texto escrito à mão sem «Substituir pela IA» (2 toques); objetivos da IA ficam em `microCampo/{seg}~objPrin|objSec` até aprovar (aí passam para o microciclo da Época); sem IA tudo funciona com os textos automáticos.
 
 - Livro de exercícios (v103): o livro guarda escolhas (`livros/{id}`: filtros, `mais`, `menos`, versão), não exercícios. Capítulos pelas categorias do caderno (MOM_EX; sem categoria = Outros), numeração do livro SIGLA-NN e nº fixo do repositório (`exercicios.n`, 1, 2, 3… pela data de criação; os novos ficam com o seguinte; não conta para «mudou no repositório»). Versão para fora: figura sem nomes (`nomes:false`), nomes e alcunhas do Plantel e dos jogadores de fora trocados por «jogador» no texto, sem autoria, só ligações com `pub: true`. Figuras em imagem não se limpam: o aviso antes de gerar lista-as. QR: `qrMatriz` / `qrNoPdf` (vetorial, clicável); qualquer mudança ao gerador tem de passar em `tests/qr-verifica.py`.
+
+- Imagens do Pós-jogo (v114, decidido pelo Rodrigo em 12/11/2026): `imagens/{id}` (jogo `atual` ou id do arquivo, momento `parte`/`seg`/`temT`, `rid`, `js`, `princ`, `img` no `assets`, `crop`, `escuro`, `pecas`). **Um material por peça** com propriedades (cor, espessura, traço, pontas, preenchimento, tamanho) — nunca peças diferentes por estilo. Coordenadas em frações da imagem. Servem só os relatórios pós-jogo; não entram na biblioteca Modelo → situação → exercícios (Fase 2). Ao arquivar passam para o arquivo (`arquivaImagens`). Entrega 1B: entram no relatório para jogadores (grupo; individual só as que têm o jogador).
 
 - Ações por atleta (v112.12, `acoesAtletaPdf`): PDF com todas as ações do Pós-jogo, uma página por atleta, coletivo e adversário no fim; ao contrário do individual do relatório para jogadores, aqui os jogadores veem os dados dos colegas (decidido pelo Rodrigo em 05/11/2026).
 

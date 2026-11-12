@@ -786,3 +786,44 @@ table.ptempo tr.zero td{color:var(--muted)}table.ptempo tr.micro td:nth-child(2)
 .mh-rt.cueca{background:#FBE3E3;color:#8A1C1C}
 .mh-rn{flex:1;min-width:0;display:flex;flex-direction:column}.mh-rn small{color:var(--muted,#6B675E)}
 .mh-ed{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:rgba(192,0,0,.08);border:1px solid #C00000;border-radius:8px;padding:8px 10px;margin-bottom:8px}.mh-ed span{flex:1;min-width:200px}
+/* v114: Pós-jogo › Imagens (lista e editor) */
+#a-imagens{padding:14px}
+.imgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;min-height:120px;border-radius:12px;transition:background .15s}
+.imgrid.sobre{background:var(--surface-2);outline:2px dashed var(--gold)}
+.imcard{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);display:flex;flex-direction:column}
+.imth{display:block;width:100%;padding:0;border:0;background:#1B1A17;cursor:pointer;aspect-ratio:16/9}
+.imth svg{display:block;width:100%;height:100%}
+.imtx{padding:8px 10px 10px;display:flex;flex-direction:column;gap:3px}
+.imtx b{font-size:14.5px;line-height:1.25}
+.imtx small{color:var(--muted);font-size:12.5px}
+.imt{color:var(--red)}
+.imch{display:flex;flex-wrap:wrap;gap:4px}
+.imed{position:fixed;inset:0;z-index:35;background:#14130F;display:flex;flex-direction:column;color:#F2EFE8;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+.imed .btn{min-height:40px}
+.imed-top{display:flex;gap:8px;align-items:center;padding:8px 12px;flex-wrap:wrap}
+.imed-top .sp{flex:1}
+.imed-tit{font-family:var(--f-display);font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:50vw}
+.imed-ferr{display:flex;gap:4px;padding:0 12px 8px;overflow-x:auto;flex-wrap:nowrap}
+.imed-ferr button{flex:0 0 auto;min-height:42px;padding:0 12px;border-radius:10px;border:1px solid #3A3833;background:#24221E;color:#F2EFE8;font:inherit;font-size:14px;cursor:pointer}
+.imed-ferr button[aria-pressed="true"]{background:#C00000;border-color:#C00000}
+.imed-corpo{flex:1;display:flex;gap:10px;min-height:0;padding:0 12px 12px}
+.imed-palco{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;background:#0B0A08;border-radius:10px;overflow:hidden}
+.imed-svg{max-width:100%;max-height:100%;width:100%;height:100%;cursor:crosshair;user-select:none;-webkit-user-select:none}
+.imed-lado{width:330px;flex:0 0 330px;overflow-y:auto;background:var(--surface);color:var(--ink);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.imed-lado h4{font-family:var(--f-display);font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin:6px 0 0}
+.imed-lado .f{display:flex;flex-direction:column;gap:4px;font-size:13px}
+.imed-lado input[type=text],.imed-lado textarea,.imed-lado select{border:1px solid var(--line);border-radius:8px;padding:9px 10px;font:inherit;background:var(--surface);color:var(--ink);min-height:40px;width:100%;box-sizing:border-box}
+.imed-lado input[type=range]{width:100%;min-height:32px}
+.imed-lado .seg{flex-wrap:wrap}
+.imed-lado .seg button{min-height:38px}
+.imcores{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.imcores button{width:40px;height:40px;border-radius:10px;border:2px solid var(--line);background:var(--surface);padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.imcores button[aria-pressed="true"]{border-color:var(--ink)}
+.imcores i{width:22px;height:22px;border-radius:50%;border:1px solid #0005;display:block}
+.imcores label input{width:40px;height:40px;border:0;padding:0;background:none;cursor:pointer}
+.imjog{display:flex;flex-wrap:wrap;gap:4px}
+.imjog .btn[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+@media (max-width:900px){.imed-corpo{flex-direction:column}.imed-lado{width:auto;flex:0 0 42%}.imed-palco{flex:1 1 58%}}
+.imed-top .btn:not(.primary){background:#24221E;color:#F2EFE8;border-color:#3A3833}
+.imed-top .btn:disabled{opacity:.45}
+.imed-lado{color:var(--ink)}

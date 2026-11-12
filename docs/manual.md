@@ -239,3 +239,11 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 
 ## Quadro Dinâmico · Pôr quem está a jogar (v113.10)
 - O Quadro Dinâmico fica com os jogadores com que foi gravado. Depois de substituições no jogo, o botão **🔁 Pôr quem está a jogar** (barra de cima, a vermelho com o nº de bolinhas a mudar) passa para as bolinhas quem está em campo, sem mexer nas posições. Quando está certo mostra «✓ Com quem está a jogar». Engano: **Desfazer**.
+
+## Pós-jogo › Imagens (v114)
+- **Nova imagem:** tira um print do vídeo e cola-o na vista Imagens (Ctrl+V), arrasta o ficheiro para lá ou toca em «+ Nova imagem» (no iPad, escolhe das fotografias). Abre logo o editor.
+- **Peças** (barra de cima): Seta, Círculo, Luz, Zona, Texto, Nº, Marca, Caneta e Recortar. Cada peça é um só material: escolhe-a com **✥ Mover** e muda no painel a cor, a espessura, o traço (cheio, tracejado, pontos, aos S na seta), as pontas, o preenchimento ou o tamanho. A última escolha fica para as peças seguintes.
+- **Pegas:** brancas para o tamanho ou os cantos, dourada para a curva da seta e a altura da luz. **Delete** apaga, **Ctrl+Z** desfaz.
+- **Luz:** feixe sobre o jogador; «Escurecer à volta das luzes» escurece o resto da imagem.
+- **Ficha** (painel da direita): título, descrição, momento do jogo (um lance do Pós-jogo ou parte e minuto), jogadores e princípios do Modelo de Jogo.
+- **⬇ PNG** guarda a imagem final. Ao arquivar o jogo, as imagens vão com ele.
