@@ -36,7 +36,7 @@ function desenha(L,opts={}){
   const f=el("filter",{id:"sh",x:"-5%",y:"-10%",width:"110%",height:"140%"},el("defs",{},svg));
   el("feDropShadow",{dx:0,dy:300,stdDeviation:220,"flood-opacity":".35"},f);
   if(L.fundo==="pitch-setores") campoSetores(svg); else if(L.fundo==="pitch-espacos"){ campo(svg,true,FUNDOS[L.fundo].campo); gridSetores(svg,FUNDOS[L.fundo].campo,9*PT); legendaEspacos(svg); } else if(L.fundo==="pitch"||L.fundo==="pitch-full") campo(svg,L.semCabecalho,FUNDOS[L.fundo].campo); else el("image",{href:`slides/${L.fundo}.jpg`,x:0,y:0,width:W,height:H,preserveAspectRatio:"none"},svg);
-  if(L.espacos) desenhaEspacos(svg,L.adv);
+  if(L.espacos) desenhaEspacos(svg,L.adv,null,L.bolas);
   if(L.titulo) titulo(svg,L);
   (L.textos||[]).forEach((T,ti)=>desenhaTexto(svg,L,T,ti,opts));
   const {v,base:bv,dups}=calcula(L); cartoesCache=cartoes(); dupsAtual=dups||[];
@@ -402,7 +402,8 @@ function liga(g,svg,L,kind,i,num,o_){
     if(Math.hypot(dx,dy)>350){ moved=true; paraLongo(); }
     if(moved){ g.setAttribute("transform",`translate(${dx} ${dy})`);
       if(orig.setas.length){ const gs=svg.querySelectorAll("g.seta"); orig.setas.forEach(k=>{ const s=L.setas[k], b={...s,x1:s.x1+dx,y1:s.y1+dy,...(s.qx!=null?{qx:s.qx+dx/2,qy:s.qy+dy/2}:{})}; gs[k]&&gs[k].querySelectorAll("path").forEach(pa=>pa.setAttribute("d",caminho(b))); }); }
-      if(kind==="adv"&&L.espacos){ const zg=svg.querySelector("g.espacos"); if(zg) desenhaEspacos(svg,L.adv.map((a,k)=>k===i?{...a,cx:orig.cx+dx,cy:orig.cy+dy}:a),zg); }
+      if((kind==="adv"||kind==="bolas")&&L.espacos){ const zg=svg.querySelector("g.espacos"), mv=arr=>arr.map((a,k)=>k===i?{...a,cx:orig.cx+dx,cy:orig.cy+dy}:a);   // v113.9: os nossos também mexem na Largura
+        if(zg) desenhaEspacos(svg,kind==="adv"?mv(L.adv):L.adv,zg,kind==="bolas"?mv(L.bolas):L.bolas); }
       if(kind==="bolas"||kind==="adv"){ const lz=svg.querySelector(`g.luz[data-bi="${kind==="adv"?"a"+i:i}"]`); if(lz) lz.setAttribute("transform",`translate(${dx} ${dy})`); } }
   });
   const end=e=>{

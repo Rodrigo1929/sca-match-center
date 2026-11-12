@@ -233,3 +233,6 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 ## Setas das figuras (v113.7)
 - Tipos: **Passe** (a cheio, fino), **Remate** (a cheio, grosso), **Corrida** (tracejada), **Condução** (aos S) e **Pressão** (aos pontinhos).
 - **Cor:** na barra da ferramenta Seta escolhe o tipo e a cor antes de desenhar («Cor do tipo» usa a cor habitual de cada tipo). Para mudar uma seta já feita, toca nela duas vezes (ou botão direito / dedo pressionado › opções) e escolhe o tipo e a cor.
+
+## Quadro Dinâmico · Largura (v113.9)
+- A zona **Largura** começa no adversário mais largo e acaba no **nosso jogador mais aberto** desse lado (entre as linhas do adversário). Colado à linha lateral, a Largura vai até à linha; mais por dentro, fica mais pequena; se nenhum dos nossos estiver mais aberto que o adversário, não há Largura desse lado. Arrasta os nossos jogadores e a zona acompanha.

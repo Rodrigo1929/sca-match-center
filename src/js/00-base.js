@@ -86,15 +86,22 @@ function linhasAdv(adv){ const ps=(adv||[]).map((a,i)=>({x:a.cx,y:a.cy,i,l:a.lin
   return {L:L.map(l=>l.sort((a,b)=>a.y-b.y)),gr}; }
 function xDaLinha(l,y){ if(!l.length) return null; if(y<=l[0].y) return l[0].x; if(y>=l[l.length-1].y) return l[l.length-1].x;
   for(let k=1;k<l.length;k++) if(y<=l[k].y){ const a=l[k-1], b=l[k], t=(y-a.y)/((b.y-a.y)||1); return a.x+t*(b.x-a.x); } return l[l.length-1].x; }
-function zonasEspacos(adv,R){ const [x0,y0,x1,y1]=R, my=(y1-y0)/68, {L,gr}=linhasAdv(adv); if(L.some(l=>!l.length)) return null;
-  const todos=L.flat(), yA=Math.max(y0,Math.min(...todos.map(p=>p.y))-my), yB=Math.min(y1,Math.max(...todos.map(p=>p.y))+my), xG=gr?Math.max(gr.x,x0):x1;
+/* v113.9: a Largura começa no adversário mais largo (como antes) e acaba no NOSSO jogador mais aberto desse lado, entre a 1.ª e a 3.ª linha
+   (colado à linha lateral = até à linha, como antes; por dentro = zona mais pequena; sem ninguém nosso mais aberto que o adversário = sem Largura desse lado).
+   Sem peças nossas no quadro, vai até à linha lateral. */
+function limitesLargura(L,R,nos,yA,yB){ const [x0,y0,x1,y1]=R, my=(y1-y0)/68; if(!nos||!nos.length) return [y0,y1];
+  const xa=Math.min(...L[0].map(p=>p.x))-3*my, xb=Math.max(...L[2].map(p=>p.x))+3*my, ns=nos.filter(b=>b.cx>=xa&&b.cx<=xb);
+  const cima=ns.filter(b=>b.cy<yA).map(b=>b.cy), baixo=ns.filter(b=>b.cy>yB).map(b=>b.cy);
+  return [cima.length?Math.max(y0,Math.min(...cima)-my):yA, baixo.length?Math.min(y1,Math.max(...baixo)+my):yB]; }
+function zonasEspacos(adv,R,nos){ const [x0,y0,x1,y1]=R, my=(y1-y0)/68, {L,gr}=linhasAdv(adv); if(L.some(l=>!l.length)) return null;
+  const todos=L.flat(), yA=Math.max(y0,Math.min(...todos.map(p=>p.y))-my), yB=Math.min(y1,Math.max(...todos.map(p=>p.y))+my), xG=gr?Math.max(gr.x,x0):x1, [lc,lb]=limitesLargura(L,R,nos,yA,yB);
   const f=[y=>x0,y=>xDaLinha(L[0],y),y=>Math.max(xDaLinha(L[0],y),xDaLinha(L[1],y)),y=>Math.max(xDaLinha(L[0],y),xDaLinha(L[1],y),xDaLinha(L[2],y)),y=>Math.max(xG,xDaLinha(L[0],y),xDaLinha(L[1],y),xDaLinha(L[2],y))];
   const faixa=(a,b,ya,yb)=>{ if(yb-ya<1) return null; const n=24, ys=[...Array(n+1)].map((_,k)=>ya+(yb-ya)*k/n);
     return {pts:ys.map(y=>[f[a](y),y]).concat(ys.slice().reverse().map(y=>[f[b](y),y])),cx:(f[a]((ya+yb)/2)+f[b]((ya+yb)/2))/2,cy:(ya+yb)/2,w:f[b]((ya+yb)/2)-f[a]((ya+yb)/2),h:yb-ya}; };
-  return {L,yA,yB,z:[[0,faixa(0,1,y0,y1)],[1,faixa(1,2,yA,yB)],[2,faixa(2,3,yA,yB)],[3,faixa(1,3,y0,yA)],[3,faixa(1,3,yB,y1)],[4,faixa(3,4,y0,y1)]].filter(z=>z[1])}; }
-function desenhaEspacos(svg,adv,velho){ const R=FUNDOS["pitch-espacos"].campo, [x0,y0,x1,y1]=R, g=el("g",{class:"espacos","pointer-events":"none"});
+  return {L,yA,yB,z:[[0,faixa(0,1,y0,y1)],[1,faixa(1,2,yA,yB)],[2,faixa(2,3,yA,yB)],[3,faixa(1,3,lc,yA)],[3,faixa(1,3,yB,lb)],[4,faixa(3,4,y0,y1)]].filter(z=>z[1])}; }
+function desenhaEspacos(svg,adv,velho,nos){ const R=FUNDOS["pitch-espacos"].campo, [x0,y0,x1,y1]=R, g=el("g",{class:"espacos","pointer-events":"none"});
   if(velho){ velho.parentNode.insertBefore(g,velho); velho.remove(); } else svg.appendChild(g);
-  const Z=zonasEspacos(adv,R), fs=12*PT;
+  const Z=zonasEspacos(adv,R,nos), fs=12*PT;
   if(!Z){ el("text",{x:(x0+x1)/2,y:(y0+y1)/2,"text-anchor":"middle","font-size":fs,fill:"#1B1A17",class:"lbl"},g).textContent="Põe pelo menos 3 adversários de campo para ver os espaços"; return g; }
   Z.z.forEach(([k,z])=>{ el("polygon",{points:z.pts.map(p=>p.map(Math.round).join(",")).join(" "),fill:ESPACOS[k][2],"fill-opacity":.28,stroke:"none"},g); });
   Z.L.forEach(l=>{ const n=24, d=[...Array(n+1)].map((_,k)=>{ const y=Z.yA+(Z.yB-Z.yA)*k/n; return `${k?"L":"M"} ${Math.round(xDaLinha(l,y))} ${Math.round(y)}`; }).join(" ");
