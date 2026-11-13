@@ -75,13 +75,14 @@ function tentaGravar(j){
   return true; }
 function renderAnalise(){
   if(!$("view-a")||$("view-a").hidden) return;
-  $("av-reg").setAttribute("aria-pressed",String(anVista==="reg")); $("av-rel").setAttribute("aria-pressed",String(anVista==="rel")); $("av-img").setAttribute("aria-pressed",String(anVista==="img"));
-  $("a-registo").hidden=anVista!=="reg"; $("a-relatorio").hidden=anVista!=="rel"; $("a-imagens").hidden=anVista!=="img";
+  $("av-reg").setAttribute("aria-pressed",String(anVista==="reg")); $("av-rel").setAttribute("aria-pressed",String(anVista==="rel")); $("av-img").setAttribute("aria-pressed",String(anVista==="img")); $("av-vid").setAttribute("aria-pressed",String(anVista==="vid"));
+  $("a-registo").hidden=anVista!=="reg"; $("a-relatorio").hidden=anVista!=="rel"; $("a-imagens").hidden=anVista!=="img"; $("a-videos").hidden=anVista!=="vid";
   $("ap-1").setAttribute("aria-pressed",String(an.posse.parte===1)); $("ap-2").setAttribute("aria-pressed",String(an.posse.parte===2));
   $("a-dir").textContent=an.ataque[String(an.posse.parte)]==="esq"?"← Atacamos para a esquerda":"Atacamos para a direita →";
   tickAnalise();
   if(anVista==="rel"){ renderRelatorio(); return; }
-  if(anVista==="img"){ renderImagens(); return; }   // v114: imagens do jogo para os relatórios
+  if(anVista==="img"){ renderImagens(); return; }
+  if(anVista==="vid"){ renderVideos(); return; }   // v115: vídeos com paragens e desenhos   // v114: imagens do jogo para os relatórios
   $("a-orig").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.o===anOrig.or)));
   { const sb=$("a-bpl"); sb.hidden=anOrig.or!=="bp"; if(anOrig.or==="bp") opcBpl(sb,anSel.eq,anOrig.bpl); }
   $("ae-nos").setAttribute("aria-pressed",String(anSel.eq==="nos")); $("ae-eles").setAttribute("aria-pressed",String(anSel.eq==="eles"));
@@ -210,7 +211,7 @@ function folhaReg(id,J){ const regsDe=()=>J?((hist[J.id].analise||{}).regs||[]):
       if(J){ novo.acao=A.nome; novo.nome=novo.j?(F.nome(novo.j)||nome(novo.j)):""; }
       const prev=regsDe().slice(); fecha(); guardaRegs(prev.map(y=>y.id===id?novo:y)); toast("Registo atualizado",()=>guardaRegs(prev)); };
   }); }
-$("av-reg").onclick=()=>{ anVista="reg"; renderAnalise(); }; $("av-rel").onclick=()=>{ anVista="rel"; renderAnalise(); }; $("av-img").onclick=()=>{ anVista="img"; renderAnalise(); };
+$("av-reg").onclick=()=>{ anVista="reg"; renderAnalise(); }; $("av-rel").onclick=()=>{ anVista="rel"; renderAnalise(); }; $("av-img").onclick=()=>{ anVista="img"; renderAnalise(); }; $("av-vid").onclick=()=>{ anVista="vid"; renderAnalise(); };
 $("ap-1").onclick=()=>setParte(1); $("ap-2").onclick=()=>setParte(2);
 function folhaSync(){ const p=an.posse.parte, V=jogo.video||{}, k=p===2?V.k2:V.k1, temV=!!ytId(V.url);
   folha(`<h3>Acertar com o vídeo · ${p}ª parte</h3><p class="sub" style="margin:0">Pausa o YouTube e escreve o tempo que aparece no leitor. O cronómetro passa a coincidir com o vídeo (a diferença vai para o estado ${NOME_E[an.posse.estado||an.posse.ult]||"Dividida"}).</p>

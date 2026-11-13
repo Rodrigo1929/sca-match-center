@@ -158,7 +158,7 @@ $("h-arq").onclick=()=>{
     s.querySelector("#ar-ok").onclick=()=>{
       const id="J"+Date.now().toString(36);
       const J={id,...snapshotJogo(),resultado:{nos:s.querySelector("#ar-n").value.trim(),eles:s.querySelector("#ar-e").value.trim()},obs:s.querySelector("#ar-o").value.trim(),arquivadoEm:new Date().toISOString()};
-      hist[id]=J; guardaLocal(); gravaDoc("historico/"+id,J); arquivaRelJog(id); arquivaImagens(id);   // v104 (v114: e as imagens): o relatório para jogadores preparado passa para o jogo arquivado
+      hist[id]=J; guardaLocal(); gravaDoc("historico/"+id,J); arquivaRelJog(id); arquivaImagens(id); arquivaVideos(id);   // v104 (v114: e as imagens): o relatório para jogadores preparado passa para o jogo arquivado
       if(s.querySelector("#ar-nv").checked){
         guardaEst({...est,linhas:est.linhas.filter(l=>l.pre),fase:"pre"});
         guardaNotas({itens:[]});

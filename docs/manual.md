@@ -240,6 +240,13 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 ## Quadro Dinâmico · Pôr quem está a jogar (v113.10)
 - O Quadro Dinâmico fica com os jogadores com que foi gravado. Depois de substituições no jogo, o botão **🔁 Pôr quem está a jogar** (barra de cima, a vermelho com o nº de bolinhas a mudar) passa para as bolinhas quem está em campo, sem mexer nas posições. Quando está certo mostra «✓ Com quem está a jogar». Engano: **Desfazer**.
 
+## Pós-jogo › Vídeos (v115)
+- **Edita-se no computador** (Chrome ou Edge). No iPad vês os vídeos finais (▶ Ver).
+- **+ Novo vídeo:** escolhe ou arrasta um clip MP4 do lance. O clip fica no computador; a app guarda as paragens, os desenhos e o vídeo final. Para voltar a editar (neste ou noutro PC), a app pede o mesmo clip.
+- **Paragens:** põe o vídeo no momento (▶, a barra, ou ← → imagem a imagem) e toca em **⏸ Parar aqui e desenhar**. A imagem parada abre no editor de imagens, com as mesmas peças (círculos, ligação, luz, zona, 📐 Campo…). Na ficha da paragem escolhes quanto tempo o vídeo fica parado (1–15 s). As paragens aparecem como marcas na barra; no painel mudas o tempo, voltas a desenhar ou apagas.
+- **▶ Tocar** mostra o vídeo como vai ficar: para em cada paragem com o desenho e continua.
+- **⬇ Gravar vídeo final:** grava o MP4 com o som do clip (em silêncio nas paragens). Demora mais ou menos o tempo do clip; deixa a janela à frente. Fica na app (até 20 MB) e também é descarregado para o computador. Se mudares as paragens depois, a lista avisa para gravar de novo.
+
 ## Pós-jogo › Imagens (v114)
 - **Nova imagem:** tira um print do vídeo e cola-o na vista Imagens (Ctrl+V), arrasta o ficheiro para lá ou toca em «+ Nova imagem» (no iPad, escolhe das fotografias). Abre logo o editor.
 - **Peças** (barra de cima): Seta, Círculo, Luz, Zona, Texto, Nº, Marca, Caneta e Recortar. Cada peça é um só material: escolhe-a com **✥ Mover** e muda no painel a cor, a espessura, o traço (cheio, tracejado, pontos, aos S na seta), as pontas, o preenchimento ou o tamanho. A última escolha fica para as peças seguintes.

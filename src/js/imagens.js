@@ -42,12 +42,13 @@ function normPecaIm(p){ if(!p||typeof p!=="object") return null; const f=v=>imNu
   if(p.t==="marca") return {...b,x:f(p.x),y:f(p.y),k:p.k==="ok"?"ok":"x",tam:imNum(p.tam,1,.4,4)};
   if(p.t==="livre"){ const pts=(Array.isArray(p.pts)?p.pts:[]).map(q=>[f(q[0]),f(q[1])]).slice(0,600); return pts.length>1?{...b,pts}:null; }
   return null; }
+const normCalIm=c=>c&&Array.isArray(c.pts)&&c.pts.length===4?{pts:c.pts.map(q=>[imNum(q&&q[0],.5,-.5,1.5),imNum(q&&q[1],.5,-.5,1.5)]),ref:IM_REF[c.ref]?c.ref:"ga",rod:!!c.rod}:null;
 function normImagem(d){ const s=v=>String(v??"").trim(), im=d.img||{};
   const cr=d.crop&&isFinite(+d.crop.w)&&+d.crop.w>.02&&+d.crop.h>.02?{x:imNum(d.crop.x,0,0,1),y:imNum(d.crop.y,0,0,1),w:imNum(d.crop.w,1,.02,1),h:imNum(d.crop.h,1,.02,1)}:null;
   return {id:s(d.id)||uId("im"),jogo:s(d.jogo)||"atual",titulo:s(d.titulo).slice(0,120),desc:String(d.desc??"").slice(0,2000),rid:s(d.rid),parte:d.parte===2||d.parte==="2"?2:1,seg:Math.max(0,Math.round(+d.seg)||0),temT:!!d.temT,
     js:[...new Set((Array.isArray(d.js)?d.js:[]).map(s).filter(Boolean))].slice(0,22),princ:d.princ&&d.princ.p?{p:s(d.princ.p),s:(Array.isArray(d.princ.s)?d.princ.s:[]).map(s).filter(Boolean).slice(0,3)}:null,
     img:/^[\w-]{8,64}$/.test(s(im.id))?{id:s(im.id),w:Math.round(+im.w)||1600,h:Math.round(+im.h)||900}:null,crop:cr,escuro:imNum(d.escuro,0,0,.8),
-    cal:d.cal&&Array.isArray(d.cal.pts)&&d.cal.pts.length===4?{pts:d.cal.pts.map(q=>[imNum(q&&q[0],.5,-.5,1.5),imNum(q&&q[1],.5,-.5,1.5)]),ref:IM_REF[d.cal.ref]?d.cal.ref:"ga",rod:!!d.cal.rod}:null,
+    cal:normCalIm(d.cal),
     pecas:(Array.isArray(d.pecas)?d.pecas:[]).map(normPecaIm).filter(Boolean).slice(0,300),
     criadoPor:s(d.criadoPor),criadoEm:s(d.criadoEm),alteradoPor:s(d.alteradoPor),alteradoEm:s(d.alteradoEm)}; }
 Object.keys(imagens).forEach(id=>{ try{ imagens[id]=normImagem({...imagens[id],id}); }catch(e){ delete imagens[id]; } });
@@ -225,18 +226,19 @@ const imPadrao={seta:{c:"#FFD400",w:1,tr:"cheio",pt:"fim"},circ:{c:"#FFD400",w:1
   txt:{c:"#111111",tam:1},num:{c:"#E00000",tam:1},marca:{c:"#E00000",tam:1,k:"x"},livre:{c:"#FFD400",w:1,tr:"cheio"}};
 let imEstilo=(()=>{ try{ return {...clone(imPadrao),...JSON.parse(localStorage.getItem("sca-im-estilo")||"{}")}; }catch(e){ return clone(imPadrao); } })();
 const guardaEstiloIm=()=>{ try{ localStorage.setItem("sca-im-estilo",JSON.stringify(imEstilo)); }catch(e){} };
-function abreEditorImagem(id){ const I0=imagens[id]; if(!I0) return; imEd={I:clone(I0),sel:-1,ferr:"mover",undo:[],redo:[],drag:null,tSave:null,lig:null};
+/* op (v115, vídeos): editar um desenho que não é uma imagem do Pós-jogo — {I, grava(I), fecha(), ficha(caixa)}; sem PNG nem Recortar */
+function abreEditorImagem(id,op){ const I0=op?op.I:imagens[id]; if(!I0) return; imEd={I:clone(I0),sel:-1,ferr:"mover",undo:[],redo:[],drag:null,tSave:null,lig:null,op:op||null};
   let r=$("imed-root"); if(!r){ r=document.createElement("div"); r.id="imed-root"; document.body.appendChild(r); }
   r.innerHTML=`<div class="imed" role="dialog" aria-label="Editor de imagem">
     <div class="imed-top"><b class="imed-tit"></b><span class="sp"></span><button class="btn sm" id="ie-undo">↶ Desfazer</button><button class="btn sm" id="ie-redo">↷ Refazer</button><button class="btn sm" id="ie-png">⬇ PNG</button><button class="btn sm primary" id="ie-ok">✓ Concluir</button></div>
-    <div class="imed-ferr" id="ie-ferr">${IM_FERR.map(([k,t])=>`<button data-f="${k}">${t}</button>`).join("")}</div>
+    <div class="imed-ferr" id="ie-ferr">${IM_FERR.filter(([k])=>!(op&&k==="crop")).map(([k,t])=>`<button data-f="${k}">${t}</button>`).join("")}</div>
     <div class="imed-corpo"><div class="imed-palco" id="ie-palco"></div><div class="imed-lado"><div id="ie-prop"></div><div id="ie-ficha"></div></div></div></div>`;
   r.querySelectorAll("#ie-ferr button").forEach(b=>b.onclick=()=>{ if(imEd.lig!=null) imFimLig(true); const f=b.dataset.f;
     if(f==="cal"&&!imEd.I.cal){ imMarca(); imEd.I.cal={pts:[[.3,.3],[.7,.3],[.85,.75],[.15,.75]],ref:"ga",rod:false}; imGrava(); }
     imEd.ferr=f; imEd.sel=-1; imDesenha(); imPainel(); });
-  $("ie-undo").onclick=imDesfaz; $("ie-redo").onclick=imRefaz; $("ie-png").onclick=e=>{ imGravaJa(); exportaPngImagem(imagens[imEd.I.id],e.currentTarget); }; $("ie-ok").onclick=fechaEditorImagem;
+  $("ie-undo").onclick=imDesfaz; $("ie-redo").onclick=imRefaz; $("ie-png").onclick=e=>{ imGravaJa(); exportaPngImagem(imagens[imEd.I.id],e.currentTarget); }; $("ie-png").hidden=!!op; $("ie-ok").onclick=fechaEditorImagem;
   document.addEventListener("keydown",imTecla); imDesenha(); imPainel(); imFicha(); }
-function fechaEditorImagem(){ if(!imEd) return; imFechaMenu(); if(imEd.lig!=null) imFimLig(true); imGravaJa(); document.removeEventListener("keydown",imTecla); const r=$("imed-root"); if(r) r.innerHTML=""; imEd=null; renderImagens(); }
+function fechaEditorImagem(){ if(!imEd) return; imFechaMenu(); if(imEd.lig!=null) imFimLig(true); imGravaJa(); document.removeEventListener("keydown",imTecla); const r=$("imed-root"); if(r) r.innerHTML=""; const op=imEd.op; imEd=null; if(op) op.fecha(); else renderImagens(); }
 function imTecla(e){ if(!imEd||/INPUT|TEXTAREA|SELECT/.test((e.target&&e.target.tagName)||"")) return;
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"){ e.preventDefault(); e.shiftKey?imRefaz():imDesfaz(); }
   else if((e.key==="Delete"||e.key==="Backspace")&&imEd.sel>=0){ e.preventDefault(); imApagaSel(); }
@@ -254,7 +256,7 @@ function imDesfaz(){ if(!imEd||!imEd.undo.length){ toast("Nada para desfazer.");
 function imRefaz(){ if(!imEd||!imEd.redo.length) return; imEd.undo.push(imFoto()); imRepoe(imEd.redo.pop()); }
 function imGrava(){ clearTimeout(imEd.tSave); imEd.tSave=setTimeout(imGravaJa,500); }
 /* o editor trabalha sempre no mesmo objeto (os botões do painel e da ficha guardam-no); grava-se uma cópia normalizada */
-function imGravaJa(){ if(!imEd) return; clearTimeout(imEd.tSave); const N=gravaImagem(imEd.I); imEd.I.alteradoEm=N.alteradoEm; imEd.I.alteradoPor=N.alteradoPor; }
+function imGravaJa(){ if(!imEd) return; clearTimeout(imEd.tSave); if(imEd.op){ imEd.op.grava(clone(imEd.I)); return; } const N=gravaImagem(imEd.I); imEd.I.alteradoEm=N.alteradoEm; imEd.I.alteradoPor=N.alteradoPor; }
 function imApagaSel(){ const i=imEd.sel; if(i<0) return; imMarca(); imEd.I.pecas.splice(i,1); imEd.sel=-1; imDesenha(); imPainel(); imGrava(); }
 function imDuplica(){ const I=imEd.I, P=I.pecas[imEd.sel]; if(!P) return; imMarca(); const C=clone(P); imMove(C,clone(P),.02,.02); I.pecas.push(normPecaIm(C)); imEd.sel=I.pecas.length-1; imDesenha(); imPainel(); imGrava(); }
 /* v114.2.1: menu da peça — botão direito do rato, ou toque longo no iPad (pedido do Rodrigo) */
@@ -269,7 +271,7 @@ function imForaMenu(e){ if(!e.target.closest("#ie-menu")) imFechaMenu(); }
 function imFechaMenu(){ const m=$("ie-menu"); if(m) m.remove(); document.removeEventListener("pointerdown",imForaMenu,true); }
 function imDesenha(){ const pal=$("ie-palco"); if(!pal||!imEd) return; const I=imEd.I;
   $("ie-ferr").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.f===imEd.ferr)));
-  document.querySelector(".imed-tit").textContent=(I.titulo||"Imagem")+(I.temT?` · ${I.parte}.ª parte ${minutoReg(I)}`:"");
+  $("imed-root").querySelector(".imed-tit").textContent=(I.titulo||"Imagem")+(I.temT?` · ${I.parte}.ª parte ${minutoReg(I)}`:"");
   let svg=pal.querySelector("svg");
   if(!svg||svg.dataset.crop!==JSON.stringify(I.crop)){ pal.innerHTML=svgImagem(I,{uid:"ed_",ed:true,sel:imEd.sel,cal:imEd.ferr==="cal",attrs:` class="imed-svg" style="touch-action:none" preserveAspectRatio="xMidYMid meet"`}); svg=pal.querySelector("svg"); svg.dataset.crop=JSON.stringify(I.crop); imLigaPalco(svg); }
   else svg.querySelector(".im-ov").innerHTML=imCamadaSvg(I,"ed_",true,imEd.sel,imEd.ferr==="cal");
@@ -415,7 +417,7 @@ function imPainel(){ const bx=$("ie-prop"); if(!bx||!imEd) return; const I=imEd.
   if(q("#ie-semcrop")) q("#ie-semcrop").onclick=()=>{ imMarca(); I.crop=null; imDesenha(); imPainel(); imGrava(); }; }
 
 /* ficha da imagem: título, descrição, momento do jogo, jogadores, princípios */
-function imFicha(){ const bx=$("ie-ficha"); if(!bx||!imEd) return; const I=imEd.I, regs=imRegs(I.jogo), nm=n=>imNomeJ(I.jogo,n);
+function imFicha(){ const bx=$("ie-ficha"); if(!bx||!imEd) return; if(imEd.op){ bx.innerHTML=""; if(imEd.op.ficha) imEd.op.ficha(bx); return; } const I=imEd.I, regs=imRegs(I.jogo), nm=n=>imNomeJ(I.jogo,n);
   const opReg=r_=>`${r_.parte}.ª ${minutoReg(r_)} · ${descReg(r_)}${r_.j?" · "+r_.j+" "+nm(r_.j):r_.eq==="eles"?" · Adversário":""}`;
   bx.innerHTML=`<h4>Ficha da imagem</h4>
     <label class="f">Título<input type="text" id="if-t" maxlength="120" placeholder="Ex.: Pressão alta depois da perda" value="${esc(I.titulo)}"></label>

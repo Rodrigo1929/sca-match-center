@@ -832,3 +832,31 @@ table.ptempo tr.zero td{color:var(--muted)}table.ptempo tr.micro td:nth-child(2)
 .immenu button{min-height:44px;padding:0 14px;text-align:left;background:none;border:0;border-radius:8px;color:#F2EFE8;font:inherit;font-size:15px;cursor:pointer}
 .immenu button:hover,.immenu button:focus-visible{background:#3A3833}
 .immenu .perigo{color:#FF8A80}
+/* v115: vídeos do Pós-jogo (editor no computador, ver no iPad) */
+.vded{z-index:34}
+.vd-esq{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.vd-palco{position:relative;flex:1;min-height:0}
+.vd-palco video{width:100%;height:100%;object-fit:contain;display:block;background:#000}
+.vd-ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.vd-linha{position:relative;padding-top:14px}
+.vd-linha input[type=range]{width:100%;min-height:32px;margin:0}
+.vd-marcas{position:absolute;left:8px;right:8px;top:0;height:14px}
+.vd-marca{position:absolute;top:0;width:14px;height:14px;margin-left:-7px;border-radius:3px;border:1px solid #1B1A17;background:#FFD400;padding:0;cursor:pointer}
+.vd-marca.on{background:#C00000;border-color:#fff}
+.vd-ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.vd-ctl .sp{flex:1}
+.vd-ctl .btn:not(.primary){background:#24221E;color:#F2EFE8;border-color:#3A3833}
+.vd-t{font-variant-numeric:tabular-nums;font-size:14px;color:#F2EFE8;min-width:120px}
+.vd-pzl{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--line)}
+.vdth{position:relative;display:flex;align-items:center;justify-content:center;background:#0B0A08}
+.vdth video{width:100%;height:100%;object-fit:cover;display:block}
+.vdplay{position:absolute;width:52px;height:52px;border-radius:50%;background:rgba(192,0,0,.9);color:#fff;font-size:22px;display:flex;align-items:center;justify-content:center}
+.vdsem{display:flex;flex-direction:column;align-items:center;gap:4px;color:#F2EFE8;font-size:30px}
+.vdsem small{font-size:12px;color:#B9B4A8}
+.vdvelho{color:#B45309;display:block}
+.vdver{position:fixed;inset:0;z-index:36;background:#0B0A08;display:flex;flex-direction:column;color:#F2EFE8}
+.vdver video{flex:1;min-height:0;width:100%;background:#000}
+.vd-prog{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center}
+.vd-prog>div{background:var(--surface);color:var(--ink);border-radius:12px;padding:18px;width:min(420px,90vw);display:flex;flex-direction:column;gap:8px}
+.vp-barra{height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.vp-barra i{display:block;height:100%;width:0;background:#C00000}
