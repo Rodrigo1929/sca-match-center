@@ -45,6 +45,7 @@ const b64 = await pg.evaluate(async (src) => { const CAM = eval(src.CAM), AM = e
 await pg.click("#tab-a"); await pg.click("#av-vid"); await pg.waitForTimeout(150);
 await pg.setInputFiles("#vd-file", { name: "seguir-sintetico.mp4", mimeType: "video/mp4", buffer: Buffer.from(b64, "base64") });
 await pg.waitForFunction(() => vdEd && vdEd.v && vdEd.v.readyState >= 2, null, { timeout: 20000 });
+await pg.evaluate(() => { window.vdEdV = () => vdEd.V; });
 const vaiPara = async (t) => { await pg.evaluate((t) => new Promise((ok) => { vdEd.v.addEventListener("seeked", ok, { once: true }); vdEd.v.currentTime = t; }), t); };
 const em = async (fx, fy) => { const b = await pg.locator(".imed-svg").boundingBox(), I = await pg.evaluate(() => ({ w: imEd.I.img.w, h: imEd.I.img.h }));
   const k = Math.min(b.width / I.w, b.height / I.h), ox = b.x + (b.width - I.w * k) / 2, oy = b.y + (b.height - I.h * k) / 2; return { x: ox + fx * I.w * k, y: oy + fy * I.h * k }; };
@@ -67,9 +68,25 @@ const r = await pg.evaluate(() => { const P = vdEd.V.pausas[0], ts = [1, 1.5, 2,
 let pior = 0; for (const [t, cx, cy, la, lb] of r.em) { const A = ecr(AM, t), B = ecr(BR, t); pior = Math.max(pior, Math.hypot(cx - A[0], (cy - A[1]) * 720 / 1280), Math.hypot(la[0] - A[0], (la[1] - A[1]) * 720 / 1280), Math.hypot(lb[0] - B[0], (lb[1] - B[1]) * 720 / 1280)); }
 ok(r.ate > 4.3 && pior < .012, `seguiu os dois até ${r.ate} s; maior erro ${(pior * 1280).toFixed(0)} px em 1280 (${seg.toFixed(1)} s para ${(r.ate - T0).toFixed(1)} s de vídeo) · «${msg}»`);
 ok(r.keys.every((n) => n >= 15), "pontos-chave criados (a cada 0,2 s) " + JSON.stringify(r.keys));
-await pg.click('.vf-nav [data-d="1"]'); await pg.click('.vf-nav [data-d="1"]'); await pg.waitForFunction(() => /0:02\.5/.test($("vf-agora").textContent)); await pg.waitForTimeout(200);
+// v121: desenho geral — aos 2 s vê-se a marca dessa paragem e o círculo e a ligação que vêm da paragem dos 0,5 s, e mexe-se em tudo
+await pg.evaluate(() => { const e = $("vf-tl"); e.value = 2; e.dispatchEvent(new Event("change")); }); await pg.waitForFunction(() => /0:02\.0/.test($("vf-agora").textContent), null, { timeout: 20000 }); await pg.waitForTimeout(200);
+const g2 = await pg.evaluate(() => ({ t: imEd.I.pecas.map((p) => p.t).join(), tit: document.querySelector("#imed-root .imed-tit").textContent }));
+ok(g2.t.split(",").sort().join() === "circ,lig,marca" && /Desenho · 0:02\.0 · paragem 1 s/.test(g2.tit), "desenho geral aos 2 s: a marca da paragem e o círculo e a ligação que vêm de trás " + JSON.stringify(g2));
+{ const i = await pg.evaluate(() => imEd.I.pecas.findIndex((p) => p.t === "circ")), c = await pg.evaluate((i) => [imEd.I.pecas[i].x, imEd.I.pecas[i].y], i);
+  const a = await em(c[0], c[1]), b = await em(c[0] + .05, c[1]); await pg.click('#ie-ferr [data-f="mover"]'); await pg.mouse.move(a.x, a.y); await pg.mouse.down(); for (let k = 1; k <= 6; k++) await pg.mouse.move(a.x + (b.x - a.x) * k / 6, a.y); await pg.mouse.up(); await pg.waitForTimeout(700); }
+const g3 = await pg.evaluate(() => { const [P0, P1] = vdEdV().pausas; return { em2: Object.values(P0.mov).some((tr) => tr.some((e) => Math.abs(e[0] - 2) < .02)), p1: P1.pecas.map((p) => p.t).join() }; });   // o círculo e o 1.º ponto da ligação estão nos mesmos pés: qualquer um serve
+ok(g3.em2 && g3.p1 === "marca", "mexer no círculo aos 2 s grava o ponto-chave na paragem de onde ele vem (não na dos 2 s) " + JSON.stringify(g3));
+await pg.click('.vf-nav [data-d="0.2"]'); await pg.click('.vf-nav [data-d="0.2"]'); await pg.click('.vf-nav [data-d="0.2"]'); await pg.waitForTimeout(400);
+await pg.evaluate(() => { const e = $("vf-tl"); e.value = 2.5; e.dispatchEvent(new Event("change")); }); await pg.waitForFunction(() => /0:02\.5/.test($("vf-agora").textContent), null, { timeout: 20000 }); await pg.waitForTimeout(200);
 await pg.screenshot({ path: join(cap, "sintetico-2.5s.png") });
 await pg.click("#ie-ok"); await pg.waitForTimeout(400);
+// «✎ Desenhar aqui» aos 4 s (sem paragem): o número desenhado nasce num momento novo «sem parar», que fica até ao fim do clip (3 s no mínimo)
+await vaiPara(4); await pg.click("#vd-des"); await pg.waitForSelector(".imed:not(.vded) .imed-svg"); await pg.waitForTimeout(300);
+await pg.click('#ie-ferr [data-f="num"]'); await pg.mouse.click(...Object.values(await em(.9, .2))); await pg.waitForTimeout(700);
+const g4 = await pg.evaluate(() => { const V = vdEdV(), M = V.pausas.find((p) => Math.abs(p.t - 4) < .02); return { n: V.pausas.length, M: M && { dur: M.dur, ate: M.ate, pecas: M.pecas.map((p) => p.t).join() }, outros: imEd.I.pecas.map((p) => p.t).sort().join() }; });
+ok(g4.n === 3 && g4.M && g4.M.dur === 0 && g4.M.ate === 5 && g4.M.pecas === "num" && ["circ", "lig", "num"].every((t) => g4.outros.includes(t)), "desenhar aqui aos 4 s: momento novo sem parar com o número; o que vem de trás também se vê " + JSON.stringify(g4));
+await pg.keyboard.press("Delete"); await pg.waitForTimeout(200); await pg.click("#ie-ok"); await pg.waitForTimeout(500);
+ok(await pg.evaluate(() => vdEdV().pausas.length === 2), "apagar o número e fechar: o momento vazio desaparece");
 // parado na paragem dos 2 s: aparecem a marca dela e o círculo que vem a andar da paragem anterior
 await vaiPara(2); await pg.waitForTimeout(200);
 ok(await pg.evaluate(() => document.querySelectorAll("#vd-ov > g, #vd-ov > *").length >= 2 && vdCamadas(vdEd.V, 2, vdEd.V.pausas[1]).length === 2), "na paragem dos 2 s vê-se o desenho dela e o círculo que vem a andar");

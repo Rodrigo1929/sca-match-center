@@ -41,7 +41,7 @@ const em = async (fx, fy) => { const b = await pg.locator(".imed-svg").boundingB
 const toca = async (p) => { await pg.mouse.click(p.x, p.y); await pg.waitForTimeout(80); };
 await vaiPara(6); await pg.click("#vd-add"); await pg.waitForSelector(".imed:not(.vded) .imed-svg", { timeout: 10000 }); await pg.waitForTimeout(300);
 const ed1 = await pg.evaluate(() => ({ op: !!imEd.op, png: $("ie-png").hidden, crop: !!document.querySelector('#ie-ferr [data-f="crop"]'), tit: document.querySelector("#imed-root .imed-tit").textContent, img: imEd.I.img.w }));
-ok(ed1.op && ed1.png && !ed1.crop && /Paragem aos 0:06/.test(ed1.tit) && ed1.img === 1280, "paragem abre o editor de imagens com a imagem parada (sem PNG nem Recortar) " + JSON.stringify(ed1));
+ok(ed1.op && ed1.png && !ed1.crop && /Desenho · 0:06.0 · paragem 3 s/.test(ed1.tit) && ed1.img === 1280, "paragem abre o editor de imagens com a imagem parada (sem PNG nem Recortar) " + JSON.stringify(ed1));
 await pg.click('#ie-ferr [data-f="circ"]'); await toca(await em(.5, .55));
 await pg.click('#ie-ferr [data-f="lig"]'); for (const q of [[.3, .6], [.45, .5], [.6, .62]]) await toca(await em(...q)); await toca(await em(.6, .62));
 await pg.locator("#vf-dur").fill("2"); await pg.locator("#vf-dur").dispatchEvent("input");
@@ -64,7 +64,7 @@ await pg.locator("#vf-dur").fill("0"); await pg.locator("#vf-dur").dispatchEvent
 await pg.click('#ie-ferr [data-f="circ"]'); await toca(await em(.5, .5));
 await pg.click('.vf-nav [data-d="1"]'); await pg.waitForFunction(() => /0:31\.0/.test($("vf-agora").textContent)); await pg.waitForTimeout(200);
 const n1 = await pg.evaluate(() => ({ tit: document.querySelector("#imed-root .imed-tit").textContent, x: imEd.I.pecas[0].x, undo: imEd.undo.length }));
-ok(/agora 0:31\.0/.test(n1.tit) && Math.abs(n1.x - .5) < .01 && n1.undo === 0, "1 s ▶ dentro do desenho: imagem dos 31 s, círculo ainda no sítio " + JSON.stringify(n1));
+ok(/Desenho · 0:31\.0/.test(n1.tit) && Math.abs(n1.x - .5) < .01 && n1.undo === 0, "1 s ▶ dentro do desenho: imagem dos 31 s, círculo ainda no sítio " + JSON.stringify(n1));
 await arrasta(await em(.5, .5), await em(.6, .5));
 await pg.keyboard.press("Shift+ArrowRight"); await pg.waitForFunction(() => /0:32\.0/.test($("vf-agora").textContent)); await pg.waitForTimeout(200);
 await arrasta(await em(.6, .5), await em(.7, .5));
@@ -74,14 +74,14 @@ ok(Math.abs(n2 - .68) < .01, "← volta 0,2 s e o círculo está a meio do camin
 await pg.screenshot({ path: join(cap, "anda-editor.png") });
 await pg.click("#ie-ok"); await pg.waitForTimeout(700);
 const p3 = await pg.evaluate(() => { const P = vdEd.V.pausas[2], k = P.pecas[0].pk; return { dur: P.dur, ate: P.ate, keys: (P.mov[k] || []).map((e) => [e[0], +e[1].x.toFixed(3)]), meio: +vdPecasEm(P, 30.5)[0].x.toFixed(3), guardado: videos[vdEd.V.id].pausas[2].ate, painel: $("vd-pz").textContent }; });
-ok(p3.dur === 0 && p3.ate === 32 && p3.keys.length === 3 && p3.keys[0][0] === 30 && Math.abs(p3.keys[2][1] - .7) < .01 && Math.abs(p3.meio - .55) < .01 && p3.guardado === 32 && /0:30\.0 → 0:32\.0/.test(p3.painel) && /Sem parar/.test(p3.painel),
+ok(p3.dur === 0 && p3.ate === 33 && p3.keys.length === 3 && p3.keys[0][0] === 30 && Math.abs(p3.keys[2][1] - .7) < .01 && Math.abs(p3.meio - .55) < .01 && p3.guardado === 33 && /0:30\.0 → 0:33\.0/.test(p3.painel) && /Sem parar/.test(p3.painel),
   "pontos-chave 30/31/32 s, movimento em linha entre eles, gravado " + JSON.stringify({ ...p3, painel: undefined }));
 // a tocar: não para aos 30 s e o círculo anda
 await vaiPara(29.5); await pg.click("#vd-play"); await pg.waitForFunction(() => vdEd.v.currentTime > 30.9, null, { timeout: 5000 }).catch(() => {});
 const a1 = await pg.evaluate(() => { const c = document.querySelector("#vd-ov ellipse, #vd-ov path, #vd-ov polygon"); return { t: vdEd.v.currentTime, cong: !!vdEd.congelada, ov: !!c }; });
 await pg.click("#vd-play");
 ok(!a1.cong && a1.ov && a1.t > 30.8, "a tocar não para aos 30 s e o círculo aparece a andar " + JSON.stringify(a1));
-await vaiPara(32.5); await pg.waitForTimeout(100); ok(await pg.evaluate(() => !document.querySelector("#vd-ov *")), "depois dos 32 s o círculo desaparece");
+await vaiPara(33.5); await pg.waitForTimeout(100); ok(await pg.evaluate(() => !document.querySelector("#vd-ov *")), "depois dos 33 s (um momento fica 3 s no ecrã no mínimo) o círculo desaparece");
 await pg.screenshot({ path: join(cap, "editor-video.png") });
 
 // tocar: para na paragem 1 o tempo marcado, com o desenho, e continua
@@ -120,7 +120,7 @@ ok(await pg.evaluate(() => !!document.querySelector(".vdver video")), "▶ Ver a
 await pg.evaluate(() => { const V = Object.values(videos)[0]; V.pausas[0].dur = 4; gravaVideo(V); renderVideos(); });
 ok(await pg.evaluate(() => /Mudou depois de gravado/.test($("vd-grid").textContent)), "aviso quando as paragens mudam depois de gravar");
 // cópia de segurança leva os vídeos
-ok(await pg.evaluate(() => { const B = { videos: clone(videos) }; const id = Object.keys(videos)[0]; apagaVideo(id); repoeVideos(B); return !!videos[id] && videos[id].pausas.length === 3 && videos[id].pausas[2].ate === 32; }), "repor cópia de segurança devolve os vídeos");
+ok(await pg.evaluate(() => { const B = { videos: clone(videos) }; const id = Object.keys(videos)[0]; apagaVideo(id); repoeVideos(B); return !!videos[id] && videos[id].pausas.length === 3 && videos[id].pausas[2].ate === 33; }), "repor cópia de segurança devolve os vídeos");
 
 await browser.close();
 if (erros.length) { console.log("✗ erros de JavaScript: " + erros.join(" | ")); falhas++; }

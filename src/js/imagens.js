@@ -144,7 +144,8 @@ function imPecaSvg(p,W,H,i,uid,ed,K){ const at=ed?` data-i="${i}"`:"", X=v=>imR(
 function imCamadaSvg(I,uid,ed,sel,cal){ const W=I.img?I.img.w:1600, H=I.img?I.img.h:900, K=imK(I); let o="";
   const luzes=I.pecas.filter(p=>p.t==="luz");
   if(I.escuro>0&&luzes.length) o+=`<defs><mask id="${uid}m"><rect x="0" y="0" width="${W}" height="${H}" fill="#fff"/>${luzes.map(p=>`<ellipse cx="${imR(p.x*W)}" cy="${imR(p.y*H-p.rx*W*p.alt*.45)}" rx="${imR(p.rx*W*1.25)}" ry="${imR(p.rx*W*Math.max(.6,p.alt*.62))}" fill="#000"/>`).join("")}</mask></defs><rect x="0" y="0" width="${W}" height="${H}" fill="#000" fill-opacity="${I.escuro}" mask="url(#${uid}m)"/>`;
-  I.pecas.forEach((p,i)=>{ o+=imPecaSvg(p,W,H,i,uid,ed,K); });
+  /* v121: I.fracas = índices das peças a mostrar esbatidas (no desenho geral do vídeo: as que naquele momento não aparecem no vídeo) */
+  I.pecas.forEach((p,i)=>{ const f=I.fracas&&I.fracas.includes(i); o+=(f?`<g opacity=".35">`:"")+imPecaSvg(p,W,H,i,uid,ed,K)+(f?"</g>":""); });
   if(ed&&cal&&I.cal) o+=imGrelhaSvg(I,K,W,H);
   else if(ed&&sel>=0&&I.pecas[sel]) o+=imPegasSvg(I.pecas[sel],W,H,sel,K);
   return o; }
