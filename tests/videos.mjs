@@ -54,7 +54,7 @@ ok(await pg.evaluate(() => videos[vdEd.V.id].titulo === "Saída curta e pressão
 const arrasta = async (a, b) => { await pg.mouse.move(a.x, a.y); await pg.mouse.down(); for (let i = 1; i <= 8; i++) await pg.mouse.move(a.x + (b.x - a.x) * i / 8, a.y + (b.y - a.y) * i / 8); await pg.mouse.up(); await pg.waitForTimeout(100); };
 const espera = () => pg.waitForFunction(() => document.getElementById("vf-agora"), null, { timeout: 5000 });
 await vaiPara(30); await pg.click("#vd-add"); await pg.waitForSelector(".imed:not(.vded) .imed-svg"); await pg.waitForTimeout(300);
-await pg.locator("#vf-dur").fill("0"); await pg.locator("#vf-dur").dispatchEvent("input");
+await pg.locator("#vf-dur").fill("0"); await pg.locator("#vf-dur").dispatchEvent("input"); await pg.uncheck("#vf-cam"); await pg.waitForTimeout(200);   // v118: aqui há um corte de câmara; os pontos-chave testam-se sem seguir a câmara
 await pg.click('#ie-ferr [data-f="circ"]'); await toca(await em(.5, .5));
 await pg.click('.vf-nav [data-d="1"]'); await pg.waitForFunction(() => /0:31\.0/.test($("vf-agora").textContent)); await pg.waitForTimeout(200);
 const n1 = await pg.evaluate(() => ({ tit: document.querySelector("#imed-root .imed-tit").textContent, x: imEd.I.pecas[0].x, undo: imEd.undo.length }));

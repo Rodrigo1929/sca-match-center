@@ -863,3 +863,4 @@ table.ptempo tr.zero td{color:var(--muted)}table.ptempo tr.micro td:nth-child(2)
 /* v117 · vídeos V2: navegar no tempo dentro do desenho */
 .vf-nav{display:flex;gap:4px;align-items:center;justify-content:space-between;margin:8px 0 4px}.vf-nav .btn{padding-left:8px;padding-right:8px;white-space:nowrap}.vf-nav b{min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
 #vf-tl{width:100%;margin:2px 0 6px}
+.imed-lado .chk{display:flex;gap:8px;align-items:center;min-height:40px}
