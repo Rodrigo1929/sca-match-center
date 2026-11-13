@@ -286,6 +286,11 @@ function imNova(t,pt){ const E={...clone(imEstilo[t]||{})}; let p;
   else if(t==="num"){ const n=imEd.I.pecas.filter(x=>x.t==="num").length+1; p={t,x:pt.x,y:pt.y,n:String(n),...E}; }
   else if(t==="marca") p={t,x:pt.x,y:pt.y,...E};
   return normPecaIm(p); }
+/* peças umas em cima das outras: escolhe a que tem o centro (ou o ponto) mais perto do toque, para se poder mexer em qualquer uma */
+function imMaisPerto(e,pt,i0){ const I=imEd.I, W=I.img.w, H=I.img.h, is=[...new Set(document.elementsFromPoint(e.clientX,e.clientY).map(el=>el.closest&&el.closest("[data-i]")).filter(Boolean).map(el=>+el.dataset.i))].filter(i=>I.pecas[i]);
+  if(is.length<2) return i0; const d=(x,y)=>Math.hypot((x-pt.x)*W,(y-pt.y)*H);
+  const dist=p=>p.pts?Math.min(...p.pts.map(q=>d(q[0],q[1]))):p.x1!=null?Math.min(d(p.x1,p.y1),d(p.x2,p.y2),d((p.x1+p.x2)/2,(p.y1+p.y2)/2)):d(p.x,p.y);
+  return is.reduce((b,i)=>dist(I.pecas[i])<dist(I.pecas[b])?i:b,is[0]); }
 function imLigaPalco(svg){
   svg.addEventListener("pointerdown",e=>{ if(!imEd||e.button===2) return; e.preventDefault(); const I=imEd.I, pt=imPt(svg,e), alvo=e.target.closest("[data-h],[data-i]"), f=imEd.ferr, K=imK(I);
     /* depois de criar uma peça volta ao Mover; com Ctrl carregado fica na mesma ferramenta (pedido do Rodrigo) */
@@ -297,9 +302,10 @@ function imLigaPalco(svg){
         if(L.pts.length>=2&&Math.hypot((u[0]-pt.x)*I.img.w,(u[1]-pt.y)*I.img.h)<I.img.w*.015){ imFimLig(fica); return; }
         if(L.pts.length<12) L.pts.push([pt.x,pt.y]); }
       imDesenha(); imPainel(); imGrava(); return; }
-    if(alvo&&alvo.dataset.h){ const [i,k]=alvo.dataset.h.split(":"); if(i==="c") Object.assign(D,{tipo:"cal",k:+k}); else Object.assign(D,{tipo:"pega",i:+i,k,orig:clone(I.pecas[+i])}); }
+    /* v119.1: com uma ferramenta de desenhar, tocar em cima de outra peça (ou das pegas dela) desenha uma peça nova por cima (pedido do Rodrigo) */
+    if(alvo&&alvo.dataset.h&&(f==="mover"||(f==="cal"&&alvo.dataset.h.startsWith("c:")))){ const [i,k]=alvo.dataset.h.split(":"); if(i==="c") Object.assign(D,{tipo:"cal",k:+k}); else Object.assign(D,{tipo:"pega",i:+i,k,orig:clone(I.pecas[+i])}); }
     else if(f==="cal") D.tipo="nada";
-    else if(f==="mover"){ if(alvo&&alvo.dataset.i!=null){ const i=+alvo.dataset.i, era=imEd.sel===i; imEd.sel=i; Object.assign(D,{tipo:"mover",i,orig:clone(I.pecas[i]),era});
+    else if(f==="mover"){ if(alvo&&alvo.dataset.i!=null){ const i=imMaisPerto(e,pt,+alvo.dataset.i), era=imEd.sel===i; imEd.sel=i; Object.assign(D,{tipo:"mover",i,orig:clone(I.pecas[i]),era});
         if(e.pointerType!=="mouse"){ const cx=e.clientX, cy=e.clientY; D.lp=setTimeout(()=>{ if(!D.mov&&imEd) imMenu(i,cx,cy); },550); } }
       else { imEd.sel=-1; D.tipo="nada"; } }
     else if(f==="seta") Object.assign(D,{tipo:"criar",nova:normPecaIm({t:"seta",x1:pt.x,y1:pt.y,x2:pt.x,y2:pt.y,...clone(imEstilo.seta)})});

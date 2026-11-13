@@ -242,11 +242,13 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 ## Quadro Dinâmico · Pôr quem está a jogar (v113.10)
 - O Quadro Dinâmico fica com os jogadores com que foi gravado. Depois de substituições no jogo, o botão **🔁 Pôr quem está a jogar** (barra de cima, a vermelho com o nº de bolinhas a mudar) passa para as bolinhas quem está em campo, sem mexer nas posições. Quando está certo mostra «✓ Com quem está a jogar». Engano: **Desfazer**.
 
-## Pós-jogo › Vídeos (v115–v118)
+## Pós-jogo › Vídeos (v115–v119)
 - **Edita-se no computador** (Chrome ou Edge). No iPad vês os vídeos finais (▶ Ver).
 - **+ Novo vídeo:** escolhe ou arrasta um clip MP4 do lance. O clip fica no computador; a app guarda as paragens, os desenhos e o vídeo final. Para voltar a editar (neste ou noutro PC), a app pede o mesmo clip.
 - **Paragens:** põe o vídeo no momento (▶, a barra, ou ← → imagem a imagem) e toca em **⏸ Parar aqui e desenhar**. A imagem parada abre no editor de imagens, com as mesmas peças (círculos, ligação, luz, zona, 📐 Campo…). Na ficha da paragem escolhes quanto tempo o vídeo fica parado (1–15 s). As paragens aparecem como marcas na barra; no painel mudas o tempo, voltas a desenhar ou apagas.
 - **Peças que andam com os jogadores** (v117): no desenho da paragem, avança o clip com **◀ 1 s · ◀ 0,2 · 0,2 ▶ · 1 s ▶**, a barra ou as teclas **← →** (Shift = 1 s). A imagem muda para esse momento; arrasta cada peça para onde o jogador está (fica um ponto-chave). Entre pontos-chave a app faz o movimento. Mudar a cor ou o tamanho vale para todo o movimento. As peças andam até ao último ponto-chave; **⏹ Acabar aqui** muda esse fim. Se a câmara mexer, ajusta também o 📐 Campo noutros momentos.
+- **Seguir sozinho** (v119): põe o círculo (ou a ligação) nos pés do jogador e toca em **🎯 Seguir o escolhido** ou **🎯 Seguir todos**. A app segue-o até à paragem seguinte (no máximo 15 s). Se o perder (tapado por outro, colado a um da mesma cor), diz onde: avança até lá, arrasta a peça para os pés dele e segue outra vez. Confere com ▶ ou com 1 s ▶.
+- **Barra** (v119): arrasta para trás e para a frente ou clica num ponto para ir lá.
 - **A câmara roda** (v118): com **📷 A câmara roda (tripé)** ligado (vem ligado), ao avançar o clip a app mede quanto a câmara rodou e tudo o que desenhaste acompanha a relva: zonas, setas e o 📐 Campo ficam no mesmo sítio do campo. Só arrastas os círculos dos jogadores quando eles correm. Se houver um corte para outra câmara ou zoom, desliga a caixa e ajusta à mão.
 - **Sem parar:** põe o Tempo parado a 0 para o vídeo não parar; as peças só aparecem e andam.
 - **▶ Tocar** mostra o vídeo como vai ficar: para em cada paragem com o desenho, continua, e as peças andam.
@@ -259,6 +261,7 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - **Pegas:** brancas para o tamanho ou os cantos, dourada para a curva da seta e a altura da luz. **Delete** apaga, **Ctrl+Z** desfaz.
 - **Luz:** feixe sobre o jogador; «Escurecer à volta das luzes» escurece o resto da imagem.
 - **Ficha** (painel da direita): título, descrição, momento do jogo (um lance do Pós-jogo ou parte e minuto), jogadores e princípios do Modelo de Jogo.
+- **Peças por cima umas das outras** (v119): com uma ferramenta de desenhar, tocar em cima de outra peça desenha uma nova por cima. Com o **✥ Mover**, toca perto do centro da peça que queres mexer.
 - **Depois de criar uma peça** a ferramenta volta ao **✥ Mover** (com a peça escolhida). Para fazer várias seguidas, carrega em **Ctrl** enquanto tocas (v114.2).
 - **📐 Campo · perspetiva** (v114.2): arrasta as 4 pegas amarelas para os cantos de um retângulo marcado na relva (grande área, pequena área, meio-campo, campo inteiro; ou «A olho (quadrado)» quando não se vê nenhum) e escolhe qual é; «↻ Trocar os lados» se a grelha ficar esticada ao contrário. A partir daí os **círculos** (tamanho em metros), as **ligações** e as **zonas** novas ficam deitados na relva: a zona arrastada nasce com a forma do campo, o riscado segue a relva e, ao arrastá-la, desliza no chão. «Tirar perspetiva» volta ao normal (Desfazer repõe).
 - **🔗 Ligação** (v114.2): toca em cada jogador pela ordem; cada um fica com o seu círculo e a linha liga-os (sem entrar nos círculos). Para acabar toca outra vez no último, carrega em Enter ou em «✓ Terminar ligação». Cada jogador tem a sua pega para o acertar.

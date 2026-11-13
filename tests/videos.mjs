@@ -27,6 +27,12 @@ await pg.setInputFiles("#vd-file", clip);
 await pg.waitForFunction(() => vdEd && vdEd.v && vdEd.v.readyState >= 2, null, { timeout: 20000 });
 const V0 = await pg.evaluate(() => ({ ...vdEd.V.fonte, n: Object.keys(videos).length }));
 ok(V0.n === 1 && V0.dur > 40 && V0.w === 1280 && V0.h === 720, "clip aberto no editor " + JSON.stringify(V0));
+// v119.1: a barra arrasta-se para a frente e para trás, e um clique salta para lá
+{ const bb = await pg.locator("#vd-pos").boundingBox(), y = bb.y + bb.height / 2, x = (f) => bb.x + 8 + (bb.width - 16) * f, t = () => pg.evaluate(() => vdEd.v.currentTime);
+  await pg.mouse.move(x(0), y); await pg.mouse.down(); for (let i = 1; i <= 25; i++) { await pg.mouse.move(x(i / 50), y); await pg.waitForTimeout(25); } const fr = await t();
+  for (let i = 25; i >= 10; i--) { await pg.mouse.move(x(i / 50), y); await pg.waitForTimeout(25); } await pg.mouse.up(); await pg.waitForTimeout(300); const tr = await t();
+  await pg.mouse.click(x(.75), y); await pg.waitForTimeout(300); const cl = await t();
+  ok(Math.abs(fr - V0.dur * .5) < 1 && Math.abs(tr - V0.dur * .2) < 1 && Math.abs(cl - V0.dur * .75) < 1, `barra: arrastar para a frente (${fr.toFixed(1)} s), para trás (${tr.toFixed(1)} s) e clicar (${cl.toFixed(1)} s)`); }
 
 // paragem 1 aos 6 s: círculo + ligação; paragem 2 aos 20 s: seta
 const vaiPara = async (t) => { await pg.evaluate((t) => new Promise((ok) => { vdEd.v.addEventListener("seeked", ok, { once: true }); vdEd.v.currentTime = t; }), t); };

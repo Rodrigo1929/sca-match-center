@@ -82,6 +82,16 @@ await toca(await em(.8, .6)); await pg.keyboard.press("Delete"); ok((await pecas
     el.dispatchEvent(new PointerEvent("pointerdown", o)); await new Promise((r) => setTimeout(r, 750)); const aberto = !!$("ie-menu"); window.dispatchEvent(new PointerEvent("pointerup", o)); imFechaMenu(); return aberto; }, p);
   ok(lp, "toque longo numa peça abre o menu"); }
 
+// v119.1: desenhar por cima de outra peça (até em cima das pegas dela) faz uma peça nova; com o Mover escolhe-se a de centro mais perto
+{ const n0 = (await pecas()).length;
+  await ferr("circ"); await toca(await em(.2, .85));
+  const hb = await pg.locator(`[data-h="${n0}:rx"]`).boundingBox();
+  await pg.keyboard.down("Control"); await ferr("circ"); await toca({ x: hb.x + hb.width / 2, y: hb.y + hb.height / 2 }); await pg.keyboard.up("Control");
+  const so = await pg.evaluate((n0) => ({ n: imEd.I.pecas.length - n0, rx0: imEd.I.pecas[n0].rx }), n0);
+  ok(so.n === 2, "círculo novo em cima das pegas de outro: fica por cima, não mexe no primeiro " + JSON.stringify(so));
+  await ferr("mover"); const c0 = await pg.evaluate((n0) => [imEd.I.pecas[n0].x, imEd.I.pecas[n0].y], n0); await toca(await em(c0[0] - .005, c0[1]));
+  ok(await pg.evaluate((n0) => imEd.sel === n0, n0), "com o Mover, tocar perto do centro do de baixo escolhe o de baixo");
+  await pg.evaluate((n0) => { imEd.I.pecas.splice(n0, 2); imEd.sel = -1; imDesenha(); imPainel(); imGrava(); }, n0); }
 // ficha: título, descrição, momento, jogadores
 await pg.fill("#if-t", "Pressão alta depois da perda"); await pg.fill("#if-d", "Reação à perda em 5 segundos.");
 await pg.selectOption("#if-p", "2"); await pg.fill("#if-m", "52:30"); await pg.locator("#if-m").dispatchEvent("change");

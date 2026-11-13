@@ -140,7 +140,10 @@ function abreEditorVideo(id){ const V0=videos[id]; if(!V0) return; const f=vdFic
   v.addEventListener("timeupdate",vdCtl); v.addEventListener("seeked",()=>{ vdCtl(); vdDesenhaOv(); }); v.addEventListener("ended",()=>{ vdEd&&(vdEd.tocar=false); vdCtl(); });
   v.addEventListener("loadeddata",()=>{ vdCtl(); vdDesenhaOv(); });
   $("vd-play").onclick=vdPlay; $("vd-m1").onclick=()=>vdPasso(-1); $("vd-p1").onclick=()=>vdPasso(1); $("vd-add").onclick=vdNovaPausa;
-  $("vd-pos").oninput=e=>{ vdPara(); v.currentTime=+e.target.value; };
+  /* barra: arrastar para trás e para a frente (v119.1: antes, parar o vídeo repunha a barra no sítio antigo antes de ler o novo e a barra não mexia) */
+  const pos=$("vd-pos"); pos.oninput=()=>{ const t=+pos.value; vdEd.arr=true; if(vdEd.tocar||vdEd.congelada) vdPara(); vdBusca(t); };
+  pos.onchange=()=>{ vdEd.arr=false; vdBusca(+pos.value); }; pos.addEventListener("pointerup",()=>{ if(vdEd) vdEd.arr=false; });
+  v.addEventListener("seeked",()=>{ if(vdEd&&vdEd.pend!=null){ const t=vdEd.pend; vdEd.pend=null; v.currentTime=t; } });
   $("vd-grav").onclick=vdExporta; $("vd-ok").onclick=fechaEditorVideo;
   document.addEventListener("keydown",vdTecla); vdTitulo(); vdPainel(); vdFicha(); vdCtl(); }
 function fechaEditorVideo(){ if(!vdEd) return; vdPara(); vdGravaJa(); document.removeEventListener("keydown",vdTecla); const r=$("vded-root"); if(r) r.innerHTML=""; URL.revokeObjectURL(vdEd.url); vdEd=null; renderVideos(); }
@@ -150,7 +153,9 @@ function vdGrava(){ clearTimeout(vdEd.tSave); vdEd.tSave=setTimeout(vdGravaJa,60
 function vdGravaJa(){ if(!vdEd) return; clearTimeout(vdEd.tSave); const N=gravaVideo(vdEd.V); vdEd.V.alteradoEm=N.alteradoEm; vdEd.V.alteradoPor=N.alteradoPor; }
 const vdTitulo=()=>{ const t=document.querySelector(".vded .imed-tit"); if(t) t.textContent="Vídeo · "+(vdEd.V.titulo||"sem título"); };
 const vdPausaEm=t=>vdEd.V.pausas.find(p=>Math.abs(p.t-t)<.06);
-function vdCtl(){ if(!vdEd) return; const v=vdEd.v, V=vdEd.V; $("vd-t").textContent=`${vdT(v.currentTime)} / ${vdT(V.fonte.dur)}`; $("vd-pos").value=v.currentTime;
+/* procurar sem encher a fila: enquanto o vídeo está a procurar, guarda só o último sítio pedido */
+function vdBusca(t){ const v=vdEd.v; if(v.seeking) vdEd.pend=t; else v.currentTime=t; }
+function vdCtl(){ if(!vdEd) return; const v=vdEd.v, V=vdEd.V; $("vd-t").textContent=`${vdT(v.currentTime)} / ${vdT(V.fonte.dur)}`; if(!vdEd.arr) $("vd-pos").value=v.currentTime;
   $("vd-play").textContent=vdEd.tocar?"⏸":"▶"; $("vd-play").setAttribute("aria-label",vdEd.tocar?"Parar":"Tocar");
   const d=V.fonte.dur||1; $("vd-marcas").innerHTML=V.pausas.map(p=>`<button class="vd-marca${vdEd.congelada===p||(!vdEd.tocar&&vdPausaEm(v.currentTime)===p)?" on":""}" data-id="${esc(p.id)}" style="left:${(p.t/d*100).toFixed(3)}%" title="Paragem ${vdT(p.t)} · ${p.dur} s" aria-label="Ir para a paragem ${vdT(p.t)}"></button>`).join("");
   $("vd-marcas").querySelectorAll("button").forEach(b=>b.onclick=()=>{ vdPara(); const p=V.pausas.find(x=>x.id===b.dataset.id); if(p) v.currentTime=p.t; }); }
@@ -195,6 +200,51 @@ async function vdSegueCam(p,ate,v,prog){ const C=p.cam, novo=!C.length; if(novo)
   /* pontos-chave marcados antes de haver câmara medida (v117): passam para a imagem do momento da paragem */
   if(novo) Object.values(p.mov).forEach(tr=>tr.forEach(e=>{ if(e[0]>p.t+.02){ const [dx,dy]=vdCamEm(p,e[0]); e[1]=vdMexe(e[1],-dx,-dy); } }));
   return true; }
+/* ---------- V3 (v119): seguir o jogador sozinho ----------
+   Guarda o aspeto do jogador (um retrato da pessoa, por cima do ponto da peça, que está nos pés) e procura-o nas imagens seguintes,
+   de 0,1 em 0,1 s, à volta de onde devia estar (correlação normalizada das cores, em meia resolução); grava um ponto-chave a cada 0,2 s.
+   Para quando o perde (tapado, misturado com outros, fora da imagem): aí arrasta-se a peça para o sítio e segue-se outra vez.
+   shortcut: procura por semelhança de cor; dois jogadores colados com a mesma camisola podem trocar — corrigir à mão e voltar a seguir */
+const VD_TW=640, VD_TH=360, VD_SEGUE=["circ","lig","luz"];
+function vdImgMeia(v){ const c=vdImgMeia.c||(vdImgMeia.c=document.createElement("canvas")); c.width=VD_TW; c.height=VD_TH; const x=c.getContext("2d",{willReadFrequently:true}); x.drawImage(v,0,0,VD_TW,VD_TH); return x.getImageData(0,0,VD_TW,VD_TH).data; }
+const vdCaixa=(cx,cy,w,h)=>{ const x0=Math.round(cx-w/2), y0=Math.round(cy-h*.88); return x0<0||y0<0||x0+w>VD_TW||y0+h>VD_TH?null:[x0,y0]; };
+function vdNormT(T){ let m=0; for(let k=0;k<T.length;k++) m+=T[k]; m/=T.length; let n=0; for(let k=0;k<T.length;k++){ T[k]-=m; n+=T[k]*T[k]; } n=Math.sqrt(n)||1; for(let k=0;k<T.length;k++) T[k]/=n; return T; }
+/* retrato w×h com os pés (cx, cy) em baixo ao centro, em RGB, com média 0 e norma 1 */
+function vdRetrato(D,cx,cy,w,h){ const c=vdCaixa(cx,cy,w,h); if(!c) return null; const T=new Float32Array(w*h*3);
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){ const i=((c[1]+y)*VD_TW+c[0]+x)*4, k=(y*w+x)*3; T[k]=D[i]; T[k+1]=D[i+1]; T[k+2]=D[i+2]; } return vdNormT(T); }
+/* onde está o retrato T à volta de (px, py), até r px: {x, y, s} com s = semelhança (-1 a 1) */
+function vdProcura(D,T,w,h,px,py,r){ let b={x:px,y:py,s:-2}; const N=w*h*3;
+  for(let cy=Math.round(py-r);cy<=Math.round(py+r);cy++) for(let cx=Math.round(px-r);cx<=Math.round(px+r);cx++){ const c=vdCaixa(cx,cy,w,h); if(!c) continue;
+    let s1=0, s2=0, st=0;
+    for(let y=0;y<h;y++){ let i=((c[1]+y)*VD_TW+c[0])*4, k=y*w*3; for(let x=0;x<w;x++,i+=4,k+=3){ const R=D[i], G=D[i+1], B=D[i+2]; s1+=R+G+B; s2+=R*R+G*G+B*B; st+=R*T[k]+G*T[k+1]+B*T[k+2]; } }
+    const va=s2-s1*s1/N, sc=va>1e-6?st/Math.sqrt(va):-1; if(sc>b.s) b={x:cx,y:cy,s:sc}; }
+  return b; }
+/* segue os pontos (imagem do momento t0, em frações) até «fim»; cada alvo fica com pos = [[t, x, y]] e, se o perdeu, perdido = t */
+async function vdSeguePontos(t0,fim,alvos,v,prog,parar){ const seek=t=>new Promise(ok=>{ v.addEventListener("seeked",ok,{once:true}); v.currentTime=t; });
+  await seek(t0); let D=vdImgMeia(v);
+  alvos.forEach(a=>{ Object.assign(a,{px:a.x*VD_TW,py:a.y*VD_TH,vx:0,vy:0,mau:0,pos:[[t0,a.x,a.y]]}); a.T=vdRetrato(D,a.px,a.py,a.w,a.h); a.ok=!!a.T; if(!a.ok) a.perdido=t0; });
+  for(let k=1;;k++){ const t=Math.round((t0+k*.1)*100)/100; if(t>fim+.001||parar()) break; const vivos=alvos.filter(a=>a.ok); if(!vivos.length) break;
+    await seek(t); D=vdImgMeia(v);
+    for(const a of vivos){ const b=vdProcura(D,a.T,a.w,a.h,a.px+a.vx,a.py+a.vy,Math.max(10,Math.round(a.w*.9)));
+      if(b.s<.45){ a.mau++; a.px+=a.vx; a.py+=a.vy; if(a.mau>=4){ a.ok=false; a.perdido=t; a.pos.splice(a.pos.length-(a.mau-1)); continue; } }
+      else { a.mau=0; a.vx=.6*a.vx+.4*(b.x-a.px); a.vy=.6*a.vy+.4*(b.y-a.py); a.px=b.x; a.py=b.y;
+        if(b.s>.75){ const N=vdRetrato(D,b.x,b.y,a.w,a.h); if(N){ for(let j=0;j<N.length;j++) a.T[j]=a.T[j]*.85+N[j]*.15; vdNormT(a.T); } } }   // o jogador muda de pose: o retrato atualiza-se devagar
+      if(!vdCaixa(a.px,a.py,a.w,a.h)){ a.ok=false; a.perdido=t; continue; }
+      a.pos.push([t,a.px/VD_TW,a.py/VD_TH]); }
+    if(prog) prog(t); }
+  return alvos; }
+/* largura do jogador na imagem (fração), pelo tamanho da peça: o círculo à volta dos pés é um pouco mais largo do que ele */
+function vdLargJog(P,t,p,x,y){ let rx=p.rx||.03; if(p.chao){ const K=imK({cal:vdCalVer(P,t)}), c=K&&imCircChao(K,x,y,p.m||1.2,p.m||1.2,1,1); if(c){ const xs=c.map(q=>q[0]); rx=(Math.max(...xs)-Math.min(...xs))/2; } } return rx; }
+/* os caminhos seguidos viram pontos-chave (a cada 0,2 s, média de 3 medições), na imagem do momento da paragem */
+function vdPoeSeguidos(P,I,alvos,t0){ const porPeca=new Map(); alvos.forEach(a=>{ if(!porPeca.has(a.i)) porPeca.set(a.i,[]); porPeca.get(a.i).push(a); }); let ult=t0;
+  porPeca.forEach((As,i)=>{ const p=I.pecas[i], A=p&&P.pecas.find(x=>x.pk===p.pk); if(!A) return;
+    const tr=P.mov[A.pk]||(P.mov[A.pk]=[[P.t,vdGeo(A)]]), g0=clone(vdGeoEm(tr,t0));
+    for(let j=tr.length-1;j>=0;j--) if(tr[j][0]>t0+.01) tr.splice(j,1); vdPoeKey(tr,t0,g0);   // o que estava depois daqui é substituído
+    const n=Math.max(...As.map(a=>a.pos.length)), suave=(pos,j)=>{ const q=pos.slice(Math.max(0,j-1),j+2); return j<pos.length?[q.reduce((s,e)=>s+e[1],0)/q.length,q.reduce((s,e)=>s+e[2],0)/q.length]:null; };
+    for(let j=2;j<n;j+=2){ const t=As.find(a=>a.pos[j])?.pos[j][0]; if(t==null) break; const [dx,dy]=vdCamEm(P,t), g=clone(vdGeoEm(tr,t));
+      As.forEach(a=>{ const q=suave(a.pos,j); if(!q) return; if(a.k>=0){ if(g.pts&&g.pts[a.k]) g.pts[a.k]=[q[0]-dx,q[1]-dy]; } else { g.x=q[0]-dx; g.y=q[1]-dy; } });
+      vdPoeKey(tr,t,g); ult=Math.max(ult,t); } });
+  if(ult>P.ate) P.ate=ult; return ult; }
 const vdPseudoI=(V,p,t)=>({img:{id:"vf",w:V.fonte.w,h:V.fonte.h},pecas:vdPecasVer(p,t),cal:vdCalVer(p,t),escuro:p.escuro,crop:null});
 /* camada no tempo t: a paragem parada, ou as peças a andar depois dela */
 function vdOv(t){ const o=$("vd-ov"); if(!o||!vdEd) return; const V=vdEd.V; let p=vdEd.congelada||(!vdEd.tocar&&vdPausaEm(t)), tt=p&&p.t; if(!p){ p=vdSegueEm(V,t); tt=t; }
@@ -227,6 +277,22 @@ async function vdDesenha(pid){ const V=vdEd.V, p=V.pausas.find(x=>x.id===pid); i
   await poeFoto(p.t); p.pecas.forEach(x=>{ if(!x.pk) x.pk=uId("pk"); });
   const cur={t:p.t,ocup:false}, achaP=()=>vdEd&&vdEd.V.pausas.find(x=>x.id===pid), tit=()=>`Paragem aos ${vdT(p.t)}`+(cur.t>p.t+.01?` · agora ${vdT(cur.t)}`:"");
   /* V2: mudar o momento do clip dentro do desenho — grava, mostra a imagem desse momento e as peças onde estão nesse momento */
+  /* V3: seguir o jogador escolhido (ou todos os círculos, ligações e luzes) a partir deste momento */
+  const seguir=async todos=>{ const P=achaP(); if(!P||!imEd||cur.ocup) return; imGravaJa(); const I=imEd.I;
+    const idx=(todos?I.pecas.map((_,i)=>i):[imEd.sel]).filter(i=>i>=0&&I.pecas[i]&&VD_SEGUE.includes(I.pecas[i].t));
+    if(!idx.length){ toast(todos?"Não há círculos, ligações nem luzes para seguir.":"Escolhe primeiro (com ✥ Mover) o círculo, a ligação ou a luz do jogador."); return; }
+    const fim=Math.min(vdLimSeg(vdEd.V,P),cur.t+15); if(fim<cur.t+.15){ toast("Já não há vídeo para seguir daqui (acaba aqui ou na paragem seguinte)."); return; }
+    const bt=$("vf-segx"); cur.ocup=true; cur.parar=false; if(bt){ bt.hidden=false; bt.onclick=()=>{ cur.parar=true; }; }
+    const diz=x=>{ const e=$("vf-segst"); if(e) e.textContent=x; }; let fimT=cur.t, perdidos=[];
+    try{ if(!P.semCam&&await vdSegueCam(P,fim,vdEd.v,x=>diz("📷 A medir a câmara… "+vdT(x)))) vdGrava();
+      const alvos=[]; idx.forEach(i=>{ const p=I.pecas[i], pts=p.t==="lig"?p.pts.map((q,k)=>[q,k]):[[[p.x,p.y],-1]];
+        pts.forEach(([q,k])=>{ const w=Math.max(10,Math.min(44,Math.round(vdLargJog(P,cur.t,p,q[0],q[1])*VD_TW*1.1))); alvos.push({i,k,x:q[0],y:q[1],w,h:Math.round(w*2.3),nome:p.t==="lig"?"ligação":p.t==="luz"?"luz":"círculo"}); }); });
+      await vdSeguePontos(cur.t,fim,alvos,vdEd.v,x=>diz("🎯 A seguir… "+vdT(x)),()=>cur.parar||!imEd);
+      if(!imEd) return; fimT=vdPoeSeguidos(P,I,alvos,cur.t); vdGrava(); perdidos=alvos.filter(a=>a.perdido!=null&&a.perdido<fim-.05); }
+    catch(e){ toast("Não consegui seguir ("+((e&&e.message)||"erro")+")."); }
+    finally{ cur.ocup=false; if(bt) bt.hidden=true; }
+    await ir(cur.t,true);
+    diz(fimT>cur.t+.05?`Seguido até ${vdT(fimT)}.${perdidos.length?` Perdi ${perdidos.length===1?"o jogador":perdidos.length+" jogadores"} aos ${vdT(Math.min(...perdidos.map(a=>a.perdido)))}: avança até lá, arrasta para o sítio e segue outra vez.`:""} Confere com ▶ ou com 1 s ▶.`:"Não consegui seguir: arrasta a peça para os pés do jogador e tenta outra vez."); };
   const ir=async (t,forca)=>{ const P=achaP(); if(!P||!imEd||cur.ocup) return; cur.ocup=true;
     try{ imGravaJa(); t=Math.round(Math.max(P.t,Math.min(vdLimSeg(vdEd.V,P),t))*100)/100; if(Math.abs(t-cur.t)<.005&&!forca) return;
       if(!P.semCam){ const ag=$("vf-agora"); if(await vdSegueCam(P,t,vdEd.v,x=>{ if(ag) ag.textContent="📷 "+vdT(x); })) vdGrava(); }
@@ -245,6 +311,8 @@ async function vdDesenha(pid){ const V=vdEd.V, p=V.pausas.find(x=>x.id===pid); i
       <label class="f"><span>${vdDurTxt(P.dur)}</span><input type="range" id="vf-dur" min="0" max="15" step="0.5" value="${P.dur}"></label>
       <h4>Peças que andam com os jogadores</h4>
       <p class="sub" style="margin:0">Avança o vídeo e arrasta cada peça para onde o jogador está. A app faz o movimento entre esses pontos.</p>
+      <div class="vf-seg"><button class="btn sm primary" id="vf-seg1" title="Segue sozinho o jogador da peça escolhida, a partir deste momento">🎯 Seguir o escolhido</button><button class="btn sm" id="vf-segT" title="Segue todos os círculos, ligações e luzes a partir deste momento">🎯 Seguir todos</button><button class="btn sm ghost" id="vf-segx" hidden>Parar</button></div>
+      <p class="sub" id="vf-segst" style="margin:0" aria-live="polite">Põe a peça nos pés do jogador e a app segue-o sozinha. Se o perder, arrasta-o para o sítio e segue outra vez.</p>
       <label class="chk" style="margin:6px 0"><input type="checkbox" id="vf-cam"${P.semCam?"":" checked"}> 📷 A câmara roda (tripé): o desenho fica preso à relva</label>
       <div class="vf-nav"><button class="btn sm" data-d="-1" title="1 s para trás (Shift+←)">◀ 1 s</button><button class="btn sm" data-d="-0.2" title="0,2 s para trás (←)">◀ 0,2</button><b id="vf-agora">${esc(vdT(cur.t))}</b><button class="btn sm" data-d="0.2" title="0,2 s para a frente (→)">0,2 ▶</button><button class="btn sm" data-d="1" title="1 s para a frente (Shift+→)">1 s ▶</button></div>
       <input type="range" id="vf-tl" min="${P.t}" max="${lim}" step="0.04" value="${cur.t}" aria-label="Momento do clip">
@@ -253,6 +321,7 @@ async function vdDesenha(pid){ const V=vdEd.V, p=V.pausas.find(x=>x.id===pid); i
       bx.querySelector("#vf-dur").oninput=e=>{ P.dur=+e.target.value; bx.querySelector("#vf-dur").previousElementSibling.textContent=vdDurTxt(P.dur); vdGrava(); };
       bx.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>ir(cur.t+(+b.dataset.d)));
       bx.querySelector("#vf-tl").onchange=e=>ir(+e.target.value);
+      bx.querySelector("#vf-seg1").onclick=()=>seguir(false); bx.querySelector("#vf-segT").onclick=()=>seguir(true);
       bx.querySelector("#vf-cam").onchange=e=>{ imGravaJa(); P.semCam=!e.target.checked; vdGrava(); ir(cur.t,true); };
       /* acabar aqui: as peças ficam onde estão neste momento e desaparecem daqui para a frente */
       const fb=bx.querySelector("#vf-fim"); if(fb) confirma2(fb,"Acabar?",()=>{ imGravaJa(); const t=cur.t;
