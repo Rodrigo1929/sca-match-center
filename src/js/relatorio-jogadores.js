@@ -7,6 +7,7 @@ const RJ_LS="sca-reljog-v1";
 let relJogs={}; try{ relJogs=JSON.parse(localStorage.getItem(RJ_LS)||"{}")||{}; }catch(e){}
 function normRelJog(d){ const s=v=>String(v??"").trim(), mi={}; Object.entries(d.msgInd||{}).forEach(([k,v])=>{ if(s(k)&&s(v)) mi[s(k)]=s(v); });
   return {id:s(d.id)||"atual",msg:s(d.msg),msgInd:mi,lances:(Array.isArray(d.lances)?d.lances:[]).filter(x=>x&&s(x.rid)).map(x=>({rid:s(x.rid),titulo:s(x.titulo)})).slice(0,500),   // v112.12.1: antes 40 — «Todos os lances» ficava cortado e jogadores sem lances no individual
+    semImg:(Array.isArray(d.semImg)?d.semImg:[]).map(s).filter(Boolean).slice(0,500),   // v114.1: imagens do Pós-jogo que NÃO entram (as outras entram todas)
     exportado:(Array.isArray(d.exportado)?d.exportado:[]).filter(x=>x&&x.em).map(x=>({em:s(x.em),por:s(x.por),versao:Math.round(+x.versao)||1,n:Math.round(+x.n)||0})).slice(-30),
     alteradoPor:s(d.alteradoPor),alteradoEm:s(d.alteradoEm)}; }
 Object.keys(relJogs).forEach(id=>{ try{ relJogs[id]=normRelJog({...relJogs[id],id}); }catch(e){ delete relJogs[id]; } });
@@ -23,6 +24,12 @@ function ligaRelJogDb(){ if(!db) return; db.collection("relJog").onSnapshot(q=>{
   mergeCol("relJog/",m,relJogs); if(JSON.stringify(m)!==JSON.stringify(relJogs)){ relJogs=m; guardaRelJogLocal(); } },()=>{}); }
 (()=>{ let n=0; const t=setInterval(()=>{ n++; if(db){ clearInterval(t); try{ ligaRelJogDb(); }catch(e){} } else if(n>80) clearInterval(t); },250); })();
 
+/* v114.1: imagens do Pós-jogo no relatório — no do grupo todas as que não foram tiradas; no individual só as que têm esse jogador marcado
+   (exceção decidida pelo Rodrigo: a imagem pode mostrar colegas). Os princípios do Modelo ligados à imagem não saem (regra do relatório). */
+function imagensRel(G,R,k){ if(typeof imagensDe!=="function") return []; return imagensDe(idRelJog(G)).filter(I=>I.img&&!(R.semImg||[]).includes(I.id)&&(!k||I.js.includes(String(k)))); }
+const IMG_REL=new Map();
+async function pngRel(I){ const key=I.id+"|"+I.alteradoEm; if(!IMG_REL.has(key)){ if(IMG_REL.size>40) IMG_REL.clear(); const cv=await canvasImagem(I); IMG_REL.set(key,{url:cv.toDataURL("image/jpeg",.88),w:cv.width,h:cv.height}); } return IMG_REL.get(key); }
+const legImgRel=I=>[I.temT?`${I.parte}.ª parte · ${minutoReg(I)}`:"",I.titulo].filter(Boolean).join("  ·  ")||"Imagem do jogo";
 /* ---------- dados do jogo (tudo calculado na hora a partir do jogo) ---------- */
 const COR_PERDA={"Passe falhado":"#C00000","Drible perdido":"#E07B39","Receção falhada":"#8064A2"};
 const COR_REMATE={re:"#1F497D",rd:"#7F9CC0",rb:"#5B6B80",golo:"#B8963F"};
@@ -97,6 +104,17 @@ async function pdfRelJog(G,k,R,base){ if(!window.jspdf) await carregaScript("htt
     for(let i=0;i<lances.length;i+=por){ novaSe(lado+40); lances.slice(i,i+por).forEach((l,j)=>{ const x=M+j*(lado+40);
       if(l.url){ qrNoPdf(doc,l.url,x,y,lado); doc.link(x,y,lado,lado,{url:l.url}); } else { doc.setDrawColor(...MUT); doc.rect(x,y,lado,lado); T("sem vídeo",x+lado/2,y+lado/2,{s:7,c:MUT,al:"center"}); }
       doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.setTextColor(...INK); doc.text(doc.splitTextToSize(pdfTxt(`${l.min} · ${l.titulo}`),lado+34).slice(0,2),x+lado/2,y+lado+10,{align:"center"}); }); y+=lado+34; } }
+  const ims=imagensRel(G,R,k);
+  if(ims.length){ titulo(k?"As tuas imagens":"Imagens do jogo");
+    for(const I of ims){ let P=null; try{ P=await pngRel(I); }catch(e){}
+      const qr=imLinkVideo(I), lq=qr?70:0, ih=P?Math.min(W*P.h/P.w,380):40, iw=P?ih*P.w/P.h:W;
+      doc.setFont("helvetica","normal"); doc.setFontSize(9.5); const ld=I.desc?doc.splitTextToSize(pdfTxt(I.desc),W-lq-8).slice(0,10):[];
+      novaSe(ih+Math.max(lq,22+ld.length*12.5)+18);
+      if(P) doc.addImage(P.url,"JPEG",M+(W-iw)/2,y,iw,ih,undefined,"FAST"); else { doc.setDrawColor(...MUT); doc.rect(M,y,W,ih); T("imagem indisponível",M+W/2,y+ih/2+3,{s:8,c:MUT,al:"center"}); }
+      y+=ih+8; const y0=y; doc.setFont("helvetica","bold"); doc.setFontSize(10.5); doc.splitTextToSize(pdfTxt(legImgRel(I)),W-lq-8).slice(0,2).forEach((l,j)=>T(l,M,y+11+j*13,{b:1,s:10.5,c:RED})); y+=13*Math.min(2,doc.splitTextToSize(pdfTxt(legImgRel(I)),W-lq-8).length)+4;
+      ld.forEach(l=>{ T(l,M,y+9,{s:9.5}); y+=12.5; });
+      if(qr){ qrNoPdf(doc,qr,M+W-62,y0,62); doc.link(M+W-62,y0,62,62,{url:qr}); y=Math.max(y,y0+66); }
+      y+=16; } }
   if(k){ novaSe(9999); titulo("A equipa neste jogo"); await equipa(); }   // depois do que é do jogador, numa página nova
   const np=doc.getNumberOfPages(); for(let i=p0;i<=np;i++){ doc.setPage(i); T(`SC Angrense · Pós-jogo vs ${G.adversario||""}${k?" · "+nomeJogRel(G,k):""} · ${i-p0+1}/${np-p0+1}`,PW/2,PH-16,{s:7.5,c:MUT,al:"center"}); }
   return doc; }
@@ -135,6 +153,14 @@ async function ecrasRelJog(G,k,R){ const D=dadosRel(G), FW=1080, FH=1920, RED="#
         txt(c,`${l.min} · ${l.titulo}`,x+lado/2,yy+lado+42,28,INK,"center",true,FW/2-60); });
       i+=cabe; txt(c,"Aponta a câmara ao código para ver o lance",FW/2,FH-50,28,MUT,"center",false); } };
   const lances=lancesRel(G,R,k);
+  /* v114.1: um ecrã por imagem do Pós-jogo (imagem, momento, título, descrição e QR do vídeo) */
+  const imagensC=async sub=>{ for(const I of imagensRel(G,R,k)){ let P=null; try{ P=await pngRel(I); }catch(e){} const c=novo(); await cab(c,sub); let y=470;
+      if(P){ const mw=FW-80, h=Math.min(mw*P.h/P.w,860), w=h*P.w/P.h, i=await img(P.url); c.drawImage(i,(FW-w)/2,y,w,h); y+=h+60; } else { txt(c,"imagem indisponível",FW/2,y+80,34,MUT,"center",false); y+=160; }
+      if(I.temT) txt(c,`${I.parte}.ª PARTE · ${minutoReg(I)}`,60,y,38,RED); y+=I.temT?60:0;
+      if(I.titulo) y=linhas(c,I.titulo,60,y,50,FW-120,INK,true,1.2)+6;
+      const qr=imLinkVideo(I), lado=qr?260:0;
+      if(I.desc) y=linhas(c,I.desc,60,y+10,36,FW-120,INK,false,1.32);
+      if(qr&&y+lado+90<FH){ const yq=Math.max(y+20,FH-lado-110); qrC(c,qr,(FW-lado)/2,yq,lado); txt(c,"Aponta a câmara ao código para ver o lance",FW/2,FH-50,28,MUT,"center",false); } } };
   /* ecrãs da equipa; no individual (v112.17) sem marcadores nem a mensagem do grupo */
   const equipaC=async ind=>{
     let c=novo(); await cab(c,ind?"A EQUIPA NESTE JOGO":"RELATÓRIO DA EQUIPA"); let y=480; if(!ind&&D.golos.length){ y=linhas(c,"⚽ "+D.golos.join("  ·  "),60,y,36,FW-120,INK,true)+20; }
@@ -145,7 +171,8 @@ async function ecrasRelJog(G,k,R){ const D=dadosRel(G), FW=1080, FH=1920, RED="#
     if(!ind&&R.msg){ y=tituloC(c,"Mensagem da equipa técnica",y+20); linhas(c,R.msg,60,y+10,40,FW-120,INK,false,1.35); } };
   if(!k){
     await equipaC(false);
-    if(lances.length) await lancesC(lances,"RELATÓRIO DA EQUIPA",""); }
+    if(lances.length) await lancesC(lances,"RELATÓRIO DA EQUIPA","");
+    await imagensC("IMAGENS DO JOGO"); }
   else {
     const c=novo(); await cab(c,"O TEU RELATÓRIO"); const fj=typeof fotoCirculo==="function"?await fotoCirculo(String(k),300,10,"#FFFFFF"):null;
     let y=470; if(fj){ c.drawImage(fj,60,y,200,200); } txt(c,nomeJogRel(G,k),fj?290:60,y+90,60,INK,"left",true,FW-(fj?350:120)); txt(c,`Nº ${k}`,fj?290:60,y+150,40,RED);
@@ -155,6 +182,7 @@ async function ecrasRelJog(G,k,R){ const D=dadosRel(G), FW=1080, FH=1920, RED="#
     if(A.linhas.length){ y=tabelaC(c,y,["","1.ª","2.ª","Total"],A.linhas.slice(0,8)); const larg=Math.min(FW-120,(FH-40-y)/PROP_CAMPO); if(A.rs.length&&larg>=520) await mapaC(c,pontosMapa(A.rs,x=>acaoDe(x.ac).cor),y,[],larg); }
     else txt(c,"Sem ações registadas para ti neste jogo.",60,y+30,34,MUT,"left",false);
     if(R.msgInd[k]||lances.length) await lancesC(lances,"O TEU RELATÓRIO",R.msgInd[k]||"");
+    await imagensC("AS TUAS IMAGENS");
     await equipaC(true); }
   return ecras; }
 
@@ -183,6 +211,7 @@ function folhaRelJog(G){ if(!G){ toast("Sem jogo."); return; } const R=clone(rel
     <h4 style="margin-bottom:0">Lances em vídeo <span class="sub" id="rj-c"></span></h4>${G.video&&ytId(G.video.url)?"":`<p class="mc-av" style="margin:0">Este jogo não tem vídeo do YouTube configurado: os lances saem sem QR.</p>`}
     <div class="seg" id="rj-g">${grupos.map(([k,n])=>`<button data-k="${k}">${n}</button>`).join("")}</div>
     <div class="actions" style="justify-content:flex-start;margin:0"><button class="btn sm" id="rj-tg">✓ Todos deste tipo</button><button class="btn sm" id="rj-ta">✓ Todos os lances (${regs.length})</button><button class="btn sm ghost" id="rj-tn">✕ Tirar todos</button></div><div id="rj-l" class="lv-lista"></div>
+    <h4 style="margin-bottom:0">Imagens do jogo <span class="sub" id="rj-ic"></span></h4><div id="rj-im" class="lv-lista"></div>
     <h4 style="margin-bottom:0">Mensagens individuais <span class="sub">(opcional)</span></h4><div id="rj-i" class="rj-ind">${js.map(k=>`<label class="f"><span><b>${esc(k)}</b> ${esc(nomeJogRel(G,k))} · ${minutosDe(G,k)}'</span><textarea rows="2" data-k="${esc(k)}">${esc(R.msgInd[k]||"")}</textarea></label>`).join("")||`<p class="sub">Sem jogadores neste jogo.</p>`}</div>
     <div class="actions"><button class="btn" data-close>Fechar</button><button class="btn" id="rj-ok">Guardar</button><button class="btn primary" id="rj-pv">👁 Pré-visualizar e exportar</button></div>`,(s,fecha)=>{
     const q=x=>s.querySelector(x);
@@ -193,6 +222,13 @@ function folhaRelJog(G){ if(!G){ toast("Sem jogo."); return; } const R=clone(rel
       q("#rj-l").querySelectorAll("[data-r]").forEach(c=>c.onchange=()=>{ const id=c.dataset.r; if(c.checked) R.lances.push({rid:id,titulo:""}); else R.lances=R.lances.filter(y=>y.rid!==id); pinta(); });
       q("#rj-l").querySelectorAll("[data-t]").forEach(t=>t.oninput=()=>{ const l=R.lances.find(y=>y.rid===t.dataset.t); if(l) l.titulo=t.value; }); };
     s.querySelectorAll("#rj-g button").forEach(b=>b.onclick=()=>{ gr=b.dataset.k; pinta(); }); pinta();
+    /* v114.1: imagens do Pós-jogo — entram todas; desmarcar tira-a do relatório (grupo e individuais) */
+    const pintaImg=()=>{ const L=typeof imagensDe==="function"?imagensDe(idRelJog(G)).filter(I=>I.img):[];
+      q("#rj-ic").textContent=L.length?`(${L.filter(I=>!R.semImg.includes(I.id)).length} de ${L.length}; no individual só as do jogador)`:"";
+      q("#rj-im").innerHTML=L.length?L.map(I=>`<label class="lv-ex"><input type="checkbox" data-im="${esc(I.id)}"${R.semImg.includes(I.id)?"":" checked"}><span><b>${esc(legImgRel(I))}</b><small>${I.js.length?esc(I.js.map(n=>n+" "+nomeJogRel(G,n)).join(", ")):"sem jogadores marcados (só no relatório do grupo)"}</small></span></label>`).join("")
+        :`<p class="sub" style="margin:0">Sem imagens deste jogo. Cria-as em Pós-jogo › Imagens.</p>`;
+      q("#rj-im").querySelectorAll("[data-im]").forEach(c=>c.onchange=()=>{ const id=c.dataset.im; R.semImg=c.checked?R.semImg.filter(x=>x!==id):[...R.semImg,id]; pintaImg(); }); };
+    pintaImg();
     /* v112.12: escolher todos de uma vez (os já escolhidos mantêm o título) */
     const poe=ls=>{ ls.forEach(x=>{ if(!R.lances.some(y=>y.rid===x.id)) R.lances.push({rid:x.id,titulo:""}); }); R.lances.sort((a,b)=>{ const A=regs.find(x=>x.id===a.rid), B=regs.find(x=>x.id===b.rid); return !A||!B?0:(A.parte-B.parte)||(A.seg-B.seg); }); pinta(); };
     q("#rj-tg").onclick=()=>poe(regs.filter(grupos.find(g=>g[0]===gr)[2])); q("#rj-ta").onclick=()=>poe(regs);

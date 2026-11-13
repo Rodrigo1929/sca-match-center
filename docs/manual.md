@@ -247,3 +247,4 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 - **Luz:** feixe sobre o jogador; «Escurecer à volta das luzes» escurece o resto da imagem.
 - **Ficha** (painel da direita): título, descrição, momento do jogo (um lance do Pós-jogo ou parte e minuto), jogadores e princípios do Modelo de Jogo.
 - **⬇ PNG** guarda a imagem final. Ao arquivar o jogo, as imagens vão com ele.
+- **Nos relatórios para jogadores** (v114.1): as imagens do jogo entram no relatório do grupo (desmarca na folha do relatório as que não queres) e no individual de cada jogador marcado na imagem, no PDF e num ecrã próprio para o telemóvel, com o minuto, o título, a descrição e o QR do vídeo.

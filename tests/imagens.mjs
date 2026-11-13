@@ -10,7 +10,7 @@ const ipad = process.argv.includes("--ipad");
 const cap = join(raiz, "tests/capturas/imagens"); mkdirSync(cap, { recursive: true });
 const browser = ipad ? await webkit.launch() : await chromium.launch();
 const pg = ipad ? await (await browser.newContext({ ...devices["iPad (gen 7) landscape"] })).newPage() : await browser.newPage({ viewport: { width: 1366, height: 900 } });
-await pg.route(/^https?:/, (r) => r.abort());
+await pg.route(/^https?:/, (r) => (/cdnjs.cloudflare.com/.test(r.request().url()) ? r.continue() : r.abort()));   // o PDF do relatório precisa do jsPDF (cdnjs)
 const erros = []; pg.on("pageerror", (e) => { const s = String(e); if (!/Fetch API cannot load file:/.test(s)) erros.push(s); });
 let falhas = 0; const ok = (c, msg) => { console.log((c ? "✓ " : "✗ ") + msg); if (!c) falhas++; };
 await pg.goto(pathToFileURL(join(raiz, "dist/index.html")).href); await pg.waitForTimeout(800);
@@ -91,6 +91,19 @@ await pg.click("#ie-ok"); await pg.waitForTimeout(150);
 const lista = await pg.evaluate(() => ({ cards: document.querySelectorAll("#im-grid .imcard").length, txt: $("im-grid").textContent, gravada: imagens[Object.keys(imagens)[0]].pecas.length }));
 ok(lista.cards === 1 && /2\.ª · 52:30/.test(lista.txt) && /Pressão alta/.test(lista.txt) && lista.gravada === 9, "lista com a imagem, o momento e o título");
 await pg.screenshot({ path: join(cap, "lista.png") });
+// v114.1: a imagem entra no relatório para jogadores — grupo, individual do jogador marcado (não no de outro), ecrãs; desmarcar tira-a
+const rel = await pg.evaluate(async () => { const G = jogoAtualRel(), R = clone(relJogDe(G)), I = Object.values(imagens)[0], k = I.js[0], outro = jogadoresRel(G).find((n) => !I.js.includes(String(n))) || "zz";
+  const t = async (kk, RR) => (await pdfRelJog(G, kk, RR)).output();
+  const g = await t(null, R), ind = await t(k, R), out = await t(outro, R), e0 = (await ecrasRelJog(G, null, { ...R, semImg: [I.id] })).length, e1 = (await ecrasRelJog(G, null, R)).length;
+  const sem = await t(null, { ...R, semImg: [I.id] });
+  return { g: g.includes("IMAGENS DO JOGO") && g.includes("alta depois"), ind: ind.includes("AS TUAS IMAGENS"), out: !out.includes("AS TUAS IMAGENS"), ecras: e1 - e0, sem: !sem.includes("IMAGENS DO JOGO") }; });
+ok(rel.g && rel.ind && rel.out && rel.ecras === 1 && rel.sem, "relatório para jogadores: grupo, individual do marcado, não no de outro, 1 ecrã, desmarcar tira " + JSON.stringify(rel));
+await pg.evaluate(() => { folhaRelJog(jogoAtualRel()); }); await pg.waitForSelector("#rj-im [data-im]");
+await pg.screenshot({ path: join(cap, "folha-relatorio.png") });
+await pg.click("#rj-im [data-im]"); await pg.click("#rj-ok"); await pg.waitForTimeout(100);
+ok(await pg.evaluate(() => (relJogs.atual.semImg || []).length === 1), "folha do relatório: desmarcar a imagem fica gravado");
+await pg.evaluate(async () => { const G = jogoAtualRel(), R = clone(relJogDe(G)); R.semImg = []; gravaRelJog(R); const cv = (await ecrasRelJog(G, null, R)).slice(-1)[0]; window.__ecra = cv.toDataURL("image/jpeg", .8); });
+{ const b64 = (await pg.evaluate(() => window.__ecra)).split(",")[1]; (await import("node:fs")).writeFileSync(join(cap, "ecra-imagem.jpg"), Buffer.from(b64, "base64")); }
 // arquivar o jogo: a imagem passa para o jogo arquivado; cópia de segurança leva as imagens
 const arq = await pg.evaluate(() => { arquivaImagens("Jteste1"); const I = Object.values(imagens)[0]; return { jogo: I.jogo, atual: imagensDe("atual").length }; });
 ok(arq.jogo === "Jteste1" && arq.atual === 0, "ao arquivar o jogo, a imagem passa para o arquivo");
