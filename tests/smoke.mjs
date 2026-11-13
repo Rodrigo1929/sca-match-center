@@ -819,7 +819,7 @@ if (ia.semana !== "OBJ IA*|PI IA*|Jogo reduzido e finalização|PFIN IA*|OBJ IA*
 await pg.evaluate((seg) => { delete ciclos["micro-" + seg]; mcSample = undefined; }, SEGM);
 await pg.click("#mc-pad"); await pg.waitForSelector(".mc-pl"); mcUi.padrao = await pg.locator(".mc-pl").count(); await pg.click("#sheet-root [data-close]"); await pg.waitForTimeout(100);
 if (mc.md !== "MD-4,MD-3,MD+1,MD+2,MD" || mc.blocos !== "folga,,,jogo,,estagio,md" || mc.at !== "2,1" || mc.min !== 10 || mc.ut !== "UT 901" || mc.hora !== "19h30 - 21h00" || mc.n !== 77 || mc.pf !== "Texto escrito|true" || mc.repor || !mc.pdf
-  || mc.cores !== ",,,#F28E86,,#F28E86,#F28E86" || mc.fora !== "#B3CEFB,#B3CEFB" || mc.anual !== 2 || mc.cfa !== "#1F3864#FF6B6B,#404040#FF6B6B"
+  || mc.cores !== ",,,#F28E86,,#F28E86,#F28E86" || mc.fora !== "#003F82,#003F82" || mc.anual !== 2 || mc.cfa !== "#1F3864#FF6B6B,#404040#FF6B6B"
   || mc.loc !== "Estádio João Paulo II - Angra do Heroísmo (Ilha Terceira)" || mc.chave !== "barreiro,uniao-micaelense,barreiro,sao-roque" || mc.compCal !== "camp,livre,taca"
   || mcUi.blocos !== 4 || mcUi.campo !== "Jogo reduzido e finalização" || mcUi.fechado !== "fechado,0" || mcUi.reaberto !== "rascunho,2" || mcUi.padrao !== 9)
   erros.push("Microciclo: resumo errado " + JSON.stringify({ mc, mcUi }));
@@ -874,7 +874,7 @@ await pg.click("#tab-u"); await pg.click(".u-modo button[data-m='semana']"); awa
 const iniS = await pg.evaluate(() => { const h = segundaDe(isoDia(new Date())); return new Date().getDay() >= 5 ? diaMais(h, 7) : h; });
 const dS = await pg.evaluate((i) => diasDaSemana(i), iniS);
 await pg.click("#s-jn"); await pg.fill("#jc-d", dS[6]); await pg.fill("#jc-h", "15:00"); await pg.fill("#jc-a", "União Micaelense");
-await pg.click("#jc-c button[data-k='']"); await pg.click("#jc-v button[data-k='1']"); await pg.fill("#jc-de", "S. Miguel");
+await pg.click("#jc-c button[data-k='fora']"); await pg.click("#jc-v button[data-k='1']"); await pg.fill("#jc-de", "S. Miguel");
 await pg.fill("#jc-p", "Campeonato dos Açores"); await pg.fill("#jc-j", "4ª Jornada"); await pg.click("#jc-ok"); await pg.waitForTimeout(150);
 await pg.click("#s-nova2"); await pg.waitForTimeout(200);
 const sem = await pg.evaluate(() => { const S = semanas[sCur], ds = diasDaSemana(S.inicio), z = (k, t) => S.dias[ds[k]][t].map((x) => x.tipo + ":" + x.txt + ":" + x.conc).join("|");

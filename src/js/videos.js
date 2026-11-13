@@ -1,14 +1,22 @@
 /* ---------- Vídeos do Pós-jogo (v115, V1: parar e desenhar) ----------
    videos/{id} = { id, jogo: "atual" | <id do jogo arquivado>, titulo, desc, js: [nº], temT, parte, seg,
      fonte: {nome, tam, dur, w, h} (o clip original, que fica no computador),
-     pausas: [{id, t (segundos do clip), dur (segundos parado), pecas, cal, escuro}] (desenhos com as peças do editor de imagens),
+     pausas: [{id, t (segundos do clip), dur (segundos parado; 0 = não para), pecas, cal, escuro, ate, mov}] (desenhos com as peças do editor de imagens),
+       v117 (V2): depois da paragem as peças andam com os jogadores até «ate»; mov = {pk da peça | "cal": [[t, geometria], …]} (pontos-chave, movimento linear entre eles),
      saida: {id, tam, dur, w, h, em, chave} | null (vídeo final MP4 no armazenamento do link), criadoPor, criadoEm, alteradoPor, alteradoEm }
    Decidido pelo Rodrigo (13/11/2026): edita-se no computador (o iPad vê); o clip original fica no PC (o armazenamento do link aceita
    até 20 MiB por ficheiro) e só o vídeo final fica na app; o vídeo final leva o som do clip, em silêncio nas paragens. */
 const VD_LS="sca-videos-v1", VD_MAX=20*1024*1024, VD_FPS=25, VD_MUXER="https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.js";
 let videos={}; try{ videos=JSON.parse(localStorage.getItem(VD_LS)||"{}")||{}; }catch(e){ videos={}; }
-function normPausaVd(p){ p=p||{}; return {id:/^[\w-]{4,40}$/.test(String(p.id||""))?String(p.id):uId("pz"),t:imNum(p.t,0,0,36000),dur:imNum(p.dur,3,.5,30),
-  pecas:(Array.isArray(p.pecas)?p.pecas:[]).map(normPecaIm).filter(Boolean).slice(0,300),cal:normCalIm(p.cal),escuro:imNum(p.escuro,0,0,.8)}; }
+const VD_GEO=["x","y","x1","y1","x2","y2","qx","qy","rx","ry","a","b","m","pts"];   // o que muda de um ponto-chave para outro (o resto é da peça)
+function normMovVd(m){ const o={}, n=v=>imNum(v,0,-100,100); if(!m||typeof m!=="object") return o;
+  Object.keys(m).slice(0,301).forEach(k=>{ if(!/^[\w-]{1,24}$/.test(k)||!Array.isArray(m[k])) return;
+    const tr=m[k].filter(e=>Array.isArray(e)&&e[1]&&typeof e[1]==="object").map(([t,g])=>{ const G={};
+      VD_GEO.forEach(c=>{ if(c==="pts"){ if(Array.isArray(g.pts)) G.pts=g.pts.slice(0,600).map(q=>[n(q&&q[0]),n(q&&q[1])]); } else if(g[c]!=null&&isFinite(+g[c])) G[c]=n(g[c]); });
+      return [imNum(t,0,0,36000),G]; }).sort((a,b)=>a[0]-b[0]).slice(0,200);
+    if(tr.length) o[k]=tr; }); return o; }
+function normPausaVd(p){ p=p||{}; const t=imNum(p.t,0,0,36000); return {id:/^[\w-]{4,40}$/.test(String(p.id||""))?String(p.id):uId("pz"),t,dur:imNum(p.dur,3,0,30),
+  pecas:(Array.isArray(p.pecas)?p.pecas:[]).map(normPecaIm).filter(Boolean).slice(0,300),cal:normCalIm(p.cal),escuro:imNum(p.escuro,0,0,.8),ate:imNum(p.ate,t,t,36000),mov:normMovVd(p.mov)}; }
 function normVideo(d){ const s=v=>String(v??"").trim(), F=d.fonte||{}, S=d.saida;
   return {id:s(d.id)||uId("vd"),jogo:s(d.jogo)||"atual",titulo:s(d.titulo).slice(0,120),desc:String(d.desc??"").slice(0,2000),
     js:[...new Set((Array.isArray(d.js)?d.js:[]).map(s).filter(Boolean))].slice(0,22),temT:!!d.temT,parte:d.parte===2||d.parte==="2"?2:1,seg:Math.max(0,Math.round(+d.seg)||0),
@@ -30,9 +38,42 @@ function ligaVideosDb(){ if(!db) return; db.collection("videos").onSnapshot(q=>{
 (()=>{ let n=0; const t=setInterval(()=>{ n++; if(db){ clearInterval(t); try{ ligaVideosDb(); }catch(e){} } else if(n>80) clearInterval(t); },250); })();
 
 /* «impressão digital» das paragens: o vídeo final fica desatualizado se mudarem depois de gravado */
-const vdChave=V=>{ const s=JSON.stringify(V.pausas.map(p=>[p.t,p.dur,p.pecas,p.cal,p.escuro])); let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))|0; return String(h>>>0); };
+const vdChave=V=>{ const s=JSON.stringify(V.pausas.map(p=>{ const a=[p.t,p.dur,p.pecas,p.cal,p.escuro]; return p.ate>p.t?[...a,p.ate,p.mov]:a; }),(k,v)=>k==="pk"?undefined:v); let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))|0; return String(h>>>0); };
 const vdT=t=>{ t=Math.max(0,+t||0); const m=Math.floor(t/60), s=t-m*60; return `${m}:${s<10?"0":""}${s.toFixed(1)}`; };
 const vdDurTot=V=>V.fonte.dur+V.pausas.reduce((a,p)=>a+p.dur,0);
+/* ---------- V2: peças que andam (pontos-chave) ---------- */
+const vdGeo=P=>{ const g={}; VD_GEO.forEach(c=>{ if(P[c]!=null) g[c]=clone(P[c]); }); return g; };
+/* geometria no tempo t: antes do 1.º ponto-chave fica no 1.º, depois do último fica no último; entre dois, em linha reta
+   shortcut: movimento linear (com pontos-chave a cada ~0,5 s chega); curvas suaves se o Rodrigo achar o movimento aos solavancos */
+function vdGeoEm(tr,t){ if(!tr||!tr.length) return null; if(t<=tr[0][0]) return tr[0][1]; const n=tr.length-1; if(t>=tr[n][0]) return tr[n][1];
+  let i=1; while(tr[i][0]<t) i++; const [ta,a]=tr[i-1], [tb,b]=tr[i], u=(t-ta)/((tb-ta)||1), o={};
+  for(const c in b){ const x=a[c], y=b[c]; o[c]=Array.isArray(y)?(Array.isArray(x)&&x.length===y.length?y.map((q,j)=>[x[j][0]+(q[0]-x[j][0])*u,x[j][1]+(q[1]-x[j][1])*u]):x??y):x!=null?x+(y-x)*u:y; }
+  return o; }
+function vdPoeKey(tr,t,g){ for(let i=tr.length-1;i>=0;i--) if(Math.abs(tr[i][0]-t)<.02) tr.splice(i,1); tr.push([t,clone(g)]); tr.sort((a,b)=>a[0]-b[0]); if(tr.length>200) tr.splice(1,1); }
+const vdPecasEm=(p,t)=>p.pecas.map(P=>{ const g=P.pk&&vdGeoEm(p.mov[P.pk],t); return g?normPecaIm({...P,...g}):P; }).filter(Boolean);
+const vdCalEm=(p,t)=>{ const g=vdGeoEm(p.mov.cal,t); return p.cal&&g&&g.pts?{...p.cal,pts:clone(g.pts)}:p.cal; };
+/* até onde as peças de uma paragem podem andar (a paragem seguinte ou o fim do clip) e até onde andam */
+const vdLimSeg=(V,p)=>{ const n=V.pausas.find(x=>x.t>p.t+.02); return Math.min(n?n.t:V.fonte.dur,V.fonte.dur); };
+const vdFimSeg=(V,p)=>Math.min(p.ate,vdLimSeg(V,p));
+const vdSegueEm=(V,t)=>V.pausas.filter(p=>p.ate>p.t+.02&&p.t<=t+.001&&t<vdFimSeg(V,p)).pop()||null;
+/* gravar o desenho feito no momento t: o que mudou de sítio nesse momento vira ponto-chave; cor, tamanho… valem para todo o movimento */
+function vdGravaPecas(P,J,t,E){ const noIni=Math.abs(t-P.t)<.02, mov=P.mov, ant={}, vistos=new Set(); P.pecas.forEach(x=>{ if(x.pk) ant[x.pk]=x; });
+  P.pecas=J.pecas.map((N0,i)=>{ const N=normPecaIm(N0); if(!N) return null;
+    if(!N.pk||vistos.has(N.pk)){ N.pk=uId("pk"); if(E&&E.pecas[i]) E.pecas[i].pk=N.pk; } vistos.add(N.pk);
+    const A=ant[N.pk], g=vdGeo(N); if(!A){ if(!noIni) mov[N.pk]=[[t,g]]; return N; }
+    const gA=vdGeo(A); if(Object.keys(g).join()!==Object.keys(gA).join()){ delete mov[N.pk]; return N; }   // mudou de forma (ex.: elipse ↔ polígono): recomeça parada
+    if(JSON.stringify(g)===JSON.stringify(vdGeoEm(mov[N.pk],t)||gA)) return {...N,...gA};
+    if(mov[N.pk]){ vdPoeKey(mov[N.pk],t,g); return {...N,...gA}; }
+    if(noIni) return N;
+    mov[N.pk]=[[P.t,gA],[t,g]]; return {...N,...gA}; }).filter(Boolean);
+  const vivas=new Set(P.pecas.map(x=>x.pk)); Object.keys(mov).forEach(k=>{ if(k!=="cal"&&!vivas.has(k)) delete mov[k]; });
+  /* o campo (perspetiva) também pode andar, quando a câmara mexe */
+  const C=normCalIm(J.cal);
+  if(!C||!P.cal){ P.cal=C; delete mov.cal; }
+  else { const ag=vdGeoEm(mov.cal,t)||{pts:P.cal.pts}; P.cal={...P.cal,ref:C.ref,rod:C.rod};
+    if(JSON.stringify(C.pts)!==JSON.stringify(ag.pts)){ if(mov.cal) vdPoeKey(mov.cal,t,{pts:C.pts}); else if(noIni) P.cal=C; else mov.cal=[[P.t,{pts:clone(P.cal.pts)}],[t,{pts:C.pts}]]; } }
+  P.escuro=imNum(J.escuro,0,0,.8);
+  const ult=Math.max(P.t,...Object.values(mov).map(tr=>tr[tr.length-1][0])); if(ult>P.ate) P.ate=ult; }
 /* clips abertos nesta sessão (ficam no computador; nunca vão para a app) */
 const vdFich={};
 function vdEscolheFich(cb){ const i=document.createElement("input"); i.type="file"; i.accept="video/mp4,video/*"; i.onchange=()=>{ const f=i.files[0]; if(f) cb(f); }; i.click(); }
@@ -111,45 +152,74 @@ function vdCtl(){ if(!vdEd) return; const v=vdEd.v, V=vdEd.V; $("vd-t").textCont
   const d=V.fonte.dur||1; $("vd-marcas").innerHTML=V.pausas.map(p=>`<button class="vd-marca${vdEd.congelada===p||(!vdEd.tocar&&vdPausaEm(v.currentTime)===p)?" on":""}" data-id="${esc(p.id)}" style="left:${(p.t/d*100).toFixed(3)}%" title="Paragem ${vdT(p.t)} · ${p.dur} s" aria-label="Ir para a paragem ${vdT(p.t)}"></button>`).join("");
   $("vd-marcas").querySelectorAll("button").forEach(b=>b.onclick=()=>{ vdPara(); const p=V.pausas.find(x=>x.id===b.dataset.id); if(p) v.currentTime=p.t; }); }
 /* camada do desenho por cima do vídeo: na paragem em que o vídeo está parado, ou na que está a ser mostrada ao tocar */
-const vdPseudoI=(V,p)=>({img:{id:"vf",w:V.fonte.w,h:V.fonte.h},pecas:p.pecas,cal:p.cal,escuro:p.escuro,crop:null});
-function vdDesenhaOv(){ if(!vdEd) return; const o=$("vd-ov"); if(!o) return; const v=vdEd.v, p=vdEd.congelada||(!vdEd.tocar&&vdPausaEm(v.currentTime));
-  o.innerHTML=p?imCamadaSvg(vdPseudoI(vdEd.V,p),"vo_",false,-1):""; vdCtl(); }
+const vdPseudoI=(V,p,t)=>({img:{id:"vf",w:V.fonte.w,h:V.fonte.h},pecas:vdPecasEm(p,t),cal:vdCalEm(p,t),escuro:p.escuro,crop:null});
+/* camada no tempo t: a paragem parada, ou as peças a andar depois dela */
+function vdOv(t){ const o=$("vd-ov"); if(!o||!vdEd) return; const V=vdEd.V; let p=vdEd.congelada||(!vdEd.tocar&&vdPausaEm(t)), tt=p&&p.t; if(!p){ p=vdSegueEm(V,t); tt=t; }
+  o.innerHTML=p?imCamadaSvg(vdPseudoI(V,p,tt),"vo_",false,-1):""; }
+function vdDesenhaOv(){ if(!vdEd) return; vdOv(vdEd.v.currentTime); vdCtl(); }
 function vdPara(){ if(!vdEd) return; vdEd.tocar=false; clearTimeout(vdEd.tCong); vdEd.congelada=null; vdEd.v.pause(); vdDesenhaOv(); }
 function vdPasso(n){ vdPara(); const v=vdEd.v; v.currentTime=Math.max(0,Math.min(vdEd.V.fonte.dur,v.currentTime+n/VD_FPS)); }
 /* tocar: o vídeo para em cada paragem o tempo marcado, com o desenho, e continua (como no vídeo final) */
 function vdPlay(){ if(!vdEd) return; const v=vdEd.v; if(vdEd.tocar){ vdPara(); return; } if(v.ended||v.currentTime>=vdEd.V.fonte.dur-.05) v.currentTime=0;
-  vdEd.tocar=true; vdEd.desde=v.currentTime-.001; const p=vdPausaEm(v.currentTime); if(p&&p.t>vdEd.desde){ vdEd.desde=p.t; vdCongela(p); return; }
+  vdEd.tocar=true; vdEd.desde=v.currentTime-.001; const p=vdPausaEm(v.currentTime); if(p&&p.dur>0&&p.t>vdEd.desde){ vdEd.desde=p.t; vdCongela(p); return; }
   v.play().catch(()=>{}); vdVigia(); vdCtl(); }
 function vdVigia(){ const v=vdEd.v, cb=(now,meta)=>{ if(!vdEd||!vdEd.tocar) return; const m=meta.mediaTime, p=vdEd.V.pausas.find(x=>x.t>vdEd.desde&&x.t<=m+.5/VD_FPS); vdEd.desde=m;
-    if(p){ v.pause(); v.currentTime=p.t; vdEd.desde=p.t; vdCongela(p); return; } if(!v.ended) v.requestVideoFrameCallback(cb); };
+    if(p&&p.dur>0){ v.pause(); v.currentTime=p.t; vdEd.desde=p.t; vdCongela(p); return; } vdOv(m); if(!v.ended) v.requestVideoFrameCallback(cb); };
   if(v.requestVideoFrameCallback) v.requestVideoFrameCallback(cb); }
 function vdCongela(p){ vdEd.congelada=p; vdDesenhaOv(); clearTimeout(vdEd.tCong);
   vdEd.tCong=setTimeout(()=>{ if(!vdEd) return; vdEd.congelada=null; if(vdEd.tocar){ vdEd.v.play().catch(()=>{}); vdVigia(); } vdDesenhaOv(); },p.dur*1000); }
 /* nova paragem no sítio onde o vídeo está, e abre logo o desenho; se já houver uma ali, abre essa */
 function vdNovaPausa(){ vdPara(); const V=vdEd.V, t=Math.round(vdEd.v.currentTime*100)/100; let p=vdPausaEm(t);
   if(!p){ if(V.pausas.length>=60){ toast("Máximo de 60 paragens."); return; } const ant=V.pausas.filter(x=>x.t<t).pop();
-    p=normPausaVd({id:uId("pz"),t,dur:3,cal:ant?ant.cal:null}); V.pausas.push(p); V.pausas.sort((a,b)=>a.t-b.t); vdGrava(); vdPainel(); }
+    p=normPausaVd({id:uId("pz"),t,dur:3,cal:ant?vdCalEm(ant,t):null}); V.pausas.push(p); V.pausas.sort((a,b)=>a.t-b.t); vdGrava(); vdPainel(); }
   vdDesenha(p.id); }
 /* desenhar uma paragem: a imagem parada vai para o editor de imagens (as mesmas peças, a perspetiva, os menus) */
-async function vdDesenha(pid){ const V=vdEd.V, p=V.pausas.find(x=>x.id===pid); if(!p) return; vdPara(); const v=vdEd.v;
-  if(Math.abs(v.currentTime-p.t)>.001){ await new Promise(ok=>{ v.addEventListener("seeked",ok,{once:true}); v.currentTime=p.t; }); }
+async function vdFoto(t){ const V=vdEd.V, v=vdEd.v;
+  if(Math.abs(v.currentTime-t)>.001){ await new Promise(ok=>{ v.addEventListener("seeked",ok,{once:true}); v.currentTime=t; }); }
   const cv=document.createElement("canvas"); cv.width=V.fonte.w; cv.height=V.fonte.h; cv.getContext("2d").drawImage(v,0,0,cv.width,cv.height);
-  const b=await new Promise(ok=>cv.toBlob(ok,"image/jpeg",.9)), fid="vf_"+p.id; if(xImgUrl[fid]) URL.revokeObjectURL(xImgUrl[fid]); xImgUrl[fid]=URL.createObjectURL(b);
-  abreEditorImagem(null,{I:{id:p.id,jogo:V.jogo,js:V.js,titulo:`Paragem aos ${vdT(p.t)}`,temT:false,parte:1,seg:0,img:{id:fid,w:V.fonte.w,h:V.fonte.h},crop:null,escuro:p.escuro,cal:p.cal,pecas:clone(p.pecas)},
-    grava:J=>{ const P=vdEd&&vdEd.V.pausas.find(x=>x.id===pid); if(!P) return; P.pecas=J.pecas.map(normPecaIm).filter(Boolean); P.cal=normCalIm(J.cal); P.escuro=imNum(J.escuro,0,0,.8); vdGrava(); },
+  return new Promise(ok=>cv.toBlob(ok,"image/jpeg",.9)); }
+const vdDurTxt=d=>d>0?`Tempo parado (${d} s)`:"Sem parar (o vídeo não para aqui)";
+async function vdDesenha(pid){ const V=vdEd.V, p=V.pausas.find(x=>x.id===pid); if(!p) return; vdPara();
+  const fid="vf_"+p.id, poeFoto=async t=>{ const b=await vdFoto(t); if(xImgUrl[fid]) URL.revokeObjectURL(xImgUrl[fid]); xImgUrl[fid]=URL.createObjectURL(b); };
+  await poeFoto(p.t); p.pecas.forEach(x=>{ if(!x.pk) x.pk=uId("pk"); });
+  const cur={t:p.t,ocup:false}, achaP=()=>vdEd&&vdEd.V.pausas.find(x=>x.id===pid), tit=()=>`Paragem aos ${vdT(p.t)}`+(cur.t>p.t+.01?` · agora ${vdT(cur.t)}`:"");
+  /* V2: mudar o momento do clip dentro do desenho — grava, mostra a imagem desse momento e as peças onde estão nesse momento */
+  const ir=async t=>{ const P=achaP(); if(!P||!imEd||cur.ocup) return; cur.ocup=true;
+    try{ imGravaJa(); t=Math.round(Math.max(P.t,Math.min(vdLimSeg(vdEd.V,P),t))*100)/100; if(Math.abs(t-cur.t)<.005) return;
+      await poeFoto(t); if(!imEd) return; cur.t=t;
+      Object.assign(imEd.I,{pecas:clone(vdPecasEm(P,t)),cal:vdCalEm(P,t),titulo:tit()}); imEd.undo=[]; imEd.redo=[]; imEd.lig=null;
+      const sv=$("ie-palco").querySelector("svg"); if(sv) sv.dataset.crop="-";   // obriga a trocar a imagem de fundo
+      imDesenha(); imPainel(); imFicha(); } finally{ cur.ocup=false; } };
+  abreEditorImagem(null,{I:{id:p.id,jogo:V.jogo,js:V.js,titulo:tit(),temT:false,parte:1,seg:0,img:{id:fid,w:V.fonte.w,h:V.fonte.h},crop:null,escuro:p.escuro,cal:vdCalEm(p,p.t),pecas:clone(vdPecasEm(p,p.t))},
+    grava:J=>{ const P=achaP(); if(!P) return; vdGravaPecas(P,J,cur.t,imEd&&imEd.I); vdGrava(); },
     fecha:()=>{ vdPainel(); vdDesenhaOv(); },
-    ficha:bx=>{ const P=vdEd.V.pausas.find(x=>x.id===pid); bx.innerHTML=`<h4>Paragem do vídeo</h4><p class="sub" style="margin:0">Aos ${esc(vdT(P.t))} do clip. O vídeo fica parado com este desenho e depois continua.</p>
-      <label class="f">Tempo parado (${P.dur} s)<input type="range" id="vf-dur" min="1" max="15" step="0.5" value="${P.dur}"></label>`;
-      bx.querySelector("#vf-dur").oninput=e=>{ P.dur=+e.target.value; bx.querySelector(".f").firstChild.textContent=`Tempo parado (${P.dur} s)`; vdGrava(); }; }}); }
+    tecla:e=>{ if((e.key!=="ArrowLeft"&&e.key!=="ArrowRight")||imEd.drag) return false; ir(cur.t+(e.key==="ArrowRight"?1:-1)*(e.shiftKey?1:.2)); return true; },
+    ficha:bx=>{ const P=achaP(); if(!P) return; const lim=vdLimSeg(vdEd.V,P), anda=P.ate>P.t+.02;
+      bx.innerHTML=`<h4>Paragem do vídeo</h4><p class="sub" style="margin:0">Aos ${esc(vdT(P.t))} do clip. O vídeo fica parado com este desenho e depois continua.</p>
+      <label class="f"><span>${vdDurTxt(P.dur)}</span><input type="range" id="vf-dur" min="0" max="15" step="0.5" value="${P.dur}"></label>
+      <h4>Peças que andam com os jogadores</h4>
+      <p class="sub" style="margin:0">Avança o vídeo e arrasta cada peça para onde o jogador está. A app faz o movimento entre esses pontos.</p>
+      <div class="vf-nav"><button class="btn sm" data-d="-1" title="1 s para trás (Shift+←)">◀ 1 s</button><button class="btn sm" data-d="-0.2" title="0,2 s para trás (←)">◀ 0,2</button><b id="vf-agora">${esc(vdT(cur.t))}</b><button class="btn sm" data-d="0.2" title="0,2 s para a frente (→)">0,2 ▶</button><button class="btn sm" data-d="1" title="1 s para a frente (Shift+→)">1 s ▶</button></div>
+      <input type="range" id="vf-tl" min="${P.t}" max="${lim}" step="0.04" value="${cur.t}" aria-label="Momento do clip">
+      <p class="sub" style="margin:0">${anda?`Andam até ${esc(vdT(vdFimSeg(vdEd.V,P)))}.`:"Ainda não andam: só aparecem na paragem."} Teclas ← → (0,2 s); com Shift, 1 s.</p>
+      ${cur.t>P.t+.01||anda?`<button class="btn sm ghost danger" id="vf-fim">⏹ Acabar aqui (${cur.t>P.t+.01?esc(vdT(cur.t)):"não andam"})</button>`:""}`;
+      bx.querySelector("#vf-dur").oninput=e=>{ P.dur=+e.target.value; bx.querySelector("#vf-dur").previousElementSibling.textContent=vdDurTxt(P.dur); vdGrava(); };
+      bx.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>ir(cur.t+(+b.dataset.d)));
+      bx.querySelector("#vf-tl").onchange=e=>ir(+e.target.value);
+      /* acabar aqui: as peças ficam onde estão neste momento e desaparecem daqui para a frente */
+      const fb=bx.querySelector("#vf-fim"); if(fb) confirma2(fb,"Acabar?",()=>{ imGravaJa(); const t=cur.t;
+        Object.keys(P.mov).forEach(k=>{ const tr=P.mov[k], g=vdGeoEm(tr,t); vdPoeKey(tr,t,g); P.mov[k]=tr.filter(e=>e[0]<=t+.01); });
+        P.ate=t; vdGrava(); imFicha(); toast(t>P.t+.01?`As peças andam até ${vdT(t)}.`:"As peças já não andam."); }); }}); }
 function vdPainel(){ const bx=$("vd-pz"); if(!bx||!vdEd) return; const V=vdEd.V;
-  bx.innerHTML=V.pausas.length?V.pausas.map(p=>`<div class="vd-pzl" data-id="${esc(p.id)}"><button class="btn sm" data-a="ir" title="Ir para a paragem">⏸ ${esc(vdT(p.t))}</button>
-      <label class="f" style="flex:1;min-width:110px">Parado ${p.dur} s<input type="range" data-a="dur" min="1" max="15" step="0.5" value="${p.dur}"></label>
+  const parado=d=>d>0?`Parado ${d} s`:"Sem parar";
+  bx.innerHTML=V.pausas.length?V.pausas.map(p=>`<div class="vd-pzl" data-id="${esc(p.id)}"><button class="btn sm" data-a="ir" title="Ir para a paragem">⏸ ${esc(vdT(p.t))}${p.ate>p.t+.02?` → ${esc(vdT(vdFimSeg(V,p)))}`:""}</button>
+      <label class="f" style="flex:1;min-width:110px"><span>${parado(p.dur)}</span><input type="range" data-a="dur" min="0" max="15" step="0.5" value="${p.dur}"></label>
       <button class="btn sm" data-a="des">✎ Desenhar${p.pecas.length?` (${p.pecas.length})`:""}</button><button class="btn sm ghost danger" data-a="del" aria-label="Apagar paragem">🗑</button></div>`).join("")
     :`<p class="sub" style="margin:0">Ainda não há paragens. Põe o vídeo no momento certo (▶, a barra, ou as setas ← → imagem a imagem) e toca em <b>⏸ Parar aqui e desenhar</b>.</p>`;
   bx.querySelectorAll(".vd-pzl").forEach(L=>{ const p=V.pausas.find(x=>x.id===L.dataset.id);
     L.querySelector('[data-a="ir"]').onclick=()=>{ vdPara(); vdEd.v.currentTime=p.t; };
     L.querySelector('[data-a="des"]').onclick=()=>vdDesenha(p.id);
-    const r=L.querySelector('[data-a="dur"]'); r.oninput=()=>{ p.dur=+r.value; r.parentNode.firstChild.textContent=`Parado ${p.dur} s`; vdGrava(); };
+    const r=L.querySelector('[data-a="dur"]'); r.oninput=()=>{ p.dur=+r.value; r.previousElementSibling.textContent=parado(p.dur); vdGrava(); };
     confirma2(L.querySelector('[data-a="del"]'),"Apagar?",()=>{ const i=V.pausas.indexOf(p), antes=clone(p); V.pausas.splice(i,1); vdGrava(); vdPainel(); vdDesenhaOv();
       toast("Paragem apagada",()=>{ if(!vdEd) return; V.pausas.push(antes); V.pausas.sort((a,b)=>a.t-b.t); vdGrava(); vdPainel(); vdDesenhaOv(); }); }); }); }
 function vdFicha(){ const bx=$("vd-ficha"); if(!bx||!vdEd) return; const V=vdEd.V;
@@ -169,7 +239,7 @@ function vdFicha(){ const bx=$("vd-ficha"); if(!bx||!vdEd) return; const V=vdEd.
    A imagem grava-se em tempo real (o clip toca sem som e cada imagem é copiada); nas paragens repete-se a imagem parada com o desenho.
    O som é o do clip, com silêncio nas paragens. Qualidade ajustada para o ficheiro caber nos 20 MiB do armazenamento do link. */
 const vdPar=n=>Math.max(2,Math.round(n/2)*2);
-async function vdCamadaImg(V,p,W,H){ const sv=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${V.fonte.w} ${V.fonte.h}">${imCamadaSvg(vdPseudoI(V,p),"vx_",false,-1)}</svg>`;
+async function vdCamadaImg(V,p,W,H,t){ const sv=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${V.fonte.w} ${V.fonte.h}">${imCamadaSvg(vdPseudoI(V,p,t),"vx_",false,-1)}</svg>`;
   const u=URL.createObjectURL(new Blob([sv],{type:"image/svg+xml"})); try{ const im=new Image(); await new Promise((ok,ko)=>{ im.onload=ok; im.onerror=ko; im.src=u; }); await im.decode?.().catch(()=>{}); return im; } finally{ setTimeout(()=>URL.revokeObjectURL(u),2000); } }
 /* som de saída: o do clip, cortado nas paragens com silêncio; blocos de 0,1 s */
 async function vdLeSom(F,sr){ try{ const ac=new (window.AudioContext||window.webkitAudioContext)({sampleRate:sr}); const A=await ac.decodeAudioData(await F.arrayBuffer()); ac.close?.(); return A.length?A:null; }catch(e){ return null; } }   // clip sem som → null
@@ -199,16 +269,22 @@ async function vdExporta(){ if(!vdEd) return; vdPara(); vdGravaJa(); const V=vdE
     let erro=null; const enc=new VideoEncoder({output:(c,m)=>muxer.addVideoChunk(c,m),error:e=>{ erro=e; }}); enc.configure(cfg);
     if(temSom){ const aenc=new AudioEncoder({output:(c,m)=>muxer.addAudioChunk(c,m),error:e=>{ erro=e; }}); aenc.configure({codec:"mp4a.40.2",sampleRate:sr,numberOfChannels:nc,bitrate:128000});
       await vdSom(A,V,aenc,nc,sr); await aenc.flush(); aenc.close(); if(erro) throw erro; }
-    pr.txt("A preparar os desenhos…"); const cam={}; for(const p of V.pausas) if(p.pecas.length) cam[p.id]=await vdCamadaImg(V,p,W,H);
+    pr.txt("A preparar os desenhos…"); const cam={}; for(const p of V.pausas) if(p.pecas.length&&p.dur>0) cam[p.id]=await vdCamadaImg(V,p,W,H,p.t);
     const cv=document.createElement("canvas"); cv.width=W; cv.height=H; const cx=cv.getContext("2d"), dF=Math.round(1e6/VD_FPS);
     let ult=-1, nFr=0; const meteFr=(ts,key)=>{ if(ts<=ult) return; const fr=new VideoFrame(cv,{timestamp:ts,duration:dF}); enc.encode(fr,{keyFrame:key||nFr%(VD_FPS*2)===0}); fr.close(); ult=ts; nFr++; if(erro) throw erro; };
-    const seek=t=>new Promise(ok=>{ v.addEventListener("seeked",ok,{once:true}); v.currentTime=t; });
+    const seek=t=>Math.abs(v.currentTime-t)<1e-4&&!v.seeking?Promise.resolve():new Promise(ok=>{ v.addEventListener("seeked",ok,{once:true}); v.currentTime=t; });
     const pausas=V.pausas.slice(); let off=0, i=0;
-    const congela=async p=>{ await seek(p.t); cx.drawImage(v,0,0,W,H); if(cam[p.id]) cx.drawImage(cam[p.id],0,0,W,H); const n=Math.max(1,Math.round(p.dur*VD_FPS)), t0=Math.round(p.t*1e6)+off;
+    /* V2: o troço em que as peças andam grava-se imagem a imagem (procura cada imagem e desenha as peças nesse momento) */
+    const segue=async p=>{ const fim=vdFimSeg(V,p); if(!(fim>p.t+.02)) return;
+      for(let j=0;!cancelou;j++){ const m=p.t+j/VD_FPS; if(m>=fim-1e-3) break; await seek(m); cx.drawImage(v,0,0,W,H);
+        if(p.pecas.length) cx.drawImage(await vdCamadaImg(V,p,W,H,m),0,0,W,H); meteFr(Math.round(m*1e6)+off); pr.pct((m+off/1e6)/tot);
+        while(enc.encodeQueueSize>8) await new Promise(ok=>setTimeout(ok,4)); }
+      await seek(fim); };
+    const congela=async p=>{ if(!(p.dur>0)) return; await seek(p.t); cx.drawImage(v,0,0,W,H); if(cam[p.id]) cx.drawImage(cam[p.id],0,0,W,H); const n=Math.max(1,Math.round(p.dur*VD_FPS)), t0=Math.round(p.t*1e6)+off;
       for(let f=0;f<n;f++){ meteFr(t0+f*dF,f===0); while(enc.encodeQueueSize>8) await new Promise(ok=>setTimeout(ok,4)); } off+=Math.round(p.dur*1e6); };
     v.muted=true; await seek(0);
     while(!cancelou){
-      while(i<pausas.length&&pausas[i].t<=v.currentTime+.5/VD_FPS){ await congela(pausas[i]); i++; }
+      while(!cancelou&&i<pausas.length&&pausas[i].t<=v.currentTime+.5/VD_FPS){ await congela(pausas[i]); await segue(pausas[i]); i++; }
       if(v.currentTime>=V.fonte.dur-.02) break;
       const prox=pausas[i];
       /* toca até à próxima paragem (ou ao fim), copiando cada imagem que aparece */
@@ -218,7 +294,7 @@ async function vdExporta(){ if(!vdEd) return; vdPara(); vdGravaJa(); const V=vdE
           if(v.ended||m>=V.fonte.dur-.5/VD_FPS){ ok(); return; } v.requestVideoFrameCallback(cb); }catch(e){ v.pause(); ko(e); } };
         v.addEventListener("ended",()=>ok(),{once:true}); v.requestVideoFrameCallback(cb); v.play().catch(ko); });
       if(!prox) break; }
-    for(;!cancelou&&i<pausas.length;i++) await congela(pausas[i]);   // paragens no fim do clip
+    for(;!cancelou&&i<pausas.length;i++){ await congela(pausas[i]); await segue(pausas[i]); }   // paragens no fim do clip
     v.pause(); v.muted=false;
     if(cancelou){ enc.close(); toast("Gravação cancelada."); return; }
     pr.txt("A fechar o ficheiro…"); await enc.flush(); if(erro) throw erro; enc.close(); muxer.finalize();

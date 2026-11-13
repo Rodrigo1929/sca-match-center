@@ -55,7 +55,7 @@ const pontosMapa=(rs,cor)=>rs.map(x=>({x:x.x,y:x.y,...(x.x2!=null?{x2:x.x2,y2:x.
 const MAPAS_REL=new Map();
 async function mapaRel(pts,larg=1600){ const k=larg+JSON.stringify(pts); if(MAPAS_REL.has(k)) return MAPAS_REL.get(k); if(MAPAS_REL.size>60) MAPAS_REL.clear();
   const p=svgParaJpeg(campoAnalise(null,pts),await cssFontes(),larg); MAPAS_REL.set(k,p); p.catch(()=>MAPAS_REL.delete(k)); return p; }
-async function emblemaAdvRel(G){ try{ if(typeof listaJogosCal!=="function") return null; const j=listaJogosCal().find(c=>c.data===G.data&&c.emblema); return j?await blobDataUrl(srcImagem(j.emblema)):null; }catch(e){ return null; } }
+async function emblemaAdvRel(G){ try{ if(typeof listaJogosCal!=="function") return null; const j=listaJogosCal().find(c=>c.data===G.data&&emblemaJogo(c)); return j?await blobDataUrl(srcImagem(emblemaJogo(j))):null; }catch(e){ return null; } }
 function acoesJogador(D,k){ const rs=D.nos.filter(x=>String(x.j)===String(k)), tipos=[...new Set(rs.map(x=>x.ac+"|"+(x.tipo||"")))];
   return {rs,linhas:tipos.map(t=>{ const [ac,tp]=t.split("|"), q=rs.filter(x=>x.ac===ac&&(x.tipo||"")===tp); return [(q[0].acao||acaoDe(ac).nome)+(tp?" ("+tp+")":""),q.filter(x=>x.parte===1).length,q.filter(x=>x.parte===2).length,q.length]; })}; }
 function cartoesDe(D,k){ return D.ev.filter(e=>String(e.n)===String(k)&&(e.tipo==="amarelo"||e.tipo==="vermelho")).map(e=>(e.tipo==="amarelo"?"Amarelo ":"Vermelho ")+(e.min?String(e.min).split(":")[0]+"'":"")); }

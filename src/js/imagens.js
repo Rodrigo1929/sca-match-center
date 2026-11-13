@@ -30,7 +30,7 @@ function imCircChao(K,x,y,a,b,W,H){ const g=imAplica(K.Hi,[x,y]), out=[];
   for(let k=0;k<40;k++){ const t=k/40*2*Math.PI, q=imAplicaW(K.H,[g[0]+a*Math.cos(t),g[1]+b*Math.sin(t)]); if(!(q[2]>0)||!isFinite(q[0])||Math.abs(q[0])>4||Math.abs(q[1])>4) return null; out.push([q[0]*W,q[1]*H]); }
   return out; }
 function normPecaIm(p){ if(!p||typeof p!=="object") return null; const f=v=>imNum(v,.5,-.5,1.5), s=v=>String(v??""), tr=IM_TRACO.some(x=>x[0]===p.tr)||p.tr==="onda"?p.tr:"cheio";
-  const b={t:p.t,c:imCor(p.c),w:imNum(p.w,1,.3,4),tr}, chao=p.chao?{chao:true}:{};
+  const b={t:p.t,c:imCor(p.c),w:imNum(p.w,1,.3,4),tr,...(/^[\w-]{1,24}$/.test(p.pk||"")?{pk:p.pk}:{})}, chao=p.chao?{chao:true}:{};
   if(p.t==="seta") return {...b,x1:f(p.x1),y1:f(p.y1),x2:f(p.x2),y2:f(p.y2),...(p.qx!=null?{qx:f(p.qx),qy:f(p.qy)}:{}),pt:["fim","duas","nenhuma"].includes(p.pt)?p.pt:"fim"};
   if(p.t==="circ") return {...b,x:f(p.x),y:f(p.y),rx:imNum(p.rx,.04,.005,.6),ry:imNum(p.ry,.015,.003,.6),op:imNum(p.op,.15,0,.8),...(p.chao?{chao:true,m:imNum(p.m,1.2,.2,20)}:{})};
   if(p.t==="lig"){ const pts=(Array.isArray(p.pts)?p.pts:[]).map(q=>[f(q[0]),f(q[1])]).slice(0,12); return pts.length?{...b,pts,op:imNum(p.op,.2,0,.8),rx:imNum(p.rx,.03,.005,.2),...(p.chao?{chao:true,m:imNum(p.m,1.2,.2,20)}:{})}:null; }
@@ -240,6 +240,7 @@ function abreEditorImagem(id,op){ const I0=op?op.I:imagens[id]; if(!I0) return; 
   document.addEventListener("keydown",imTecla); imDesenha(); imPainel(); imFicha(); }
 function fechaEditorImagem(){ if(!imEd) return; imFechaMenu(); if(imEd.lig!=null) imFimLig(true); imGravaJa(); document.removeEventListener("keydown",imTecla); const r=$("imed-root"); if(r) r.innerHTML=""; const op=imEd.op; imEd=null; if(op) op.fecha(); else renderImagens(); }
 function imTecla(e){ if(!imEd||/INPUT|TEXTAREA|SELECT/.test((e.target&&e.target.tagName)||"")) return;
+  if(imEd.op&&imEd.op.tecla&&imEd.op.tecla(e)){ e.preventDefault(); return; }   // v117: ← → mudam o tempo do vídeo
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"){ e.preventDefault(); e.shiftKey?imRefaz():imDesfaz(); }
   else if((e.key==="Delete"||e.key==="Backspace")&&imEd.sel>=0){ e.preventDefault(); imApagaSel(); }
   else if((e.key==="Enter"||e.key==="Escape")&&imEd.lig!=null){ e.preventDefault(); imFimLig(); }
@@ -258,7 +259,7 @@ function imGrava(){ clearTimeout(imEd.tSave); imEd.tSave=setTimeout(imGravaJa,50
 /* o editor trabalha sempre no mesmo objeto (os botões do painel e da ficha guardam-no); grava-se uma cópia normalizada */
 function imGravaJa(){ if(!imEd) return; clearTimeout(imEd.tSave); if(imEd.op){ imEd.op.grava(clone(imEd.I)); return; } const N=gravaImagem(imEd.I); imEd.I.alteradoEm=N.alteradoEm; imEd.I.alteradoPor=N.alteradoPor; }
 function imApagaSel(){ const i=imEd.sel; if(i<0) return; imMarca(); imEd.I.pecas.splice(i,1); imEd.sel=-1; imDesenha(); imPainel(); imGrava(); }
-function imDuplica(){ const I=imEd.I, P=I.pecas[imEd.sel]; if(!P) return; imMarca(); const C=clone(P); imMove(C,clone(P),.02,.02); I.pecas.push(normPecaIm(C)); imEd.sel=I.pecas.length-1; imDesenha(); imPainel(); imGrava(); }
+function imDuplica(){ const I=imEd.I, P=I.pecas[imEd.sel]; if(!P) return; imMarca(); const C=clone(P); delete C.pk; imMove(C,clone(P),.02,.02); I.pecas.push(normPecaIm(C)); imEd.sel=I.pecas.length-1; imDesenha(); imPainel(); imGrava(); }
 /* v114.2.1: menu da peça — botão direito do rato, ou toque longo no iPad (pedido do Rodrigo) */
 function imMenu(i,x,y){ imFechaMenu(); if(!imEd||!imEd.I.pecas[i]) return; imEd.sel=i; imDesenha(); imPainel();
   const m=document.createElement("div"); m.className="immenu"; m.id="ie-menu"; m.setAttribute("role","menu");

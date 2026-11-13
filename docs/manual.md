@@ -107,6 +107,8 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 
 ## Local dos jogos e Jogo a partir do calendário (v106)
 - No jogo do calendário (Treino › Semana › ✎ ou + Jogo): **Campo**, **Localidade** e **Ilha**. Ao escrever o adversário de um jogo fora, o campo vem do último jogo com ele; em casa, do último jogo em casa. Ilha fora da Terceira = viagem (destino = ilha).
+- **Símbolo do adversário** (v116): carrega-se **uma vez por clube**, na folha de qualquer jogo com esse adversário, e aparece em todos os jogos com o mesmo clube (PDF do plano semanal, relatório para jogadores). Para trocar o símbolo de um clube, carrega o novo num dos jogos.
+- **Campo neutro** (v116): na folha do jogo, **Em casa · Fora · Campo neutro**. No neutro escolhe se na ficha de jogo ficamos **Visitado** ou **Visitante**, e a deslocação como num jogo fora. Aparece «vs Adversário (neutro)», a **verde** nos planos (cor provisória; muda-se em Micro › ⚙ Padrão MD › Blocos).
 - No separador **Jogo**, **📅 Do calendário**: toca no jogo e a app preenche adversário, data, hora, prova, jornada, local, casa / fora e competição (regras das substituições). Muda o que quiseres à mão depois. Se já houver outro adversário, pede 2 toques; o onze e os quadros não mudam.
 - Competições: Campeonato dos Açores, Taça AFAH (e Supertaça), **Taça Ilha Terceira** (7 suplentes, 7 substituições, 3 paragens), **Taça de Portugal** (9 suplentes, 5 substituições, 3 paragens), Outra / amigável (jogos-treino).
 
@@ -240,11 +242,13 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 ## Quadro Dinâmico · Pôr quem está a jogar (v113.10)
 - O Quadro Dinâmico fica com os jogadores com que foi gravado. Depois de substituições no jogo, o botão **🔁 Pôr quem está a jogar** (barra de cima, a vermelho com o nº de bolinhas a mudar) passa para as bolinhas quem está em campo, sem mexer nas posições. Quando está certo mostra «✓ Com quem está a jogar». Engano: **Desfazer**.
 
-## Pós-jogo › Vídeos (v115)
+## Pós-jogo › Vídeos (v115–v117)
 - **Edita-se no computador** (Chrome ou Edge). No iPad vês os vídeos finais (▶ Ver).
 - **+ Novo vídeo:** escolhe ou arrasta um clip MP4 do lance. O clip fica no computador; a app guarda as paragens, os desenhos e o vídeo final. Para voltar a editar (neste ou noutro PC), a app pede o mesmo clip.
 - **Paragens:** põe o vídeo no momento (▶, a barra, ou ← → imagem a imagem) e toca em **⏸ Parar aqui e desenhar**. A imagem parada abre no editor de imagens, com as mesmas peças (círculos, ligação, luz, zona, 📐 Campo…). Na ficha da paragem escolhes quanto tempo o vídeo fica parado (1–15 s). As paragens aparecem como marcas na barra; no painel mudas o tempo, voltas a desenhar ou apagas.
-- **▶ Tocar** mostra o vídeo como vai ficar: para em cada paragem com o desenho e continua.
+- **Peças que andam com os jogadores** (v117): no desenho da paragem, avança o clip com **◀ 1 s · ◀ 0,2 · 0,2 ▶ · 1 s ▶**, a barra ou as teclas **← →** (Shift = 1 s). A imagem muda para esse momento; arrasta cada peça para onde o jogador está (fica um ponto-chave). Entre pontos-chave a app faz o movimento. Mudar a cor ou o tamanho vale para todo o movimento. As peças andam até ao último ponto-chave; **⏹ Acabar aqui** muda esse fim. Se a câmara mexer, ajusta também o 📐 Campo noutros momentos.
+- **Sem parar:** põe o Tempo parado a 0 para o vídeo não parar; as peças só aparecem e andam.
+- **▶ Tocar** mostra o vídeo como vai ficar: para em cada paragem com o desenho, continua, e as peças andam.
 - **⬇ Gravar vídeo final:** grava o MP4 com o som do clip (em silêncio nas paragens). Demora mais ou menos o tempo do clip; deixa a janela à frente. Fica na app (até 20 MB) e também é descarregado para o computador. Se mudares as paragens depois, a lista avisa para gravar de novo.
 
 ## Pós-jogo › Imagens (v114)

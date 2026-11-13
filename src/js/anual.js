@@ -65,11 +65,11 @@ const isoAMD=(a,m,d)=>`${a}-${String(m+1).padStart(2,"0")}-${String(d).padStart(
 /* no Ano (v105.2, pedido do Rodrigo): o fundo diz a prova e a letra diz casa (vermelho) ou fora (azul claro).
    Fundos escuros para as letras se lerem; a Supertaça AFAH vai com a Taça AFAH. */
 const PROVAS_ANUAL=[["CFA","Campeonato dos Açores","#1F3864"],["TAT","Taça AFAH","#404040"],["TIT","Taça Ilha Terceira","#38761D"],["JT","Jogo-treino","#C55A11"],["TP","Taça de Portugal","#7030A0"]];
-const LETRA_CASA="#FF6B6B", LETRA_FORA="#B3CEFB";
+const LETRA_CASA="#FF6B6B", LETRA_FORA="#B3CEFB", LETRA_NEUTRO="#8FE3A8";   // v116: neutro a verde claro (provisório)
 const corJogoAnual=j=>{ const s=siglaJogo(j)==="ST"?"TAT":siglaJogo(j); return (PROVAS_ANUAL.find(p=>p[0]===s)||[0,0,"#595959"])[2]; };
-const letraJogoAnual=j=>j.casa?LETRA_CASA:LETRA_FORA;
+const letraJogoAnual=j=>j.neutro?LETRA_NEUTRO:j.casa?LETRA_CASA:LETRA_FORA;
 function celulaAnual(d){ const js=jogosDoDia(d), A=anual[d];
-  if(js.length){ const j=js[0]; return {cls:j.casa?"jogo":"jogo fora",cor:corJogoAnual(j),letra:letraJogoAnual(j),txt:siglaJogo(j),tit:`${j.casa?"vs":"@"} ${j.adversario||"?"}${j.hora?" · "+j.hora:""} · ${[j.competicao,j.jornada].filter(Boolean).join(" · ")}`}; }
+  if(js.length){ const j=js[0]; return {cls:emCasa(j)?"jogo":"jogo fora",cor:corJogoAnual(j),letra:letraJogoAnual(j),txt:siglaJogo(j),tit:`${vsJogo(j)} ${j.adversario||"?"}${neutroTxt(j)}${j.hora?" · "+j.hora:""} · ${[j.competicao,j.jornada].filter(Boolean).join(" · ")}`}; }
   if(!A) return {cls:"",txt:"",tit:"Livre"};
   if(A.tipo==="ut") return {cls:"ut",txt:String(A.ut||"UT"),tit:`UT ${A.ut||""}${A.txt?" · "+A.txt:""}`};
   if(A.tipo==="folga") return {cls:"folga",txt:"F",tit:"Folga"+(A.txt?" · "+A.txt:"")};
@@ -99,7 +99,7 @@ function renderAnualCorpo(){ const bx=$("u-corpo"), bar=$("u-bar"), tg=$("u-tag"
   bx.querySelectorAll("td.pan-p").forEach(td=>td.onclick=()=>folhaDiaAnual(td.dataset.d));
   bx.querySelectorAll("td.pan-mi").forEach(td=>td.onclick=()=>folhaMicro(td.dataset.mi)); }
 function renderAnualPainel(){ const pn=$("u-panel"), ini=`${aEpoca}-07-01`, fim=`${aEpoca+1}-06-30`, ds=Object.values(anual).filter(a=>a.id>=ini&&a.id<=fim), js=listaJogosCal().filter(j=>j.data>=ini&&j.data<=fim);
-  pn.innerHTML=`<header><h2>Resumo da época</h2><p class="sub">${ds.filter(a=>a.tipo==="ut").length} UT planeadas · ${ds.filter(a=>a.tipo==="folga").length} folgas · ${js.length} jogos (${js.filter(j=>j.casa).length} em casa)</p></header>
+  pn.innerHTML=`<header><h2>Resumo da época</h2><p class="sub">${ds.filter(a=>a.tipo==="ut").length} UT planeadas · ${ds.filter(a=>a.tipo==="folga").length} folgas · ${js.length} jogos (${js.filter(emCasa).length} em casa${js.some(j=>j.neutro)?`, ${js.filter(j=>j.neutro).length} em campo neutro`:""})</p></header>
     <div class="add"><h3>Legenda</h3><div class="pan-leg">${PERIODOS.map(([k,n,c])=>`<span><i style="background:${c}"></i>${n}</span>`).join("")}
       ${PROVAS_ANUAL.map(([s,n,c])=>`<span><i style="background:${c}"></i>${n}</span>`).join("")}<span><b style="color:${LETRA_CASA};background:#404040;padding:0 4px;border-radius:3px">ABC</b>&nbsp;em casa</span><span><b style="color:${LETRA_FORA};background:#404040;padding:0 4px;border-radius:3px">ABC</b>&nbsp;fora</span><span><i class="folga"></i>Folga</span><span><i class="pausa"></i>Interrupção</span></div>
       <p class="sub" style="margin:6px 0 0">TAT Taça AFAH · CFA Campeonato dos Açores · TIT Taça Ilha Terceira · TP Taça de Portugal · ST Supertaça · JT jogo-treino</p></div>`; }
@@ -144,7 +144,7 @@ async function pdfAnual(){ await carregaJsPdf(false);
   /* legenda e mesociclos */
   y+=12; let x=X0; const leg=[...PERIODOS.map(([k,n,c])=>[n,c]),...PROVAS_ANUAL.map(([s,n,c])=>[n,c]),["Folga","#FCE4A0"],["Interrupção","#FF7D7D"]];
   leg.forEach(([n,c])=>{ box(x,y-4,9,9,rgb(c)); T(n,x+13,y+.5,7.5,{al:"left"}); doc.setFont(F,"normal"); doc.setFontSize(7.5); x+=doc.getTextWidth(F==="RC"?n:pdfTxt(n))+26; });
-  y+=13; x=X0; [["Em casa",LETRA_CASA],["Fora",LETRA_FORA]].forEach(([n,c])=>{ box(x,y-5,26,11,[64,64,64],null); T("CFA",x+13,y+.5,7,{b:1,c:rgb(c)}); T(n,x+30,y+.5,7.5,{al:"left"}); x+=70; });
+  y+=13; x=X0; [["Em casa",LETRA_CASA],["Fora",LETRA_FORA],["Neutro",LETRA_NEUTRO]].forEach(([n,c])=>{ box(x,y-5,26,11,[64,64,64],null); T("CFA",x+13,y+.5,7,{b:1,c:rgb(c)}); T(n,x+30,y+.5,7.5,{al:"left"}); x+=70; });
   T("TAT Taça AFAH · CFA Campeonato dos Açores · TIT Taça Ilha Terceira · TP Taça de Portugal · ST Supertaça AFAH · JT jogo-treino",x+6,y+.5,7,{al:"left",c:[110,106,98]});
   if(ms.length){ y+=14; const cw=W0/Math.min(4,ms.length);
     ms.forEach((c,n)=>{ const cx=X0+(n%4)*cw, cy=y+Math.floor(n/4)*12; box(cx,cy-4.5,14,9,rgb(corPeriodo(c.periodo))); T(c.n||"–",cx+7,cy,6.5,{b:1});
@@ -158,7 +158,7 @@ async function pdfAnual(){ await carregaJsPdf(false);
   linha(cols.map(c=>c[0]),INK,BR,1);
   if(!js.length){ T("Sem jogos no calendário desta época.",X0+W0/2,y+20,10); }
   js.forEach((j,n)=>{ const dt=new Date(j.data+"T12:00");
-    linha([`${DIAS_AB[dt.getDay()]} ${dt.toLocaleDateString("pt-PT")}`,j.hora||"",j.casa?"CASA":"FORA",j.adversario||"A definir",j.competicao,j.jornada,localJogo(j)||(j.casa?"":j.destino)],n%2?[246,244,240]:BR,INK,0,rgb(corJogo(j))); });
+    linha([`${DIAS_AB[dt.getDay()]} ${dt.toLocaleDateString("pt-PT")}`,j.hora||"",j.neutro?"NEUTRO":j.casa?"CASA":"FORA",j.adversario||"A definir",j.competicao,j.jornada,localJogo(j)||(emCasa(j)?"":j.destino)],n%2?[246,244,240]:BR,INK,0,rgb(corJogo(j))); });
   const n=doc.getNumberOfPages(); for(let p=1;p<=n;p++){ doc.setPage(p); T(`SC Angrense · Planeamento anual ${aEpoca}/${aEpoca+1} · actualizado a ${atual} · ${p}/${n}`,PW/2,583,7,{c:[128,128,128]}); }
   return doc; }
 async function guardaPdfAnual(botao){ if(botao) botao.disabled=true; toast("A gerar o PDF do planeamento anual…");
@@ -171,7 +171,7 @@ function folhaDiaAnual(d){ const A=anual[d], js=jogosDoDia(d), M=microDe(d), Me=
   const sug=A&&A.ut?A.ut:ultimaUTAnual(d)+1, x=new Date(d+"T12:00");
   folha(`<h3>${DIAS_SEM[(x.getDay()+6)%7].toLowerCase()}, ${x.getDate()} ${MESES_PT[x.getMonth()].toLowerCase()} ${x.getFullYear()}</h3>
     <p class="sub" style="margin:0">${[M?"Microciclo "+M.n:"",Me?"Mesociclo "+Me.n+" · "+((PERIODOS.find(p=>p[0]===Me.periodo)||[])[1]||"").toLowerCase():"",mdAuto(d)].filter(Boolean).join(" · ")||"Sem ciclo marcado"}</p>
-    ${js.length?`<ul class="evl">${js.map(j=>`<li><span style="flex:1">${j.casa?"vs":"@"} ${esc(j.adversario||"?")}${j.hora?" · "+esc(j.hora):""} · ${esc([j.competicao,j.jornada].filter(Boolean).join(" · "))}</span><button class="btn sm ghost" data-jc="${esc(j.id)}">✎</button></li>`).join("")}</ul>`:""}
+    ${js.length?`<ul class="evl">${js.map(j=>`<li><span style="flex:1">${vsJogo(j)} ${esc(j.adversario||"?")}${neutroTxt(j)}${j.hora?" · "+esc(j.hora):""} · ${esc([j.competicao,j.jornada].filter(Boolean).join(" · "))}</span><button class="btn sm ghost" data-jc="${esc(j.id)}">✎</button></li>`).join("")}</ul>`:""}
     <div class="seg" id="ad-t">${TIPOS_DIA.map(([k,n])=>`<button data-k="${k}">${n}</button>`).join("")}</div>
     <label class="f" id="ad-nb">UT nº<input type="text" id="ad-n" inputmode="numeric" value="${sug}"></label>
     <label class="f" id="ad-xb">Texto<input type="text" id="ad-x" value="${esc(A?A.txt:"")}" placeholder="Ex.: Estágio · Interrupção de Natal · Apresentação"></label>

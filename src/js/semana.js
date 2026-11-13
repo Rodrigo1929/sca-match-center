@@ -44,17 +44,27 @@ function normSemana(d){ const s=v=>String(v??"").trim(), ini=/^\d{4}-\d{2}-\d{2}
 function normJogoCal(d){ const s=v=>String(v??"").trim(), im=d.emblema, casa=d.casa!==false;
   return {id:s(d.id)||uId("j"),data:/^\d{4}-\d{2}-\d{2}$/.test(s(d.data))?s(d.data):isoDia(new Date()),hora:horaOk(d.hora),adversario:s(d.adversario),casa,
     competicao:s(d.competicao),jornada:s(d.jornada),local:s(d.local),localidade:s(d.localidade),ilha:ILHAS.includes(s(d.ilha))?s(d.ilha):"",nota:s(d.nota),
-    deslocacao:!casa&&!!d.deslocacao, destino:s(d.destino),     // jogo fora da ilha (viagem de ida na véspera e regresso depois do jogo)
+    ...(d.neutro?{neutro:true}:{}),                              // v116: campo neutro (casa = como ficamos na ficha de jogo: visitado / visitante)
+    deslocacao:(!casa||!!d.neutro)&&!!d.deslocacao, destino:s(d.destino),     // jogo fora da ilha (viagem de ida na véspera e regresso depois do jogo)
     ...(d.semArquivo?{semArquivo:true}:{}),                       // v113.5: «Não arquivar este» (o aviso de jogo por arquivar deixa de o mostrar)
-    ...(im&&/^[\w-]{8,64}$/.test(String(im.id||""))?{emblema:{id:String(im.id),w:Math.round(+im.w)||200,h:Math.round(+im.h)||200}}:{}),
+    ...(im&&/^[\w-]{8,64}$/.test(String(im.id||""))?{emblema:{id:String(im.id),w:Math.round(+im.w)||200,h:Math.round(+im.h)||200,...(im.em?{em:s(im.em)}:{})}}:{}),
     criadoPor:s(d.criadoPor),criadoEm:s(d.criadoEm),alteradoPor:s(d.alteradoPor),alteradoEm:s(d.alteradoEm)}; }
 Object.keys(semanas).forEach(id=>{ try{ semanas[id]=normSemana({...semanas[id],id}); }catch(e){ delete semanas[id]; } });
 Object.keys(calendario).forEach(id=>{ try{ calendario[id]=normJogoCal({...calendario[id],id}); }catch(e){ delete calendario[id]; } });
 
 /* cores dos jogos (v105, como no plano do clube): em casa vermelho claro, fora azul claro, com texto branco.
    O estágio e a viagem levam a cor do jogo a que se ligam. As cores mudam-se em Micro › ⚙ Padrão MD › Regimes e cores. */
-const COR_CASA="#F28E86", COR_FORA="#003F82";   // fora: azul do plano do clube (v113.4)
-const corJogo=j=>{ const k=j&&j.casa?"casa":"fora"; return typeof corBloco==="function"?corBloco(k):(k==="casa"?COR_CASA:COR_FORA); };
+const COR_CASA="#F28E86", COR_FORA="#003F82", COR_NEUTRO="#2E9E5B";   // fora: azul do plano do clube (v113.4); neutro: verde provisório (v116, até o treinador principal decidir)
+const corJogo=j=>{ const k=j&&j.neutro?"neutro":j&&j.casa?"casa":"fora"; return typeof corBloco==="function"?corBloco(k):({casa:COR_CASA,fora:COR_FORA,neutro:COR_NEUTRO})[k]; };
+/* v116: campo neutro — joga-se fora do nosso campo, mas escreve-se «vs» com «(neutro)» */
+const emCasa=j=>!!(j&&j.casa&&!j.neutro);
+const vsJogo=j=>j&&(j.casa||j.neutro)?"vs":"@";
+const neutroTxt=j=>j&&j.neutro?" (neutro)":"";
+/* v116: o símbolo é do clube — carregado num jogo, vale para todos os jogos com esse adversário (vale o carregado mais recentemente) */
+const ADV_GENERICO=/^(a definir|jogo-treino|adversário|\?)?$/i;
+function emblemaJogo(j){ if(!j) return null; const k=chaveEq(j.adversario); if(!k||ADV_GENERICO.test(String(j.adversario||"").trim())) return j.emblema||null;
+  const c=listaJogosCal().filter(x=>x.emblema&&chaveEq(x.adversario)===k).sort((a,b)=>String(b.emblema.em||b.alteradoEm||"").localeCompare(String(a.emblema.em||a.alteradoEm||"")))[0];
+  return c?c.emblema:j.emblema||null; }
 /* jogo a que um estágio ou viagem se liga: o do dia, o seguinte até 2 dias depois, ou o da véspera (regresso) */
 function jogoLigado(d){ const js=listaJogosCal(); return js.find(j=>j.data===d)||js.find(j=>j.data>d&&j.data<=diaMais(d,2))||js.filter(j=>j.data<d&&j.data>=diaMais(d,-1)).pop()||null; }
 const ativJogo=x=>x.tipo==="viagem"||(x.tipo==="outro"&&/est[aá]gio|concentra|viagem/i.test(x.txt||""));
@@ -69,7 +79,7 @@ const ilhaTxt=i=>!i?"":["Madeira","Continente"].includes(i)?i:"Ilha "+i;
 const campoLocal=j=>[j.local,j.localidade].filter(Boolean).join(" - ");
 const localJogo=j=>{ const c=campoLocal(j); return c&&j.ilha?`${c} (${ilhaTxt(j.ilha)})`:c||ilhaTxt(j.ilha); };
 /* o campo do último jogo com esse adversário (fora) ou do último jogo em casa */
-function ultimoLocal(adv,casa,semId){ const k=chaveEq(adv); return listaJogosCal().filter(j=>j.id!==semId&&j.casa===casa&&(j.local||j.localidade||j.ilha)&&(casa||chaveEq(j.adversario)===k)).pop()||null; }
+function ultimoLocal(adv,casa,semId){ const k=chaveEq(adv); return listaJogosCal().filter(j=>j.id!==semId&&!j.neutro&&j.casa===casa&&(j.local||j.localidade||j.ilha)&&(casa||chaveEq(j.adversario)===k)).pop()||null; }
 const localCurto=l=>String(l||"").replace(/Angra do Hero[ií]smo/i,"A.H.");
 const atividades=S=>Object.entries(S.dias).flatMap(([d,z])=>[...z.manha,...z.tarde].map(x=>({d,x})));
 /* UT do mesmo número de treino (o plano costuma ser feito antes de a UT existir) */
@@ -136,7 +146,7 @@ function linhasAtividade(x){ if(x.tipo==="folga") return [{t:"FOLGA",s:12,b:1}];
   return L; }
 function linhasJogo(j,ov){ const L=[];
   if(ov&&ov.conc) L.push({t:"CONCENTRAÇÃO:",s:7.5},{t:ov.conc,s:8,b:1}); if(ov&&ov.local) L.push({t:ov.local.toUpperCase(),s:7.5}); if(L.length) L.push({gap:5});
-  L.push({t:"VS",s:9,b:1},{t:(j.adversario||"Adversário").toUpperCase(),s:10,b:1}); if(j.hora) L.push({t:horaPdf(j.hora),s:9,b:1});
+  L.push({t:"VS",s:9,b:1},{t:(j.adversario||"Adversário").toUpperCase(),s:10,b:1}); if(j.neutro) L.push({t:"CAMPO NEUTRO",s:7.5,b:1}); if(j.hora) L.push({t:horaPdf(j.hora),s:9,b:1});
   if(j.jornada) L.push({t:j.jornada.toUpperCase(),s:7.5}); if(j.competicao) L.push({t:j.competicao.toUpperCase(),s:7.5});
   if(ov&&ov.txt) L.push({gap:4},{t:ov.txt.toUpperCase(),s:7.5,b:1});
   return L; }
@@ -153,7 +163,7 @@ function renderSemana(){ const ls=listaSemanas(); let S=semanas[sCur]||ls.find(x
   renderSemNav(ls,S); renderSemCorpo(S); renderSemPainel(S); }
 function renderSemNav(ls,S){ const nav=$("u-nav");
   nav.innerHTML=modoUTHtml()+`<button class="newl" id="s-nova">+ Nova semana</button><div class="grp"><h3>Planos semanais</h3><ul>${ls.length?ls.map(x=>{ const fim=diaMais(x.inicio,6), jg=listaJogosCal().filter(j=>j.data>=x.inicio&&j.data<=fim);
-    return `<li><button data-id="${esc(x.id)}" aria-current="${!!S&&x.id===S.id}"><span class="n">${x.numero||"–"}</span><span class="m-nm">${esc(dataCurta(x.inicio))} a ${esc(dataCurta(fim))}<small>${esc(jg.length?jg.map(j=>(j.casa?"vs ":"@ ")+(j.adversario||"?")).join(" · "):"sem jogo")}</small></span></button></li>`; }).join(""):`<li><span class="m-nada">Ainda sem planos</span></li>`}</ul></div>`;
+    return `<li><button data-id="${esc(x.id)}" aria-current="${!!S&&x.id===S.id}"><span class="n">${x.numero||"–"}</span><span class="m-nm">${esc(dataCurta(x.inicio))} a ${esc(dataCurta(fim))}<small>${esc(jg.length?jg.map(j=>vsJogo(j)+" "+(j.adversario||"?")+neutroTxt(j)).join(" · "):"sem jogo")}</small></span></button></li>`; }).join(""):`<li><span class="m-nada">Ainda sem planos</span></li>`}</ul></div>`;
   ligaModoUT(nav); $("s-nova").onclick=novaSemana;
   nav.querySelectorAll("button[data-id]").forEach(b=>{ b.onclick=()=>{ sCur=b.dataset.id; renderUT(); };
     b.oncontextmenu=e=>{ const X=semanas[b.dataset.id]; if(X) menuContexto(e,[[`🗑 Apagar semana ${X.numero||""}`,()=>apagaSemana(X.id),"perigo"]]); }; }); }
@@ -172,7 +182,7 @@ function renderSemCorpo(S){ const bx=$("u-corpo"), bar=$("u-bar"), tg=$("u-tag")
     return `<td class="ps-ses" ${at}>${xs.map(x=>{ const U=x.tipo==="treino"?utDoTreino(x.treino):null;
       const Jl=ativJogo(x)?jogoLigado(d):null;
       return `<div class="ps-it${x.tipo==="folga"?" folga":""}${Jl?" ps-jg":""}"${Jl?` style="background:${corJogo(Jl)}"`:""}>${htmlLinhasSem(linhasAtividade(x))}${U&&U.data===d?`<small class="ps-ut" title="A UT deste treino já está feita">UT${U.numero} ✓</small>`:""}</div>`; }).join("")}</td>`; };
-  const locais=(d,t)=>{ const j=jogoDoTurno(d,t); if(j) return [campoLocal(j)||(j.casa?LOCAL_CASA:j.destino)].filter(Boolean);
+  const locais=(d,t)=>{ const j=jogoDoTurno(d,t); if(j) return [campoLocal(j)||(emCasa(j)?LOCAL_CASA:j.destino)].filter(Boolean);
     return [...new Set(S.dias[d][t].filter(x=>x.tipo!=="folga"&&x.local).map(x=>x.local))]; };
   const loc=(d,t)=>{ const l=locais(d,t).join(" · "); return `<td class="ps-loc${l?"":" vazio"}">${esc(l.toUpperCase())}</td>`; };
   let h=`<div class="psem-wrap"><table class="psem"><thead><tr><th>PLANO SEMANAL</th>${DIAS_SEM.map(x=>`<th>${x}</th>`).join("")}</tr>
@@ -187,7 +197,7 @@ function renderSemCorpo(S){ const bx=$("u-corpo"), bar=$("u-bar"), tg=$("u-tag")
   bx.querySelectorAll("td[data-d]").forEach(td=>{ td.onclick=()=>folhaTurno(S.id,td.dataset.d,td.dataset.t); });
   $("s-obs").onclick=()=>folhaCabSemana(S.id); }
 function renderSemPainel(S){ const pn=$("u-panel"), hoje=isoDia(new Date()), prox=listaJogosCal().filter(j=>j.data>=(S?S.inicio:hoje)).slice(0,8), ant=listaJogosCal().filter(j=>j.data<(S?S.inicio:hoje)).slice(-3);
-  const li=j=>`<li><span style="flex:1"><b>${esc(dataPt_(j.data).slice(0,5))}${j.hora?" · "+esc(j.hora):""}</b> · ${j.casa?"vs":"@"} ${esc(j.adversario||"?")}${j.deslocacao?" ✈":""}<br><small class="sub">${esc([j.competicao,j.jornada,localJogo(j)||(j.deslocacao&&j.destino)].filter(Boolean).join(" · "))}</small></span><button class="btn sm ghost" data-jc="${esc(j.id)}">✎</button></li>`;
+  const li=j=>`<li><span style="flex:1"><b>${esc(dataPt_(j.data).slice(0,5))}${j.hora?" · "+esc(j.hora):""}</b> · ${vsJogo(j)} ${esc(j.adversario||"?")}${neutroTxt(j)}${j.deslocacao?" ✈":""}<br><small class="sub">${esc([j.competicao,j.jornada,localJogo(j)||(j.deslocacao&&j.destino)].filter(Boolean).join(" · "))}</small></span><button class="btn sm ghost" data-jc="${esc(j.id)}">✎</button></li>`;
   pn.innerHTML=`<header><h2>Calendário de jogos</h2><p class="sub">Oficiais e jogos-treino. Entram no plano no dia do jogo; ✈ = fora da ilha (viagem na véspera e regresso depois do jogo).</p></header>
     <div class="add"><h3>Próximos jogos</h3>${prox.length?`<ul class="evl">${prox.map(li).join("")}</ul>`:`<p class="sub" style="margin:0">Sem jogos marcados.</p>`}<button class="btn sm" id="s-jn">+ Jogo</button></div>
     ${ant.length?`<div class="add"><h3>Últimos jogos</h3><ul class="evl">${ant.reverse().map(li).join("")}</ul></div>`:""}`;
@@ -198,7 +208,7 @@ function renderSemPainel(S){ const pn=$("u-panel"), hoje=isoDia(new Date()), pro
 function folhaTurno(sid,d,t){ const S=semanas[sid]; if(!S) return; const D=S.dias[d], ix=diasDaSemana(S.inicio).indexOf(d), j=jogoDoTurno(d,t), qual=t==="manha"?"manhã":"tarde / noite";
   folha(`<h3>${DIAS_SEM[ix]} · dia ${diaNum(d)} · ${qual}</h3>
     ${D.folga?`<p style="margin:0"><b>Folga o dia todo.</b></p>`:""}
-    ${j?`<div class="st-jogo"><h4>Jogo: ${j.casa?"vs":"@"} ${esc(j.adversario||"?")}${j.hora?" · "+esc(j.hora):""}</h4>
+    ${j?`<div class="st-jogo"><h4>Jogo: ${vsJogo(j)} ${esc(j.adversario||"?")}${neutroTxt(j)}${j.hora?" · "+esc(j.hora):""}</h4>
       <div class="fields"><label class="f">Concentração<input type="text" id="st-jc" inputmode="numeric" value="${esc(D.jogo.conc)}" placeholder="13:30"></label>
         <label class="f">Local de concentração<input type="text" id="st-jl" list="st-ll" value="${esc(D.jogo.local)}" placeholder="Ex.: Campo Municipal A.H."></label></div>
       <label class="f">Texto no quadrado do jogo<input type="text" id="st-jt" value="${esc(D.jogo.txt)}" placeholder="Ex.: Regresso 20:30"></label>
@@ -250,12 +260,13 @@ function folhaCabSemana(sid){ const S=semanas[sid]; if(!S) return;
     const q=y=>s.querySelector(y);
     confirma2(q("#sc-del"),"Toca outra vez",()=>{ fecha(); apagaSemana(sid); });
     q("#sc-ok").onclick=()=>{ fecha(); editaSemana(sid,Z=>{ Z.numero=Math.round(+q("#sc-n").value)||0; Z.obs=q("#sc-o").value.trim(); },"Semana guardada"); }; }); }
-function folhaJogoCal(id,dataSug){ const J=id?calendario[id]:null; let casa=J?J.casa:true, desl=J?J.deslocacao:false;
+function folhaJogoCal(id,dataSug){ const J=id?calendario[id]:null; let casa=J?J.casa:true, neutro=!!(J&&J.neutro), desl=J?J.deslocacao:false;
   const comps=[...new Set([...COMPETICOES,...listaJogosCal().map(j=>j.competicao)].filter(Boolean))];
   folha(`<h3>${J?"Jogo do calendário":"Novo jogo no calendário"}</h3>
     <div class="fields"><label class="f">Data<input type="date" id="jc-d" value="${esc(J?J.data:dataSug||isoDia(new Date()))}"></label><label class="f">Hora<input type="text" id="jc-h" inputmode="numeric" value="${esc(J?J.hora:"")}" placeholder="15:00"></label></div>
     <label class="f">Adversário<input type="text" id="jc-a" value="${esc(J?J.adversario:"")}" placeholder="Ex.: Boavista CR"></label>
-    <div class="seg" id="jc-c"><button data-k="1">Em casa</button><button data-k="">Fora</button></div>
+    <div class="seg" id="jc-c"><button data-k="casa">Em casa</button><button data-k="fora">Fora</button><button data-k="neutro">Campo neutro</button></div>
+    <div id="jc-neu"><h4>Na ficha de jogo somos</h4><div class="seg" id="jc-of"><button data-k="1">Visitado</button><button data-k="">Visitante</button></div></div>
     <div id="jc-fora"><h4>Deslocação</h4><div class="seg" id="jc-v"><button data-k="">Na ilha</button><button data-k="1">Fora da ilha (viagem)</button></div>
       <label class="f" id="jc-db">Destino<input type="text" id="jc-de" value="${esc(J?J.destino:"")}" placeholder="Ex.: S. Miguel, Pico, Lisboa"></label></div>
     <div class="fields"><label class="f">Competição<input type="text" id="jc-p" list="jc-pl" value="${esc(J?J.competicao:"")}"><datalist id="jc-pl">${comps.map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label>
@@ -263,29 +274,31 @@ function folhaJogoCal(id,dataSug){ const J=id?calendario[id]:null; let casa=J?J.
     <h4>Local do jogo</h4><div class="fields"><label class="f">Campo<input type="text" id="jc-l" value="${esc(J?J.local:"")}" placeholder="Ex.: Estádio João Paulo II"></label>
       <label class="f">Localidade<input type="text" id="jc-lo" value="${esc(J?J.localidade:"")}" placeholder="Ex.: Angra do Heroísmo"></label>
       <label class="f">Ilha<select id="jc-il"><option value="">—</option>${ILHAS.map(i=>`<option${J&&J.ilha===i?" selected":""}>${esc(i)}</option>`).join("")}</select></label></div>
-    <h4>Emblema do adversário (opcional)</h4><div class="jc-emb">${J&&J.emblema?`<img alt="Emblema">`:`<span class="sub">Sem emblema</span>`}<button class="btn sm" id="jc-e" disabled>Carregar emblema</button><input type="file" id="jc-ef" accept="image/*" hidden></div><p class="sub" id="jc-st" style="margin:0"></p>
+    <h4>Símbolo do adversário (opcional)</h4><p class="sub" style="margin:0 0 4px">Carrega-se uma vez por clube: vale para todos os jogos com este adversário.</p><div class="jc-emb">${emblemaJogo(J)?`<img alt="Símbolo">`:`<span class="sub">Sem símbolo</span>`}<button class="btn sm" id="jc-e" disabled>Carregar símbolo</button><input type="file" id="jc-ef" accept="image/*" hidden></div><p class="sub" id="jc-st" style="margin:0"></p>
     <div class="actions">${J?`<button class="btn danger l" id="jc-del">Apagar jogo</button>`:""}<button class="btn" data-close>Cancelar</button><button class="btn primary" id="jc-ok">Guardar</button></div>`,async(s,fecha)=>{
-    const q=y=>s.querySelector(y), st=q("#jc-st"); let emb=J&&J.emblema?J.emblema:null;
-    const pinta=()=>{ s.querySelectorAll("#jc-c button").forEach(b=>b.setAttribute("aria-pressed",String(!!b.dataset.k===casa))); s.querySelectorAll("#jc-v button").forEach(b=>b.setAttribute("aria-pressed",String(!!b.dataset.k===desl)));
-      q("#jc-fora").hidden=casa; q("#jc-db").hidden=!desl; };
+    const q=y=>s.querySelector(y), st=q("#jc-st"); let emb=J&&J.emblema?J.emblema:null; const embClube=emblemaJogo(J);
+    const pinta=()=>{ const k=neutro?"neutro":casa?"casa":"fora"; s.querySelectorAll("#jc-c button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===k))); s.querySelectorAll("#jc-v button").forEach(b=>b.setAttribute("aria-pressed",String(!!b.dataset.k===desl)));
+      s.querySelectorAll("#jc-of button").forEach(b=>b.setAttribute("aria-pressed",String(!!b.dataset.k===casa))); q("#jc-neu").hidden=!neutro;
+      q("#jc-fora").hidden=casa&&!neutro; q("#jc-db").hidden=!desl; };
     /* campo vazio: vem do último jogo com o adversário (fora) ou do último em casa; ilha fora da Terceira = viagem */
-    const sugere=()=>{ if(q("#jc-l").value.trim()||q("#jc-lo").value.trim()) return; const U=ultimoLocal(q("#jc-a").value,casa,id); if(!U) return;
+    const sugere=()=>{ if(neutro||q("#jc-l").value.trim()||q("#jc-lo").value.trim()) return; const U=ultimoLocal(q("#jc-a").value,casa,id); if(!U) return;
       q("#jc-l").value=U.local; q("#jc-lo").value=U.localidade; q("#jc-il").value=U.ilha; ilhaMuda(); };
-    const ilhaMuda=()=>{ const i=q("#jc-il").value; if(casa||!i) return; desl=i!=="Terceira"; const de=q("#jc-de"); if(desl&&(!de.value.trim()||ILHAS.includes(de.value.trim()))) de.value=i; pinta(); };
-    s.querySelectorAll("#jc-c button").forEach(b=>b.onclick=()=>{ casa=!!b.dataset.k; pinta(); sugere(); }); s.querySelectorAll("#jc-v button").forEach(b=>b.onclick=()=>{ desl=!!b.dataset.k; pinta(); }); pinta();
+    const ilhaMuda=()=>{ const i=q("#jc-il").value; if((casa&&!neutro)||!i) return; desl=i!=="Terceira"; const de=q("#jc-de"); if(desl&&(!de.value.trim()||ILHAS.includes(de.value.trim()))) de.value=i; pinta(); };
+    s.querySelectorAll("#jc-c button").forEach(b=>b.onclick=()=>{ const k=b.dataset.k; if(k==="neutro"){ if(!neutro) casa=true; neutro=true; } else { neutro=false; casa=k==="casa"; } pinta(); sugere(); });
+    s.querySelectorAll("#jc-of button").forEach(b=>b.onclick=()=>{ casa=!!b.dataset.k; pinta(); }); s.querySelectorAll("#jc-v button").forEach(b=>b.onclick=()=>{ desl=!!b.dataset.k; pinta(); }); pinta();
     q("#jc-a").addEventListener("change",sugere); q("#jc-il").addEventListener("change",ilhaMuda); if(!J) sugere();
-    const img=q(".jc-emb img"); if(img){ img.src=srcImagem(emb); img.onerror=()=>{ img.replaceWith(Object.assign(document.createElement("span"),{className:"sub",textContent:"Emblema guardado (sem rede para o mostrar)."})); }; }
+    const img=q(".jc-emb img"); if(img){ img.src=srcImagem(embClube); img.onerror=()=>{ img.replaceWith(Object.assign(document.createElement("span"),{className:"sub",textContent:"Símbolo guardado (sem rede para o mostrar)."})); }; }
     if(q("#jc-del")) confirma2(q("#jc-del"),"Toca outra vez",()=>{ fecha(); apagaJogoCal(id); });
     q("#jc-ok").onclick=()=>{ const d=q("#jc-d").value, h=q("#jc-h").value.trim(), a=q("#jc-a").value.trim();
       if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){ toast("Escolhe a data do jogo."); return; } if(h&&!horaOk(h)){ toast("Hora que não percebo. Usa por exemplo 15:00."); return; } if(!a){ toast("Escreve o adversário."); return; }
-      fecha(); guardaJogoCal({...(J||{criadoPor:meuId||"",criadoEm:new Date().toISOString()}),id:id||uId("j"),data:d,hora:h,adversario:a,casa,deslocacao:!casa&&desl,destino:q("#jc-de").value.trim(),
+      fecha(); guardaJogoCal({...(J||{criadoPor:meuId||"",criadoEm:new Date().toISOString()}),id:id||uId("j"),data:d,hora:h,adversario:a,casa,neutro,deslocacao:(!casa||neutro)&&desl,destino:q("#jc-de").value.trim(),
         competicao:q("#jc-p").value.trim(),jornada:q("#jc-j").value.trim(),local:q("#jc-l").value.trim(),localidade:q("#jc-lo").value.trim(),ilha:q("#jc-il").value,emblema:emb||undefined});
       toast(J?"Jogo guardado":`Jogo com ${a} no calendário`); };
-    const A=await assetsEx(); if(!A){ st.textContent="Para carregar o emblema é preciso acesso de edição ao link no claude.ai."; return; }
+    const A=await assetsEx(); if(!A){ st.textContent="Para carregar o símbolo é preciso acesso de edição ao link no claude.ai."; return; }
     const be=q("#jc-e"); be.disabled=false; be.onclick=()=>q("#jc-ef").click();
-    q("#jc-ef").onchange=async()=>{ const f=q("#jc-ef").files[0]; if(!f) return; be.disabled=true; st.textContent="A enviar o emblema…";
-      try{ const {blob,w,h}=await reduzImagem(f,400,true); const r=await A.upload(blob,{type:"image/png"}); xImgUrl[r.id]=r.url; emb={id:r.id,w,h}; st.textContent="Emblema carregado · carrega em Guardar."; }
-      catch(e){ be.disabled=false; st.textContent=(e&&ERR_ASSETS[e.code])||"Não foi possível carregar o emblema."; } }; }); }
+    q("#jc-ef").onchange=async()=>{ const f=q("#jc-ef").files[0]; if(!f) return; be.disabled=true; st.textContent="A enviar o símbolo…";
+      try{ const {blob,w,h}=await reduzImagem(f,400,true); const r=await A.upload(blob,{type:"image/png"}); xImgUrl[r.id]=r.url; emb={id:r.id,w,h,em:new Date().toISOString()}; st.textContent="Símbolo carregado · carrega em Guardar (fica para todos os jogos com este clube)."; }
+      catch(e){ be.disabled=false; st.textContent=(e&&ERR_ASSETS[e.code])||"Não foi possível carregar o símbolo."; } }; }); }
 
 /* ---------- PDF: o plano semanal do clube (A4 deitado) ---------- */
 async function blobDataUrl(u){ const r=await fetch(u); if(!r.ok) throw new Error("img"); const b=await r.blob();
@@ -315,7 +328,7 @@ async function pdfSemana(S){
   box(X0,y,W0,hD,INK); T("PLANO SEMANAL",X0+cl/2,y+hD/2,8,{c:BR}); DIAS_SEM.forEach((d,i)=>T(d,xc(i)+cw/2,y+hD/2,8,{c:BR})); y+=hD;
   box(X0,y,cl,hE,BR); T(String(S.numero||"").padStart(2,"0"),X0+cl/2,y+hE/2,10,{b:1}); ds.forEach((d,i)=>{ box(xc(i),y,cw,hE,CL); T(`DIA ${diaNum(d)}`,xc(i)+cw/2,y+hE/2,8); }); y+=hE;
   /* emblemas dos adversários desta semana */
-  const emb={}; for(const j of listaJogosCal().filter(j=>j.data>=S.inicio&&j.data<=fim&&j.emblema)){ try{ emb[j.id]=await blobDataUrl(srcImagem(j.emblema)); }catch(e){} }
+  const emb={}; for(const j of listaJogosCal().filter(j=>j.data>=S.inicio&&j.data<=fim)){ const e=emblemaJogo(j); if(e) try{ emb[j.id]={e,u:await blobDataUrl(srcImagem(e))}; }catch(_){} }
   const yM=y, yLM=yM+hM, yT=yLM+hL, yLT=yT+hM;
   [["MANHÃ",yM,hM],["LOCAL",yLM,hL],["TARDE | NOITE",yT,hM],["LOCAL",yLT,hL]].forEach(([t,yy,h])=>{ box(X0,yy,cl,h,CL); T(t,X0+cl/2,yy+h/2,9,{b:1}); });
   /* linhas de texto centradas numa área; encolhem se não couberem (várias atividades no mesmo período) */
@@ -332,10 +345,10 @@ async function pdfSemana(S){
   ds.forEach((d,i)=>{ const x=xc(i), D=S.dias[d], jogos=jogosDoDia(d);
     if(D.folga&&!jogos.length){ box(x,yM,cw,hM*2+hL,FOL); "FOLGA".split("").forEach((c,k)=>T(c,x+cw/2,yM+hM-30+k*30,22,{b:1})); box(x,yLT,cw,hL,ESC); return; }
     [["manha",yM,yLM],["tarde",yT,yLT]].forEach(([t,yy,yl])=>{ const j=jogos.find(z=>turnoDoJogo(z)===t), xs=D[t];
-      if(j){ box(x,yy,cw,hM,rgbHex(corJogo(j))); let top=yy+8; if(emb[j.id]){ const e=j.emblema, r=e.w/e.h, eh=32, ew=Math.min(cw-20,eh*r); try{ doc.addImage(emb[j.id],/png/i.test(emb[j.id].slice(0,30))?"PNG":"JPEG",x+cw/2-ew/2,top,ew,eh); }catch(_){} top+=eh+4; }
+      if(j){ box(x,yy,cw,hM,rgbHex(corJogo(j))); let top=yy+8; if(emb[j.id]){ const {e,u}=emb[j.id], r=e.w/e.h, eh=32, ew=Math.min(cw-20,eh*r); try{ doc.addImage(u,/png/i.test(u.slice(0,30))?"PNG":"JPEG",x+cw/2-ew/2,top,ew,eh); }catch(_){} top+=eh+4; }
         const L=quebra([...linhasJogo(j,D.jogo),...xs.flatMap(z=>[{gap:5},...linhasAtividade(z)])]), disp=yy+hM-top-6, k=Math.min(1,disp/altura(L));
         blocoTxt(L,x+cw/2,top,disp,BR,k);
-        localPdf(campoLocal(j)||(j.casa?LOCAL_CASA:j.destino),x,yl); return; }
+        localPdf(campoLocal(j)||(emCasa(j)?LOCAL_CASA:j.destino),x,yl); return; }
       if(!xs.length){ box(x,yy,cw,hM,CINZ); box(x,yl,cw,hL,ESC); return; }
       /* cada atividade na sua faixa (a folga a amarelo) */
       const LS=xs.map(z=>quebra(linhasAtividade(z))), hs=xs.map((z,n)=>z.tipo==="folga"?30:altura(LS[n])+14), tot=hs.reduce((a,b)=>a+b,0), k=Math.min(1,hM/tot); let yA=yy;
