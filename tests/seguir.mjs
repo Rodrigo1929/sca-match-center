@@ -48,6 +48,10 @@ await pg.waitForFunction(() => vdEd && vdEd.v && vdEd.v.readyState >= 2, null, {
 const vaiPara = async (t) => { await pg.evaluate((t) => new Promise((ok) => { vdEd.v.addEventListener("seeked", ok, { once: true }); vdEd.v.currentTime = t; }), t); };
 const em = async (fx, fy) => { const b = await pg.locator(".imed-svg").boundingBox(), I = await pg.evaluate(() => ({ w: imEd.I.img.w, h: imEd.I.img.h }));
   const k = Math.min(b.width / I.w, b.height / I.h), ox = b.x + (b.width - I.w * k) / 2, oy = b.y + (b.height - I.h * k) / 2; return { x: ox + fx * I.w * k, y: oy + fy * I.h * k }; };
+// v120: uma paragem aos 2 s (1 s parada, com uma marca) já existe antes de seguir — o seguir passa por cima dela
+await vaiPara(2); await pg.click("#vd-add"); await pg.waitForSelector(".imed:not(.vded) .imed-svg"); await pg.waitForTimeout(300);
+await pg.locator("#vf-dur").fill("1"); await pg.locator("#vf-dur").dispatchEvent("input");
+await pg.click('#ie-ferr [data-f="marca"]'); await pg.mouse.click(...Object.values(await em(.15, .3))); await pg.click("#ie-ok"); await pg.waitForTimeout(400);
 const T0 = 0.5;
 await vaiPara(T0); await pg.click("#vd-add"); await pg.waitForSelector(".imed:not(.vded) .imed-svg"); await pg.waitForTimeout(300);
 await pg.locator("#vf-dur").fill("0"); await pg.locator("#vf-dur").dispatchEvent("input");
@@ -65,7 +69,24 @@ ok(r.ate > 4.3 && pior < .012, `seguiu os dois até ${r.ate} s; maior erro ${(pi
 ok(r.keys.every((n) => n >= 15), "pontos-chave criados (a cada 0,2 s) " + JSON.stringify(r.keys));
 await pg.click('.vf-nav [data-d="1"]'); await pg.click('.vf-nav [data-d="1"]'); await pg.waitForFunction(() => /0:02\.5/.test($("vf-agora").textContent)); await pg.waitForTimeout(200);
 await pg.screenshot({ path: join(cap, "sintetico-2.5s.png") });
-await pg.click("#ie-ok"); await pg.click("#vd-ok"); await pg.waitForTimeout(300);
+await pg.click("#ie-ok"); await pg.waitForTimeout(400);
+// parado na paragem dos 2 s: aparecem a marca dela e o círculo que vem a andar da paragem anterior
+await vaiPara(2); await pg.waitForTimeout(200);
+ok(await pg.evaluate(() => document.querySelectorAll("#vd-ov > g, #vd-ov > *").length >= 2 && vdCamadas(vdEd.V, 2, vdEd.V.pausas[1]).length === 2), "na paragem dos 2 s vê-se o desenho dela e o círculo que vem a andar");
+await vaiPara(3); await pg.waitForTimeout(150);
+ok(await pg.evaluate(() => vdCamadas(vdEd.V, 3).length === 1 && !!document.querySelector("#vd-ov *")), "depois da paragem dos 2 s o círculo continua a andar");
+// vídeo final: 5 s + 1 s parado; o anel amarelo está nos pés do amarelo na paragem e depois dela
+await pg.evaluate(() => { window.__up = []; window.claude = { use: async (n) => n === "assets" ? { upload: async (b) => { window.__mp4 = b; return { id: "vdteste" + Math.random().toString(36).slice(2, 10), url: URL.createObjectURL(b) }; }, delete: async () => ({}) }
+  : n === "downloads" ? { save: async () => {} } : null }; xAssets = undefined; });
+await pg.click("#vd-grav"); await pg.waitForFunction(() => !document.getElementById("vd-prog"), null, { timeout: 120000 });
+const anel = await pg.evaluate(async (alvos) => { const v = document.createElement("video"); v.muted = true; v.src = URL.createObjectURL(window.__mp4); await new Promise((ok) => { v.onloadeddata = ok; });
+  const c = document.createElement("canvas"); c.width = 1280; c.height = 720; const x = c.getContext("2d", { willReadFrequently: true }), out = [];
+  for (const [tm, fx, fy] of alvos) { await new Promise((ok) => { v.onseeked = ok; v.currentTime = tm; }); x.drawImage(v, 0, 0);
+    const cx = Math.round(fx * 1280 + .035 * 1280), cy = Math.round(fy * 720), d = x.getImageData(cx - 8, cy - 6, 16, 12).data; let n = 0;
+    for (let i = 0; i < d.length; i += 4) if (d[i] > 200 && d[i + 1] > 160 && d[i + 2] < 100) n++; out.push(n); }
+  return { dur: v.duration, n: out }; }, [[2.5, ...ecr(AM, 2)], [4.0, ...ecr(AM, 3)], [5.4, ...ecr(AM, 4.4)]]);
+ok(Math.abs(anel.dur - 6) < .3 && anel.n.every((n) => n >= 4), `MP4 com ${anel.dur.toFixed(2)} s; anel amarelo nos pés do jogador na paragem, depois dela e no fim (píxeis amarelos: ${anel.n})`);
+await pg.click("#vd-ok"); await pg.waitForTimeout(300);
 
 // clip real (capturas para ver): o 8 (branco) e o jogador de verde, aos 36 s, durante 3 s
 if (existsSync(clip)) {

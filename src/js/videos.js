@@ -54,9 +54,11 @@ function vdPoeKey(tr,t,g){ for(let i=tr.length-1;i>=0;i--) if(Math.abs(tr[i][0]-
 const vdPecasEm=(p,t)=>p.pecas.map(P=>{ const g=P.pk&&vdGeoEm(p.mov[P.pk],t); return g?normPecaIm({...P,...g}):P; }).filter(Boolean);
 const vdCalEm=(p,t)=>{ const g=vdGeoEm(p.mov.cal,t); return p.cal&&g&&g.pts?{...p.cal,pts:clone(g.pts)}:p.cal; };
 /* até onde as peças de uma paragem podem andar (a paragem seguinte ou o fim do clip) e até onde andam */
-const vdLimSeg=(V,p)=>{ const n=V.pausas.find(x=>x.t>p.t+.02); return Math.min(n?n.t:V.fonte.dur,V.fonte.dur); };
-const vdFimSeg=(V,p)=>Math.min(p.ate,vdLimSeg(V,p));
-const vdSegueEm=(V,t)=>V.pausas.filter(p=>p.ate>p.t+.02&&p.t<=t+.001&&t<vdFimSeg(V,p)).pop()||null;
+/* v120: as peças que andam já não param na paragem seguinte (pedido do Rodrigo): continuam por cima dela, no máximo até ao fim do clip */
+const vdLimSeg=V=>V.fonte.dur;
+const vdFimSeg=(V,p)=>Math.min(p.ate,V.fonte.dur);
+/* paragens com peças a andar no momento t (podem ser várias ao mesmo tempo), menos «fora» */
+const vdAndamEm=(V,t,fora)=>V.pausas.filter(p=>p!==fora&&p.ate>p.t+.02&&p.pecas.length&&p.t<=t+.001&&t<vdFimSeg(V,p));
 /* gravar o desenho feito no momento t: o que mudou de sítio nesse momento vira ponto-chave; cor, tamanho… valem para todo o movimento */
 const vdIgual=(a,b)=>typeof a==="number"&&typeof b==="number"?Math.abs(a-b)<1e-6:Array.isArray(a)&&Array.isArray(b)?a.length===b.length&&a.every((x,i)=>vdIgual(x,b[i]))
   :a&&b&&typeof a==="object"&&typeof b==="object"?Object.keys(a).join()===Object.keys(b).join()&&Object.keys(a).every(k=>vdIgual(a[k],b[k])):a===b;
@@ -247,8 +249,10 @@ function vdPoeSeguidos(P,I,alvos,t0){ const porPeca=new Map(); alvos.forEach(a=>
   if(ult>P.ate) P.ate=ult; return ult; }
 const vdPseudoI=(V,p,t)=>({img:{id:"vf",w:V.fonte.w,h:V.fonte.h},pecas:vdPecasVer(p,t),cal:vdCalVer(p,t),escuro:p.escuro,crop:null});
 /* camada no tempo t: a paragem parada, ou as peças a andar depois dela */
-function vdOv(t){ const o=$("vd-ov"); if(!o||!vdEd) return; const V=vdEd.V; let p=vdEd.congelada||(!vdEd.tocar&&vdPausaEm(t)), tt=p&&p.t; if(!p){ p=vdSegueEm(V,t); tt=t; }
-  o.innerHTML=p?imCamadaSvg(vdPseudoI(V,p,tt),"vo_",false,-1):""; }
+function vdOv(t){ const o=$("vd-ov"); if(!o||!vdEd) return; const V=vdEd.V, p=vdEd.congelada||(!vdEd.tocar&&vdPausaEm(t)), tt=p?p.t:t;
+  o.innerHTML=vdCamadas(V,tt,p).map(([q,x],i)=>imCamadaSvg(vdPseudoI(V,q,x),"vo"+i+"_",false,-1)).join(""); }
+/* o que se vê no momento t: as peças a andar (de paragens anteriores) e, por cima, o desenho da paragem «pz» se estiver parado nela */
+const vdCamadas=(V,t,pz)=>[...vdAndamEm(V,t,pz).map(q=>[q,t]),...(pz&&pz.pecas.length?[[pz,pz.t]]:[])];
 function vdDesenhaOv(){ if(!vdEd) return; vdOv(vdEd.v.currentTime); vdCtl(); }
 function vdPara(){ if(!vdEd) return; vdEd.tocar=false; clearTimeout(vdEd.tCong); vdEd.congelada=null; vdEd.v.pause(); vdDesenhaOv(); }
 function vdPasso(n){ vdPara(); const v=vdEd.v; v.currentTime=Math.max(0,Math.min(vdEd.V.fonte.dur,v.currentTime+n/VD_FPS)); }
@@ -264,7 +268,7 @@ function vdCongela(p){ vdEd.congelada=p; vdDesenhaOv(); clearTimeout(vdEd.tCong)
 /* nova paragem no sítio onde o vídeo está, e abre logo o desenho; se já houver uma ali, abre essa */
 function vdNovaPausa(){ vdPara(); const V=vdEd.V, t=Math.round(vdEd.v.currentTime*100)/100; let p=vdPausaEm(t);
   if(!p){ if(V.pausas.length>=60){ toast("Máximo de 60 paragens."); return; } const ant=V.pausas.filter(x=>x.t<t).pop();
-    p=normPausaVd({id:uId("pz"),t,dur:3,cal:ant?vdCalEm(ant,t):null}); V.pausas.push(p); V.pausas.sort((a,b)=>a.t-b.t); vdGrava(); vdPainel(); }
+    p=normPausaVd({id:uId("pz"),t,dur:3,cal:ant?vdCalVer(ant,t):null}); V.pausas.push(p); V.pausas.sort((a,b)=>a.t-b.t); vdGrava(); vdPainel(); }
   vdDesenha(p.id); }
 /* desenhar uma paragem: a imagem parada vai para o editor de imagens (as mesmas peças, a perspetiva, os menus) */
 async function vdFoto(t){ const V=vdEd.V, v=vdEd.v;
@@ -281,7 +285,7 @@ async function vdDesenha(pid){ const V=vdEd.V, p=V.pausas.find(x=>x.id===pid); i
   const seguir=async todos=>{ const P=achaP(); if(!P||!imEd||cur.ocup) return; imGravaJa(); const I=imEd.I;
     const idx=(todos?I.pecas.map((_,i)=>i):[imEd.sel]).filter(i=>i>=0&&I.pecas[i]&&VD_SEGUE.includes(I.pecas[i].t));
     if(!idx.length){ toast(todos?"Não há círculos, ligações nem luzes para seguir.":"Escolhe primeiro (com ✥ Mover) o círculo, a ligação ou a luz do jogador."); return; }
-    const fim=Math.min(vdLimSeg(vdEd.V,P),cur.t+15); if(fim<cur.t+.15){ toast("Já não há vídeo para seguir daqui (acaba aqui ou na paragem seguinte)."); return; }
+    const fim=Math.min(vdLimSeg(vdEd.V,P),cur.t+15); if(fim<cur.t+.15){ toast("Já não há vídeo para seguir daqui (é o fim do clip)."); return; }
     const bt=$("vf-segx"); cur.ocup=true; cur.parar=false; if(bt){ bt.hidden=false; bt.onclick=()=>{ cur.parar=true; }; }
     const diz=x=>{ const e=$("vf-segst"); if(e) e.textContent=x; }; let fimT=cur.t, perdidos=[];
     try{ if(!P.semCam&&await vdSegueCam(P,fim,vdEd.v,x=>diz("📷 A medir a câmara… "+vdT(x)))) vdGrava();
@@ -307,7 +311,7 @@ async function vdDesenha(pid){ const V=vdEd.V, p=V.pausas.find(x=>x.id===pid); i
     fecha:()=>{ vdPainel(); vdDesenhaOv(); },
     tecla:e=>{ if((e.key!=="ArrowLeft"&&e.key!=="ArrowRight")||imEd.drag) return false; ir(cur.t+(e.key==="ArrowRight"?1:-1)*(e.shiftKey?1:.2)); return true; },
     ficha:bx=>{ const P=achaP(); if(!P) return; const lim=vdLimSeg(vdEd.V,P), anda=P.ate>P.t+.02;
-      bx.innerHTML=`<h4>Paragem do vídeo</h4><p class="sub" style="margin:0">Aos ${esc(vdT(P.t))} do clip. O vídeo fica parado com este desenho e depois continua.</p>
+      bx.innerHTML=`<h4>Paragem do vídeo</h4><p class="sub" style="margin:0">Aos ${esc(vdT(P.t))} do clip. O vídeo fica parado com este desenho e depois continua. As peças que andam continuam por cima das paragens seguintes.</p>
       <label class="f"><span>${vdDurTxt(P.dur)}</span><input type="range" id="vf-dur" min="0" max="15" step="0.5" value="${P.dur}"></label>
       <h4>Peças que andam com os jogadores</h4>
       <p class="sub" style="margin:0">Avança o vídeo e arrasta cada peça para onde o jogador está. A app faz o movimento entre esses pontos.</p>
@@ -356,7 +360,7 @@ function vdFicha(){ const bx=$("vd-ficha"); if(!bx||!vdEd) return; const V=vdEd.
    A imagem grava-se em tempo real (o clip toca sem som e cada imagem é copiada); nas paragens repete-se a imagem parada com o desenho.
    O som é o do clip, com silêncio nas paragens. Qualidade ajustada para o ficheiro caber nos 20 MiB do armazenamento do link. */
 const vdPar=n=>Math.max(2,Math.round(n/2)*2);
-async function vdCamadaImg(V,p,W,H,t){ const sv=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${V.fonte.w} ${V.fonte.h}">${imCamadaSvg(vdPseudoI(V,p,t),"vx_",false,-1)}</svg>`;
+async function vdCamadaImg(V,L,W,H){ const sv=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${V.fonte.w} ${V.fonte.h}">${L.map(([p,t],i)=>imCamadaSvg(vdPseudoI(V,p,t),"vx"+i+"_",false,-1)).join("")}</svg>`;
   const u=URL.createObjectURL(new Blob([sv],{type:"image/svg+xml"})); try{ const im=new Image(); await new Promise((ok,ko)=>{ im.onload=ok; im.onerror=ko; im.src=u; }); await im.decode?.().catch(()=>{}); return im; } finally{ setTimeout(()=>URL.revokeObjectURL(u),2000); } }
 /* som de saída: o do clip, cortado nas paragens com silêncio; blocos de 0,1 s */
 async function vdLeSom(F,sr){ try{ const ac=new (window.AudioContext||window.webkitAudioContext)({sampleRate:sr}); const A=await ac.decodeAudioData(await F.arrayBuffer()); ac.close?.(); return A.length?A:null; }catch(e){ return null; } }   // clip sem som → null
@@ -386,24 +390,26 @@ async function vdExporta(){ if(!vdEd) return; vdPara(); vdGravaJa(); const V=vdE
     let erro=null; const enc=new VideoEncoder({output:(c,m)=>muxer.addVideoChunk(c,m),error:e=>{ erro=e; }}); enc.configure(cfg);
     if(temSom){ const aenc=new AudioEncoder({output:(c,m)=>muxer.addAudioChunk(c,m),error:e=>{ erro=e; }}); aenc.configure({codec:"mp4a.40.2",sampleRate:sr,numberOfChannels:nc,bitrate:128000});
       await vdSom(A,V,aenc,nc,sr); await aenc.flush(); aenc.close(); if(erro) throw erro; }
-    pr.txt("A preparar os desenhos…"); const cam={}; for(const p of V.pausas) if(p.pecas.length&&p.dur>0) cam[p.id]=await vdCamadaImg(V,p,W,H,p.t);
+    pr.txt("A preparar os desenhos…"); const cam={}; for(const p of V.pausas) if(p.dur>0&&vdCamadas(V,p.t,p).length) cam[p.id]=await vdCamadaImg(V,vdCamadas(V,p.t,p),W,H);
     const cv=document.createElement("canvas"); cv.width=W; cv.height=H; const cx=cv.getContext("2d"), dF=Math.round(1e6/VD_FPS);
     let ult=-1, nFr=0; const meteFr=(ts,key)=>{ if(ts<=ult) return; const fr=new VideoFrame(cv,{timestamp:ts,duration:dF}); enc.encode(fr,{keyFrame:key||nFr%(VD_FPS*2)===0}); fr.close(); ult=ts; nFr++; if(erro) throw erro; };
     const seek=t=>Math.abs(v.currentTime-t)<1e-4&&!v.seeking?Promise.resolve():new Promise(ok=>{ v.addEventListener("seeked",ok,{once:true}); v.currentTime=t; });
     const pausas=V.pausas.slice(); let off=0, i=0;
-    /* V2: o troço em que as peças andam grava-se imagem a imagem (procura cada imagem e desenha as peças nesse momento) */
-    const segue=async p=>{ const fim=vdFimSeg(V,p); if(!(fim>p.t+.02)) return;
-      for(let j=0;!cancelou;j++){ const m=p.t+j/VD_FPS; if(m>=fim-1e-3) break; await seek(m); cx.drawImage(v,0,0,W,H);
-        if(p.pecas.length) cx.drawImage(await vdCamadaImg(V,p,W,H,m),0,0,W,H); meteFr(Math.round(m*1e6)+off); pr.pct((m+off/1e6)/tot);
+    /* V2: enquanto há peças a andar (de uma ou mais paragens), grava-se imagem a imagem (procura cada imagem e desenha as peças nesse momento),
+       até não haver nada a andar ou até à paragem seguinte */
+    const segue=async ate=>{ const m0=v.currentTime; let m=m0;
+      for(let j=0;!cancelou;j++){ m=m0+j/VD_FPS; if(m>=ate-1e-3) break; const L=vdCamadas(V,m); if(!L.length) break; await seek(m); cx.drawImage(v,0,0,W,H);
+        cx.drawImage(await vdCamadaImg(V,L,W,H),0,0,W,H); meteFr(Math.round(m*1e6)+off); pr.pct((m+off/1e6)/tot);
         while(enc.encodeQueueSize>8) await new Promise(ok=>setTimeout(ok,4)); }
-      await seek(fim); };
+      if(m>m0+1e-6) await seek(Math.min(m,ate)); };
     const congela=async p=>{ if(!(p.dur>0)) return; await seek(p.t); cx.drawImage(v,0,0,W,H); if(cam[p.id]) cx.drawImage(cam[p.id],0,0,W,H); const n=Math.max(1,Math.round(p.dur*VD_FPS)), t0=Math.round(p.t*1e6)+off;
       for(let f=0;f<n;f++){ meteFr(t0+f*dF,f===0); while(enc.encodeQueueSize>8) await new Promise(ok=>setTimeout(ok,4)); } off+=Math.round(p.dur*1e6); };
     v.muted=true; await seek(0);
     while(!cancelou){
-      while(!cancelou&&i<pausas.length&&pausas[i].t<=v.currentTime+.5/VD_FPS){ await congela(pausas[i]); await segue(pausas[i]); i++; }
+      while(!cancelou&&i<pausas.length&&pausas[i].t<=v.currentTime+.5/VD_FPS){ await congela(pausas[i]); i++; }
       if(v.currentTime>=V.fonte.dur-.02) break;
       const prox=pausas[i];
+      if(vdCamadas(V,v.currentTime).length){ await segue(prox?prox.t:V.fonte.dur); continue; }
       /* toca até à próxima paragem (ou ao fim), copiando cada imagem que aparece */
       await new Promise((ok,ko)=>{ const cb=(now,meta)=>{ try{ if(cancelou){ v.pause(); ok(); return; } const m=meta.mediaTime;
           if(prox&&m>=prox.t-.5/VD_FPS){ v.pause(); ok(); return; }
@@ -411,7 +417,7 @@ async function vdExporta(){ if(!vdEd) return; vdPara(); vdGravaJa(); const V=vdE
           if(v.ended||m>=V.fonte.dur-.5/VD_FPS){ ok(); return; } v.requestVideoFrameCallback(cb); }catch(e){ v.pause(); ko(e); } };
         v.addEventListener("ended",()=>ok(),{once:true}); v.requestVideoFrameCallback(cb); v.play().catch(ko); });
       if(!prox) break; }
-    for(;!cancelou&&i<pausas.length;i++){ await congela(pausas[i]); await segue(pausas[i]); }   // paragens no fim do clip
+    for(;!cancelou&&i<pausas.length;i++) await congela(pausas[i]);   // paragens no fim do clip
     v.pause(); v.muted=false;
     if(cancelou){ enc.close(); toast("Gravação cancelada."); return; }
     pr.txt("A fechar o ficheiro…"); await enc.flush(); if(erro) throw erro; enc.close(); muxer.finalize();
