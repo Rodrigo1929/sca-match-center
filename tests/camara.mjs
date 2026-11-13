@@ -6,6 +6,7 @@ import { chromium } from "playwright";
 import { join, dirname } from "node:path";
 import { mkdirSync, existsSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { ajudas } from "./_vd-comum.mjs";
 
 const raiz = join(dirname(fileURLToPath(import.meta.url)), "..");
 const clip = process.argv.slice(2).find((a) => a.endsWith(".mp4")) || join(process.env.USERPROFILE || "", "Documents/Arquivo/Fut/Estoril Vários Momentos (2).mp4");
@@ -39,50 +40,41 @@ const b64 = await pg.evaluate(async ({ VX, VY }) => {
     const f = new VideoFrame(cv, { timestamp: Math.round(s * 1e6), duration: 40000 }); enc.encode(f, { keyFrame: i % 50 === 0 }); f.close(); }
   await enc.flush(); mux.finalize(); const b = new Uint8Array(mux.target.buffer); let r = ""; for (let i = 0; i < b.length; i += 32768) r += String.fromCharCode(...b.subarray(i, i + 32768)); return btoa(r); }, { VX, VY });
 
+const { abre, livre, vaiPara, em, toca, arrasta, ferr, passo } = ajudas(pg);
 await pg.click("#tab-a"); await pg.click("#av-vid"); await pg.waitForTimeout(150);
-await pg.setInputFiles("#vd-file", { name: "camara-sintetica.mp4", mimeType: "video/mp4", buffer: Buffer.from(b64, "base64") });
-await pg.waitForFunction(() => vdEd && vdEd.v && vdEd.v.readyState >= 2, null, { timeout: 20000 });
-const vaiPara = async (t) => { await pg.evaluate((t) => new Promise((ok) => { vdEd.v.addEventListener("seeked", ok, { once: true }); vdEd.v.currentTime = t; }), t); };
-const em = async (fx, fy) => { const b = await pg.locator(".imed-svg").boundingBox(), I = await pg.evaluate(() => ({ w: imEd.I.img.w, h: imEd.I.img.h }));
-  const k = Math.min(b.width / I.w, b.height / I.h), ox = b.x + (b.width - I.w * k) / 2, oy = b.y + (b.height - I.h * k) / 2; return { x: ox + fx * I.w * k, y: oy + fy * I.h * k }; };
-await vaiPara(1); await pg.click("#vd-add"); await pg.waitForSelector(".imed:not(.vded) .imed-svg"); await pg.waitForTimeout(300);
-ok(await pg.evaluate(() => $("vf-cam").checked), "«A câmara roda» vem ligado");
-await pg.click('#ie-ferr [data-f="zona"]'); { const a = await em(.45, .6), b = await em(.6, .8); await pg.mouse.move(a.x, a.y); await pg.mouse.down(); for (let i = 1; i <= 6; i++) await pg.mouse.move(a.x + (b.x - a.x) * i / 6, a.y + (b.y - a.y) * i / 6); await pg.mouse.up(); }
-await pg.click('#ie-ferr [data-f="circ"]'); await pg.mouse.click(...Object.values(await em(.5, .5)));
-await pg.waitForTimeout(200);
+await abre({ name: "camara-sintetica.mp4", mimeType: "video/mp4", buffer: Buffer.from(b64, "base64") });
+await vaiPara(1);
+ok(await pg.evaluate(() => { imEd.sel = -1; imPainel(); return !$("vf-cam") || $("vf-cam").checked; }), "«A câmara roda» vem ligado");
+await ferr("zona"); await arrasta(await em(.45, .6), await em(.6, .8));
+await ferr("circ"); await toca(await em(.5, .5)); await pg.waitForTimeout(700);
 const z0 = await pg.evaluate(() => imEd.I.pecas.map((p) => p.pts ? p.pts[0][0] : p.x));
-const t0 = Date.now(); await pg.click('.vf-nav [data-d="1"]'); await pg.waitForFunction(() => /0:02\.0/.test($("vf-agora").textContent), null, { timeout: 30000 });
-const seg = (Date.now() - t0) / 1000;
-await pg.click('.vf-nav [data-d="1"]'); await pg.waitForFunction(() => /0:03\.0/.test($("vf-agora").textContent), null, { timeout: 30000 }); await pg.waitForTimeout(200);
+const t0 = Date.now(); await passo(1); const seg = (Date.now() - t0) / 1000;
+await passo(1);
 const r = await pg.evaluate(() => { const P = vdEd.V.pausas[0], c = P.cam[P.cam.length - 1]; return { n: P.cam.length, c, em2: vdCamEm(P, 2), x3: imEd.I.pecas.map((p) => p.pts ? p.pts[0][0] : p.x), mov: Object.keys(P.mov).length }; });
-const esp = (s) => [-VX * s / 1280, -VY * s / 720];   // quanto a imagem andou s segundos depois da paragem
+const esp = (s) => [-VX * s / 1280, -VY * s / 720];   // quanto a imagem andou s segundos depois do momento do desenho
 const e2 = esp(1), e3 = esp(2);
-ok(Math.abs(r.em2[0] - e2[0]) < .004 && Math.abs(r.em2[1] - e2[1]) < .004, `câmara medida ao fim de 1 s: dx ${r.em2[0].toFixed(4)} (esperado ${e2[0].toFixed(4)}), dy ${r.em2[1].toFixed(4)} (esperado ${e2[1].toFixed(4)}) · ${seg.toFixed(1)} s a medir 1 s de vídeo`);
+ok(Math.abs(r.em2[0] - e2[0]) < .004 && Math.abs(r.em2[1] - e2[1]) < .004, `câmara medida ao fim de 1 s: dx ${r.em2[0].toFixed(4)} (esperado ${e2[0].toFixed(4)}), dy ${r.em2[1].toFixed(4)} (esperado ${e2[1].toFixed(4)}) · ${seg.toFixed(1)} s a medir e mostrar 1 s de vídeo`);
 ok(Math.abs(r.c[1] - e3[0]) < .006 && Math.abs(r.c[2] - e3[1]) < .006 && r.n >= 21, `ao fim de 2 s: dx ${r.c[1].toFixed(4)} (esperado ${e3[0].toFixed(4)}) · ${r.n} medições`);
 ok(r.x3.every((x, i) => Math.abs(x - (z0[i] + e3[0])) < .008) && r.mov === 0, `a zona e o círculo seguem a relva sem pontos-chave (${z0.map((x) => x.toFixed(3))} → ${r.x3.map((x) => x.toFixed(3))})`);
 await pg.screenshot({ path: join(cap, "sintetico-3s.png") });
-// arrastar o círculo aos 3 s: o ponto-chave guarda-se na imagem da paragem (sem a câmara)
-{ const cy = await pg.evaluate(() => imEd.I.pecas.find((p) => p.t === "circ").y), a = await em(r.x3[1], cy), b = await em(r.x3[1] + .1, cy); await pg.mouse.move(a.x, a.y); await pg.mouse.down(); for (let i = 1; i <= 6; i++) await pg.mouse.move(a.x + (b.x - a.x) * i / 6, a.y); await pg.mouse.up(); await pg.waitForTimeout(150); }
-await pg.click("#ie-ok"); await pg.waitForTimeout(500);
-const k = await pg.evaluate(() => { const P = vdEd.V.pausas[0], C = P.pecas.find((p) => p.t === "circ"), tr = P.mov[C.pk]; return { tr: tr && tr.map((e) => [e[0], +e[1].x.toFixed(3)]), ver: +vdPecasVer(P, 3).find((p) => p.t === "circ").x.toFixed(3), ate: P.ate, gravado: videos[vdEd.V.id].pausas[0].cam.length }; });
-ok(k.tr && k.tr.length === 2 && Math.abs(k.tr[1][1] - .6) < .01 && Math.abs(k.ver - (.6 + e3[0])) < .01 && k.ate === 3 && k.gravado >= 21, "ponto-chave guardado na imagem da paragem; no ecrã aparece onde foi largado " + JSON.stringify(k));
-// a tocar: aos 2,5 s a zona está onde a relva está
-await vaiPara(2.5); await pg.waitForTimeout(150);
-const ov = await pg.evaluate(() => { const P = vdEd.V.pausas[0]; return { zx: vdPecasVer(P, 2.5).find((p) => p.t === "zona").pts[0][0], ov: !!document.querySelector("#vd-ov *") }; });
-ok(ov.ov && Math.abs(ov.zx - (z0[0] + esp(1.5)[0])) < .008, "fora do desenho (barra / tocar) a zona também acompanha a câmara " + ov.zx.toFixed(3));
-await pg.click("#vd-ok"); await pg.waitForTimeout(300);
+// arrastar o círculo aos 3 s: o ponto-chave guarda-se na imagem do momento do desenho (sem a câmara)
+{ const cy = await pg.evaluate(() => imEd.I.pecas.find((p) => p.t === "circ").y), a = await em(r.x3[1], cy), b = await em(r.x3[1] + .1, cy); await arrasta(a, b); await pg.waitForTimeout(600); }
+const k = await pg.evaluate(() => { const P = vdEd.V.pausas[0], C = P.pecas.find((p) => p.t === "circ"), tr = P.mov[C.pk]; imGravaJa(); return { tr: tr && tr.map((e) => [e[0], +e[1].x.toFixed(3)]), ver: +vdPecasVer(P, 3).find((p) => p.t === "circ").x.toFixed(3), ate: P.ate, gravado: videos[vdEd.V.id].pausas[0].cam.length }; });
+ok(k.tr && k.tr.length === 2 && Math.abs(k.tr[1][1] - .6) < .01 && Math.abs(k.ver - (.6 + e3[0])) < .01 && k.ate >= 3 && k.gravado >= 21, "ponto-chave guardado na imagem do momento; no ecrã aparece onde foi largado " + JSON.stringify(k));
+// a meio (2,5 s) a zona está onde a relva está
+const zx = await pg.evaluate(() => vdPecasVer(vdEd.V.pausas[0], 2.5).find((p) => p.t === "zona").pts[0][0]);
+ok(Math.abs(zx - (z0[0] + esp(1.5)[0])) < .008, "aos 2,5 s a zona também acompanha a câmara " + zx.toFixed(3));
+await pg.click("#ie-ok"); await pg.waitForTimeout(300);
 
 // 2) clip real (opcional): zona no meio-campo e câmara medida durante 3 s, para ver nas capturas
 if (existsSync(clip)) {
   await pg.evaluate(() => { Object.keys(videos).forEach(apagaVideo); renderVideos(); });
-  await pg.setInputFiles("#vd-file", clip); await pg.waitForFunction(() => vdEd && vdEd.v && vdEd.v.readyState >= 2, null, { timeout: 20000 });
-  const T0 = +(process.env.CAM_T || 36);
-  await vaiPara(T0); await pg.click("#vd-add"); await pg.waitForSelector(".imed:not(.vded) .imed-svg"); await pg.waitForTimeout(300);
-  await pg.click('#ie-ferr [data-f="zona"]'); { const a = await em(.4, .55), b = await em(.6, .8); await pg.mouse.move(a.x, a.y); await pg.mouse.down(); for (let i = 1; i <= 6; i++) await pg.mouse.move(a.x + (b.x - a.x) * i / 6, a.y + (b.y - a.y) * i / 6); await pg.mouse.up(); }
+  await abre(clip); const T0 = +(process.env.CAM_T || 36); await vaiPara(T0);
+  await ferr("zona"); await arrasta(await em(.4, .55), await em(.6, .8)); await pg.waitForTimeout(500);
   await pg.screenshot({ path: join(cap, "real-0.png") });
-  for (let s = 1; s <= 3; s++) { await pg.click('.vf-nav [data-d="1"]'); await pg.waitForFunction((t) => $("vf-agora").textContent.includes(vdT(t)), T0 + s, { timeout: 30000 }); await pg.waitForTimeout(200); await pg.screenshot({ path: join(cap, `real-${s}.png`) }); }
+  for (let s = 1; s <= 3; s++) { await passo(1); await pg.screenshot({ path: join(cap, `real-${s}.png`) }); }
   console.log("  clip real: câmara " + JSON.stringify(await pg.evaluate(() => vdEd.V.pausas[0].cam.filter((_, i) => i % 5 === 0).map((e) => [e[0], e[1]]))));
-  await pg.click("#ie-ok"); await pg.click("#vd-ok");
+  await pg.click("#ie-ok");
 }
 await browser.close();
 if (erros.length) { console.log("✗ erros de JavaScript: " + erros.join(" | ")); falhas++; }

@@ -227,18 +227,24 @@ const imPadrao={seta:{c:"#FFD400",w:1,tr:"cheio",pt:"fim"},circ:{c:"#FFD400",w:1
   txt:{c:"#111111",tam:1},num:{c:"#E00000",tam:1},marca:{c:"#E00000",tam:1,k:"x"},livre:{c:"#FFD400",w:1,tr:"cheio"}};
 let imEstilo=(()=>{ try{ return {...clone(imPadrao),...JSON.parse(localStorage.getItem("sca-im-estilo")||"{}")}; }catch(e){ return clone(imPadrao); } })();
 const guardaEstiloIm=()=>{ try{ localStorage.setItem("sca-im-estilo",JSON.stringify(imEstilo)); }catch(e){} };
-/* op (v115, vídeos): editar um desenho que não é uma imagem do Pós-jogo — {I, grava(I), fecha(), ficha(caixa)}; sem PNG nem Recortar */
+/* op (v115, vídeos): editar um desenho que não é uma imagem do Pós-jogo — {I, grava(I), fecha(), ficha(caixa)}; sem PNG nem Recortar.
+   v122 (ecrã único do vídeo): op.topo (html na barra de cima), op.ferr = [principais, mais] e op.nomes, op.tempo (coluna da esquerda com barra do tempo),
+   op.monta(raiz) depois de montar, op.toque(ponto) antes das ferramentas, op.painel() sempre que o painel da peça muda */
 function abreEditorImagem(id,op){ const I0=op?op.I:imagens[id]; if(!I0) return; imEd={I:clone(I0),sel:-1,ferr:"mover",undo:[],redo:[],drag:null,tSave:null,lig:null,op:op||null};
   let r=$("imed-root"); if(!r){ r=document.createElement("div"); r.id="imed-root"; document.body.appendChild(r); }
   r.innerHTML=`<div class="imed" role="dialog" aria-label="Editor de imagem">
-    <div class="imed-top"><b class="imed-tit"></b><span class="sp"></span><button class="btn sm" id="ie-undo">↶ Desfazer</button><button class="btn sm" id="ie-redo">↷ Refazer</button><button class="btn sm" id="ie-png">⬇ PNG</button><button class="btn sm primary" id="ie-ok">✓ Concluir</button></div>
-    <div class="imed-ferr" id="ie-ferr">${IM_FERR.filter(([k])=>!(op&&k==="crop")).map(([k,t])=>`<button data-f="${k}">${t}</button>`).join("")}</div>
-    <div class="imed-corpo"><div class="imed-palco" id="ie-palco"></div><div class="imed-lado"><div id="ie-prop"></div><div id="ie-ficha"></div></div></div></div>`;
-  r.querySelectorAll("#ie-ferr button").forEach(b=>b.onclick=()=>{ if(imEd.lig!=null) imFimLig(true); const f=b.dataset.f;
+    <div class="imed-top"><b class="imed-tit"></b><span class="sp"></span>${op&&op.topo?op.topo:""}<button class="btn sm" id="ie-undo">↶ Desfazer</button><button class="btn sm" id="ie-redo">↷ Refazer</button><button class="btn sm" id="ie-png">⬇ PNG</button><button class="btn sm primary" id="ie-ok">✓ Concluir</button></div>
+    <div class="imed-ferr" id="ie-ferr">${op&&op.ferr?imBotoesFerr(op):IM_FERR.filter(([k])=>!(op&&k==="crop")).map(([k,t])=>`<button data-f="${k}">${t}</button>`).join("")}</div>
+    <div class="imed-corpo">${op&&op.tempo?`<div class="imed-esq"><div class="imed-palco" id="ie-palco"></div><div id="ie-tempo"></div></div>`:`<div class="imed-palco" id="ie-palco"></div>`}<div class="imed-lado"><div id="ie-prop"></div><div id="ie-ficha"></div></div></div></div>`;
+  const bm=r.querySelector("#ie-ferr [data-mais]"); if(bm) bm.onclick=()=>{ const ab=bm.getAttribute("aria-expanded")!=="true"; bm.setAttribute("aria-expanded",String(ab)); r.querySelectorAll("#ie-ferr .ie-mais").forEach(x=>x.hidden=!ab); };
+  r.querySelectorAll("#ie-ferr button[data-f]").forEach(b=>b.onclick=()=>{ if(imEd.lig!=null) imFimLig(true); const f=b.dataset.f;
     if(f==="cal"&&!imEd.I.cal){ imMarca(); imEd.I.cal={pts:[[.3,.3],[.7,.3],[.85,.75],[.15,.75]],ref:"ga",rod:false}; imGrava(); }
     imEd.ferr=f; imEd.sel=-1; imDesenha(); imPainel(); });
   $("ie-undo").onclick=imDesfaz; $("ie-redo").onclick=imRefaz; $("ie-png").onclick=e=>{ imGravaJa(); exportaPngImagem(imagens[imEd.I.id],e.currentTarget); }; $("ie-png").hidden=!!op; $("ie-ok").onclick=fechaEditorImagem;
-  document.addEventListener("keydown",imTecla); imDesenha(); imPainel(); imFicha(); }
+  document.addEventListener("keydown",imTecla); imDesenha(); imPainel(); imFicha(); if(op&&op.monta) op.monta(r); }
+/* v122: ferramentas do editor do vídeo — as principais à vista, as outras em «⋯ Mais» */
+function imBotoesFerr(op){ const [prin,mais]=op.ferr, nome=k=>(op.nomes&&op.nomes[k])||(IM_FERR.find(x=>x[0]===k)||[0,k])[1];
+  return prin.map(k=>`<button data-f="${k}">${nome(k)}</button>`).join("")+(mais&&mais.length?`<button data-mais aria-expanded="false" title="Mais ferramentas">⋯ Mais</button>`+mais.map(k=>`<button data-f="${k}" class="ie-mais" hidden>${nome(k)}</button>`).join(""):""); }
 function fechaEditorImagem(){ if(!imEd) return; imFechaMenu(); if(imEd.lig!=null) imFimLig(true); imGravaJa(); document.removeEventListener("keydown",imTecla); const r=$("imed-root"); if(r) r.innerHTML=""; const op=imEd.op; imEd=null; if(op) op.fecha(); else renderImagens(); }
 function imTecla(e){ if(!imEd||/INPUT|TEXTAREA|SELECT/.test((e.target&&e.target.tagName)||"")) return;
   if(imEd.op&&imEd.op.tecla&&imEd.op.tecla(e)){ e.preventDefault(); return; }   // v117: ← → mudam o tempo do vídeo
@@ -275,7 +281,7 @@ function imDesenha(){ const pal=$("ie-palco"); if(!pal||!imEd) return; const I=i
   $("ie-ferr").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.f===imEd.ferr)));
   $("imed-root").querySelector(".imed-tit").textContent=(I.titulo||"Imagem")+(I.temT?` · ${I.parte}.ª parte ${minutoReg(I)}`:"");
   let svg=pal.querySelector("svg");
-  if(!svg||svg.dataset.crop!==JSON.stringify(I.crop)){ pal.innerHTML=svgImagem(I,{uid:"ed_",ed:true,sel:imEd.sel,cal:imEd.ferr==="cal",attrs:` class="imed-svg" style="touch-action:none" preserveAspectRatio="xMidYMid meet"`}); svg=pal.querySelector("svg"); svg.dataset.crop=JSON.stringify(I.crop); imLigaPalco(svg); }
+  if(!svg||svg.dataset.crop!==JSON.stringify(I.crop)){ const fundo=pal.querySelector(".ie-fundo"); pal.innerHTML=svgImagem(I,{uid:"ed_",ed:true,sel:imEd.sel,cal:imEd.ferr==="cal",attrs:` class="imed-svg" style="touch-action:none" preserveAspectRatio="xMidYMid meet"`}); if(fundo) pal.prepend(fundo); svg=pal.querySelector("svg"); svg.dataset.crop=JSON.stringify(I.crop); imLigaPalco(svg); }
   else svg.querySelector(".im-ov").innerHTML=imCamadaSvg(I,"ed_",true,imEd.sel,imEd.ferr==="cal");
   if(imEd.drag&&imEd.drag.crop){ const c=imEd.drag.crop, W=I.img.w, H=I.img.h; svg.querySelector(".im-ov").insertAdjacentHTML("beforeend",`<rect x="${imR(c.x*W)}" y="${imR(c.y*H)}" width="${imR(c.w*W)}" height="${imR(c.h*H)}" fill="rgba(255,255,255,.15)" stroke="#FFFFFF" stroke-width="${imR(W*.003)}" stroke-dasharray="${imR(W*.01)} ${imR(W*.006)}"/>`); }
   $("ie-undo").disabled=!imEd.undo.length; $("ie-redo").disabled=!imEd.redo.length; }
@@ -294,6 +300,7 @@ function imMaisPerto(e,pt,i0){ const I=imEd.I, W=I.img.w, H=I.img.h, is=[...new 
   return is.reduce((b,i)=>dist(I.pecas[i])<dist(I.pecas[b])?i:b,is[0]); }
 function imLigaPalco(svg){
   svg.addEventListener("pointerdown",e=>{ if(!imEd||e.button===2) return; e.preventDefault(); const I=imEd.I, pt=imPt(svg,e), alvo=e.target.closest("[data-h],[data-i]"), f=imEd.ferr, K=imK(I);
+    if(imEd.op&&imEd.op.toque&&imEd.op.toque(pt,e)) return;
     /* depois de criar uma peça volta ao Mover; com Ctrl carregado fica na mesma ferramenta (pedido do Rodrigo) */
     const fica=e.ctrlKey||e.metaKey, D={x0:e.clientX,y0:e.clientY,p0:pt,mov:false,antes:imFoto(),fica};
     if(f==="lig"){ const L=imEd.lig!=null&&I.pecas[imEd.lig]&&I.pecas[imEd.lig].t==="lig"?I.pecas[imEd.lig]:null;
@@ -384,6 +391,7 @@ function imPainel(){ const bx=$("ie-prop"); if(!bx||!imEd) return; const I=imEd.
       <p class="sub" style="margin:0">${K?`Lado 1→2: ${imR(K.A)} m · lado 2→3: ${imR(K.B)} m`:"<b>As pegas estão mal colocadas</b> (cruzadas ou em linha)."}</p>
       <div class="actions" style="justify-content:flex-start"><button class="btn sm" id="ie-rod">↻ Trocar os lados</button><button class="btn sm danger" id="ie-semcal">Tirar perspetiva</button><button class="btn sm primary" id="ie-calok">✓ Feito</button></div>`;
   else if(f==="crop") h+=`<h4>Recortar</h4><p class="sub" style="margin:0">Arrasta na imagem para escolher a parte que fica.</p>`;
+  else if(imEd.op&&imEd.op.tempo) h+=`<h4>Momento ${esc(vdT(imEd.op.agora?imEd.op.agora():0))}</h4>`;   // v122: no ecrã do vídeo a ajuda está no painel de baixo
   else h+=`<h4>Editar</h4><p class="sub" style="margin:0">Escolhe uma ferramenta em cima e toca ou arrasta na imagem. Depois de criares uma peça volta ao <b>✥ Mover</b>; com <b>Ctrl</b> carregado ficas na mesma ferramenta para fazer várias. Com <b>✥ Mover</b>, toca numa peça para a escolher, arrasta-a, e usa as pegas (brancas e dourada) para mudar o tamanho, a forma ou a curva.</p>`;
   if(I.pecas.some(p=>p.t==="luz")) h+=`<label class="f">Escurecer à volta das luzes<input type="range" id="ie-esc" min="0" max="0.8" step="0.05" value="${I.escuro}"></label>`;
   if(I.crop) h+=`<button class="btn sm" id="ie-semcrop">⛶ Sem recorte</button>`;
@@ -422,7 +430,8 @@ function imPainel(){ const bx=$("ie-prop"); if(!bx||!imEd) return; const I=imEd.
   if(q("#ie-baixo")) q("#ie-baixo").onclick=()=>{ if(i<=0) return; imMarca(); I.pecas.splice(i,1); I.pecas.unshift(P); imEd.sel=0; imDesenha(); imGrava(); };
   if(q("#ie-del")) q("#ie-del").onclick=imApagaSel;
   if(q("#ie-esc")){ let m=false; q("#ie-esc").oninput=e=>{ if(!m){ imMarca(); m=true; } I.escuro=+e.target.value; imDesenha(); imGrava(); }; q("#ie-esc").onchange=()=>{ m=false; }; }
-  if(q("#ie-semcrop")) q("#ie-semcrop").onclick=()=>{ imMarca(); I.crop=null; imDesenha(); imPainel(); imGrava(); }; }
+  if(q("#ie-semcrop")) q("#ie-semcrop").onclick=()=>{ imMarca(); I.crop=null; imDesenha(); imPainel(); imGrava(); };
+  if(imEd.op&&imEd.op.painel) imEd.op.painel(); }
 
 /* ficha da imagem: título, descrição, momento do jogo, jogadores, princípios */
 function imFicha(){ const bx=$("ie-ficha"); if(!bx||!imEd) return; if(imEd.op){ bx.innerHTML=""; if(imEd.op.ficha) imEd.op.ficha(bx); return; } const I=imEd.I, regs=imRegs(I.jogo), nm=n=>imNomeJ(I.jogo,n);

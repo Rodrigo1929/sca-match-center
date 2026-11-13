@@ -865,3 +865,18 @@ table.ptempo tr.zero td{color:var(--muted)}table.ptempo tr.micro td:nth-child(2)
 #vf-tl{width:100%;margin:2px 0 6px}
 .imed-lado .chk{display:flex;gap:8px;align-items:center;min-height:40px}
 .vf-seg{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px}
+/* v122 · ecrã único do vídeo: o vídeo por baixo do desenho, barra do tempo por baixo */
+.imed-esq{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.imed-esq .imed-palco{position:relative;flex:1;min-height:0}
+.imed-palco .ie-fundo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.imed-esq .imed-svg{position:relative;z-index:1}
+.imed-palco.tocar .imed-svg{pointer-events:none}
+#ie-tempo{display:flex;flex-direction:column;gap:6px}
+#ie-tempo .vd-ctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+#ie-tempo .vd-ctl .sp{flex:1}
+#ie-tempo .btn:not(.primary){background:#24221E;color:#F2EFE8;border-color:#3A3833}
+#ie-tempo #vt-para[aria-pressed="true"]{background:#FFD400;color:#1B1A17;border-color:#FFD400}
+.vt-key{position:absolute;top:4px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#F2EFE8;pointer-events:none}
+.vt-perdi{position:absolute;top:-4px;margin-left:-9px;width:18px;height:18px;padding:0;border:0;background:none;color:#FF8A80;font-size:15px;line-height:18px;cursor:pointer}
+.vt-aviso{background:#3A2E12;color:#FFE08A;border:1px solid #8A6A1A;border-radius:8px;padding:8px 10px;font-size:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.vf-det summary{cursor:pointer;font-weight:600;padding:8px 0}
