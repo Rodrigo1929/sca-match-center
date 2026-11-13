@@ -71,6 +71,16 @@ await toca(await em(.65, .8)); await pg.locator("#ie-esc").fill("0.5"); await pg
 ok(await pg.evaluate(() => imEd.I.escuro === .5 && !!document.querySelector(".imed-svg mask")), "escurecer à volta das luzes");
 // apagar com a tecla Delete e desfazer
 await toca(await em(.8, .6)); await pg.keyboard.press("Delete"); ok((await pecas()).length === 8, "Delete apaga a peça escolhida"); await pg.keyboard.press("Control+z"); ok((await pecas()).length === 9, "Ctrl+Z repõe");
+// v114.2.1: menu da peça — botão direito (Duplicar, Apagar) e toque longo
+{ const p = await em(.8, .6); await pg.mouse.click(p.x, p.y, { button: "right" }); await pg.waitForTimeout(100);
+  ok(await pg.evaluate(() => !!$("ie-menu") && imEd.sel === 7), "botão direito numa peça abre o menu"); await pg.screenshot({ path: join(cap, "menu-peca.png") });
+  await pg.click('#ie-menu [data-a="dup"]'); ok(await pg.evaluate(() => !$("ie-menu") && imEd.I.pecas.length === 10 && imEd.I.pecas[9].t === "marca" && imEd.sel === 9), "menu › Duplicar");
+  const p2 = await pg.evaluate(() => { const b = document.querySelector('.imed-svg [data-i="9"]').getBoundingClientRect(); return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; });
+  await pg.mouse.click(p2.x, p2.y, { button: "right" }); await pg.click('#ie-menu [data-a="del"]'); ok(await pg.evaluate(() => imEd.I.pecas.length === 9 && !$("ie-menu")), "menu › Apagar");
+  await pg.mouse.click(p.x, p.y, { button: "right" }); await pg.keyboard.press("Escape"); ok(await pg.evaluate(() => !$("ie-menu")), "Esc fecha o menu");
+  const lp = await pg.evaluate(async ({ x, y }) => { const el = document.elementFromPoint(x, y), o = { pointerType: "touch", clientX: x, clientY: y, bubbles: true, isPrimary: true, pointerId: 7 };
+    el.dispatchEvent(new PointerEvent("pointerdown", o)); await new Promise((r) => setTimeout(r, 750)); const aberto = !!$("ie-menu"); window.dispatchEvent(new PointerEvent("pointerup", o)); imFechaMenu(); return aberto; }, p);
+  ok(lp, "toque longo numa peça abre o menu"); }
 
 // ficha: título, descrição, momento, jogadores
 await pg.fill("#if-t", "Pressão alta depois da perda"); await pg.fill("#if-d", "Reação à perda em 5 segundos.");

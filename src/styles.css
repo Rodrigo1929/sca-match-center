@@ -827,3 +827,8 @@ table.ptempo tr.zero td{color:var(--muted)}table.ptempo tr.micro td:nth-child(2)
 .imed-top .btn:not(.primary){background:#24221E;color:#F2EFE8;border-color:#3A3833}
 .imed-top .btn:disabled{opacity:.45}
 .imed-lado{color:var(--ink)}
+/* v114.2.1: menu da peça no editor de imagens (botão direito / toque longo) */
+.immenu{position:fixed;z-index:40;display:flex;flex-direction:column;min-width:170px;padding:4px;background:#24221E;border:1px solid #3A3833;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+.immenu button{min-height:44px;padding:0 14px;text-align:left;background:none;border:0;border-radius:8px;color:#F2EFE8;font:inherit;font-size:15px;cursor:pointer}
+.immenu button:hover,.immenu button:focus-visible{background:#3A3833}
+.immenu .perigo{color:#FF8A80}

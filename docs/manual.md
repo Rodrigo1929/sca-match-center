@@ -243,6 +243,7 @@ Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 ## Pós-jogo › Imagens (v114)
 - **Nova imagem:** tira um print do vídeo e cola-o na vista Imagens (Ctrl+V), arrasta o ficheiro para lá ou toca em «+ Nova imagem» (no iPad, escolhe das fotografias). Abre logo o editor.
 - **Peças** (barra de cima): Seta, Círculo, Luz, Zona, Texto, Nº, Marca, Caneta e Recortar. Cada peça é um só material: escolhe-a com **✥ Mover** e muda no painel a cor, a espessura, o traço (cheio, tracejado, pontos, aos S na seta), as pontas, o preenchimento ou o tamanho. A última escolha fica para as peças seguintes.
+- **Menu da peça** (v114.2.1): botão direito do rato numa peça (no iPad, toque longo) abre ⧉ Duplicar e 🗑 Apagar. Esc ou tocar fora fecha.
 - **Pegas:** brancas para o tamanho ou os cantos, dourada para a curva da seta e a altura da luz. **Delete** apaga, **Ctrl+Z** desfaz.
 - **Luz:** feixe sobre o jogador; «Escurecer à volta das luzes» escurece o resto da imagem.
 - **Ficha** (painel da direita): título, descrição, momento do jogo (um lance do Pós-jogo ou parte e minuto), jogadores e princípios do Modelo de Jogo.

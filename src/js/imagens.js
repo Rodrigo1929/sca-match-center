@@ -236,11 +236,12 @@ function abreEditorImagem(id){ const I0=imagens[id]; if(!I0) return; imEd={I:clo
     imEd.ferr=f; imEd.sel=-1; imDesenha(); imPainel(); });
   $("ie-undo").onclick=imDesfaz; $("ie-redo").onclick=imRefaz; $("ie-png").onclick=e=>{ imGravaJa(); exportaPngImagem(imagens[imEd.I.id],e.currentTarget); }; $("ie-ok").onclick=fechaEditorImagem;
   document.addEventListener("keydown",imTecla); imDesenha(); imPainel(); imFicha(); }
-function fechaEditorImagem(){ if(!imEd) return; if(imEd.lig!=null) imFimLig(true); imGravaJa(); document.removeEventListener("keydown",imTecla); const r=$("imed-root"); if(r) r.innerHTML=""; imEd=null; renderImagens(); }
+function fechaEditorImagem(){ if(!imEd) return; imFechaMenu(); if(imEd.lig!=null) imFimLig(true); imGravaJa(); document.removeEventListener("keydown",imTecla); const r=$("imed-root"); if(r) r.innerHTML=""; imEd=null; renderImagens(); }
 function imTecla(e){ if(!imEd||/INPUT|TEXTAREA|SELECT/.test((e.target&&e.target.tagName)||"")) return;
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"){ e.preventDefault(); e.shiftKey?imRefaz():imDesfaz(); }
   else if((e.key==="Delete"||e.key==="Backspace")&&imEd.sel>=0){ e.preventDefault(); imApagaSel(); }
   else if((e.key==="Enter"||e.key==="Escape")&&imEd.lig!=null){ e.preventDefault(); imFimLig(); }
+  else if(e.key==="Escape"&&$("ie-menu")) imFechaMenu();
   else if(e.key==="Escape"){ imEd.sel=-1; imEd.ferr="mover"; imDesenha(); imPainel(); } }
 const imFoto=()=>JSON.stringify({pecas:imEd.I.pecas,crop:imEd.I.crop,escuro:imEd.I.escuro,cal:imEd.I.cal});
 function imMarca(){ imEd.undo.push(imFoto()); if(imEd.undo.length>80) imEd.undo.shift(); imEd.redo=[]; }
@@ -255,6 +256,17 @@ function imGrava(){ clearTimeout(imEd.tSave); imEd.tSave=setTimeout(imGravaJa,50
 /* o editor trabalha sempre no mesmo objeto (os botões do painel e da ficha guardam-no); grava-se uma cópia normalizada */
 function imGravaJa(){ if(!imEd) return; clearTimeout(imEd.tSave); const N=gravaImagem(imEd.I); imEd.I.alteradoEm=N.alteradoEm; imEd.I.alteradoPor=N.alteradoPor; }
 function imApagaSel(){ const i=imEd.sel; if(i<0) return; imMarca(); imEd.I.pecas.splice(i,1); imEd.sel=-1; imDesenha(); imPainel(); imGrava(); }
+function imDuplica(){ const I=imEd.I, P=I.pecas[imEd.sel]; if(!P) return; imMarca(); const C=clone(P); imMove(C,clone(P),.02,.02); I.pecas.push(normPecaIm(C)); imEd.sel=I.pecas.length-1; imDesenha(); imPainel(); imGrava(); }
+/* v114.2.1: menu da peça — botão direito do rato, ou toque longo no iPad (pedido do Rodrigo) */
+function imMenu(i,x,y){ imFechaMenu(); if(!imEd||!imEd.I.pecas[i]) return; imEd.sel=i; imDesenha(); imPainel();
+  const m=document.createElement("div"); m.className="immenu"; m.id="ie-menu"; m.setAttribute("role","menu");
+  m.innerHTML=`<button role="menuitem" data-a="dup">⧉ Duplicar</button><button role="menuitem" data-a="del" class="perigo">🗑 Apagar</button>`;
+  document.querySelector(".imed").appendChild(m); const r=m.getBoundingClientRect();
+  m.style.left=Math.max(8,Math.min(x,innerWidth-r.width-8))+"px"; m.style.top=Math.max(8,Math.min(y,innerHeight-r.height-8))+"px";
+  m.querySelector('[data-a="dup"]').onclick=()=>{ imFechaMenu(); imDuplica(); }; m.querySelector('[data-a="del"]').onclick=()=>{ imFechaMenu(); imApagaSel(); };
+  setTimeout(()=>document.addEventListener("pointerdown",imForaMenu,true),0); }
+function imForaMenu(e){ if(!e.target.closest("#ie-menu")) imFechaMenu(); }
+function imFechaMenu(){ const m=$("ie-menu"); if(m) m.remove(); document.removeEventListener("pointerdown",imForaMenu,true); }
 function imDesenha(){ const pal=$("ie-palco"); if(!pal||!imEd) return; const I=imEd.I;
   $("ie-ferr").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.f===imEd.ferr)));
   document.querySelector(".imed-tit").textContent=(I.titulo||"Imagem")+(I.temT?` · ${I.parte}.ª parte ${minutoReg(I)}`:"");
@@ -284,7 +296,9 @@ function imLigaPalco(svg){
       imDesenha(); imPainel(); imGrava(); return; }
     if(alvo&&alvo.dataset.h){ const [i,k]=alvo.dataset.h.split(":"); if(i==="c") Object.assign(D,{tipo:"cal",k:+k}); else Object.assign(D,{tipo:"pega",i:+i,k,orig:clone(I.pecas[+i])}); }
     else if(f==="cal") D.tipo="nada";
-    else if(f==="mover"){ if(alvo&&alvo.dataset.i!=null){ const i=+alvo.dataset.i, era=imEd.sel===i; imEd.sel=i; Object.assign(D,{tipo:"mover",i,orig:clone(I.pecas[i]),era}); } else { imEd.sel=-1; D.tipo="nada"; } }
+    else if(f==="mover"){ if(alvo&&alvo.dataset.i!=null){ const i=+alvo.dataset.i, era=imEd.sel===i; imEd.sel=i; Object.assign(D,{tipo:"mover",i,orig:clone(I.pecas[i]),era});
+        if(e.pointerType!=="mouse"){ const cx=e.clientX, cy=e.clientY; D.lp=setTimeout(()=>{ if(!D.mov&&imEd) imMenu(i,cx,cy); },550); } }
+      else { imEd.sel=-1; D.tipo="nada"; } }
     else if(f==="seta") Object.assign(D,{tipo:"criar",nova:normPecaIm({t:"seta",x1:pt.x,y1:pt.y,x2:pt.x,y2:pt.y,...clone(imEstilo.seta)})});
     else if(f==="zona"){ const z=imEstilo.zona, ch=K?{chao:true}:{}; Object.assign(D,{tipo:"criar",nova:normPecaIm(z.f==="elip"?{t:"zona",f:"elip",x:pt.x,y:pt.y,rx:.006,ry:.004,a:.3,b:.3,...clone(z),...ch}:{t:"zona",f:"poli",pts:[[pt.x,pt.y],[pt.x,pt.y],[pt.x,pt.y],[pt.x,pt.y]],...clone(z),...ch})}); }
     else if(f==="livre") Object.assign(D,{tipo:"criar",nova:{t:"livre",pts:[[pt.x,pt.y]],...clone(imEstilo.livre)}});
@@ -292,7 +306,7 @@ function imLigaPalco(svg){
     else { const p=imNova(f,pt); if(p){ imMarca(); I.pecas.push(p); imEd.sel=I.pecas.length-1; if(!fica) imEd.ferr="mover"; imDesenha(); imPainel(); imGrava(); } return; }
     if(D.tipo==="criar"){ I.pecas.push(D.nova); D.i=I.pecas.length-1; imEd.sel=D.i; }
     imEd.drag=D; imDesenha(); imPainel();
-    const mv=ev=>{ const p=imPt(svg,ev), dx=p.x-D.p0.x, dy=p.y-D.p0.y; if(Math.hypot(ev.clientX-D.x0,ev.clientY-D.y0)>5) D.mov=true; if(!D.mov) return;
+    const mv=ev=>{ const p=imPt(svg,ev), dx=p.x-D.p0.x, dy=p.y-D.p0.y; if(Math.hypot(ev.clientX-D.x0,ev.clientY-D.y0)>5){ D.mov=true; clearTimeout(D.lp); } if(!D.mov) return;
       const P=I.pecas[D.i];
       if(D.tipo==="cal"){ I.cal.pts[D.k]=[p.x,p.y]; imDesenha(); return; }
       if(D.tipo==="mover"){ if(K&&P.chao&&P.t==="zona"&&P.pts) imMoveChao(P,D.orig,K,D.p0,p); else imMove(P,D.orig,dx,dy); }
@@ -305,7 +319,7 @@ function imLigaPalco(svg){
         else P.pts=[[a.x,a.y],[p.x,a.y],[p.x,p.y],[a.x,p.y]]; }
       else if(D.tipo==="crop") D.crop={x:Math.min(D.p0.x,p.x),y:Math.min(D.p0.y,p.y),w:Math.abs(dx),h:Math.abs(dy)};
       imDesenha(); };
-    const up=()=>{ window.removeEventListener("pointermove",mv); window.removeEventListener("pointerup",up); window.removeEventListener("pointercancel",up); imEd&&(imEd.drag=null); if(!imEd) return;
+    const up=()=>{ clearTimeout(D.lp); window.removeEventListener("pointermove",mv); window.removeEventListener("pointerup",up); window.removeEventListener("pointercancel",up); imEd&&(imEd.drag=null); if(!imEd) return;
       if(D.tipo==="cal"){ if(D.mov){ imEd.undo.push(D.antes); imEd.redo=[]; imGrava(); } }
       else if(D.tipo==="criar"){ const P=I.pecas[D.i], peq=P.t==="seta"?Math.hypot(P.x2-P.x1,P.y2-P.y1)<.012:P.t==="livre"?P.pts.length<3:!D.mov;
         if(peq){ I.pecas.splice(D.i,1); imEd.sel=-1; } else { if(P.t==="livre") I.pecas[D.i]=normPecaIm(P); imEd.undo.push(D.antes); imEd.redo=[]; if(!D.fica) imEd.ferr="mover"; imGrava(); } }
@@ -313,7 +327,7 @@ function imLigaPalco(svg){
       else if(D.mov&&(D.tipo==="mover"||D.tipo==="pega")){ imEd.undo.push(D.antes); imEd.redo=[]; imGrava(); }
       imDesenha(); imPainel(); };
     window.addEventListener("pointermove",mv); window.addEventListener("pointerup",up); window.addEventListener("pointercancel",up); });
-  svg.addEventListener("contextmenu",e=>{ const a=e.target.closest("[data-i]"); if(!a) return; e.preventDefault(); imEd.sel=+a.dataset.i; imDesenha(); imPainel(); }); }
+  svg.addEventListener("contextmenu",e=>{ const a=e.target.closest("[data-i]"); if(!a) return; e.preventDefault(); if($("ie-menu")) return; imMenu(+a.dataset.i,e.clientX,e.clientY); }); }
 function imMove(P,O,dx,dy){ const m=(a,b)=>{ if(O[a]!=null) P[a]=O[a]+dx; if(O[b]!=null) P[b]=O[b]+dy; };
   if(P.t==="seta"){ m("x1","y1"); m("x2","y2"); if(O.qx!=null) m("qx","qy"); }
   else if(P.pts) P.pts=O.pts.map(q=>[q[0]+dx,q[1]+dy]);
@@ -393,7 +407,7 @@ function imPainel(){ const bx=$("ie-prop"); if(!bx||!imEd) return; const I=imEd.
   if(q("#ie-s")){ let m=false; q("#ie-s").oninput=e=>{ if(!m){ imMarca(); m=true; } P.s=e.target.value||"Texto"; imDesenha(); imGrava(); }; }
   bx.querySelectorAll("[data-jt]").forEach(b=>b.onclick=()=>{ imMarca(); const n=b.dataset.jt; P.s=`${n}. ${(imNomeJ(I.jogo,n)||"").split(" ")[0]}`.trim(); imDesenha(); imPainel(); imGrava(); });
   if(q("#ie-n")){ let m=false; q("#ie-n").oninput=e=>{ if(!m){ imMarca(); m=true; } P.n=e.target.value||"1"; imDesenha(); imGrava(); }; }
-  if(q("#ie-dup")) q("#ie-dup").onclick=()=>{ imMarca(); const C=clone(P); imMove(C,clone(P),.02,.02); I.pecas.push(normPecaIm(C)); imEd.sel=I.pecas.length-1; imDesenha(); imPainel(); imGrava(); };
+  if(q("#ie-dup")) q("#ie-dup").onclick=imDuplica;
   if(q("#ie-cima")) q("#ie-cima").onclick=()=>{ if(i>=I.pecas.length-1) return; imMarca(); I.pecas.splice(i,1); I.pecas.push(P); imEd.sel=I.pecas.length-1; imDesenha(); imGrava(); };
   if(q("#ie-baixo")) q("#ie-baixo").onclick=()=>{ if(i<=0) return; imMarca(); I.pecas.splice(i,1); I.pecas.unshift(P); imEd.sel=0; imDesenha(); imGrava(); };
   if(q("#ie-del")) q("#ie-del").onclick=imApagaSel;
