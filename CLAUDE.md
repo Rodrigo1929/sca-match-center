@@ -55,7 +55,7 @@ Os 4 scripts partilham o âmbito global: uma `function` repetida noutro script s
 - `npm run test:sem-rede` → build + abre com rede, corta a rede e gera PDF (gerador carregado ao abrir); precisa de internet; `node tests/sem-rede.mjs --ipad` no WebKit
 - `npm run test:aviso` → build + teste do aviso de jogo por arquivar; `node tests/aviso-arquivo.mjs --ipad` no WebKit
 - `npm run test:quem-joga` → build + botão «Pôr quem está a jogar» do Quadro Dinâmico; `node tests/quem-joga.mjs --ipad` no WebKit
-- `npm run test:imagens` → build + editor de imagens do Pós-jogo (carregar, peças, propriedades, pegas, desfazer, recortar, ficha, PNG, arquivar); `node tests/imagens.mjs --ipad` no WebKit
+- `npm run test:imagens` → build + editor de imagens do Pós-jogo (carregar, peças, propriedades, pegas, desfazer, recortar, perspetiva do campo, ligação, volta ao Mover/Ctrl, ficha, PNG, arquivar); `node tests/imagens.mjs --ipad` no WebKit
 - `npm run test:setas` → build + setas do editor de figuras (estilos por tipo, remate, cor por seta); `node tests/setas.mjs --ipad` no WebKit
 
 ## Publicação — regra crítica

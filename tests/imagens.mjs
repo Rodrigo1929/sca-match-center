@@ -37,7 +37,10 @@ await ferr("circ"); await toca(await em(.5, .75));
 await ferr("luz"); await toca(await em(.65, .8));
 await ferr("zona"); await arrasta(await em(.7, .2), await em(.9, .4));
 await ferr("txt"); await toca(await em(.3, .2));
-await ferr("num"); await toca(await em(.2, .3)); await toca(await em(.25, .35));
+// v114.2: depois de criar volta ao Mover; com Ctrl fica na ferramenta (2.º Nº)
+await ferr("num"); await pg.keyboard.down("Control"); await toca(await em(.2, .3)); await pg.keyboard.up("Control");
+ok(await pg.evaluate(() => imEd.ferr === "num"), "com Ctrl fica na ferramenta Nº");
+await toca(await em(.25, .35)); ok(await pg.evaluate(() => imEd.ferr === "mover"), "sem Ctrl volta ao Mover");
 await ferr("marca"); await toca(await em(.8, .6));
 await ferr("livre"); await arrasta(await em(.1, .1), await em(.3, .15), 12);
 const tp = await pecas();
@@ -82,6 +85,40 @@ ok(await pg.evaluate((n) => imEd.I.pecas[4].s.startsWith(n + "."), jn), "texto c
 await ferr("crop"); await arrasta(await em(.1, .1), await em(.8, .85));
 const cr = await pg.evaluate(() => imEd.I.crop); ok(cr && cr.w > .6 && cr.w < .75, "recortar " + JSON.stringify(cr));
 await pg.screenshot({ path: join(cap, "editor-recortado.png") });
+
+// v114.2: perspetiva do campo (📐 Campo), círculo e zona deitados na relva, Ligação de jogadores
+{ const n0 = (await pecas()).length, crop0 = await pg.evaluate(() => { const c = imEd.I.crop; imEd.I.crop = null; imDesenha(); return c; });   // em() conta sem recorte
+  await ferr("cal"); ok(await pg.evaluate(() => !!imEd.I.cal && document.querySelectorAll('.imed-svg [data-h^="c:"]').length === 4 && !!document.querySelector(".imed-svg polyline")), "📐 Campo: 4 pegas e grelha do chão");
+  // trapézio: lado de cima (longe) mais curto que o de baixo
+  const alvos = [[.35, .35], [.6, .35], [.75, .7], [.2, .7]];
+  for (let k = 0; k < 4; k++) { const h = await pg.locator(`[data-h="c:${k}"]`).boundingBox(); await arrasta({ x: h.x + h.width / 2, y: h.y + h.height / 2 }, await em(...alvos[k])); }
+  const cal = await pg.evaluate(() => ({ pts: imEd.I.cal.pts, K: !!imK(imEd.I) }));
+  ok(cal.K && Math.abs(cal.pts[2][0] - .75) < .01 && Math.abs(cal.pts[0][1] - .35) < .01, "pegas da calibração arrastadas " + JSON.stringify(cal.pts.map((q) => q.map((v) => +v.toFixed(3)))));
+  await pg.click("#ie-calok");
+  await ferr("circ"); await toca(await em(.45, .4)); const c1 = await pg.evaluate(() => { const p = imEd.I.pecas.at(-1), b = document.querySelector(`.imed-svg [data-i="${imEd.I.pecas.length - 1}"] polygon`).getBBox(); return { chao: p.chao, m: p.m, ferr: imEd.ferr, w: b.width }; });
+  await ferr("circ"); await toca(await em(.45, .65)); const c2 = await pg.evaluate(() => document.querySelector(`.imed-svg [data-i="${imEd.I.pecas.length - 1}"] polygon`).getBBox().width);
+  ok(c1.chao && c1.m === 1.2 && c1.ferr === "mover" && c2 > c1.w * 1.15, `círculo no chão: mais perto = maior (${c1.w.toFixed(0)} → ${c2.toFixed(0)} px) e volta ao Mover`);
+  await ferr("zona"); await pg.click('#ie-prop #ie-risc [data-k="1"]'); await arrasta(await em(.3, .45), await em(.55, .65));
+  const z = await pg.evaluate(() => { const p = imEd.I.pecas.at(-1); return { chao: p.chao, pts: p.pts, linhas: !!document.querySelector(`.imed-svg [data-i="${imEd.I.pecas.length - 1}"] path[clip-path]`) }; });
+  const larg = (a, b) => Math.abs(z.pts[b][0] - z.pts[a][0]);
+  ok(z.chao && z.linhas && larg(0, 1) < larg(3, 2) - .005, "zona no chão: trapézio (longe mais estreito) com riscado na relva " + JSON.stringify({ cima: larg(0, 1).toFixed(3), baixo: larg(3, 2).toFixed(3) }));
+  await pg.evaluate(() => { imEstilo.zona.risc = false; });
+  // Ligação: 4 jogadores, tocar outra vez no último acaba
+  await ferr("lig"); for (const q of [[.3, .5], [.4, .45], [.5, .5], [.6, .45]]) await toca(await em(...q));
+  ok(await pg.evaluate(() => imEd.lig != null && imEd.I.pecas.at(-1).pts.length === 4), "Ligação: 4 jogadores tocados");
+  await toca(await em(.6, .45));
+  const lg = await pg.evaluate(() => { const i = imEd.I.pecas.length - 1, p = imEd.I.pecas[i], g = document.querySelector(`.imed-svg [data-i="${i}"]`); return { t: p.t, n: p.pts.length, chao: p.chao, ferr: imEd.ferr, lig: imEd.lig, circ: g.querySelectorAll("polygon").length, mask: !!g.querySelector("mask"), pegas: document.querySelectorAll(`.imed-svg [data-h^="${i}:p"]`).length }; });
+  ok(lg.t === "lig" && lg.n === 4 && lg.chao && lg.ferr === "mover" && lg.lig === null && lg.circ >= 12 && lg.mask && lg.pegas === 4, "Ligação acaba ao tocar no último: 4 círculos, linha que não entra neles, volta ao Mover " + JSON.stringify(lg));
+  // mexer um jogador da ligação pela pega
+  const pg1 = await pg.locator(`[data-h="${(await pecas()).length - 1}:p1"]`).boundingBox(); await arrasta({ x: pg1.x + pg1.width / 2, y: pg1.y + pg1.height / 2 }, await em(.42, .58));
+  ok(await pg.evaluate(() => Math.abs(imEd.I.pecas.at(-1).pts[1][1] - .58) < .01), "pega de um jogador da ligação");
+  // Desfazer tira a perspetiva? não: tirar perspetiva e Desfazer repõe-na
+  await ferr("cal"); await pg.click("#ie-semcal"); ok(await pg.evaluate(() => imEd.I.cal === null && imEd.ferr === "mover"), "Tirar perspetiva");
+  await pg.click("#ie-undo"); ok(await pg.evaluate(() => !!imEd.I.cal), "Desfazer repõe a perspetiva");
+  await pg.screenshot({ path: join(cap, "editor-perspetiva.png") });
+  // apagar as peças da perspetiva para o resto do teste continuar com 9
+  await pg.evaluate(([n, c]) => { imEd.I.pecas.splice(n); imEd.I.cal = null; imEd.I.crop = c; imEd.sel = -1; imDesenha(); imPainel(); }, [n0, crop0]);
+  ok((await pecas()).length === 9, "peças de antes intactas"); }
 
 // PNG (print recortado + desenho)
 const png = await pg.evaluate(async () => { imGravaJa(); const cv = await canvasImagem(imagens[imEd.I.id]); return { w: cv.width, h: cv.height, cheio: cv.toDataURL().length > 20000 }; });
