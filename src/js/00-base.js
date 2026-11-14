@@ -10,16 +10,17 @@ const ESTILOS={
   destaque:{fill:"#C00000",stroke:"#FFFF00",sw:286,color:"#FFFFFF",nome:"Destaque"},
   alternativa:{fill:"#FFFFFF",stroke:"#F79646",sw:254,color:"#FF0000",nome:"Alternativa"}
 };
+/* v123: oculto = fora do separador Quadro (o Onze passa para a Palestra; os outros ficam escondidos). Os dados e o desenho ficam */
 const ESPECIAIS=[
-  {id:"onze",tipo:"JOGO",nome:"Onze Titular",fundo:"pitch",dinamico:"onze",bolas:[],legs:[],ordem:0},
+  {id:"onze",tipo:"JOGO",nome:"Onze Titular",oculto:true,fundo:"pitch",dinamico:"onze",bolas:[],legs:[],ordem:0},
   {id:"encaixe",tipo:"JOGO",nome:"Possíveis Encaixes",fundo:"pitch",dinamico:"encaixe",bolas:[],legs:[],ordem:.5},
-  {id:"intervalo",tipo:"JOGO",nome:"Indicações ao Intervalo",fundo:"pitch-full",campoV:2,semCabecalho:true,arrastavel:true,bolas:null,legs:[],ordem:1},
+  {id:"intervalo",tipo:"JOGO",nome:"Indicações ao Intervalo",oculto:true,fundo:"pitch-full",campoV:2,semCabecalho:true,arrastavel:true,bolas:null,legs:[],ordem:1},
   /* v112.6: quadro livre para falar de opções táticas — sem trocas, sem Ao vivo, sem onze, sem ligação a outros lances (as cópias também são livres) */
   {id:"livre",tipo:"JOGO",nome:"Quadro Livre",fundo:"pitch-setores",campoV:2,semCabecalho:true,arrastavel:true,livre:true,bolas:null,legs:[],ordem:1.2},
   /* v112.11: quadro dinâmico dos espaços — como o livre; as zonas calculam-se das posições do adversário */
-  {id:"espacos",tipo:"JOGO",nome:"Quadro Dinâmico",fundo:"pitch-espacos",campoV:2,semCabecalho:true,arrastavel:true,livre:true,espacos:true,bolas:null,legs:[],ordem:1.25},
-  {id:"notas",tipo:"JOGO",nome:"Notas do Jogo",fundo:"b-head",dinamico:"notas",bolas:[],legs:[],ordem:2},
-  {id:"estat",tipo:"JOGO",nome:"Estatística",fundo:"b-head",dinamico:"estat",bolas:[],legs:[],ordem:1.5}
+  {id:"espacos",tipo:"JOGO",nome:"Quadro Dinâmico",oculto:true,fundo:"pitch-espacos",campoV:2,semCabecalho:true,arrastavel:true,livre:true,espacos:true,bolas:null,legs:[],ordem:1.25},
+  {id:"notas",tipo:"JOGO",nome:"Notas do Jogo",oculto:true,fundo:"b-head",dinamico:"notas",bolas:[],legs:[],ordem:2},
+  {id:"estat",tipo:"JOGO",nome:"Estatística",oculto:true,fundo:"b-head",dinamico:"estat",bolas:[],legs:[],ordem:1.5}
 ];
 function mapaCampo(o,alvo="pitch-full"){ const a=[2740,11380,81400,63780], b=FUNDOS[alvo].campo;
   const fx=x=>Math.round(b[0]+(x-a[0])/(a[2]-a[0])*(b[2]-b[0])), fy=y=>Math.round(b[1]+(y-a[1])/(a[3]-a[1])*(b[3]-b[1]));

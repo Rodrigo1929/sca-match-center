@@ -5,6 +5,19 @@
 App da equipa técnica do SC Angrense (antes «SCA Match Center»). O link e os dados são os mesmos de sempre.
 Este manual cresce a cada entrega; cada secção diz desde que versão existe.
 
+## Palestra (v123)
+Separador para preparar e apresentar o plano de jogo à equipa, por esta ordem:
+1. **O Nosso Onze Inicial** — o onze e os suplentes do jogo (os mesmos do Jogo, do Quadro e do Ao vivo). Arrasta as bolinhas; toca numa para trocar o jogador ou a posição. **Sistema tático**: as bolinhas vão para as posições do sistema (cada titular para a sua posição ou a mais perto); depois arrastam-se à vontade. As bolas paradas não mudam. Notas opcionais (saem no PDF).
+2. **Onze Provável do Adversário** — o do separador Adversário (equipa, plantel, cores, suplentes, ⬆ Importar da Observação). Aqui escolhes o sistema, mexes nas bolinhas, escolhes os jogadores e escreves informações (saem no PDF).
+3. **COM BOLA** e 4. **SEM BOLA** — quadros animados, quantos quiseres. **+ Novo quadro**: nome, objetivo, a nossa equipa (onze do jogo ou um sistema), o adversário (onze provável do separador Adversário, um sistema ou sem) e as **zonas automáticas**. Em **✎ Editar**: + Passo seguinte copia o passo; arrastas só quem se mexe; setas (corrida, passe, condução, pressão, remate), zonas, material. **‹ ›** passam de passo a passo (› faz o movimento e para), **▶ Animar** reproduz tudo, **⏮** volta ao início. No painel: nome, objetivo, COM/SEM BOLA, ▲▼ ordem, ⧉ Duplicar, Apagar (2 toques). Ctrl+Z desfaz.
+5. **Bolas Paradas** — só os setups iniciais dos lances (posições, números, adversários e bola). São os lances do Quadro, não cópias: o que mudares no Quadro aparece aqui. «Abrir no Quadro» para ver setas e tarefas.
+
+**⛶ Apresentar a Palestra**: tudo pela ordem; → anda um passo no quadro e, no último, passa ao slide seguinte; espaço anima; deslizar no iPad muda de slide; a tinta funciona como no Quadro.
+**⬇ PDF da Palestra**: A4 horizontal, páginas numeradas — identificação do jogo, os dois onzes, cada quadro com os passos lado a lado (até 4 por página) e os setups das bolas paradas (2 por página).
+Ao **arquivar** o jogo, os quadros COM/SEM BOLA continuam para o jogo seguinte (para adaptar ao novo adversário) e fica uma cópia no jogo arquivado.
+
+**Quadro (v123):** ficam só as Bolas Paradas, os Possíveis Encaixes e o Quadro Livre. O Onze Titular passou para a Palestra; as Indicações ao Intervalo, o Quadro Dinâmico, a Estatística e as Notas do Jogo deixaram de aparecer, mas nada foi apagado (as notas continuam no separador Jogo; a TV mantém as escolhas).
+
 ## Exercícios (repositório)
 
 ### Vídeos e ligações (v93)

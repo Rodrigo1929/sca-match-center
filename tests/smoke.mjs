@@ -25,7 +25,7 @@ const erros = []; pg.on("pageerror", (e) => { const s = String(e); if (!/Fetch A
 await pg.goto(pathToFileURL(join(raiz, "dist/index.html")).href);
 await pg.waitForTimeout(800);
 
-for (const t of ["q", "j", "d", "p", "m", "x", "v", "a", "h"]) {
+for (const t of ["q", "l", "j", "d", "p", "m", "x", "v", "a", "h"]) {
   await pg.click("#tab-" + t); await pg.waitForTimeout(250);
   await pg.screenshot({ path: join(cap, `separador-${t}.png`) });
 }
@@ -33,7 +33,7 @@ for (const t of ["q", "j", "d", "p", "m", "x", "v", "a", "h"]) {
 await pg.click("#tab-q"); await pg.waitForTimeout(150);
 const setas = await (async () => { const t = () => pg.evaluate(() => $("b-title").textContent + "|" + $("b-pos").textContent);
   const a = await t(); await pg.click("#next"); const b = await t(); await pg.keyboard.press("ArrowLeft"); const c = await t(); await pg.click("#prev"); const d = await t();
-  const tot = await pg.evaluate(() => lances().length); return { a, b, c, d, tot }; })();
+  const tot = await pg.evaluate(() => lancesQuadro().length); return { a, b, c, d, tot }; })();   // v123: só os lances do separador Quadro
 if (setas.a !== setas.c || setas.a === setas.b || !setas.b.endsWith("2 / " + setas.tot) || !setas.d.endsWith(setas.tot + " / " + setas.tot))
   erros.push("Quadro: as setas ◀ ▶ (e as teclas) não passam bem de lance " + JSON.stringify(setas));
 await pg.click("#next"); await pg.waitForTimeout(100);

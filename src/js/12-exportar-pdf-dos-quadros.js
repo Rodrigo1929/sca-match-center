@@ -21,14 +21,14 @@ async function svgParaJpeg(svg,css,larg,alt){ alt=alt||Math.round(larg*H/W); con
   try{ const img=new Image(); await new Promise((ok,ko)=>{ img.onload=ok; img.onerror=()=>ko(new Error("svg")); img.src=url; }); if(img.decode) try{ await img.decode(); }catch(e){}
     const cv=document.createElement("canvas"); cv.width=larg; cv.height=alt; const cx=cv.getContext("2d"); cx.fillStyle="#fff"; cx.fillRect(0,0,cv.width,cv.height); cx.drawImage(img,0,0,cv.width,cv.height);
     return cv.toDataURL("image/jpeg",0.9); } finally { URL.revokeObjectURL(url); } }
-function folhaPdf(){ const grupos=[["JOGO","Jogo (Onze, Possíveis Encaixes, Intervalo, Notas)",false],["DEF","Defensivos",true],["OF","Ofensivos",true],["REF","Referência",true]];
+function folhaPdf(){ const grupos=[["JOGO","Jogo (Possíveis Encaixes, Quadro Livre)",false],["DEF","Defensivos",true],["OF","Ofensivos",true],["REF","Referência",true]];
   folha(`<h3>Exportar PDF</h3><p class="sub" style="margin:0">Uma página por quadro, como no modo apresentação, com as trocas e alterações atuais.</p>
     <div id="pdf-g" style="display:flex;flex-direction:column;gap:6px;max-height:52vh;overflow:auto"></div>
     <p class="sub" id="pdf-p" style="margin:0"></p>
     <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="pdf-ok">⬇ Gerar PDF</button></div>`,(s,fecha)=>{
     const box=s.querySelector("#pdf-g"), pp=s.querySelector("#pdf-p");
     const resumo=()=>{ const n=box.querySelectorAll("input.pdf-l:checked").length; pp.textContent=n?`${n} ${n===1?"quadro selecionado":"quadros selecionados"}`:"Nenhum quadro selecionado"; };
-    grupos.forEach(([t,n,on])=>{ const ls=lances().filter(l=>l.tipo===t); if(!ls.length) return;
+    grupos.forEach(([t,n,on])=>{ const ls=lancesQuadro().filter(l=>l.tipo===t); if(!ls.length) return;
       const g=document.createElement("div"); g.style.cssText="border:1px solid var(--line);border-radius:10px;background:var(--surface-2)";
       g.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px"><input type="checkbox" class="pdf-gr" style="width:20px;height:20px" aria-label="Grupo"><b style="flex:1;font-family:var(--f-display);font-size:15px"></b><button class="btn sm ghost pdf-ab" aria-expanded="false">Escolher ▾</button></div><div class="pdf-ls" hidden style="display:flex;flex-direction:column;gap:2px;padding:0 10px 8px 40px"></div>`;
       g.querySelector("b").textContent=n; const lst=g.querySelector(".pdf-ls"), gr=g.querySelector(".pdf-gr"), ab=g.querySelector(".pdf-ab");

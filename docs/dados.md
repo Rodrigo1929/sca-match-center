@@ -19,6 +19,8 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
 | `historico/{id}` | coleção | Jogos arquivados |
 | `lances/{id}` | coleção | Lances de bolas paradas editados (os de origem estão em `src/data/lances-base.json`). Desde a v108: `base` (id do lance cujas posições segue) e `soltas` (chaves das peças que ficam no seu sítio: posição no onze, `bj0`… da bola, `a0`… dos adversários) Desde a v110: `variante: true` (lance ligado que mantém os seus jogadores; sem isto, cada posição tem o jogador do slide inicial). |
 | `modelo/{id}` | coleção | Quadros do Modelo de Jogo |
+| `palestra/{id}` | coleção | Quadros COM BOLA / SEM BOLA da Palestra (v123): mesmo formato de um quadro do Modelo de Jogo (ver abaixo) mais `sec: "com"\|"sem"`, `jogo` ("atual" ou id do jogo arquivado), `desc` (objetivo), `ordem`, `espacos` (zonas automáticas), `criadoEm`, `copiaDe` (na cópia guardada ao arquivar) |
+| `palestraJogo/{jogo}` | coleção | Palestra por jogo (v123; `atual` ou id do jogo arquivado): `{sis (sistema do nosso onze escolhido na Palestra), notasOnze, notasAdv}` |
 | `exercicios/{id}` | coleção | Repositório de exercícios para as UT (ver abaixo) |
 | `uts/{id}` | coleção | Unidades de Treino (ver abaixo) |
 | `compJogos/{id}` | coleção | Jogos da competição interna (v95): `{ut, lid, serie, a, b (ids dos grupos), grA, grB (GR de cada equipa), semGR, fim, criadoEm, criadoPor}`; v110: `mais {a:[k], b:[k]}` (reforços de outra equipa só nesse jogo) e `menos {a:[k], b:[k]}` (quem saiu nesse jogo), só quando há |
@@ -48,6 +50,10 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
   passos: [{ id, nota, pos: { [pecaId]: {x,y} }, setas: [{id,t,x1,y1,x2,y2}], zonas: [{id,x,y,w,h,cor}] }] }
 ```
 Coordenadas em metros num campo de 105×68; a equipa SCA ataca da esquerda para a direita.
+v123: `espacos: true` = zonas automáticas (Construção, Ligação, Criação, Largura, Profundidade) calculadas das linhas do adversário em cada fotograma, como no Quadro Dinâmico (`zonasEspacos` com o campo em metros; GR = peça com posição GR).
+
+## Palestra (v123)
+Os onzes da Palestra não se gravam à parte: são `jogo.onze` / `jogo.suplentes` e `jogo.adv`. O sistema escolhido na Palestra muda `x`, `y` e `pos` do onze, nunca o `slot` (os lances seguem o slot). Os quadros COM/SEM BOLA (`palestra/{id}`) usam o motor do Modelo de Jogo com o id `pl:<id>` (`mLe`/`mGrava`); o título do slide é «COM BOLA – nome» (`cab`, não se grava). As bolas paradas da Palestra são os lances (`desenha` com `setup`): slides iniciais e lances com posição própria, sem os que seguem outro. Ao arquivar: cada quadro de `jogo: "atual"` ganha uma cópia com `jogo: <id do arquivo>` e `copiaDe`; `palestraJogo/atual` copia-se para `palestraJogo/<id>` e, com «começar jogo novo», as `notasAdv` do atual ficam vazias.
 
 ## Exercício (`exercicios/{id}`)
 ```

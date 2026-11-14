@@ -13,6 +13,7 @@
     <div class="status" id="status" aria-live="polite"><i></i><span>A ligar…</span></div>
     <div class="tabs" role="tablist">
       <button role="tab" id="tab-q" aria-selected="true">Quadro</button>
+      <button role="tab" id="tab-l" aria-selected="false">Palestra</button>
       <button role="tab" id="tab-j" aria-selected="false">Jogo</button>
       <button role="tab" id="tab-d" aria-selected="false">Adversário</button>
       <button role="tab" id="tab-p" aria-selected="false">Plantel</button>
@@ -254,6 +255,18 @@
         <div class="mprinc" id="m-princ" hidden></div>
       </div>
       <aside class="panel" id="m-panel"></aside>
+    </div>
+  </section>
+  <!-- v123: Palestra — onzes, COM BOLA, SEM BOLA e bolas paradas. Os quadros COM/SEM BOLA usam o editor do Modelo de Jogo, que vem para aqui enquanto estão abertos -->
+  <section id="view-l" hidden>
+    <div class="grid">
+      <nav class="lances" id="pl-nav" aria-label="Palestra"></nav>
+      <div class="board" id="pl-board">
+        <div class="boardbar"><h2 id="pl-tit">Palestra</h2><span class="tag" id="pl-tag" hidden></span><div class="sp" id="pl-bar"></div></div>
+        <div class="stage" id="pl-stage"></div>
+        <div class="hint" id="pl-hint"></div>
+      </div>
+      <aside class="panel" id="pl-panel"></aside>
     </div>
   </section>
   <section id="view-x" hidden>

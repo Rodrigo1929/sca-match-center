@@ -26,7 +26,7 @@ function copiaMatchCenter(d) { const doc = (k) => d[k] || null;
   const jogo = { ...(doc("jogo/atual") || {}), eventos: lista(colecao(d, "eventos")), subs: lista(colecao(d, "subs")), subsAdv: lista(colecao(d, "subsAdv")) };
   return { est: doc("estado/atual"), jogo, notas: doc("jogo/notas") || { itens: [] }, vivo: doc("jogo/vivo"),
     an: { ...(doc("analise/atual") || {}), regs: lista(colecao(d, "regs")) }, anCfg: doc("analise/config") || {},
-    lancesDb: colecao(d, "lances"), hist: colecao(d, "historico"), modelo: colecao(d, "modelo"), exercicios: colecao(d, "exercicios"),
+    lancesDb: colecao(d, "lances"), hist: colecao(d, "historico"), modelo: colecao(d, "modelo"), palestra: colecao(d, "palestra"), palestraJogo: colecao(d, "palestraJogo"), exercicios: colecao(d, "exercicios"),
     uts: colecao(d, "uts"), semanas: colecao(d, "semanas"), calendario: colecao(d, "calendario"), anual: colecao(d, "anual"), ciclos: colecao(d, "ciclos"),
     tv: doc("tv/config"), adversarios: colecao(d, "adversarios"),
     compJogos: colecao(d, "compJogos"), compGolos: colecao(d, "compGolos"), meinho: colecao(d, "meinho"), histTreino: colecao(d, "histTreino"), fotos: colecao(d, "fotos"),

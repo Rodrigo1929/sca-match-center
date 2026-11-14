@@ -2,7 +2,7 @@
 const $=id=>document.getElementById(id);
 function renderNav(){
   const nav=$("nav"); nav.innerHTML="";
-  const all=lances(); let k=0;
+  const all=lancesQuadro(); let k=0;
   [["JOGO","Jogo"],["DEF","Defensivos"],["OF","Ofensivos"],["REF","Referência"]].forEach(([t,lab])=>{
     const ls=all.filter(l=>l.tipo===t); if(!ls.length) return;
     const g=document.createElement("div"); g.className="grp"; g.innerHTML=`<h3>${lab}</h3><ul></ul>`;
@@ -45,7 +45,7 @@ function renderBoard(){
   $("b-tag").className="tag "+L.tipo; $("b-tag").textContent=L.tipo;
   $("b-title").textContent=L.nome;
   $("q-panel").hidden=!!L.livre;   // v112.6: o quadro livre não tem trocas nem pré-jogo
-  { const all=lances(), i=all.findIndex(l=>l.id===L.id), nm=d=>all[(i+d+all.length)%all.length].nome;
+  { const all=lancesQuadro(), i=all.findIndex(l=>l.id===L.id), nm=d=>all[(i+d+all.length)%all.length].nome;
     $("b-pos").textContent=`${i+1} / ${all.length}`; $("prev").title="Anterior: "+nm(-1); $("next").title="Seguinte: "+nm(1); }
   $("btn-edit").textContent=editing?"✓ Concluir":"✎ Editar lance";
   $("btn-nomes").setAttribute("aria-pressed",String(nomesOn)); $("btn-nomes").textContent=nomesOn?"✓ Nomes":"Nomes";
@@ -167,7 +167,7 @@ $("f-add").onclick=()=>{
   novaLinha($("f-sai").value,$("f-entra").value,modo,ids);
 };
 ["este","todos","esc"].forEach(k=>$("sc-"+k).onclick=()=>{scope=k;renderForm();});
-function passo(d){ const all=lances(); const i=all.findIndex(l=>l.id===lanceAtual().id); curId=all[(i+d+all.length)%all.length].id; render(); }
+function passo(d){ const all=lancesQuadro(); const i=all.findIndex(l=>l.id===lanceAtual().id); curId=all[(i+d+all.length)%all.length].id; render(); }
 $("prev").onclick=()=>passo(-1); $("next").onclick=()=>passo(1);
 /* ← → no teclado passam de lance (fora de campos de texto e de folhas abertas) */
 document.addEventListener("keydown",e=>{ if($("view-q").hidden||presentOpen||$("sheet-root").innerHTML||e.ctrlKey||e.metaKey||e.altKey) return;

@@ -19,6 +19,10 @@ function lances(){
   const io=id=>{ const i=OL.indexOf(id); return i<0?1e6:i; };
   return out.sort((a,b)=>(ord[a.tipo]??1)-(ord[b.tipo]??1)||io(a.id)-io(b.id)||(a.ordem||0)-(b.ordem||0));
 }
+/* v123: lances que aparecem no separador Quadro (bolas paradas, Possíveis Encaixes e Quadro Livre); os escondidos e as cópias do Quadro Dinâmico continuam em lances() */
+const ocultoQuadro=L=>!!(L&&(L.oculto||L.espacos));
+function lancesQuadro(){ return lances().filter(l=>!ocultoQuadro(l)); }
+function corrigeLanceQuadro(){ if(ocultoQuadro(lances().find(l=>l.id===curId))){ const v=lancesQuadro()[0]; if(v) curId=v.id; } }
 function lanceAtual(){ const L=lances(); return L.find(l=>l.id===curId)||L[0]; }
 function baseOf(slot){ const o=jogo.onze.find(o=>o.slot===slot); return o?o.n:slot; }
 function posOf(slot){ const o=jogo.onze.find(o=>o.slot===slot); return o?o.pos:""; }

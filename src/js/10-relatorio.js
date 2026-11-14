@@ -158,7 +158,7 @@ $("h-arq").onclick=()=>{
     s.querySelector("#ar-ok").onclick=()=>{
       const id="J"+Date.now().toString(36);
       const J={id,...snapshotJogo(),resultado:{nos:s.querySelector("#ar-n").value.trim(),eles:s.querySelector("#ar-e").value.trim()},obs:s.querySelector("#ar-o").value.trim(),arquivadoEm:new Date().toISOString()};
-      hist[id]=J; guardaLocal(); gravaDoc("historico/"+id,J); arquivaRelJog(id); arquivaImagens(id); arquivaVideos(id);   // v104 (v114: e as imagens): o relatório para jogadores preparado passa para o jogo arquivado
+      hist[id]=J; guardaLocal(); gravaDoc("historico/"+id,J); arquivaRelJog(id); arquivaImagens(id); arquivaVideos(id); if(typeof arquivaPalestra==="function") arquivaPalestra(id,s.querySelector("#ar-nv").checked);   // v104 (v114: e as imagens): o relatório para jogadores preparado passa para o jogo arquivado
       if(s.querySelector("#ar-nv").checked){
         guardaEst({...est,linhas:est.linhas.filter(l=>l.pre),fase:"pre"});
         guardaNotas({itens:[]});
@@ -202,7 +202,7 @@ function renderPresent(){
   st.addEventListener("touchend",e=>{ if(x0===null) return; const dx=e.changedTouches[0].clientX-x0; if(Math.abs(dx)>50) passo(dx<0?1:-1); x0=null; });
 }
 function fechaPresent(){ presentOpen=false; $("present-root").innerHTML=""; }
-$("btn-present").onclick=()=>{ if(!$("view-m").hidden&&typeof apresentaModelo==="function"){ apresentaModelo(); return; } editing=false; presentOpen=true; tintaInicio(); renderBoard(); renderPresent(); };
+$("btn-present").onclick=()=>{ if(!$("view-l").hidden&&typeof apresentaPalestra==="function"){ apresentaPalestra(); return; } if(!$("view-m").hidden&&typeof apresentaModelo==="function"){ apresentaModelo(); return; } corrigeLanceQuadro(); editing=false; presentOpen=true; tintaInicio(); renderBoard(); renderPresent(); };
 document.addEventListener("keydown",e=>{ if(!presentOpen) return; if(e.key==="ArrowRight") passo(1); else if(e.key==="ArrowLeft") passo(-1); else if(e.key==="Escape") fechaPresent(); });
 /* v112.26: tinta da apresentação (Quadro e Modelo de Jogo), como no PowerPoint — laser, caneta e setas por cima do slide.
    Não grava nada nem mexe no lance; o desenho fica até «Apagar» ou até mudar de slide. Teclas: L laser, P caneta, A seta, E apagar, Esc volta ao laser */
@@ -250,4 +250,4 @@ let tTimer=null;
 function toast(msg,undo){ const r=$("toast-root"); r.innerHTML=`<div class="toast" role="status"><span></span>${undo?'<button>Desfazer</button>':''}</div>`;
   r.querySelector("span").textContent=msg; if(undo) r.querySelector("button").onclick=()=>{ r.innerHTML=""; undo(); };
   clearTimeout(tTimer); tTimer=setTimeout(()=>{r.innerHTML="";},undo?6000:2800); }
-function render(){ if(dragging) return; renderBanco(); renderVivo(); renderNav(); renderBoard(); renderRows(); renderForm(); renderPlantel(); renderAdv(); if(!$("view-j").hidden) renderJogo(); else $("jogo-tit").textContent=jogo.adversario?`vs ${jogo.adversario}`:"Preparação · Jogo · Análise"; if(presentOpen) renderPresent(); if(typeof renderModeloSeguro==="function") renderModeloSeguro(); }
+function render(){ if(dragging) return; if(typeof renderPalestraSeguro==="function") renderPalestraSeguro(); renderBanco(); renderVivo(); renderNav(); renderBoard(); renderRows(); renderForm(); renderPlantel(); renderAdv(); if(!$("view-j").hidden) renderJogo(); else $("jogo-tit").textContent=jogo.adversario?`vs ${jogo.adversario}`:"Preparação · Jogo · Análise"; if(presentOpen) renderPresent(); if(typeof renderModeloSeguro==="function") renderModeloSeguro(); }
