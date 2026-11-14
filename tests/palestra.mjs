@@ -91,6 +91,22 @@ ok(/^1\//.test(ap.t) && ap.n >= 3, "Palestra: Apresentar " + JSON.stringify(ap))
 await pg.keyboard.press("ArrowRight"); await pg.keyboard.press("ArrowRight"); await pg.waitForTimeout(100);
 const apQ = await pg.evaluate(() => document.querySelector(".present .t").textContent); ok(/COM BOLA/.test(apQ) || /SEM BOLA/.test(apQ), "Palestra: Apresentar devia chegar a um quadro " + apQ);
 await pg.keyboard.press("ArrowRight"); await pg.waitForTimeout(150); ok(await pg.evaluate(() => /passo [12]\/3/.test(document.querySelector(".present .t").textContent)), "Palestra: → num quadro devia andar um passo");
+// v123.1: na apresentação as peças mexem-se, mas nada se grava; ↺ Repor e mudar de slide voltam ao gravado
+{ const antes = await pg.evaluate(() => JSON.stringify(palestra));
+  const alvo = await pg.evaluate(() => { const c = [...document.querySelectorAll(".present .pstage [data-p]")].map((e) => e.getBoundingClientRect()).find((r) => r.width > 4); return c && { x: c.x + c.width / 2, y: c.y + c.height / 2 }; });
+  const pos = () => pg.evaluate(() => { const e = [...document.querySelectorAll(".present .pstage [data-p]")].map((e) => e.getBoundingClientRect()).find((r) => r.width > 4); return e && Math.round(e.x); });
+  const x0 = await pos(); await pg.mouse.move(alvo.x, alvo.y); await pg.mouse.down(); for (let k = 1; k <= 6; k++) await pg.mouse.move(alvo.x + k * 15, alvo.y + k * 5); await pg.mouse.up(); await pg.waitForTimeout(100);
+  const x1 = await pos(), depois = await pg.evaluate(() => JSON.stringify(palestra)), aberta = await pg.evaluate(() => !!document.querySelector(".present"));
+  ok(aberta && x1 > x0 + 30 && depois === antes, "Apresentar: mexer numa peça do quadro sem gravar " + JSON.stringify({ x0, x1, gravou: depois !== antes }));
+  await pg.click("#pa-rp"); await pg.waitForTimeout(80); ok(Math.abs((await pos()) - x0) < 2, "Apresentar: ↺ Repor não voltou ao gravado");
+  // onze (slide 1): arrastar uma bolinha não mexe no jogo
+  const t0 = await pg.evaluate(() => document.querySelector(".present .t").textContent); await pg.keyboard.press("Home");
+  const onzeAntes = await pg.evaluate(() => JSON.stringify(jogo.onze)); await pg.click("#pa-a"); for (let k = 0; k < 20 && !/^1\//.test(await pg.evaluate(() => document.querySelector(".present .t").textContent)); k++) await pg.click("#pa-a");
+  const b = await pg.evaluate(() => { const r = document.querySelector(".present .pstage g.bola").getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
+  await pg.mouse.move(b.x, b.y); await pg.mouse.down(); for (let k = 1; k <= 6; k++) await pg.mouse.move(b.x + k * 15, b.y); await pg.mouse.up(); await pg.waitForTimeout(80);
+  const tr = await pg.evaluate(() => document.querySelector(".present .pstage g.bola").getAttribute("transform"));
+  ok(tr && /translate/.test(tr) && (await pg.evaluate(() => JSON.stringify(jogo.onze))) === onzeAntes, "Apresentar: arrastar no onze devia mexer sem gravar " + tr);
+  for (let k = 0; k < 20 && (await pg.evaluate(() => document.querySelector(".present .t").textContent)) !== t0; k++) await pg.click("#pa-b"); }
 await pg.screenshot({ path: join(cap, "palestra-apresentar.png") });
 await pg.keyboard.press("Escape"); ok(!(await pg.locator(".present").count()), "Palestra: Esc não fechou");
 // bolas paradas: só setups (sem lances que seguem outro)

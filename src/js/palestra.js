@@ -189,15 +189,18 @@ function folhaNovoPal(sec){ let sis="onze", sisAdv=advJogoOk()?"jogo":"4-4-2", e
 function slidesPalestra(){ const S=[{k:"onze",tit:"O Nosso Onze Inicial"}]; if(advJ().onze.length) S.push({k:"adv",tit:"Onze Provável do Adversário"});
   ["com","sem"].forEach(sec=>listaPal(sec).forEach(Q=>S.push({k:"pl:"+Q.id,tit:PL_NOME[sec]+" · "+Q.nome,id:Q.id})));
   setupsPal().forEach(L=>S.push({k:"bp:"+L.id,tit:"Bola parada · "+L.nome,L:L.id})); return S; }
+/* v123.1 (pedido do Rodrigo): na apresentação as peças mexem-se com o rato ou o dedo, mas nada se grava — é só para explicar.
+   Mudar de slide, «↺ Repor» ou fechar volta ao que está gravado. Nos quadros mexe-se no passo que está à vista (uma cópia do quadro). */
 function apresentaPalestra(k0){ const S=slidesPalestra(); mPara(); if(mApr) mApr.fecha(); let i=Math.max(0,S.findIndex(s=>s.k===(k0||(plCur?"pl:"+plCur:plSec==="bp"&&plBp?"bp:"+plBp:plSec)))), pl=null; tintaInicio();
   const root=document.createElement("div"); root.className="present"; root.setAttribute("role","dialog"); root.setAttribute("aria-label","Apresentação da Palestra");
-  root.innerHTML=`<div class="pstage"></div><div class="pbar"><button id="pa-a">‹ Anterior</button><span id="pa-ps" style="display:contents"><button id="pa-ini" aria-label="Voltar ao passo 1">⏮</button><button id="pa-pa" aria-label="Passo anterior">‹ Passo</button><button id="pa-pl" style="min-width:120px">▶ Animar</button><button id="pa-pn" aria-label="Passo seguinte">Passo ›</button></span><div class="t"></div><button id="pa-b">Seguinte ›</button><button id="pa-x">Fechar</button></div>`;
+  root.innerHTML=`<div class="pstage"></div><div class="pbar"><button id="pa-a">‹ Anterior</button><span id="pa-ps" style="display:contents"><button id="pa-ini" aria-label="Voltar ao passo 1">⏮</button><button id="pa-pa" aria-label="Passo anterior">‹ Passo</button><button id="pa-pl" style="min-width:120px">▶ Animar</button><button id="pa-pn" aria-label="Passo seguinte">Passo ›</button></span><div class="t"></div><button id="pa-rp" title="Voltar às posições gravadas (o que mexeres aqui não fica gravado)">↺ Repor</button><button id="pa-b">Seguinte ›</button><button id="pa-x">Fechar</button></div>`;
   document.body.appendChild(root); const st=root.querySelector(".pstage"), tt=root.querySelector(".t"), bp=root.querySelector("#pa-pl"), ps=root.querySelector("#pa-ps");
-  const Qs=()=>{ const s=S[i]; return s.id&&palestra[s.id]?palQ(s.id):null; };
+  let tmpQ=null, arr=null, semClique=false;
+  const Qs=()=>{ const s=S[i]; return s.id&&palestra[s.id]?(tmpQ||palQ(s.id)):null; };
   const estado=()=>{ const Q=Qs(); ps.hidden=!Q; ps.style.display=Q?"contents":"none"; bp.textContent=pl&&pl.playing?"⏸ Pausa":"▶ Animar";
     tt.textContent=`${i+1}/${S.length} · ${S[i].tit}${Q?` · passo ${passoVisivel(Q,pl?pl.t:0)+1}/${Q.passos.length}`:""}`; };
-  const mostra=()=>{ if(pl){ pl.pause(); pl=null; } st.innerHTML=""; const s=S[i], Q=Qs(); let svg;
-    if(Q){ pl=playerModelo(Q,{onT:estado,onEnd:estado}); svg=pl.svg; }
+  const mostra=()=>{ if(pl){ pl.pause(); pl=null; } st.innerHTML=""; arr=null; tmpQ=null; const s=S[i], Q=Qs(); let svg;
+    if(Q){ tmpQ=clone(Q); pl=playerModelo(tmpQ,{ed:()=>({edit:false}),onT:estado,onEnd:estado}); svg=pl.svg; }   // ed sem edição: as peças ficam tocáveis (data-p), sem pegas
     else if(s.k==="onze") svg=desenhaOnze({clean:true,quadro:true});
     else if(s.k==="adv") svg=desenhaAdvOnze().cloneNode(true);   // cópia sem eventos: na apresentação não se mexe no onze
     else { const L=lances().find(l=>l.id===s.L); svg=L?desenha(L,{setup:true,clean:true}):document.createElementNS(NS,"svg"); }
@@ -212,10 +215,23 @@ function apresentaPalestra(k0){ const S=slidesPalestra(); mPara(); if(mApr) mApr
   root.querySelector("#pa-a").onclick=()=>anda(-1); root.querySelector("#pa-b").onclick=()=>anda(1); root.querySelector("#pa-x").onclick=fecha;
   root.querySelector("#pa-ini").onclick=()=>{ if(!pl) return; pl.pause(); pl.set(0); estado(); }; bp.onclick=animar;
   root.querySelector("#pa-pn").onclick=()=>passoSeg(); root.querySelector("#pa-pa").onclick=()=>passoAnt();
+  root.querySelector("#pa-rp").onclick=()=>{ const k=pl?Math.round(pl.t):0; mostra(); if(pl&&k){ pl.set(k); estado(); } };
+  /* mexer nas peças sem gravar: quadros pelo passo à vista (metros, vistaQ); onzes e setups pelas bolinhas do desenho (translate) */
+  st.style.touchAction="none";
+  st.addEventListener("pointerdown",e=>{ if(e.button>0) return; const svg=st.querySelector("svg"); if(!svg) return;
+    if(pl&&tmpQ){ const a=e.target.closest&&e.target.closest("[data-p]"); if(!a) return; if(pl.playing) pl.pause(); const k=Math.round(pl.t); pl.set(k); estado();
+      const V=vistaQ(tmpQ), p=svgPt(pl.svg,e), m=V.M(p.x,p.y), P=tmpQ.passos[k].pos[a.dataset.p]||{x:52.5,y:34}; arr={q:true,id:a.dataset.p,k,dx:P.x-m.x,dy:P.y-m.y,mx:e.clientX,my:e.clientY,mov:false}; }
+    else { const g=e.target.closest&&e.target.closest("g.bola"); if(!g||!svg.contains(g)) return; const p=svgPt(svg,e), t=g.__t||{x:0,y:0}; arr={g,svg,x0:p.x-t.x,y0:p.y-t.y,mx:e.clientX,my:e.clientY,mov:false}; }
+    e.preventDefault(); try{ st.setPointerCapture(e.pointerId); }catch(_){} });
+  st.addEventListener("pointermove",e=>{ if(!arr) return; e.preventDefault(); if(!arr.mov&&Math.hypot(e.clientX-arr.mx,e.clientY-arr.my)<4) return; arr.mov=true;
+    if(arr.q){ const V=vistaQ(tmpQ), p=svgPt(pl.svg,e), m=V.M(p.x,p.y); tmpQ.passos[arr.k].pos[arr.id]={x:mClamp(m.x+arr.dx,-3,108),y:mClamp(m.y+arr.dy,-2,70)}; pl.set(arr.k); }
+    else { const p=svgPt(arr.svg,e), t={x:p.x-arr.x0,y:p.y-arr.y0}; arr.g.__t=t; arr.g.setAttribute("transform",`translate(${t.x} ${t.y})`); } });
+  const largar=e=>{ if(!arr) return; if(arr.mov) semClique=true; arr=null; try{ st.releasePointerCapture(e.pointerId); }catch(_){} };
+  st.addEventListener("pointerup",largar); st.addEventListener("pointercancel",largar);
   /* iPad: deslizar muda de slide; um toque num quadro anima ou pausa */
-  let x0=null; st.addEventListener("touchstart",e=>{ x0=e.touches[0].clientX; },{passive:true});
+  let x0=null; st.addEventListener("touchstart",e=>{ x0=arr?null:e.touches[0].clientX; },{passive:true});   // a arrastar uma peça não muda de slide
   st.addEventListener("touchend",e=>{ if(x0===null) return; const dx=e.changedTouches[0].clientX-x0; x0=null; if(Math.abs(dx)>50){ anda(dx<0?1:-1); e.preventDefault(); } });
-  st.addEventListener("click",()=>animar());
+  st.addEventListener("click",()=>{ if(semClique){ semClique=false; return; } animar(); });
   mApr={fecha}; mostra(); }
 
 /* ---------- PDF: identificação, onzes, COM BOLA, SEM BOLA (passos lado a lado) e setups das bolas paradas ---------- */
