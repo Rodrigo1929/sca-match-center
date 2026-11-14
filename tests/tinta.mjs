@@ -25,7 +25,7 @@ const nTr = () => pg.evaluate(() => document.querySelectorAll(".present g.tinta 
 const tecla = async (k) => { if (ipad) await pg.click(`.ptinta [data-m="${{ l: "laser", p: "caneta", a: "seta" }[k]}"]`); else await pg.keyboard.press(k); await pg.waitForTimeout(80); };
 
 /* ---------- Apresentação do Quadro ---------- */
-await pg.click("#tab-q"); await pg.evaluate(() => { curId = "livre"; render(); });   // v123: o Quadro Dinâmico saiu do Quadro; o Quadro Livre ficou
+await pg.click("#tab-q"); await pg.evaluate(() => { curId = "espacos"; render(); });   // v123.2: o Quadro Dinâmico voltou ao separador Bolas Paradas
 const antes = await pg.evaluate(() => JSON.stringify(lanceAtual()));
 await pg.click("#btn-present"); await pg.waitForTimeout(300);
 ok(await pg.locator(".present .ptinta").count() === 1, "a apresentação tem a barra da tinta");

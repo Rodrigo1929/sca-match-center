@@ -145,8 +145,8 @@ function palBp(st,pn,hint,tit,tag){ const ls=setupsPal(); let L=ls.find(l=>l.id=
   const sg=seguidoresDe(L.id).map(x=>x.nome);
   pn.innerHTML=`<header><h2>${esc(L.nome)}</h2><p class="sub">${L.tipo==="DEF"?"Bola parada defensiva":"Bola parada ofensiva"} · com os jogadores atuais do jogo.</p></header>
     <div class="add" style="border-top:0">${sg.length?`<p class="sub" style="margin:0">Lances com esta posição inicial: <b>${sg.map(esc).join(", ")}</b></p>`:""}
-      <p class="sub" style="margin:0">A Palestra mostra o lance como está no separador Quadro (não é uma cópia). Para ver as setas e as tarefas, ou para editar, abre-o no Quadro.</p>
-      <button class="btn sm" id="pl-bq" style="align-self:flex-start">Abrir no Quadro ↗</button></div>`;
+      <p class="sub" style="margin:0">A Palestra mostra o lance como está no separador Bolas Paradas (não é uma cópia). Para ver as setas e as tarefas, ou para editar, abre-o lá.</p>
+      <button class="btn sm" id="pl-bq" style="align-self:flex-start">Abrir em Bolas Paradas ↗</button></div>`;
   pn.querySelector("#pl-bq").onclick=()=>{ curId=L.id; setTab("q"); render(); }; }
 function palVazio(st,pn){ const sec=plSec, n=listaPal(sec).length;
   st.innerHTML=`<div class="m-vazio"><b>${PL_NOME[sec]}</b><span>${n?"Escolhe um quadro na lista.":`Cada quadro é uma organização, comportamento ou princípio ${sec==="com"?"ofensivo":"defensivo"} da equipa, com passos que andam: crias o passo 1, copias para o passo 2 e arrastas só o que muda.`}</span><button class="btn primary" id="pl-nv2">+ Novo quadro ${PL_NOME[sec]}</button></div>`;

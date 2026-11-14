@@ -16,7 +16,7 @@ Separador para preparar e apresentar o plano de jogo à equipa, por esta ordem:
 **⬇ PDF da Palestra**: A4 horizontal, páginas numeradas — identificação do jogo, os dois onzes, cada quadro com os passos lado a lado (até 4 por página) e os setups das bolas paradas (2 por página).
 Ao **arquivar** o jogo, os quadros COM/SEM BOLA continuam para o jogo seguinte (para adaptar ao novo adversário) e fica uma cópia no jogo arquivado.
 
-**Quadro (v123):** ficam só as Bolas Paradas, os Possíveis Encaixes e o Quadro Livre. O Onze Titular passou para a Palestra; as Indicações ao Intervalo, o Quadro Dinâmico, a Estatística e as Notas do Jogo deixaram de aparecer, mas nada foi apagado (as notas continuam no separador Jogo; a TV mantém as escolhas).
+**Separador Bolas Paradas (antes «Quadro»; v123, v123.2):** ficam as Bolas Paradas, os Possíveis Encaixes, o Quadro Livre e o Quadro Dinâmico. O Onze Titular passou para a Palestra; as Indicações ao Intervalo, a Estatística e as Notas do Jogo deixaram de aparecer, mas nada foi apagado (as notas continuam no separador Jogo; a TV mantém as escolhas).
 
 ## Exercícios (repositório)
 

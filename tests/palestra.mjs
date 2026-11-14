@@ -21,8 +21,9 @@ await pg.goto(pathToFileURL(join(raiz, "dist/index.html")).href); await pg.waitF
 // Quadro: só Bolas Paradas, Possíveis Encaixes e Quadro Livre; os escondidos continuam nos dados
 const q = await pg.evaluate(() => { setTab("q"); const nav = [...document.querySelectorAll("#nav li[data-id]")].map((l) => l.dataset.id);
   return { nav, atual: lanceAtual().id, todos: lances().map((l) => l.id) }; });
-ok(!["onze", "intervalo", "espacos", "estat", "notas"].some((id) => q.nav.includes(id)), "Quadro: ainda aparecem quadros escondidos " + q.nav.join(","));
-ok(q.nav.includes("encaixe") && q.nav.includes("livre"), "Quadro: faltam Possíveis Encaixes ou Quadro Livre");
+ok(!["onze", "intervalo", "estat", "notas"].some((id) => q.nav.includes(id)), "Quadro: ainda aparecem quadros escondidos " + q.nav.join(","));
+ok(q.nav.includes("encaixe") && q.nav.includes("livre") && q.nav.includes("espacos"), "Quadro: faltam Possíveis Encaixes, Quadro Livre ou Quadro Dinâmico (v123.2)");
+ok((await pg.evaluate(() => $("tab-q").textContent)) === "Bolas Paradas", "Separador: devia chamar-se Bolas Paradas (v123.2)");
 ok(["onze", "intervalo", "espacos", "estat", "notas"].every((id) => q.todos.includes(id)), "Quadro: os escondidos deviam continuar em lances()");
 ok(q.atual !== "onze", "Quadro: abre num quadro escondido (" + q.atual + ")");
 
