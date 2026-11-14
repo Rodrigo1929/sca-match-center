@@ -115,10 +115,17 @@ const bp = await pg.evaluate(() => { const S = setupsPal(); return { n: S.length
 ok(bp.n > 0 && !bp.segue && bp.nav === bp.n, "Palestra: setups das bolas paradas " + JSON.stringify(bp));
 await pg.evaluate(() => { plSec = "bp"; plBp = null; renderPalestra(); }); ok(await pg.evaluate(() => !!$("pl-stage").querySelector("svg") && !$("pl-stage").querySelector(".seta")), "Palestra: setup sem desenho ou com setas");
 await pg.screenshot({ path: join(cap, "palestra-bolas-paradas.png") });
+// v123.3: ocultar bolas paradas e quadros (fora da apresentação e do PDF; ficam na lista esbatidos)
+{ await toca("#pl-esc"); await toca("#es-of"); await toca("#es-ok"); await pg.waitForTimeout(100);
+  const oc = await pg.evaluate(() => ({ vis: setupsVisiveis().map((L) => L.tipo), todos: setupsPal().length, nav: document.querySelectorAll("#pl-nav [data-bp]").length, esb: [...document.querySelectorAll("#pl-nav [data-bp]")].filter((b) => b.style.opacity === "0.5").length,
+    slides: slidesPalestra().filter((s) => s.k.startsWith("bp:")).length, guardado: (palJogo.atual.ocultos || []).length }));
+  ok(oc.vis.length && oc.vis.every((t) => t === "OF") && oc.nav === oc.todos && oc.esb === oc.todos - oc.vis.length && oc.slides === oc.vis.length && oc.guardado === oc.esb, "Palestra: ocultar bolas paradas " + JSON.stringify(oc));
+  const q1 = await pg.evaluate(() => { const Q = listaPal("sem")[0]; plMostraOculta(["pl:" + Q.id], true); return { slides: slidesPalestra().some((s) => s.id === Q.id), nav: !!document.querySelector(`#pl-nav [data-id="${Q.id}"]`) }; });
+  ok(!q1.slides && q1.nav, "Palestra: ocultar um quadro " + JSON.stringify(q1)); }
 // PDF: identificação, 2 onzes, 1 quadro de 3 passos (1 página) × 2, setups 2 por página
 const [dl] = await Promise.all([pg.waitForEvent("download", { timeout: 90000 }), pg.evaluate(() => pdfPalestra())]);
 const f = join(cap, "palestra.pdf"); await dl.saveAs(f); const pdf = readFileSync(f, "latin1"), nPg = (pdf.match(/\/Type\s*\/Page[^s]/g) || []).length;
-const esperado = await pg.evaluate(() => 3 + listaPal("com").length + listaPal("sem").length + Math.ceil(setupsPal().length / 2));
+const esperado = await pg.evaluate(() => 3 + quadrosVisiveis("com").length + quadrosVisiveis("sem").length + Math.ceil(setupsVisiveis().length / 2));   // os ocultos não entram
 ok(nPg === esperado && statSync(f).size > 100000, `Palestra: PDF com ${nPg} páginas (esperado ${esperado}), ${statSync(f).size} bytes`);
 // arquivar: os quadros passam para o jogo seguinte e fica uma cópia no arquivado
 const arq = await pg.evaluate(() => { const n0 = listaPal("com").length + listaPal("sem").length; arquivaPalestra("Jteste", true);

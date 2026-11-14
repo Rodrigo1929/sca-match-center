@@ -22,7 +22,8 @@ function normPal(d,id){ const sec=d&&d.sec==="sem"?"sem":"com"; const Q=normQ({.
   Q.id=id; Q.sec=sec; Q.jogo=String((d&&d.jogo)||"atual"); Q.desc=String((d&&d.desc)||""); Q.criadoEm=String((d&&d.criadoEm)||"");
   if(d&&d.copiaDe) Q.copiaDe=String(d.copiaDe); else delete Q.copiaDe;
   delete Q.fig; delete Q.cab; return Q; }
-function normPalJogo(d){ return {sis:String(d&&d.sis||""),notasOnze:String(d&&d.notasOnze||""),notasAdv:String(d&&d.notasAdv||"")}; }
+/* ocultos (v123.3): lances de bola parada ("bp:<id do lance>") e quadros ("pl:<id>") que não entram na apresentação nem no PDF deste jogo */
+function normPalJogo(d){ return {sis:String(d&&d.sis||""),notasOnze:String(d&&d.notasOnze||""),notasAdv:String(d&&d.notasAdv||""),ocultos:Array.isArray(d&&d.ocultos)?[...new Set(d.ocultos.map(String))]:[]}; }
 Object.keys(palestra).forEach(id=>{ try{ palestra[id]=normPal(palestra[id],id); }catch(e){ delete palestra[id]; } });
 Object.keys(palJogo).forEach(k=>{ palJogo[k]=normPalJogo(palJogo[k]); });
 function guardaPalLocal(){ try{ localStorage.setItem(PL_LS,JSON.stringify(palestra)); localStorage.setItem(PLJ_LS,JSON.stringify(palJogo)); }catch(e){} }
@@ -37,6 +38,22 @@ function guardaPalJogo(k,o){ palJogo[k]=normPalJogo(o); guardaPalLocal(); gravaD
 function listaPal(sec,jogoId="atual"){ return Object.values(palestra).filter(q=>q.jogo===jogoId&&q.sec===sec).sort((a,b)=>a.ordem-b.ordem||String(a.criadoEm).localeCompare(String(b.criadoEm))); }
 /* bolas paradas: só os setups iniciais — slides iniciais e lances com posição própria; os que seguem outro (↳) ficam de fora */
 function setupsPal(){ return lances().filter(L=>(L.tipo==="DEF"||L.tipo==="OF")&&!L.dinamico&&!ocultoQuadro(L)&&(L.bolas||[]).length&&(!L.base||!baseDe(L)||eProprio(L))); }
+const plOculto=k=>pj().ocultos.includes(k);
+function plMostraOculta(ks,ocultar){ const s=new Set(pj().ocultos); ks.forEach(k=>ocultar?s.add(k):s.delete(k)); guardaPalJogo("atual",{...pj(),ocultos:[...s]}); renderPalestra(); }
+/* o que entra na apresentação e no PDF */
+const setupsVisiveis=()=>setupsPal().filter(L=>!plOculto("bp:"+L.id));
+const quadrosVisiveis=sec=>listaPal(sec).filter(Q=>!plOculto("pl:"+Q.id));
+function folhaEscolheSetups(){ const ls=setupsPal();
+  folha(`<h3>Bolas paradas a mostrar</h3><p class="sub" style="margin:0">Só os marcados entram na apresentação e no PDF da Palestra deste jogo. Os lances não mudam no separador Bolas Paradas.</p>
+    <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" id="es-t">Marcar todos</button><button class="btn sm" id="es-n">Desmarcar todos</button><button class="btn sm" id="es-of">Só ofensivos</button><button class="btn sm" id="es-df">Só defensivos</button></div>
+    <div id="es-l" style="display:flex;flex-direction:column;gap:2px;max-height:52vh;overflow:auto">${ls.map(L=>`<label style="display:flex;gap:10px;align-items:center;min-height:40px;font-size:15px"><input type="checkbox" value="${esc(L.id)}" data-t="${L.tipo}" ${plOculto("bp:"+L.id)?"":"checked"} style="width:20px;height:20px"> <span style="flex:1">${esc(L.nome)}</span><small style="color:var(--muted)">${L.tipo==="DEF"?"Defensivo":"Ofensivo"}</small></label>`).join("")}</div>
+    <div class="actions"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="es-ok">Guardar</button></div>`,(s,fecha)=>{
+    const cs=()=>[...s.querySelectorAll("#es-l input")], marca=f=>cs().forEach(c=>c.checked=f(c));
+    s.querySelector("#es-t").onclick=()=>marca(()=>true); s.querySelector("#es-n").onclick=()=>marca(()=>false);
+    s.querySelector("#es-of").onclick=()=>marca(c=>c.dataset.t==="OF"); s.querySelector("#es-df").onclick=()=>marca(c=>c.dataset.t==="DEF");
+    s.querySelector("#es-ok").onclick=()=>{ const sem=cs().filter(c=>!c.checked).map(c=>"bp:"+c.value), com=cs().filter(c=>c.checked).map(c=>"bp:"+c.value);
+      const set=new Set(pj().ocultos); com.forEach(k=>set.delete(k)); sem.forEach(k=>set.add(k)); guardaPalJogo("atual",{...pj(),ocultos:[...set]}); fecha(); renderPalestra();
+      toast(`${com.length} de ${cs().length} bolas paradas na apresentação e no PDF`); }; }); }
 function idJogoTxt(){ return [jogo.adversario?"vs "+jogo.adversario:"",jogo.data?dataPt(jogo.data):"",jogo.hora||""].filter(Boolean).join(" · "); }
 
 /* ---------- arquivar e repor ---------- */
@@ -77,11 +94,13 @@ function painelPalHtml(Q){ const ls=listaPal(Q.sec,Q.jogo), i=ls.findIndex(q=>q.
       <label class="f">Objetivo / descrição (opcional; sai no PDF)<textarea id="pq-desc" rows="3" style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;background:var(--surface);color:var(--ink);resize:vertical">${esc(Q.desc||"")}</textarea></label>
       <div class="seg" id="pq-sec"><button data-k="com" aria-pressed="${Q.sec==="com"}">COM BOLA</button><button data-k="sem" aria-pressed="${Q.sec==="sem"}">SEM BOLA</button></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" id="pq-up" ${i>0?"":"disabled"}>▲ Subir</button><button class="btn sm" id="pq-dn" ${i>=0&&i<ls.length-1?"":"disabled"}>▼ Descer</button><button class="btn sm" id="pq-dup">⧉ Duplicar</button></div>
+      <label style="display:flex;gap:8px;align-items:center;min-height:40px;font-size:15px"><input type="checkbox" id="pq-vis" ${plOculto("pl:"+mPal)?"":"checked"} style="width:20px;height:20px"> Mostrar na apresentação e no PDF</label>
       <button class="btn danger" id="pq-del">Apagar este quadro</button>`; }
 function ligaPainelPal(pn,Q){ const id=mPal, nm=pn.querySelector("#pq-nome"), ds=pn.querySelector("#pq-desc"); if(!nm) return;
   nm.onchange=()=>{ const v=nm.value.trim(); if(v) editaQ(Q=>{ Q.nome=v; }); };
   ds.oninput=()=>{ clearTimeout(plNotaT); const v=ds.value; plNotaT=setTimeout(()=>editaQ(Q=>{ Q.desc=v; },true),500); };
   pn.querySelectorAll("#pq-sec button").forEach(b=>b.onclick=()=>mudaSecPal(id,b.dataset.k));
+  pn.querySelector("#pq-vis").onchange=e=>{ plMostraOculta(["pl:"+id],!e.target.checked); };
   pn.querySelector("#pq-up").onclick=()=>movePal(id,-1); pn.querySelector("#pq-dn").onclick=()=>movePal(id,1); pn.querySelector("#pq-dup").onclick=()=>duplicaPal(id);
   confirma2(pn.querySelector("#pq-del"),"Toca outra vez para apagar o quadro",()=>apagaPal(id)); }
 
@@ -146,27 +165,31 @@ function palBp(st,pn,hint,tit,tag){ const ls=setupsPal(); let L=ls.find(l=>l.id=
   pn.innerHTML=`<header><h2>${esc(L.nome)}</h2><p class="sub">${L.tipo==="DEF"?"Bola parada defensiva":"Bola parada ofensiva"} · com os jogadores atuais do jogo.</p></header>
     <div class="add" style="border-top:0">${sg.length?`<p class="sub" style="margin:0">Lances com esta posição inicial: <b>${sg.map(esc).join(", ")}</b></p>`:""}
       <p class="sub" style="margin:0">A Palestra mostra o lance como está no separador Bolas Paradas (não é uma cópia). Para ver as setas e as tarefas, ou para editar, abre-o lá.</p>
-      <button class="btn sm" id="pl-bq" style="align-self:flex-start">Abrir em Bolas Paradas ↗</button></div>`;
-  pn.querySelector("#pl-bq").onclick=()=>{ curId=L.id; setTab("q"); render(); }; }
+      <label style="display:flex;gap:8px;align-items:center;min-height:40px;font-size:15px"><input type="checkbox" id="pl-bv" ${plOculto("bp:"+L.id)?"":"checked"} style="width:20px;height:20px"> Mostrar na apresentação e no PDF</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" id="pl-bq">Abrir em Bolas Paradas ↗</button><button class="btn sm" id="pl-bes">☑ Escolher os que mostro</button></div></div>`;
+  pn.querySelector("#pl-bq").onclick=()=>{ curId=L.id; setTab("q"); render(); };
+  pn.querySelector("#pl-bv").onchange=e=>plMostraOculta(["bp:"+L.id],!e.target.checked); pn.querySelector("#pl-bes").onclick=folhaEscolheSetups;
+  if(plOculto("bp:"+L.id)) hint.textContent="Oculto: não entra na apresentação nem no PDF desta Palestra"; }
 function palVazio(st,pn){ const sec=plSec, n=listaPal(sec).length;
   st.innerHTML=`<div class="m-vazio"><b>${PL_NOME[sec]}</b><span>${n?"Escolhe um quadro na lista.":`Cada quadro é uma organização, comportamento ou princípio ${sec==="com"?"ofensivo":"defensivo"} da equipa, com passos que andam: crias o passo 1, copias para o passo 2 e arrastas só o que muda.`}</span><button class="btn primary" id="pl-nv2">+ Novo quadro ${PL_NOME[sec]}</button></div>`;
   $("pl-nv2").onclick=()=>folhaNovoPal(sec); pn.innerHTML=`<header><h2>${PL_NOME[sec]}</h2><p class="sub">${n} ${n===1?"quadro":"quadros"} neste jogo.</p></header>`; }
 function renderPalNav(){ const nav=$("pl-nav"); if(!nav) return; const T=eqAdv(), A=advJ(), cur=k=>plSec===k&&!plCur;
-  const it=(attr,n,nm,sub,ativo)=>`<li><button ${attr} aria-current="${ativo}"><span class="n">${n}</span><span class="m-nm">${esc(nm)}<small>${esc(sub)}</small></span></button></li>`;
+  const it=(attr,n,nm,sub,ativo,oc)=>`<li><button ${attr} aria-current="${ativo}"${oc?' style="opacity:.5" title="Oculto: não entra na apresentação nem no PDF"':""}><span class="n">${n}</span><span class="m-nm">${esc(nm)}<small>${oc?"🚫 oculto · ":""}${esc(sub)}</small></span></button></li>`;
   let h=`<button class="newl" id="pl-apr">⛶ Apresentar a Palestra</button><button class="newl" id="pl-pdf">⬇ PDF da Palestra</button>`;
   h+=`<div class="grp"><h3>Onzes</h3><ul>${it('data-s="onze"',1,"O Nosso Onze Inicial",(pj().sis||"posições livres")+" · "+jogo.suplentes.length+" suplentes",cur("onze"))}${it('data-s="adv"',2,"Onze Provável do Adversário",A.onze.length?[(T&&T.nome)||jogo.adversario,A.sistema].filter(Boolean).join(" · "):"por definir",cur("adv"))}</ul></div>`;
   ["com","sem"].forEach((sec,j)=>{ const ls=listaPal(sec);
     h+=`<div class="grp"><h3><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${PL_COR[sec]};margin-right:6px"></i>${3+j} · ${PL_NOME[sec]}</h3><ul>`;
     if(!ls.length) h+=`<li><span class="m-nada">Sem quadros</span></li>`;
-    ls.forEach((Q,i)=>{ h+=it(`data-id="${esc(Q.id)}"`,i+1,Q.nome,`${Q.passos.length} ${Q.passos.length===1?"passo":"passos"}${Q.espacos?" · zonas":""}`,plCur===Q.id); });
+    ls.forEach((Q,i)=>{ h+=it(`data-id="${esc(Q.id)}"`,i+1,Q.nome,`${Q.passos.length} ${Q.passos.length===1?"passo":"passos"}${Q.espacos?" · zonas":""}`,plCur===Q.id,plOculto("pl:"+Q.id)); });
     h+=`</ul><button class="newl" data-novo="${sec}">+ Novo quadro ${PL_NOME[sec]}</button></div>`; });
-  const bp=setupsPal(); h+=`<div class="grp"><h3>Bolas Paradas · setups</h3><ul>`; if(!bp.length) h+=`<li><span class="m-nada">Sem lances</span></li>`;
-  bp.forEach((L,i)=>{ h+=it(`data-bp="${esc(L.id)}"`,i+1,L.nome,L.tipo==="DEF"?"Defensivo":"Ofensivo",plSec==="bp"&&plBp===L.id); }); h+=`</ul></div>`;
+  const bp=setupsPal(), nv=bp.filter(L=>!plOculto("bp:"+L.id)).length; h+=`<div class="grp"><h3>Bolas Paradas · setups${bp.length?` · ${nv}/${bp.length}`:""}</h3><ul>`; if(!bp.length) h+=`<li><span class="m-nada">Sem lances</span></li>`;
+  bp.forEach((L,i)=>{ h+=it(`data-bp="${esc(L.id)}"`,i+1,L.nome,L.tipo==="DEF"?"Defensivo":"Ofensivo",plSec==="bp"&&plBp===L.id,plOculto("bp:"+L.id)); }); h+=`</ul>${bp.length?`<button class="newl" id="pl-esc">☑ Escolher os que mostro</button>`:""}</div>`;
   nav.innerHTML=h;
-  $("pl-apr").onclick=()=>apresentaPalestra(); $("pl-pdf").onclick=e=>pdfPalestra(e.currentTarget);
+  $("pl-apr").onclick=()=>apresentaPalestra(); $("pl-pdf").onclick=e=>pdfPalestra(e.currentTarget); if($("pl-esc")) $("pl-esc").onclick=folhaEscolheSetups;
   nav.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{ plSec=b.dataset.s; plCur=null; renderPalestra(); });
   nav.querySelectorAll("[data-id]").forEach(b=>{ b.onclick=()=>{ if(b.dataset.id===mPal) return; palAbre(b.dataset.id); };
-    b.oncontextmenu=e=>{ const Q=palestra[b.dataset.id]; if(Q) menuContexto(e,[["⧉ Duplicar",()=>duplicaPal(Q.id)],[`🗑 Apagar quadro «${Q.nome}»`,()=>apagaPal(Q.id),"perigo"]]); }; });
+    b.oncontextmenu=e=>{ const Q=palestra[b.dataset.id], oc=Q&&plOculto("pl:"+Q.id); if(Q) menuContexto(e,[[oc?"👁 Mostrar na apresentação e no PDF":"🚫 Ocultar da apresentação e do PDF",()=>plMostraOculta(["pl:"+Q.id],!oc)],["⧉ Duplicar",()=>duplicaPal(Q.id)],[`🗑 Apagar quadro «${Q.nome}»`,()=>apagaPal(Q.id),"perigo"]]); }; });
+  nav.querySelectorAll("[data-bp]").forEach(b=>b.oncontextmenu=e=>{ const k="bp:"+b.dataset.bp, oc=plOculto(k); menuContexto(e,[[oc?"👁 Mostrar na apresentação e no PDF":"🚫 Ocultar da apresentação e do PDF",()=>plMostraOculta([k],!oc)]]); });
   nav.querySelectorAll("[data-novo]").forEach(b=>b.onclick=()=>folhaNovoPal(b.dataset.novo));
   nav.querySelectorAll("[data-bp]").forEach(b=>b.onclick=()=>{ plSec="bp"; plBp=b.dataset.bp; plCur=null; renderPalestra(); }); }
 function folhaNovoPal(sec){ let sis="onze", sisAdv=advJogoOk()?"jogo":"4-4-2", esp=sec==="com";
@@ -187,8 +210,8 @@ function folhaNovoPal(sec){ let sis="onze", sisAdv=advJogoOk()?"jogo":"4-4-2", e
 
 /* ---------- apresentar: a Palestra inteira, pela ordem, com os passos dos quadros ---------- */
 function slidesPalestra(){ const S=[{k:"onze",tit:"O Nosso Onze Inicial"}]; if(advJ().onze.length) S.push({k:"adv",tit:"Onze Provável do Adversário"});
-  ["com","sem"].forEach(sec=>listaPal(sec).forEach(Q=>S.push({k:"pl:"+Q.id,tit:PL_NOME[sec]+" · "+Q.nome,id:Q.id})));
-  setupsPal().forEach(L=>S.push({k:"bp:"+L.id,tit:"Bola parada · "+L.nome,L:L.id})); return S; }
+  ["com","sem"].forEach(sec=>quadrosVisiveis(sec).forEach(Q=>S.push({k:"pl:"+Q.id,tit:PL_NOME[sec]+" · "+Q.nome,id:Q.id})));
+  setupsVisiveis().forEach(L=>S.push({k:"bp:"+L.id,tit:"Bola parada · "+L.nome,L:L.id})); return S; }
 /* v123.1 (pedido do Rodrigo): na apresentação as peças mexem-se com o rato ou o dedo, mas nada se grava — é só para explicar.
    Mudar de slide, «↺ Repor» ou fechar volta ao que está gravado. Nos quadros mexe-se no passo que está à vista (uma cópia do quadro). */
 function apresentaPalestra(k0){ const S=slidesPalestra(); mPara(); if(mApr) mApr.fecha(); let i=Math.max(0,S.findIndex(s=>s.k===(k0||(plCur?"pl:"+plCur:plSec==="bp"&&plBp?"bp:"+plBp:plSec)))), pl=null; tintaInicio();
@@ -254,7 +277,7 @@ async function pdfPalestra(btn){ if(btn&&btn.disabled) return; if(btn) btn.disab
     txt("SC Angrense",M,140,{b:true,fs:30}); txt("vs "+(jogo.adversario||"adversário por definir"),M,178,{b:true,fs:30,c:[192,0,0]});
     const comp=(typeof COMPS!=="undefined"&&COMPS[jogo.comp]&&COMPS[jogo.comp].nome)||"";
     [["Data",[jogo.data?dataPt(jogo.data):"",jogo.hora].filter(Boolean).join(" · ")],["Competição",[comp,jogo.jornada?"Jornada "+jogo.jornada:""].filter(Boolean).join(" · ")],["Local",[jogo.local,jogo.casa==="fora"?"fora":"em casa"].filter(Boolean).join(" · ")]].forEach(([k,v],j)=>{ if(!v) return; txt(k.toUpperCase(),M,226+j*34,{b:true,fs:8,c:[127,127,127]}); txt(v,M,240+j*34,{b:true,fs:13}); });
-    const com=listaPal("com"), sem=listaPal("sem"), bp=setupsPal();
+    const com=quadrosVisiveis("com"), sem=quadrosVisiveis("sem"), bp=setupsVisiveis();   // os ocultos (v123.3) não entram
     const indice=[["1","O Nosso Onze Inicial",pj().sis||""],["2","Onze Provável do Adversário",A.onze.length?[(T&&T.nome)||"",A.sistema].filter(Boolean).join(" · "):"por definir"],["3","COM BOLA",com.length+" "+(com.length===1?"quadro":"quadros")],["4","SEM BOLA",sem.length+" "+(sem.length===1?"quadro":"quadros")],["5","Bolas Paradas",bp.length+" setups"]];
     txt("CONTEÚDO",PW/2+20,140,{b:true,fs:8,c:[127,127,127]}); indice.forEach(([n,nm,sub],j)=>{ const y=166+j*36; txt(n,PW/2+20,y,{b:true,fs:16,c:[192,0,0]}); txt(nm,PW/2+46,y,{b:true,fs:14}); if(sub) txt(sub,PW/2+46,y+14,{fs:9,c:[85,82,75]}); });
     /* 2 · onzes (com as notas ao lado, se houver) */

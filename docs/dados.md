@@ -20,7 +20,7 @@ Tudo é gravado por registo e passa pela fila `pendentes` (funciona sem rede).
 | `lances/{id}` | coleção | Lances de bolas paradas editados (os de origem estão em `src/data/lances-base.json`). Desde a v108: `base` (id do lance cujas posições segue) e `soltas` (chaves das peças que ficam no seu sítio: posição no onze, `bj0`… da bola, `a0`… dos adversários) Desde a v110: `variante: true` (lance ligado que mantém os seus jogadores; sem isto, cada posição tem o jogador do slide inicial). |
 | `modelo/{id}` | coleção | Quadros do Modelo de Jogo |
 | `palestra/{id}` | coleção | Quadros COM BOLA / SEM BOLA da Palestra (v123): mesmo formato de um quadro do Modelo de Jogo (ver abaixo) mais `sec: "com"\|"sem"`, `jogo` ("atual" ou id do jogo arquivado), `desc` (objetivo), `ordem`, `espacos` (zonas automáticas), `criadoEm`, `copiaDe` (na cópia guardada ao arquivar) |
-| `palestraJogo/{jogo}` | coleção | Palestra por jogo (v123; `atual` ou id do jogo arquivado): `{sis (sistema do nosso onze escolhido na Palestra), notasOnze, notasAdv}` |
+| `palestraJogo/{jogo}` | coleção | Palestra por jogo (v123; `atual` ou id do jogo arquivado): `{sis (sistema do nosso onze escolhido na Palestra), notasOnze, notasAdv, ocultos: ["bp:<id do lance>"|"pl:<id do quadro>"] (v123.3: fora da apresentação e do PDF)}` |
 | `exercicios/{id}` | coleção | Repositório de exercícios para as UT (ver abaixo) |
 | `uts/{id}` | coleção | Unidades de Treino (ver abaixo) |
 | `compJogos/{id}` | coleção | Jogos da competição interna (v95): `{ut, lid, serie, a, b (ids dos grupos), grA, grB (GR de cada equipa), semGR, fim, criadoEm, criadoPor}`; v110: `mais {a:[k], b:[k]}` (reforços de outra equipa só nesse jogo) e `menos {a:[k], b:[k]}` (quem saiu nesse jogo), só quando há |
